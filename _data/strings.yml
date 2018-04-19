@@ -30,8 +30,8 @@ templates:             Templates (for web app)
 loading:               Loading…
 redirecting:           Redirecting…
 
-continue_reading:      >
-  Continue reading <!--post_title-->
+#continue_reading:      >
+  #Continue reading <!--post_title-->
 
 not_found:
   title:               '404: Page Not Found'
