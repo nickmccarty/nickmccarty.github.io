@@ -4,11 +4,142 @@ title: Résumé
 description: >
   This is the `description` of your resume page, as it will be seen by search engines.
   Open `resume.md` to edit this text.
-resume:
-  basics:
-    name: "Nicholas McCarty"
-    label: "Data Analyst"
-    picture: "/assets/icons/icon.png"
+basics:
+  name: "Nicholas McCarty"
+  label: "Data Analyst"
+  picture: "/assets/icons/icon.png"
+  email: "NumerateAnalytics@gmail.com"
+  phone: "(971) 207-9972"
+  website: ""
+  summary:
+  location:
+    address: "1182 Walker Ave."
+    postalCode: "CA 94596"
+    city: "Walnut Creek"
+    countryCode: "US"
+    region: "California"
+  profiles:
+    - network: "LinkedIn"
+      username: "Nicholas McCarty"
+      url: "https://www.linkedin.com/in/nicholasmccarty/"
+work:
+  - company: "Private Partnership"
+    position: "Quantitative Analyst/Algorithmic Trader"
+    website: ""
+    startDate: "2017-01-01"
+    endDate: "2018-10-01"
+    summary:
+    highlights:
+      - "Created a real-time currency price data pipeline using my broker’s API"
+      - "Utilized Python tools to automate technical analysis, trade signal generation, and placement of orders"
+      - "Created data collection and analytics systems to perform sentiment and econometric analysis"
+  - company: "Northwest 3D"
+    position: "Co-Founder/Co-Owner"
+    website: ""
+    startDate: "2016-04-01"
+    endDate: "2017-01-01"
+    summary:
+    highlights:
+      - "Produced interactive models and immersive tours of properties for realtors and brokers using 3D cameras"
+      - "Researched and developed applications of photogrammetry technology in order to serve other markets"
+      - "Provided training on how to utilize and showcase the models and tours created for clients"
+  - company: "ToPa 3D"
+    position: "Project Management Consultant"
+    website: "http://topa3d.com/projects--tutorials.html"
+    startDate: "2015-02-01"
+    endDate: "2016-04-01"
+    summary:
+    highlights:
+      - "Collected data pertaining to the as-built conditions of buildings using laser scanning equipment"
+      - "Produced 3D models of structures using FARO Scene and Autodesk’s ReCap and Revit software, as well as 3D topographic models using Autodesk’s AutoCAD Civil 3D and Esri’s ArcGIS"
+      - "Provided technical support and training to architect studios and engineering firms requiring additional assistance on projects"
+volunteer:
+  - organization: "Alberta Street Project"
+    position: "Spatial Analyst"
+    website: ""
+    startDate: "2014-03-01"
+    endDate: "2015-10-01"
+    summary: "Produced choropleths to visualize the condition of property in the study area on the individual tax lot level in order to help document the effects of gentrification."
+    highlights:
+  - organization: "City Club of Portland"
+    position: "Researcher"
+    website: ""
+    startDate: "2014-03-01"
+    endDate: "2014-12-01"
+    summary: "Conducted a 10-month comprehensive study for the City Club on the effect of the Affordable Care and Patient Protection Act on the houseless population in Multnomah County, Oregon."
+    highlights:
+ - organization: "Verde NW"
+    position: "Analyst"
+    website: ""
+    startDate: "2014-01-01"
+    endDate: "2014-03-01"
+    summary: "Compiled surveys collected by Verde NW and analyzed the resulting dataset in order to provide insights to be included in a grant application for their Living Cully Walks initiative."
+    highlights:
+      - "Helped secure two rounds of Metro funding at $2M each."
+  - organization: "Portland State University, Center for Public Service"
+    position: "Community Outreach Planner"
+    website: ""
+    startDate: "2013-02-01"
+    endDate: "2013-06-01"
+    summary: "Collaborated with the City of Beaverton's Cultural Inclusion Coordinator and community leaders in order to implement an outreach event that connected members of various groups of residents with the city’s mayor and council members."
+    highlights:
+education:
+  - institution: "UC Berkeley"
+    area: "Data Analytics and Visualization"
+    studyType: "Certificate"
+    startDate: "2019-02-04"
+    endDate: "2019-08-05"
+  - institution: "Portland State University"
+    area: "Business Administration, Real Estate Finance"
+    studyType: "Bachelor of Science (B.S.)"
+    startDate: "2013-01-01"
+    endDate: "2015-06-01"
+  - institution: "Portland State University"
+    area: "Community Development"
+    studyType: "Bachelor of Science (B.S.)"
+    startDate: "2013-01-01"
+    endDate: "2015-06-01"
+    gpa: ""
+    courses:
+awards:
+  - title: ""
+    date: ""
+    awarder: ""
+    summary: ""
+publications:
+  - name: ""
+    publisher: ""
+    releaseDate: ""
+    website: ""
+    summary: ""
+skills:
+  - name: "Web Development"
+    level: "Competent"
+    keywords:
+      - "HTML"
+      - "CSS"
+      - "Javascript"
+  - name: "Data Analysis"
+    level: "Master"
+    keywords:
+      - "Python"
+      - "SQL"
+      - "VBA"
+      - "Tableau"
+languages:
+  - language: "English"
+    fluency: "Native speaker"
+  - language: "Spanish"
+    fluency: "Conversant, literate"
+interests:
+  - name: "Adventuring"
+    keywords:
+      - "Skydiving"
+      - "Sailing"
+      - "Backpacking"
+references:
+  - name: ""
+    reference:
 hide_description: true
 menu: true
 order: 3
