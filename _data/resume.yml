@@ -2,11 +2,11 @@
 # If you don't have a JSON Resume you can just edit this YAML file instead.
 # See also: <https://jsonresume.org/>.
 basics:
-  name: "Nicholas McCarty"
+  name: "Nick McCarty"
   label: "Data Analyst"
   picture: "/assets/icons/icon.png"
   email: "NumerateAnalytics@gmail.com"
-  phone: "(971) 207-9972"
+  phone: ""
   website: ""
   summary:
   location:
