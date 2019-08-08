@@ -13,7 +13,7 @@ basics:
     address: ""
     city: "Walnut Creek"
     region: "California"
-    postalCode: ""
+#     postalCode: ""
   profiles:
     - network: "LinkedIn"
       username: "Nicholas McCarty"
