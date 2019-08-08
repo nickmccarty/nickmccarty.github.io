@@ -11,9 +11,9 @@ basics:
   summary:
   location:
     address: ""
-    city: "Walnut Creek"
-    region: "California"
-#     postalCode: ""
+    city: ""
+    region: ""
+    postalCode: ""
   profiles:
     - network: "LinkedIn"
       username: "Nicholas McCarty"
