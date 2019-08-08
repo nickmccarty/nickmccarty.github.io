@@ -8,16 +8,7 @@ basics:
   email: "NumerateAnalytics@gmail.com"
   phone: "(971) 207-9972"
   website: ""
-  summary: >
-#     Richard hails from Tulsa.
-#     He has earned degrees from the University of Oklahoma and Stanford. (Go Sooners and Cardinals!)
-#     Before starting Pied Piper, he worked for Hooli as a part time software developer.
-#     While his work focuses on applied information theory,
-#     mostly optimizing lossless compression schema of both the length-limited and adaptive variants,
-#     his non-work interests range widely,
-#     everything from quantum computing to chaos theory.
-#     He could tell you about it, but THAT would NOT be a “length-limited” conversation!
-#     Open `_data/resume.yml` to edit this text.
+  summary:
   location:
     address: "1182 Walker Ave."
     postalCode: "CA 94596"
@@ -25,35 +16,26 @@ basics:
     countryCode: "US"
     region: "California"
   profiles:
-#     - network: "Twitter"
-#       username: "RHendricksCEO"
-#       url: ""
     - network: "LinkedIn"
       username: "Nicholas McCarty"
       url: "https://www.linkedin.com/in/nicholasmccarty/"
 work:
   - company: "Private Partnership"
     position: "Quantitative Analyst/Algorithmic Trader"
-#     website: "https://piedpiper.com"
+    website: ""
     startDate: "2017-01-01"
     endDate: "2018-10-01"
-#     summary: >
-#       Pied Piper is a multi-platform technology based on a proprietary universal compression algorithm that has
-#       consistently fielded high Weisman Scores™ that are not merely competitive,
-#       but approach the theoretical limit of lossless compression.
+    summary:
     highlights:
       - "Created a real-time currency price data pipeline using my broker’s API"
       - "Utilized Python tools to automate technical analysis, trade signal generation, and placement of orders"
       - "Created data collection and analytics systems to perform sentiment and econometric analysis"
   - company: "Northwest 3D"
     position: "Co-Founder/Co-Owner"
-#     website: "https://piedpiper.com"
+    website: ""
     startDate: "2016-04-01"
     endDate: "2017-01-01"
-#     summary: >
-#       Pied Piper is a multi-platform technology based on a proprietary universal compression algorithm that has
-#       consistently fielded high Weisman Scores™ that are not merely competitive,
-#       but approach the theoretical limit of lossless compression.
+    summary:
     highlights:
       - "Produced interactive models and immersive tours of properties for realtors and brokers using 3D cameras"
       - "Researched and developed applications of photogrammetry technology in order to serve other markets"
@@ -63,10 +45,7 @@ work:
     website: "http://topa3d.com/projects--tutorials.html"
     startDate: "2015-02-01"
     endDate: "2016-04-01"
-#     summary: >
-#       Pied Piper is a multi-platform technology based on a proprietary universal compression algorithm that has
-#       consistently fielded high Weisman Scores™ that are not merely competitive,
-#       but approach the theoretical limit of lossless compression.
+    summary:
     highlights:
       - "Collected data pertaining to the as-built conditions of buildings using laser scanning equipment"
       - "Produced 3D models of structures using FARO Scene and Autodesk’s ReCap and Revit software, as well as 3D topographic models using Autodesk’s AutoCAD Civil 3D and Esri’s ArcGIS"
@@ -74,23 +53,21 @@ work:
 volunteer:
   - organization: "Alberta Street Project"
     position: "Spatial Analyst"
-#     website: "https://coderdojo.com/"
+    website: ""
     startDate: "2014-03-01"
     endDate: "2015-10-01"
     summary: "Produced choropleths to visualize the condition of property in the study area on the individual tax lot level in order to help document the effects of gentrification."
-#     highlights:
-#       - "Awarded 'Teacher of the Month'"
+    highlights:
   - organization: "City Club of Portland"
     position: "Researcher"
-#     website: "https://coderdojo.com/"
+    website: ""
     startDate: "2014-03-01"
     endDate: "2014-12-01"
     summary: "Conducted a 10-month comprehensive study for the City Club on the effect of the Affordable Care and Patient Protection Act on the houseless population in Multnomah County, Oregon."
-#     highlights:
-#       - "Awarded 'Teacher of the Month'"
+    highlights:
  - organization: "Verde NW"
     position: "Analyst"
-#     website: "https://coderdojo.com/"
+    website: ""
     startDate: "2014-01-01"
     endDate: "2014-03-01"
     summary: "Compiled surveys collected by Verde NW and analyzed the resulting dataset in order to provide insights to be included in a grant application for their Living Cully Walks initiative."
@@ -98,12 +75,11 @@ volunteer:
       - "Helped secure two rounds of Metro funding at $2M each."
   - organization: "Portland State University, Center for Public Service"
     position: "Community Outreach Planner"
-#     website: "https://coderdojo.com/"
+    website: ""
     startDate: "2013-02-01"
     endDate: "2013-06-01"
     summary: "Collaborated with the City of Beaverton's Cultural Inclusion Coordinator and community leaders in order to implement an outreach event that connected members of various groups of residents with the city’s mayor and council members."
-#     highlights:
-#       - "Helped secure two rounds of Metro funding at $2M each."
+    highlights:
 education:
   - institution: "UC Berkeley"
     area: "Data Analytics and Visualization"
@@ -120,21 +96,19 @@ education:
     studyType: "Bachelor of Science (B.S.)"
     startDate: "2013-01-01"
     endDate: "2015-06-01"
-#     gpa: "4.0"
-#     courses:
-#       - "DB1101 - Basic SQL"
-#       - "CS2011 - Java Introduction"
-# awards:
-#   - title: "Digital Compression Pioneer Award"
-#     date: "2014-11-01"
-#     awarder: "Techcrunch"
-#     summary: "There is no spoon."
-# publications:
-#   - name: "Video compression for 3d media"
-#     publisher: "Hooli"
-#     releaseDate: "2014-10-01"
-#     website: "https://en.wikipedia.org/wiki/Silicon_Valley_(TV_series)"
-#     summary: "Innovative middle-out compression algorithm that changes the way we store data."
+    gpa: ""
+    courses:
+awards:
+  - title: ""
+    date: ""
+    awarder: ""
+    summary: ""
+publications:
+  - name: ""
+    publisher: ""
+    releaseDate: ""
+    website: ""
+    summary: ""
 skills:
   - name: "Web Development"
     level: "Competent"
@@ -160,8 +134,6 @@ interests:
       - "Skydiving"
       - "Sailing"
       - "Backpacking"
-# references:
-#   - name: "Erlich Bachman"
-#     reference: >
-#       It is my pleasure to recommend Richard, his performance working as a consultant for Main St.
-#       Company proved that he will be a valuable addition to any company.
+references:
+  - name: ""
+    reference:
