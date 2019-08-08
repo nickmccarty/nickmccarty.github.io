@@ -5,7 +5,7 @@ title: About
 menu: true
 ---
 
-Designed and managed project workflows involving large datasets in the production of 3D models for architects and engineers, and having freelanced as a data analyst serving the nonprofit sector, I have paid particular attention to systematization and automation wherever possible. As an independent quantitative currency trader, I have had the opportunity to take the (semi-)automation of my work to the next level. My aim here is to share with you the techniques and systems I employ, and to engage in meaningful dialogue about quantitative analysis with regards to our respective domains. 
+Having designed and managed project workflows involving large datasets in the production of 3D models for architects and engineers, and having freelanced as a data analyst serving the nonprofit sector, I have paid particular attention to systematization and automation wherever possible. As an independent quantitative currency trader, I have had the opportunity to take the (semi-)automation of my work to the next level. My aim here is to share with you the techniques and systems I employ, and to engage in meaningful dialogue about quantitative analysis with regards to our respective domains. 
 
 ### My Wheelhouse
 
