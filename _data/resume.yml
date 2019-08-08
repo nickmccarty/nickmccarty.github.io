@@ -10,10 +10,10 @@ basics:
   website: ""
   summary:
   location:
-    address: "1182 Walker Ave."
-    city: "Walnut Creek,"
-    region: " California "
-    postalCode: "94596"
+    address: ""
+    city: "Walnut Creek"
+    region: "California"
+    postalCode: ""
   profiles:
     - network: "LinkedIn"
       username: "Nicholas McCarty"
