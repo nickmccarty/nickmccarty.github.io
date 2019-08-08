@@ -42,8 +42,8 @@ keywords:              []
 # This should be the same author as first entry in `_data/authors.yml`.
 # Duplication is necessary due to the `jekyll-feed`, `jekyll-seo-tag` plugin.
 author:
-  name:                Nick McCarty
-  email:               nickmccarty0@gmail.com
+  name:                <name>
+  email:               <email>
   # Used by `jekyll-seo-tag`:
   # twitter:             <username>
 
