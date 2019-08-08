@@ -11,10 +11,9 @@ basics:
   summary:
   location:
     address: "1182 Walker Ave."
-    postalCode: "CA 94596"
-    city: "Walnut Creek"
-    countryCode: "US"
-    region: "California"
+    city: "Walnut Creek,"
+    region: " California "
+    postalCode: "94596"
   profiles:
     - network: "LinkedIn"
       username: "Nicholas McCarty"
@@ -86,17 +85,19 @@ education:
     studyType: "Certificate"
     startDate: "2019-02-04"
     endDate: "2019-08-05"
+    gpa: "4.0"
   - institution: "Portland State University"
     area: "Business Administration, Real Estate Finance"
     studyType: "Bachelor of Science (B.S.)"
     startDate: "2013-01-01"
     endDate: "2015-06-01"
+    gpa: "3.84"
   - institution: "Portland State University"
     area: "Community Development"
     studyType: "Bachelor of Science (B.S.)"
     startDate: "2013-01-01"
     endDate: "2015-06-01"
-    gpa: ""
+    gpa: "3.84"
     courses:
 awards:
   - title: ""
@@ -111,7 +112,7 @@ publications:
     summary: ""
 skills:
   - name: "Web Development"
-    level: "Competent"
+    level: "Master"
     keywords:
       - "HTML"
       - "CSS"
@@ -126,14 +127,18 @@ skills:
 languages:
   - language: "English"
     fluency: "Native speaker"
-  - language: "Spanish"
-    fluency: "Conversant, literate"
 interests:
   - name: "Adventuring"
     keywords:
       - "Skydiving"
       - "Sailing"
       - "Backpacking"
+  - name: "Self-Enrichment"
+    keywords:
+      - "Exercising"
+      - "Learning"
+      - "Volunteering"
+      - "Entrepreneurialism"
 references:
   - name: ""
     reference:
