@@ -25,13 +25,21 @@ pagination:            Pagination
 newer:                 Newer
 older:                 Older
 back:                  Back
+permalink:             Permalink
+permalink_icon:        icon-link
 templates:             Templates (for web app)
+present:               present
 
 loading:               Loading…
 redirecting:           Redirecting…
 
 continue_reading:      >
   Continue reading <!--post_title-->
+
+cookies_banner:
+  text:                >
+    This site uses cookies.
+  okay:                Okay
 
 not_found:
   title:               '404: Page Not Found'
@@ -53,6 +61,8 @@ category_start:        'in '
 category_spearator:    ' / '
 tag_start:             'on '
 tag_separator:         ', '
+from_to_separator:     '–'
+
 
 # Date formats
 # ---------------------------------------------------------------------------------------
@@ -84,18 +94,12 @@ tinyletter:
     {:.faded}
 
 welcome:
-  selected_projects:   Selected Projects
-  selected_posts:      Selected Posts
-  recent_projects:     Recent Projects
-  recent_posts:        Recent Posts
   more_projects:       See <!--projects_title--> for more
   more_posts:          See <!--posts_title--> for more
 
 resume:
   location:            Location
   location_separator:  ', '
-  from_to_separator:   '–'
-  present:             present
   email:               Email
   phone:               Phone
   website:             Website
@@ -119,10 +123,11 @@ resume:
   interests:           Interests
   keywords:            Keywords
   icons:
+    fallback:          icon-link
     location:          icon-location
-    email:             icon-envelop
+    email:             icon-mail2
     phone:             icon-phone
-    website:           icon-link
+    website:           icon-home3
     work:              icon-briefcase
     volunteer:         icon-earth
     education:         icon-library
