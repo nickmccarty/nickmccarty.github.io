@@ -9,7 +9,7 @@ links:
     url: https://nyt-style-scatterplot.herokuapp.com
   - title: Code
     url: https://github.com/nickmccarty/D3_Scatterplot
-caption: Lazy-loading images with cancellation
+caption: Dynamically explore correlation between sets of varaibles
 description: >
   Dynamically explore correlation between sets of varaibles
 accent_color: '#4fb1ba'
