@@ -4,12 +4,13 @@ image: /assets/img/hydejack-8.png
 hide_description: true
 ---
 
-# Thank You
-Thank you for visiting my site!
+# Thank You for Visiting!
 
-The side menu can be used to access my "blog," my resume, and my portfolio.
+The side menu can be used to access my resume and my portfolio.
 
 If you get the sense that I may be a potential resource for your project, team, or company, please feel free to contact me.
+
+NumerateAnalytics@gmail.com
 
 <!---## First Steps
 Please start by reading the [Documentation]{:.heading.flip-title}.
