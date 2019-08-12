@@ -1,7 +1,7 @@
 ---
 layout: project
 title: 'Interactive D3 Scatterplot'
-date: 1 Mar 2018
+date: 1 May 2019
 image: /assets/img/projects/Scatterplot.png
 screenshot: /assets/img/projects/Scatterplot.png
 links:
