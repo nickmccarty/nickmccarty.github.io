@@ -1,6 +1,6 @@
 ---
 layout: project
-title: 'Erase Hate'
+title: 'Machine Learning | Natural Language Processing'
 date: 1 August 2019
 image: /assets/img/projects/Erase_Hate_Homepage.png
 screenshot: /assets/img/projects/Erase_Hate_Homepage.png
