@@ -111,22 +111,36 @@ publications:
     website: ""
     summary: ""
 skills:
-  - name: "Web Development"
-    level: "Master"
+  - name: "Data Analysis"
+#    level: "Master"
     keywords:
+      - "Data Collection/Cleaning"
+      - "Statistical Inference"
+      - "Data Visualization"
+      - "Database Schema Design"
+      - "Python (Scripting)"
+      - "SQL (Query Writing)"
+      - "VBA (Macro Building)"
+      - "Tableau (Dashboarding)"
+  - name: "Machine Learning"
+#    level: "Master"
+    keywords:
+      - "Transforming/Encoding"
+      - "Modeling"
+      - "Natural Language Processing (NLP)"
+      - "Scikit-learn"
+      - "Keras"
+  - name: "Web Development"
+#    level: "Master"
+    keywords:
+      - "Custom Dashboarding"
+      - "Software Deployment"
       - "HTML"
       - "CSS"
       - "Javascript"
-  - name: "Data Analysis"
-    level: "Master"
-    keywords:
-      - "Python"
-      - "SQL"
-      - "VBA"
-      - "Tableau"
 languages:
   - language: "English"
-    fluency: "Native speaker"
+#    fluency: "Native speaker"
 interests:
   - name: "Adventuring"
     keywords:
