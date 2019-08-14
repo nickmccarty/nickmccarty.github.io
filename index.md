@@ -6,7 +6,7 @@ hide_description: true
 
 # Thank You for Visiting!
 
-The side menu can be used to access my resume and my portfolio.
+The side menu can be used to read more about me, as well as to access my resume and my portfolio.
 
 If you get the sense that I may be a potential resource for your project, team, or company, please feel free to contact me.
 
