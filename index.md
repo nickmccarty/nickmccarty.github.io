@@ -10,7 +10,7 @@ The side menu can be used to read more about me, as well as to access my resume 
 
 If you get the sense that I may be a potential resource for your project, team, or company, please feel free to contact me.
 
-NumerateAnalytics@gmail.com[NumerateAnalytics@gmail.com](mailto:NumerateAnalytics@gmail.com)
+[NumerateAnalytics@gmail.com](mailto:NumerateAnalytics@gmail.com)
 
 <!---## First Steps
 Please start by reading the [Documentation]{:.heading.flip-title}.
