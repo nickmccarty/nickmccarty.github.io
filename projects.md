@@ -1,6 +1,6 @@
 ---
 layout: projects
-title: Projects
+title: Portfolio
 show_collection: projects
 description: >
   I hope you enjoy interacting with and exploring my work as much as I do creating it!
