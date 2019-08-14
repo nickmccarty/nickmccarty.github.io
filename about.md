@@ -5,7 +5,7 @@ permalink: /about/
 menu: true
 ---
 
-They say a picture is worth a thousand words, but this visualization encapsulates many of the ups and downs of the last several years--which I'd be hard-pressed to synthesize into such a brief summary. That sentence was practically a thousand words, sheesh!
+They say a picture is worth a thousand words, but this visualization encapsulates many of the ups and downs of the last several years---which I'd be hard-pressed to synthesize into such a brief summary. That last sentence was practically a thousand words, sheesh!
 
 ![](assets/img/Timeline.png){:.lead data-width="800" data-height="300"}
 My path to this point has been nonlinear, to say the least | [Code](https://gist.github.com/nickmccarty/770777de95aacc456fa4860864a9e955)
