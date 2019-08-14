@@ -6,7 +6,7 @@ image: /assets/img/projects/terra_linda.jpg
 screenshot: /assets/img/projects/terra_linda.jpg
 links:
   - title: Workflow
-    url: https://www.linkedin.com/pulse/3d-scan-to-contour-topo-maps-terra-linda-paul-tice/?trk=mp-author-card
+    url: https://www.linkedin.com/pulse/3d-scan-to-contour-topo-maps-terra-linda-paul-tice/
 caption: Terra Linda Elementary School, Portland, Oregon
 description: >
   Contour map deliverable for a civil engineer in Portland, OR. Accuracy of 3D model within 0.25"; 1' contour lines
