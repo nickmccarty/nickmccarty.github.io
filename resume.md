@@ -8,10 +8,11 @@ hide_description: true
 menu: true
 order: 3
 left_column:
+ - education
  - work
  - volunteer
- - education
 right_column:
+ - awards
  - languages
  - skills
  - interests
