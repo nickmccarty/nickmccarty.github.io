@@ -21,7 +21,13 @@ Off the top of my head, I can think of several reasons:
 As cliche as it may sound, it's as though I was built for this ([Zoom](https://raw.githubusercontent.com/nickmccarty/nickmccarty.github.io/master/assets/img/Why.png) | [Code](https://gist.github.com/nickmccarty/9dfe958d700dbb83b5d43c887188ec7a))
 {:.figure}
 
-The fact is that I bring with me a level of acumen that would very likely be of benefit to your project, team, and/or company. So why not reach out and start a conversation?
+The fact is that I bring with me a level of acumen that would very likely be of benefit to your project, team, and/or company.
+
+![](assets/img/Why.png){:.lead data-width="800" data-height="100"}
+I won't lie---I still freak out a little when Vim pops up in my Bash terminal ([Zoom](https://raw.githubusercontent.com/nickmccarty/nickmccarty.github.io/master/assets/img/Qualitative_Skills.png) | [Code](https://gist.github.com/nickmccarty/61eb453bc97821249c933143a9915830))
+{:.figure}
+
+Why not reach out and start a conversation?
 
 ### Contact me
 
