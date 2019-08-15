@@ -29,6 +29,6 @@ I won't lie---I still freak out a little when Vim pops up in my Bash terminal ([
 
 Why not reach out and start a conversation?
 
-### Contact me
+### Reach Out
 
 [NumerateAnalytics@gmail.com](mailto:NumerateAnalytics@gmail.com)
