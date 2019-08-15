@@ -23,7 +23,7 @@ As cliche as it may sound, it's as though I was built for this ([Zoom](https://r
 
 The fact is that I bring with me a level of acumen that would very likely be of benefit to your project, team, and/or company.
 
-![](assets/img/Why.png){:.lead data-width="800" data-height="100"}
+![](assets/img/Qualitative_Skills.png){:.lead data-width="800" data-height="100"}
 I won't lie---I still freak out a little when Vim pops up in my Bash terminal ([Zoom](https://raw.githubusercontent.com/nickmccarty/nickmccarty.github.io/master/assets/img/Qualitative_Skills.png) | [Code](https://gist.github.com/nickmccarty/61eb453bc97821249c933143a9915830))
 {:.figure}
 
