@@ -11,7 +11,7 @@ They say a picture is worth a thousand words, but this visualization encapsulate
 My path to this point has been nonlinear, to say the least | [Code](https://gist.github.com/nickmccarty/770777de95aacc456fa4860864a9e955)
 {:.figure}
 
-After looking back at where I've been, it still amazes me that I am in the Bay Area in 2019 positioned to enter the analytics space. Having just completed UC Berkeley's Data Analytics and Visualization Bootcamp, I feel a sense of optimism and joy that reminds me of growing up in the real California (SoCal). I kid, I kid! It really is an honor to be where I am now, and I am grateful for all of the bright, wonderful people I've had the privilege of working with since I've been here.
+After looking back at where I've been, it still amazes me that I am in the Bay Area in 2019 positioned to enter the analytics space. Having just completed UC Berkeley's Data Analytics and Visualization Bootcamp, I feel a sense of optimism and joy that reminds me of growing up in the real California (SoCal). I'm kidding! It really is an honor to be where I am now, and I am grateful for all of the bright, wonderful people I've had the privilege of working with since I've been here.
 
 ## Why Data Analysis Though?
 
