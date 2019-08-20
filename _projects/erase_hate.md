@@ -6,7 +6,7 @@ image: /assets/img/projects/Erase_Hate_Homepage.png
 screenshot: /assets/img/projects/Erase_Hate_Homepage.png
 links:
   - title: Web App
-    url: https://erase-hate.herokuapp.com
+    url: http://www.erasehateapp.com
   - title: Code
     url: https://https://github.com/nickmccarty/Twitter-Sentiment-Analysis
 caption: Automated hate speech classification on tweets
