@@ -2,8 +2,8 @@
 layout: project
 title: 'Interactive Visualization of Police Shootings'
 date: 28 August 2019
-image: /assets/img/projects/police_shootings.png
-screenshot: /assets/img/projects/police_shootings.png
+image: /assets/img/projects/Map.png
+screenshot: /assets/img/projects/Map.png
 links:
   - title: Web App
     url: https://officer-involved-fatalities.herokuapp.com
