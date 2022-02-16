@@ -1,1 +1,1 @@
-Repo for my [personal website](https://nickmccarty.github.io)
+Repo for my [personal website](https://nickmccarty.me)
