@@ -13,7 +13,7 @@
     <script src="./assets/js/color-modes.js"></script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>About</title>
+    <title>Notebooks</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <link rel="icon" type="image/png" sizes="32x32" href="./assets/images/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="16x16" href="./assets/images/favicon-32x32.png">
@@ -21,52 +21,16 @@
     <!-- Owl Carousel CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
+
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://unpkg.com/d3-cloud@1.2.6/build/d3.layout.cloud.js"></script>
     <!-- jQuery (required for Owl Carousel) -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 
     <!-- Owl Carousel JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "ProfilePage",
-        "dateCreated": "2018-04-19T12:34:00-05:00",
-        "dateModified": "2023-12-14T14:53:00-05:00",
-        "mainEntity": {
-          "@type": "Person",
-          "name": "Nick McCarty",
-          "alternateName": "nickmccarty",
-          "identifier": "nickmccarty",
-          "interactionStatistic": [{
-            "@type": "InteractionCounter",
-            "interactionType": "https://schema.org/FollowAction",
-            "userInteractionCount": 1
-          },{
-            "@type": "InteractionCounter",
-            "interactionType": "https://schema.org/LikeAction",
-            "userInteractionCount": 5
-          }],
-          "agentInteractionStatistic": {
-            "@type": "InteractionCounter",
-            "interactionType": "https://schema.org/WriteAction",
-            "userInteractionCount": 2346
-          },
-          "description": "yet another data scientist",
-          "image": "https://nickmccarty.me/assets/images/avatar.jpg",
-          "sameAs": [
-            "https://linkedin.com/in/nicholasmccarty"
-          ]
-        },
-        "hasPart": [{
-          "@type": "Article",
-          "headline": "DALL-E Flask App Write-Up",
-          "url": "https://nickmccarty.me/blog/dalle-image-generator.html",
-          "datePublished": "2023-12-14T18:34:00Z",
-          "author": { "@id": "nickmccarty" }
-        }]
-      }
-      </script>
   </head>
   <body>
     <div class="container-fluid p-0" style="overflow: hidden;">
@@ -151,17 +115,17 @@
                   </div>
                 </div>
                 <div class="col-sm-4 offset-md-1 py-4 gradient">
-                  <a class="nav-item nav-link" href="./" style="text-decoration: none; text-decoration-color: none;">
+                  <a class="nav-item nav-link" href="../../" style="text-decoration: none; text-decoration-color: none;">
                     <h4>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="bi bi-house" viewBox="0 0 16 16">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-house" viewBox="0 0 16 16">
                         <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"/>
                       </svg>
                     </h4>
                   </a>
-                  <!-- <a class="nav-item nav-link" href="./blog/posts/all.html" style="text-decoration: none; text-decoration-color: none;">
-                    <h4>Blog</h4>
-                  </a> -->
-                  <a class="nav-item nav-link" href="./projects.html" style="text-decoration: none; text-decoration-color: none;">
+                  <a class="nav-item nav-link" href="../../about.html" style="text-decoration: none; text-decoration-color: none;">
+                    <h4>About</h4>
+                  </a>
+                  <a class="nav-item nav-link" href="../../projects.html" style="text-decoration: none; text-decoration-color: none;">
                     <h4>Projects</h4>
                   </a>
                 </div>
@@ -181,115 +145,37 @@
       <main>
           <section class="text-center">
             <!-- <div class="row"> -->
-              <div id="jumbotron-container" class="jumbotron text-center bg-image" style="background-image: url(https://res.cloudinary.com/da8kzrluj/image/upload/f_auto,q_auto/tggbhsubdfpnwwizrwb4); border-radius: 0 0 50% 50%; height: 10em;">
+              <div id="jumbotron-container" class="jumbotron text-center bg-image" style="background-image: url(./assets/images/blue-mesh-background.png); border-radius: 0 0 50% 50%; height: 10em;">
                   <h1 class="display-4" style="color: lightcyan; padding-top: 40px; text-shadow: 1px 1px 1px #000, 1px 1px 1px #000, 1px 1px 1px #000, 1px 1px 1px #000;"><span id="typed-text"></span></h1>
                   <!-- <p class="lead" style="color: lightcyan;">Let's build something cool together!</p> -->
               </div>
             <!-- </div> -->
           </section>
           <br>
-          <!-- Bootstrap Row with Horizontally Scrolling Logos -->
-          <div class="jumbotron-container mt-4" style="padding-top: 30px; background-color: white;">
-            <div class="row">
-                <div class="col-md-12">
-                  <h2 class="text-center gradient" style="padding-bottom: 2px;">Organizations I've Served</h2>
-                  <br>
-                  <br>
-                    <div class="owl-carousel owl-theme">
-                        <div class="logo">
-                          <img class = "carousel-img" src="https://res.cloudinary.com/da8kzrluj/image/upload/f_auto,q_auto/w9oksj91mhqvt4cnewhy">
-                        </div>
-                        <div class="logo">
-                          <img class = "carousel-img" src="https://res.cloudinary.com/da8kzrluj/image/upload/f_auto,q_auto/on5oi9t16ojo6yypcnon">
-                        </div>
-                        <div class="logo">
-                          <img class = "carousel-img" src="https://res.cloudinary.com/da8kzrluj/image/upload/f_auto,q_auto/wqavbmreplrqqcnz3yy9">
-                        </div>
-                        <div class="logo">
-                          <img class = "carousel-img" src="https://res.cloudinary.com/da8kzrluj/image/upload/f_auto,q_auto/b5857ggt3prdclu0nosq">
-                        </div>
-                        <div class="logo">
-                          <img class = "carousel-img" src="https://res.cloudinary.com/da8kzrluj/image/upload/f_auto,q_auto/a25wtc7dfrasaktkf9mm">
-                        </div>
-                        <div class="logo">
-                          <img class = "carousel-img" src="https://res.cloudinary.com/da8kzrluj/image/upload/f_auto,q_auto/dyhayb6vg8ixhe9vjm7g">
-                        </div>
-                        <div class="logo">
-                          <img class = "carousel-img" src="https://res.cloudinary.com/da8kzrluj/image/upload/f_auto,q_auto/uwus6adfzwhb6svhvnx4">
-                        </div>
-                        <div class="logo">
-                          <img class = "carousel-img" src="https://res.cloudinary.com/da8kzrluj/image/upload/f_auto,q_auto/zhcdocnr0nl1ogacmohk">
-                        </div>
-                        <div class="logo">
-                          <img class = "carousel-img" src="https://res.cloudinary.com/da8kzrluj/image/upload/f_auto,q_auto/p29lip9zj3tazfoetpni">
-                        </div>
-                        <div class="logo">
-                          <img class = "carousel-img" src="https://res.cloudinary.com/da8kzrluj/image/upload/f_auto,q_auto/lkmvstm8bjuqpk7mo3gv">
-                        </div>
-                        <div class="logo">
-                          <img class = "carousel-img" src="https://res.cloudinary.com/da8kzrluj/image/upload/f_auto,q_auto/vuknsmn968pk0hffnmwc">
-                        </div>
-                    </div>
-                </div>
-            </div>
-          </div>
-          <div class="container" style="padding-top: 40px;">
-            <div class="row">
-              <div class="col">
-                <div class="jumbotron">
-                  <h1 class="display-4 text-center gradient">Hi! I'm Nick&#128075;&#127997;</h1>
-                  <div class="row" style="padding-top: 10px;">
-                    <div class="col-sm-3 text-center">
-                      <img class="rounded-circle img-thumbnail mb-5 shadow-lg" alt="avatar" src="./assets/images/avatar.jpg" style="width: 200px;"/>
-                    </div>
-                    <div class="col-sm-9 d-flex flex-column justify-content-center">
-                      <p class="lead mb-4">
-                        I've spent the last 7 years working diligently to increase my acumen in a number of key areas, including:
-                        <ul>
-                          <li>
-                            Data Analytics/Science
-                          </li>
-                          <li>
-                            Machine Learning (ML) & Artificial Intelligence (AI)
-                          </li>
-                            <ul>
-                              <li>
-                                Natural Language Processing (NLP)
-                              </li>
-                              <li>
-                                Computer Vision
-                              </li>
-                              <li>
-                                Generative AI
-                              </li>
-                            </ul>
-                          <li>
-                            Web Development
-                          </li>
-                        </ul>
-                      </p>  
-                      <p class="lead">In practice, these years have been spent consulting, teaching, building ML/AI-driven applications,
-                        and learning -- lots and lots of learning! &#x1f913;
-                      </p>
-                    </div>
-                    <p class="lead text-center mt-4 mb-5">
-                      <a class="btn btn-primary btn-outline-secondary btn-lg gradient" href="./projects.html" role="button">
-                        Projects
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-laptop" viewBox="0 0 16 16">
-                          <path d="M13.5 3a.5.5 0 0 1 .5.5V11H2V3.5a.5.5 0 0 1 .5-.5zm-11-1A1.5 1.5 0 0 0 1 3.5V12h14V3.5A1.5 1.5 0 0 0 13.5 2zM0 12.5h16a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 12.5"/>
-                        </svg>
-                      </a>
-                    </p>
+          <div class="row d-flex justify-content-center mt-4">
+            <div class="col-6 align-items-center form-group gradient">
+              <form class="d-flex">
+                  <div class="input-group">
+                      <input id = 'searchBar' class="form-control gradient" type="search" placeholder="Enter keyword(s)..." aria-label="Search">
                   </div>
-                </div>
-              </div>
+              </form>
             </div>
           </div>
+          <div class="container" style="padding-top: 50px; padding-bottom: 40px;">
+              <div id="blogPostsContainer" class="row"></div>
+          </div>
+          <p class="lead text-center">
+            <a class="btn btn-primary btn-outline-secondary btn-lg gradient mb-5" href="https://discord.com/invite/NbQ9ucMjzd" role="button">Join Me on Discord
+              <svg style="padding-left: 3px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-discord" viewBox="0 0 16 16">
+                  <path d="M13.545 2.907a13.2 13.2 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.2 12.2 0 0 0-3.658 0 8 8 0 0 0-.412-.833.05.05 0 0 0-.052-.025c-1.125.194-2.22.534-3.257 1.011a.04.04 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032q.003.022.021.037a13.3 13.3 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019q.463-.63.818-1.329a.05.05 0 0 0-.01-.059l-.018-.011a9 9 0 0 1-1.248-.595.05.05 0 0 1-.02-.066l.015-.019q.127-.095.248-.195a.05.05 0 0 1 .051-.007c2.619 1.196 5.454 1.196 8.041 0a.05.05 0 0 1 .053.007q.121.1.248.195a.05.05 0 0 1-.004.085 8 8 0 0 1-1.249.594.05.05 0 0 0-.03.03.05.05 0 0 0 .003.041c.24.465.515.909.817 1.329a.05.05 0 0 0 .056.019 13.2 13.2 0 0 0 4.001-2.02.05.05 0 0 0 .021-.037c.334-3.451-.559-6.449-2.366-9.106a.03.03 0 0 0-.02-.019m-8.198 7.307c-.789 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.45.73 1.438 1.613 0 .888-.637 1.612-1.438 1.612m5.316 0c-.788 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.451.73 1.438 1.613 0 .888-.631 1.612-1.438 1.612"/>
+              </svg>
+            </a>
+          </p>
       </main>
       <footer id = "footer" class="jumbotron-fluid"></footer>
-      <p class="text-center mt-3 gradient">Made with <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart" viewBox="0 0 16 16">
+      <p class="text-center mt-3 gradient">Made with <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart gradient" viewBox="0 0 16 16">
         <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15"/>
-      </svg> and <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-code" viewBox="0 0 16 16">
+      </svg> and <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-code gradient" viewBox="0 0 16 16">
         <path d="M5.854 4.854a.5.5 0 1 0-.708-.708l-3.5 3.5a.5.5 0 0 0 0 .708l3.5 3.5a.5.5 0 0 0 .708-.708L2.707 8l3.147-3.146zm4.292 0a.5.5 0 0 1 .708-.708l3.5 3.5a.5.5 0 0 1 0 .708l-3.5 3.5a.5.5 0 0 1-.708-.708L13.293 8l-3.147-3.146z"/>
       </svg> by Nick McCarty</p>
       <div class="text-center mb-3">
@@ -314,10 +200,12 @@
           </svg>
         </a>
       </div>
-    </div>    
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <script src="./assets/js/typing.js"></script>
+    <script src="./assets/js/cards.js"></script>
     <script src="./assets/js/scroll.js"></script>
     <script src="./assets/js/footer-animation.js"></script>
+    <script src="./assets/js/search.js"></script>
   </body>
 </html>
