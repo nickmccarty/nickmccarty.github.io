@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
     // Words to be typed
-    var words = ["Web Developer", "Data Scientist", "ML/AI Engineer"];
+    var words = ["Web Development", "Data Science", "ML/AI Engineering"];
 
     var index = 0;
     var wordIndex = 0;
