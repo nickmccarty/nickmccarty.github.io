@@ -156,11 +156,11 @@
               session will conclude with a focus on automating the generation of useful
               insights from audio data leveraging OpenAI's <a href="https://platform.openai.com/docs/guides/text-generation" style="text-decoration: none;">text generation</a>
               and <a href="https://platform.openai.com/docs/guides/speech-to-text" style="text-decoration: none;">speech-to-text</a> models,
-              as demonstrated via a web app that outputs feedback from user-provided YouTube URLs and file uploads of themselves or others talking.
+              as demonstrated via a <a href="#" data-bs-toggle="modal" data-bs-target="#videoModal" style="text-decoration: none;">web app</a> that outputs feedback from user-provided YouTube URLs and file uploads of themselves or others talking.
             </p>
-          </div>
+          </div>          
           <div class="col-12 mt-5 text-center">
-            <img class = "img-fluid" src="./assets/images/dunning-kruger-knowledge-graph.png" alt="">
+            <img class = "img-fluid rounded mx-auto d-block" src="./assets/images/dunning-kruger-knowledge-graph.png" alt="">
             <br>
             <caption><b>Prompt</b>: <i>The Dunning-Kruger Effect as it relates to the Gartner Hype Cycle</i></caption>
           </div>
@@ -187,7 +187,7 @@
             </div>
           </div>
           <div class="col-12 mt-5 text-center">
-            <img class = "img-fluid" src="./assets/images/cosine-similarity-heatmap.png" alt="">
+            <img class = "img-fluid rounded mx-auto d-block" src="./assets/images/cosine-similarity-heatmap.png" alt="">
             <br>
             <caption>Cosine similarity heatmap of transcripts taken from ~70 hrs. of SciPy 2022 tutorial recordings</caption>
           </div>
@@ -222,16 +222,21 @@
               <!-- <h1>Jumbotron Example</h1>  -->
               <p class="lead">
                 <blockquote style="color: black;">
-                  The tutorial content begins with the premise that we are to somehow ingest ~70 hours of YouTube videos from Enthought's YouTube channel.
+                  This tutorial begins with the premise that we are to somehow ingest ~70 hours of YouTube videos from Enthought's YouTube channel.
                   Beginning with the <a href="https://www.youtube.com/playlist?list=PLYx7XA2nY5Gfxu98P_HL1MnFb_BSkpxLV" style="text-decoration: none;" class="gradient">Tutorials | SciPy 2022</a>
-                  YouTube playlist, we are driven to generate insights from this considerable volume of data as expeditiously as possible.
+                  YouTube playlist, we are driven to generate insights from this treasure trove of knowledge.
                   <br>
                   <br>
                   <p class="text-center">
                     How are we to approach this, let alone efficiently? There's only one way to find out!
                   </p>
                   <div class="lead text-center">
+<<<<<<< HEAD
+                    <a class="btn btn-primary btn-outline-secondary gradient mt-4" target="_blank" href="https://colab.research.google.com/drive/1exvj503JrG18bA55kl99dnCKlTZkWOb6?usp=sharing#sandboxMode=true">
+                      Get Started
+=======
                     <a class="btn btn-primary btn-outline-secondary gradient mt-4" target="_blank" href="https://colab.research.google.com/drive/1wymQ7cH6aZ9NxVxggk0jmUMQzK5EF1qO?usp=sharing#sandboxMode=true">Preview
+>>>>>>> 8c9d69340e7e67f88a5069bea6bde57b83b5627f
                       <img src="./assets/images/google-colab-logo.png" alt="">
                     </a>
                   </div> 
@@ -261,8 +266,15 @@
               </ul>
             </div>
           </div>
+          <div class="row text-center">
+            <div class="col-12 mt-5">
+              <img class = "img-fluid rounded mx-auto d-block" src="./assets/images/count-of-vocal-fillers.png" alt="">
+              <br>
+              <!-- <caption>Count of </caption> -->
+            </div>
+          </div>
           <div class="row">
-            <h4 class="gradient mt-5 text-center">Expected Learning Outcomes</h4>
+            <h4 class="gradient mt-4 text-center">Expected Learning Outcomes</h4>
             <div class="col-12">
               <ul>
                 <li>
@@ -277,14 +289,187 @@
               </ul>
             </div>
           </div>
-          <div class="lead text-center mb-5">
-            <a class="btn btn-primary btn-outline-secondary gradient mt-4" target="_blank" href="https://discord.com/invite/NbQ9ucMjzd">
-              Join Me on Discord
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-discord" viewBox="0 0 16 16">
-                <path d="M13.545 2.907a13.2 13.2 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.2 12.2 0 0 0-3.658 0 8 8 0 0 0-.412-.833.05.05 0 0 0-.052-.025c-1.125.194-2.22.534-3.257 1.011a.04.04 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032q.003.022.021.037a13.3 13.3 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019q.463-.63.818-1.329a.05.05 0 0 0-.01-.059l-.018-.011a9 9 0 0 1-1.248-.595.05.05 0 0 1-.02-.066l.015-.019q.127-.095.248-.195a.05.05 0 0 1 .051-.007c2.619 1.196 5.454 1.196 8.041 0a.05.05 0 0 1 .053.007q.121.1.248.195a.05.05 0 0 1-.004.085 8 8 0 0 1-1.249.594.05.05 0 0 0-.03.03.05.05 0 0 0 .003.041c.24.465.515.909.817 1.329a.05.05 0 0 0 .056.019 13.2 13.2 0 0 0 4.001-2.02.05.05 0 0 0 .021-.037c.334-3.451-.559-6.449-2.366-9.106a.03.03 0 0 0-.02-.019m-8.198 7.307c-.789 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.45.73 1.438 1.613 0 .888-.637 1.612-1.438 1.612m5.316 0c-.788 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.451.73 1.438 1.613 0 .888-.631 1.612-1.438 1.612"/>
-              </svg>
-            </a>
-          </div> 
+          <div class="row text-center mt-5 mb-0">
+            <p>
+              <button class="btn btn-outline-secondary gradient" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWidthExample" aria-expanded="false" aria-controls="collapseWidthExample">
+                View Outline
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clock-history" viewBox="0 0 16 16">
+                  <path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022zm2.004.45a7 7 0 0 0-.985-.299l.219-.976q.576.129 1.126.342zm1.37.71a7 7 0 0 0-.439-.27l.493-.87a8 8 0 0 1 .979.654l-.615.789a7 7 0 0 0-.418-.302zm1.834 1.79a7 7 0 0 0-.653-.796l.724-.69q.406.429.747.91zm.744 1.352a7 7 0 0 0-.214-.468l.893-.45a8 8 0 0 1 .45 1.088l-.95.313a7 7 0 0 0-.179-.483m.53 2.507a7 7 0 0 0-.1-1.025l.985-.17q.1.58.116 1.17zm-.131 1.538q.05-.254.081-.51l.993.123a8 8 0 0 1-.23 1.155l-.964-.267q.069-.247.12-.501m-.952 2.379q.276-.436.486-.908l.914.405q-.24.54-.555 1.038zm-.964 1.205q.183-.183.35-.378l.758.653a8 8 0 0 1-.401.432z"/>
+                  <path d="M8 1a7 7 0 1 0 4.95 11.95l.707.707A8.001 8.001 0 1 1 8 0z"/>
+                  <path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5"/>
+                </svg>
+              </button>
+            </p>
+            <div style="min-height: 120px;">
+              <div class="collapse collapse-horizontal row text-center" id="collapseWidthExample" style="margin: auto;">
+                <div class="card card-body col-12">
+                  <!-- <h1 class="gradient">
+                    Outline
+                  </h1>
+                  <hr> -->
+                  <h2 class="gradient text-center">Overview</h2>
+                  <p class="lead">
+                    This 4-hour tutorial is designed to allow at least 50% of the time for hands-on exercises and is comprised as follows:
+                  </p>
+                  <div class="accordion" id="accordionExample">
+                    <div class="accordion-item">
+                      <h2 class="accordion-header gradient">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                          <h3 class="gradient">
+                            Getting Started
+                          </h3>
+                        </button>
+                      </h2>
+                      <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionExample">
+                        <div class="accordion-body">
+                          <h4 class="gradient">
+                            Instruction (30 min.)
+                          </h4>
+                          Introduction/Motivation
+                          <br>          
+                          Problem Defintion
+                          <br>                    
+                          Data Ingestion
+                          <br>                    
+                          Visualizing Vocal Fillers in Speech with <code>Plotly</code>
+                          <br>
+                          <h4 class="gradient mt-4">
+                            Practice (30 min.)
+                          </h4>          
+                          Tutorial Exercise: Ingesting and Exploring the Data
+                          <br>
+                          <h4 class="gradient mt-4">
+                            Break (10 min.)
+                          </h4>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="accordion-item mb-0">
+                      <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                          <h3 class="gradient">
+                            Natural Language Processing (NLP)
+                          </h3>
+                        </button>
+                      </h2>
+                      <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+                        <div class="accordion-body">
+                          <h4 class="gradient">
+                            Instruction (30 min.)
+                          </h4>
+                          Text Pre-Processing Workflows with <code>NLTK</code> 
+                          <br>                             
+                          Evaluating Text Similarity with <code>Matplotlib</code> and <code>Seaborn</code> 
+                          <br>                    
+                          Generating a Knowledge Graph Visualization with <code>Graphviz</code> and <code>GPT-4</code>
+                          <br>
+                          <h4 class="gradient mt-4">
+                            Practice (30 min.)
+                          </h4>                   
+                          Tutorial Exercise: Building a Recommender System with Cosine Similarity
+                          <br>
+                          <h4 class="gradient mt-4">
+                            Break (10 min.)
+                          </h4> 
+                        </div>
+                      </div>
+                    </div>
+                    <div class="accordion-item">
+                      <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                          <h3 class="gradient">
+                            LLM-Driven Workflows
+                          </h3>
+                        </button>
+                      </h2>
+                      <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+                        <div class="accordion-body">
+                          <h4 class="gradient">
+                            Instruction (20 min.)
+                          </h4>
+                          Retrieval-Augmented Generation (RAG) Using the <code>OpenAI API</code> 
+                          <br>                             
+                          Prompt Engineering, Chunking Strategies, and Open-Source Alternatives 
+                          <br>                    
+                          Tokens, Embeddings, and Cost Estimation
+                          <br>
+                          <h4 class="gradient mt-4">
+                            Practice (30 min.)
+                          </h4>                   
+                          Tutorial Exercise: Building a Recommender System with Embeddings 
+                        </div>
+                      </div>
+                    </div>
+                    <div class="accordion-item">
+                      <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                          <h3 class="gradient">
+                            App Demo
+                          </h3>
+                        </button>
+                      </h2>
+                      <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#accordionExample">
+                        <div class="accordion-body">
+                          <h4 class="gradient">
+                            Instruction (10 min.)
+                          </h4>                                             
+                          Text-to-Speech (and Vice Versa) with OpenAI and Open-Source
+                          <br>                        
+                          <a href="#" data-bs-toggle="modal" data-bs-target="#videoModal" style="text-decoration: none;" class="mb-5">App Demo</a>: Towards Multimodal Agents 
+                          <br>
+                          <br>
+                          <a href="https://github.com/nickmccarty/speech-coach-web-app" class="mt-5">
+                            <button type="button" class="btn btn-outline-secondary gradient" id="changeVideoButton">
+                              Show me the Code!
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-github" viewBox="0 0 16 16">
+                                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+                              </svg>
+                            </button>
+                          </a>
+                          <br> 
+                          <h4 class="gradient mt-4">
+                            Conclusion
+                          </h4>                   
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Modal -->
+          <div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title gradient" id="videoModalLabel">YouTube URL Demo</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                  <video id = 'videoPlayer' controls autoplay class="w-100">
+                    <source id = 'videoSource' src="./assets/images/youtube-url-demo.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-outline-secondary gradient" id="changeVideoButton">File Upload Demo</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- <div class="container-fluid">
+            <div class="row">
+              <div class="col">
+                <div class="video-container">
+                  <video autoplay controls class="w-100">
+                    <source src="./assets/images/youtube-url-demo.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+              </div>
+            </div>
+          </div> -->
         </div>
       </main>
       <footer id = "footer" class="jumbotron-fluid"></footer>
@@ -318,5 +503,37 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
     <script src="./assets/js/typing.js"></script>
     <script src="./assets/js/footer-animation.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        // Get the video element, button element, and modal title element
+        var video = document.getElementById('videoPlayer');
+        var changeVideoButton = document.getElementById('changeVideoButton');
+        var modalTitle = document.getElementById('videoModalLabel');
+    
+        // Function to change the video source and update modal title
+        function changeVideoSource() {
+          // Change the source to another video
+          var videoSource = document.getElementById('videoSource');
+          if (videoSource) {
+            videoSource.setAttribute('src', './assets/images/upload-demo.mp4');
+            // Load the new video
+            video.load();
+            // Update modal title
+            modalTitle.textContent = 'File Upload Demo';
+            // Hide the button
+            changeVideoButton.style.display = "none";
+          } else {
+            console.error("Video source element not found!");
+          }
+        }
+    
+        // Add event listener to the button
+        if (changeVideoButton) {
+          changeVideoButton.addEventListener('click', changeVideoSource);
+        } else {
+          console.error("Change video button not found!");
+        }
+      });
+    </script>            
   </body> 
 </html>
