@@ -10,15 +10,26 @@
 
       gtag('config', 'G-YT69KZ91W7');
     </script>
-    <script src="../assets/js/color-modes.js"></script>
+    <script src="../../assets/js/color-modes.js"></script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Web Projects</title>
+    <title>Blog Posts | All</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-32x32.png">
-    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="../../assets/images/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../assets/images/favicon-32x32.png">
+    <link rel="stylesheet" href="../../assets/css/styles.css">
+    <!-- Owl Carousel CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
+
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://unpkg.com/d3-cloud@1.2.6/build/d3.layout.cloud.js"></script>
+    <!-- jQuery (required for Owl Carousel) -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+    <!-- Owl Carousel JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
   </head>
   <body>
@@ -77,9 +88,9 @@
             <div class="container">
               <div class="row">
                 <div class="col-sm-8 col-md-7 py-4">
-                  <!-- <a class="nav-item nav-link" href="./contact.html" style="text-decoration: none; text-decoration-color: none;"> -->
+                  <a class="nav-item nav-link" href="./contact.html" style="text-decoration: none; text-decoration-color: none;">
                     <h4 class="gradient">Contact</h4>
-                  <!-- </a> -->
+                  </a>
                   <div style="padding-left: 5px">
                     <a href="https://linkedin.com/in/nicholasmccarty" class="text-auto" style="text-decoration: none;">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-linkedin" viewBox="0 0 16 16">
@@ -104,17 +115,17 @@
                   </div>
                 </div>
                 <div class="col-sm-4 offset-md-1 py-4 gradient">
-                  <a class="nav-item nav-link" href="../" style="text-decoration: none; text-decoration-color: none;">
+                  <a class="nav-item nav-link" href="../../" style="text-decoration: none; text-decoration-color: none;">
                     <h4>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-house" viewBox="0 0 16 16">
                         <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"/>
                       </svg>
                     </h4>
                   </a>
-                  <a class="nav-item nav-link" href="../about.html" style="text-decoration: none; text-decoration-color: none;">
+                  <a class="nav-item nav-link" href="../../about.html" style="text-decoration: none; text-decoration-color: none;">
                     <h4>About</h4>
                   </a>
-                  <a class="nav-item nav-link" href="../projects.html" style="text-decoration: none; text-decoration-color: none;">
+                  <a class="nav-item nav-link" href="../../projects.html" style="text-decoration: none; text-decoration-color: none;">
                     <h4>Projects</h4>
                   </a>
                 </div>
@@ -132,113 +143,104 @@
           </div>
       </header>
       <main>
-        <section class="text-center">
-          <!-- <div class="row"> -->
-            <div id="jumbotron-container" class="jumbotron text-center bg-image" style="background-image: url(../assets/images/blue-mesh-background.png); border-radius: 0 0 50% 50%; height: 10em;">
-                <h1 class="display-4" style="color: lightcyan; padding-top: 40px; text-shadow: 1px 1px 1px #000, 1px 1px 1px #000, 1px 1px 1px #000, 1px 1px 1px #000;"><span id="typed-text"></span></h1>
-                <!-- <p class="lead" style="color: lightcyan;">Let's build something cool together!</p> -->
+          <section class="text-center">
+            <!-- <div class="row"> -->
+              <div id="jumbotron-container" class="jumbotron text-center bg-image" style="background-image: url(../../assets/images/blue-mesh-background.png); border-radius: 0 0 50% 50%; height: 10em;">
+                  <h1 class="display-4" style="color: lightcyan; padding-top: 40px; text-shadow: 1px 1px 1px #000, 1px 1px 1px #000, 1px 1px 1px #000, 1px 1px 1px #000;"><span id="typed-text"></span></h1>
+                  <!-- <p class="lead" style="color: lightcyan;">Let's build something cool together!</p> -->
+              </div>
+            <!-- </div> -->
+          </section>
+          <br>
+          <div class="row d-flex justify-content-center mt-4">
+            <div class="col-6 align-items-center form-group gradient">
+              <form class="d-flex">
+                  <div class="input-group">
+                      <input id = 'searchBar' class="form-control gradient" type="search" placeholder="Enter keyword..." aria-label="Search">
+                      <!-- <button class="btn btn-outline-primary" type="button">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                          </svg>
+                      </button> -->
+                  </div>
+              </form>
             </div>
-          <!-- </div> -->
-        </section>
-        <br>
-          <!-- Page content-->
-        <div class="container" style="padding-top: 40px;">
-            <div class="row justify-content-center">
-                <!-- Blog entries-->
-                <div class="col-lg-8">
-                    <!-- Featured blog post-->
-                    <div class="card mb-4" style="border-radius: 20px; overflow: hidden;">
-                        <img class="card-img-top" src="../assets/images/trending-tickers.jpg"></img>
-                        <div class="card-body">
-                            <!-- <div class="small text-muted">December 2023</div> -->
-                            <h2 class="card-title gradient">Trending Tickers</h2>
-                            <p class="card-text">Automated retrieval and storage of trending price action and related news stories...</p>
-                            <a class="btn btn-primary btn-outline-secondary gradient" href="https://nickmccarty.me/trending-tickers" target="_blank">
-                              Demo
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-play" viewBox="0 0 16 16">
-                                <path d="M10.804 8 5 4.633v6.734zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696z"/>
-                              </svg>
-                            </a>
-                            <a class="btn btn-primary btn-outline-secondary gradient" href="https://github.com/nickmccarty/trending-tickers" target="_blank">Show Me the Code! 
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-github" viewBox="0 0 16 16">
-                                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
-                                </svg>
-                            </a>
-                        </div>
+          </div>
+          <div class="container" style="padding-top: 40px;">
+            <div class="row">
+              <div class="col">
+                <div class="jumbotron">
+                  <!-- <h1 class="display-4 text-center gradient mb-5">Blog Search</h1> -->
+                  <ul class="nav nav-tabs justify-content-center">
+                    <li style="padding-left: 20px;" class="nav-item">
+                      <a class="nav-link active disabled" aria-current="page" href="">
+                          All
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-globe" viewBox="0 0 16 16">
+                            <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.5-6.923c-.67.204-1.335.82-1.887 1.855A8 8 0 0 0 5.145 4H7.5zM4.09 4a9.3 9.3 0 0 1 .64-1.539 7 7 0 0 1 .597-.933A7.03 7.03 0 0 0 2.255 4zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a7 7 0 0 0-.656 2.5zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5zM8.5 5v2.5h2.99a12.5 12.5 0 0 0-.337-2.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5zM5.145 12q.208.58.468 1.068c.552 1.035 1.218 1.65 1.887 1.855V12zm.182 2.472a7 7 0 0 1-.597-.933A9.3 9.3 0 0 1 4.09 12H2.255a7 7 0 0 0 3.072 2.472M3.82 11a13.7 13.7 0 0 1-.312-2.5h-2.49c.062.89.291 1.733.656 2.5zm6.853 3.472A7 7 0 0 0 13.745 12H11.91a9.3 9.3 0 0 1-.64 1.539 7 7 0 0 1-.597.933M8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855q.26-.487.468-1.068zm3.68-1h2.146c.365-.767.594-1.61.656-2.5h-2.49a13.7 13.7 0 0 1-.312 2.5m2.802-3.5a7 7 0 0 0-.656-2.5H12.18c.174.782.282 1.623.312 2.5zM11.27 2.461c.247.464.462.98.64 1.539h1.835a7 7 0 0 0-3.072-2.472c.218.284.418.598.597.933M10.855 4a8 8 0 0 0-.468-1.068C9.835 1.897 9.17 1.282 8.5 1.077V4z"/>
+                          </svg>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="./web-development.html">
+                        Web
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-wifi" viewBox="0 0 16 16">
+                          <path d="M15.384 6.115a.485.485 0 0 0-.047-.736A12.44 12.44 0 0 0 8 3C5.259 3 2.723 3.882.663 5.379a.485.485 0 0 0-.048.736.52.52 0 0 0 .668.05A11.45 11.45 0 0 1 8 4c2.507 0 4.827.802 6.716 2.164.205.148.49.13.668-.049"/>
+                          <path d="M13.229 8.271a.482.482 0 0 0-.063-.745A9.46 9.46 0 0 0 8 6c-1.905 0-3.68.56-5.166 1.526a.48.48 0 0 0-.063.745.525.525 0 0 0 .652.065A8.46 8.46 0 0 1 8 7a8.46 8.46 0 0 1 4.576 1.336c.206.132.48.108.653-.065m-2.183 2.183c.226-.226.185-.605-.1-.75A6.5 6.5 0 0 0 8 9c-1.06 0-2.062.254-2.946.704-.285.145-.326.524-.1.75l.015.015c.16.16.407.19.611.09A5.5 5.5 0 0 1 8 10c.868 0 1.69.201 2.42.56.203.1.45.07.61-.091zM9.06 12.44c.196-.196.198-.52-.04-.66A2 2 0 0 0 8 11.5a2 2 0 0 0-1.02.28c-.238.14-.236.464-.04.66l.706.706a.5.5 0 0 0 .707 0l.707-.707z"/>
+                        </svg>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="./data-science.html">
+                        Data
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pie-chart" viewBox="0 0 16 16">
+                          <path d="M7.5 1.018a7 7 0 0 0-4.79 11.566L7.5 7.793zm1 0V7.5h6.482A7 7 0 0 0 8.5 1.018M14.982 8.5H8.207l-4.79 4.79A7 7 0 0 0 14.982 8.5M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8"/>
+                        </svg>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="./machine-learning-and-artificial-intelligence.html">
+                        ML/AI
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-robot" viewBox="0 0 16 16">
+                          <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5M3 8.062C3 6.76 4.235 5.765 5.53 5.886a26.6 26.6 0 0 0 4.94 0C11.765 5.765 13 6.76 13 8.062v1.157a.93.93 0 0 1-.765.935c-.845.147-2.34.346-4.235.346s-3.39-.2-4.235-.346A.93.93 0 0 1 3 9.219zm4.542-.827a.25.25 0 0 0-.217.068l-.92.9a25 25 0 0 1-1.871-.183.25.25 0 0 0-.068.495c.55.076 1.232.149 2.02.193a.25.25 0 0 0 .189-.071l.754-.736.847 1.71a.25.25 0 0 0 .404.062l.932-.97a25 25 0 0 0 1.922-.188.25.25 0 0 0-.068-.495c-.538.074-1.207.145-1.98.189a.25.25 0 0 0-.166.076l-.754.785-.842-1.7a.25.25 0 0 0-.182-.135"/>
+                          <path d="M8.5 1.866a1 1 0 1 0-1 0V3h-2A4.5 4.5 0 0 0 1 7.5V8a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1v1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1v-.5A4.5 4.5 0 0 0 10.5 3h-2zM14 7.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7.5A3.5 3.5 0 0 1 5.5 4h5A3.5 3.5 0 0 1 14 7.5"/>
+                        </svg>
+                      </a>
+                    </li>
+                  </ul>
+                  <!-- <div class="row" style="padding-top: 50px;">
+                    <div class="col-sm-3 text-center">
+                      <img class="rounded-circle img-thumbnail mb-5" alt="avatar" src="../../assets/images/avatar.jpg" style="width: 200px;"/>
                     </div>
+                    <div class="col-sm-9 d-flex flex-column justify-content-center">
+                      <p class="lead mb-5">
+                        I'm seasoned data professional interested in turning business problems into useful data products
+                        and applications. I bring a potent blend of skills in Python, JavaScript, SQL, and a knack for applied machine learning.
+                        As a developer and consultant, I'm all about speedy prototyping.
+                        <br><br>
+                        Let's build something cool together!
+                      </p>
+                    </div>
+                  </div> -->
+                  <!-- <hr class="my-4">                 -->
                 </div>
-            </div>  
-            <hr>  
-            <!-- Nested row for non-featured blog posts-->
-            <div class="row" style="padding-top: 25px; padding-bottom: 40px;">
-              <!-- <div class="container" style="padding-top: 40px; padding-bottom: 40px;"> -->
-              <div class="col-md-4">
-                  <!-- Blog post-->
-                  <div class="card shadow-lg mb-4" style="opacity: 0; transform: translateY(50px); transition: opacity 1.9s, transform 0.5s; border-radius: 20px; overflow: hidden;">
-                      <a href="#!"><img class="img-fluid card-img-top" style="height: 250px;" src="../assets/images/natural-event-tracker-screenshot.jpg" alt="..." /></a>
-                      <div class="card-body">
-                          <!-- <div class="small text-muted">{Date}</div> -->
-                          <h2 class="card-title h4 gradient">Natural Event Tracker</h2>
-                          <p class="card-text">Making use of NASA's Earth Observatory Natural Event Tracker (EONET) API to build a dashboard...</p>
-                          <a class="btn btn-primary btn-outline-secondary gradient" href="https://nickmccarty.me/natural-event-tracker">
-                            Demo
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-play" viewBox="0 0 16 16">
-                              <path d="M10.804 8 5 4.633v6.734zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696z"/>
-                            </svg>
-                          </a>
-                      </div>
-                  </div>
-              </div>
-              <div class="col-md-4">
-                  <!-- Blog post-->
-                  <div class="card shadow-lg mb-4" style="opacity: 0; transform: translateY(50px); transition: opacity 1.9s, transform 0.5s; border-radius: 20px; overflow: hidden;">
-                      <a href="#!"><img class="img-fluid card-img-top" style="height: 250px;" src="../assets/images/papers-with-code-screenshot.jpg" alt="..." /></a>
-                      <div class="card-body">
-                          <!-- <div class="small text-muted">{Date}</div> -->
-                          <h2 class="card-title h4 gradient">Papers with Code Task Search</h2>
-                          <p class="card-text">Leveraging Meta's <code>Papers with Code</code> sitemap XML to create an alternative search interface...</p>
-                          <a class="btn btn-primary btn-outline-secondary gradient" href="https://nickmccarty.me/papers-with-code-task-search">
-                            Demo
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-play" viewBox="0 0 16 16">
-                              <path d="M10.804 8 5 4.633v6.734zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696z"/>
-                            </svg>
-                          </a>
-                      </div>
-                  </div>
-              </div>
-              <div class="col-md-4">
-                  <!-- Blog post-->
-                  <div class="card shadow-lg mb-4" style="opacity: 0; transform: translateY(50px); transition: opacity 1.9s, transform 0.5s; border-radius: 20px; overflow: hidden;">
-                      <a href="#!"><img class="img-fluid card-img-top" style="height: 250px;" src="../assets/images/flavor-to-taste-screenshot.jpg" alt="..." /></a>
-                      <div class="card-body">
-                          <!-- <div class="small text-muted">{Date}</div> -->
-                          <h2 class="card-title h4 gradient">Flavor to Taste</h2>
-                          <p class="card-text">A website created in an effort to help my partner document recipes and discover new ones...</p>
-                          <a class="btn btn-primary btn-outline-secondary gradient" href="https://flavortotaste.com">
-                            Demo
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-play" viewBox="0 0 16 16">
-                              <path d="M10.804 8 5 4.633v6.734zm.792-.696a.802.802 0 0 1 0 1.392l-6.363 3.692C4.713 12.69 4 12.345 4 11.692V4.308c0-.653.713-.998 1.233-.696z"/>
-                            </svg>
-                          </a>
-                      </div>
-                  </div>
-              </div>
-              <!-- </div> -->
-              <div class="lead text-center mb-2">
-                <a class="btn btn-primary btn-outline-secondary gradient mt-4" target="_blank" href="https://topmate.io/nickmccarty">Book Consultation
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-plus" viewBox="0 0 16 16">
-                    <path d="M8 7a.5.5 0 0 1 .5.5V9H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V10H6a.5.5 0 0 1 0-1h1.5V7.5A.5.5 0 0 1 8 7"/>
-                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z"/>
-                  </svg>
-                </a>
               </div>
             </div>
-        </div>
+          </div>
+          <div class="container" style="padding-top: 50px; padding-bottom: 40px;">
+              <div id="blogPostsContainer" class="row"></div>
+          </div>
+          <p class="lead text-center">
+            <a class="btn btn-primary btn-outline-secondary btn-lg gradient mb-5" href="https://discord.com/invite/NbQ9ucMjzd" role="button">Join Me on Discord
+              <svg style="padding-left: 3px;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-discord" viewBox="0 0 16 16">
+                  <path d="M13.545 2.907a13.2 13.2 0 0 0-3.257-1.011.05.05 0 0 0-.052.025c-.141.25-.297.577-.406.833a12.2 12.2 0 0 0-3.658 0 8 8 0 0 0-.412-.833.05.05 0 0 0-.052-.025c-1.125.194-2.22.534-3.257 1.011a.04.04 0 0 0-.021.018C.356 6.024-.213 9.047.066 12.032q.003.022.021.037a13.3 13.3 0 0 0 3.995 2.02.05.05 0 0 0 .056-.019q.463-.63.818-1.329a.05.05 0 0 0-.01-.059l-.018-.011a9 9 0 0 1-1.248-.595.05.05 0 0 1-.02-.066l.015-.019q.127-.095.248-.195a.05.05 0 0 1 .051-.007c2.619 1.196 5.454 1.196 8.041 0a.05.05 0 0 1 .053.007q.121.1.248.195a.05.05 0 0 1-.004.085 8 8 0 0 1-1.249.594.05.05 0 0 0-.03.03.05.05 0 0 0 .003.041c.24.465.515.909.817 1.329a.05.05 0 0 0 .056.019 13.2 13.2 0 0 0 4.001-2.02.05.05 0 0 0 .021-.037c.334-3.451-.559-6.449-2.366-9.106a.03.03 0 0 0-.02-.019m-8.198 7.307c-.789 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.45.73 1.438 1.613 0 .888-.637 1.612-1.438 1.612m5.316 0c-.788 0-1.438-.724-1.438-1.612s.637-1.613 1.438-1.613c.807 0 1.451.73 1.438 1.613 0 .888-.631 1.612-1.438 1.612"/>
+              </svg>
+            </a>
+          </p>
       </main>
       <footer id = "footer" class="jumbotron-fluid"></footer>
-      <p class="text-center mt-3 gradient">Made with <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart" viewBox="0 0 16 16">
+      <p class="text-center mt-3 gradient">Made with <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart gradient" viewBox="0 0 16 16">
         <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15"/>
-      </svg> and <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-code" viewBox="0 0 16 16">
+      </svg> and <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-code gradient" viewBox="0 0 16 16">
         <path d="M5.854 4.854a.5.5 0 1 0-.708-.708l-3.5 3.5a.5.5 0 0 0 0 .708l3.5 3.5a.5.5 0 0 0 .708-.708L2.707 8l3.147-3.146zm4.292 0a.5.5 0 0 1 .708-.708l3.5 3.5a.5.5 0 0 1 0 .708l-3.5 3.5a.5.5 0 0 1-.708-.708L13.293 8l-3.147-3.146z"/>
       </svg> by Nick McCarty</p>
       <div class="text-center mb-3">
@@ -263,11 +265,12 @@
           </svg>
         </a>
       </div>
-    </div>    
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-    <!-- <script src="./assets/js/typing.js"></script> -->
-    <script src="../assets/js/cards.js"></script>
-    <script src="../assets/js/footer-animation.js"></script>
-    <script src="../assets/js/typing.js"></script>
+    <script src="../../assets/js/typing.js"></script>
+    <script src="../../assets/js/cards.js"></script>
+    <script src="../../assets/js/scroll.js"></script>
+    <script src="../../assets/js/footer-animation.js"></script>
+    <script src="../../assets/js/search.js"></script>
   </body>
 </html>
