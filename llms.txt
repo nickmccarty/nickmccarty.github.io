@@ -1,0 +1,104 @@
+# Nick McCarty - Personal Website
+
+> Technical blog and portfolio focused on computer vision, machine learning, and geospatial AI for agricultural applications.
+
+## Author
+
+Nick McCarty is a machine learning engineer specializing in computer vision for geospatial and agricultural applications. He works at Upskilled Consulting on photogrammetry, 3D Gaussian Splatting, and ML/AI projects. His research focuses on applying mechanistic interpretability techniques to vision models.
+
+- Email: nick@upskilled.consulting
+- LinkedIn: https://linkedin.com/in/nicholasmccarty
+- GitHub: https://github.com/nickmccarty
+
+## Recent Publication
+
+"Performing Object Detection on Drone Orthomosaics with Meta's SAM" - SciPy 2025
+
+## Upcoming Speaking
+
+Geo Week 2026 (February 17, Denver) - "Reimagining Mapping with AI"
+
+## Site Structure
+
+- / - Home page
+- /about.html - About page with background, experience, and publications
+- /blog.html - Blog listing page
+- /contact.html - Contact form
+
+## Blog Posts
+
+### Circuit Extraction: Interpreting Object Detectors
+URL: /blog/circuit-extraction-pot-detection.html
+Date: January 13, 2026
+Topics: mechanistic interpretability, activation patching, co-activation analysis, neural circuits, Faster R-CNN
+Summary: Using activation patching and co-activation analysis to extract the minimal computational circuit for pot detection in Faster R-CNN. Explains how to identify critical channels, map functional relationships, and understand what vision models actually compute.
+
+### Object Detection on Drone Orthomosaics with SAM
+URL: /blog/sam-object-detection.html
+Date: January 10, 2026
+Topics: Segment Anything Model, SAM, drone imagery, orthomosaics, zero-shot learning, foundation models
+Summary: Overview of using Meta's Segment Anything Model for automated object detection in high-resolution aerial imagery. Covers tile-based processing, georeferencing, and applications in precision agriculture.
+
+### Sparse Linear Probing for Efficient Detection
+URL: /blog/sparse-probing-pot-detection.html
+Date: January 9, 2026
+Topics: linear probing, L1 regularization, sparse features, interpretability, feature analysis
+Summary: Using L1-regularized linear probes to identify minimal feature subsets from SAM and Faster R-CNN that are sufficient for pot detection. Demonstrates that ~50 channels capture 95% of detection performance.
+
+### Extracting Features from Vision Model Backbones
+URL: /blog/extracting-vision-features.html
+Date: January 7, 2026
+Topics: feature extraction, PyTorch hooks, PCA visualization, ResNet, ViT, GeoTIFF
+Summary: Technical guide to extracting and visualizing internal representations from SAM and Faster R-CNN. Covers forward hooks, tiled extraction for large images, channel selectivity, and saving features as GeoTIFFs.
+
+### Mechanistic Interpretability for Agricultural AI
+URL: /blog/mechanistic-interpretability.html
+Date: January 5, 2026
+Topics: mechanistic interpretability, neural network analysis, monosemantic features, polysemantic features, AI safety
+Summary: Exploring how mechanistic interpretability techniques help understand what vision models learn about agricultural environments. Discusses feature visualization, activation patching, and building trustworthy AI systems.
+
+### SAM vs Faster R-CNN: A Practical Comparison
+URL: /blog/sam-vs-fasterrcnn-comparison.html
+Date: January 3, 2026
+Topics: SAM, Faster R-CNN, object detection, architecture comparison, aerial imagery
+Summary: Comparing Segment Anything Model and Faster R-CNN for aerial object detection. Covers architecture differences, fine-tuning approaches, speed benchmarks, and when to use each model.
+
+### Fine-Tuning Vision Foundation Models
+URL: /blog/fine-tuning-vision-models.html
+Date: December 28, 2025
+Topics: fine-tuning, transfer learning, LoRA, PEFT, active learning, data augmentation
+Summary: Practical guide to fine-tuning strategies for vision models like SAM and Faster R-CNN. Covers full fine-tuning, decoder-only training, parameter-efficient methods, and data efficiency strategies.
+
+### Building a GeoTIFF Object Detection Web App
+URL: /blog/fastapi-web-app.html
+Date: December 28, 2025
+Topics: FastAPI, WebSockets, GeoTIFF, Leaflet, coordinate systems, web development
+Summary: Walkthrough of building a web application for running Faster R-CNN inference on geospatial imagery. Covers tiled inference, CRS reprojection, real-time progress streaming, and interactive result editing.
+
+### Training Faster R-CNN for Geospatial Object Detection
+URL: /blog/training-faster-rcnn-geospatial.html
+Date: December 20, 2025
+Topics: Faster R-CNN, object detection training, hard negative mining, transfer learning, geospatial
+Summary: Deep dive into training object detection models on aerial imagery. Covers bootstrapping training data from SAM, hard negative mining, tiled training, and georeferenced inference.
+
+## Key Topics Covered
+
+- **Computer Vision**: Object detection, image segmentation, feature extraction
+- **Foundation Models**: SAM (Segment Anything Model), vision transformers, transfer learning
+- **Geospatial AI**: Drone imagery, orthomosaics, GeoTIFF processing, coordinate systems
+- **Mechanistic Interpretability**: Activation patching, circuit extraction, sparse probing, feature visualization
+- **Agricultural AI**: Plant/pot detection, precision agriculture, automated monitoring
+- **Model Training**: Fine-tuning strategies, data augmentation, hard negative mining
+- **Deployment**: FastAPI, WebSockets, GIS integration
+
+## Technical Stack
+
+- PyTorch for deep learning
+- Faster R-CNN and SAM for object detection/segmentation
+- rasterio for geospatial data processing
+- FastAPI for web services
+- Leaflet for web mapping
+
+## Contact
+
+For questions about the research or collaboration inquiries, contact nick@upskilled.consulting

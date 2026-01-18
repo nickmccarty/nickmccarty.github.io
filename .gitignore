@@ -1,0 +1,21 @@
+# Markdown notebook files (may contain secrets)
+*.md
+!README.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Node modules (if any)
+node_modules/
+
+# Environment files
+.env
+.env.local

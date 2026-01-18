@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Object Detection on Drone Orthomosaics with SAM | Nick McCarty</title>
+  <meta name="description" content="An overview of using Meta's Segment Anything Model for automated object detection in high-resolution aerial imagery.">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <a href="../blog.html" class="back-link">&larr; Back to Blog</a>
+
+    <article>
+      <h1>Object Detection on Drone Orthomosaics with SAM</h1>
+      <div class="post-meta">January 10, 2026 &bull; 8 min read</div>
+
+      <p>
+        Drone-based remote sensing has revolutionized how we capture and analyze geospatial data. From agricultural
+        monitoring to construction site surveys, <span class="glossary-term" data-term="orthomosaic">orthomosaics</span> (geometrically corrected aerial images) provide
+        invaluable insights. But manually identifying objects in these high-resolution images is time-consuming
+        and error-prone. That's where Meta's <span class="glossary-term" data-term="sam">Segment Anything Model (SAM)</span> comes in.
+      </p>
+
+      <h2>The Challenge</h2>
+
+      <p>
+        Traditional object detection approaches face several challenges when applied to drone orthomosaics:
+      </p>
+
+      <ul>
+        <li><strong>Scale variation:</strong> Objects appear at different sizes depending on flight altitude and camera specs</li>
+        <li><strong>Dense packing:</strong> Agricultural scenes often contain thousands of similar objects (plants, pots, rows)</li>
+        <li><strong>Limited training data:</strong> Domain-specific datasets are scarce and expensive to annotate</li>
+        <li><strong>Computational constraints:</strong> Processing gigapixel images requires efficient algorithms</li>
+      </ul>
+
+      <h2>Enter SAM: A Foundation Model Approach</h2>
+
+      <p>
+        Meta's Segment Anything Model represents a paradigm shift in image segmentation. Trained on over 1 billion masks
+        from 11 million images, SAM demonstrates remarkable <span class="glossary-term" data-term="zero-shot">zero-shot generalization</span> capabilities. It can segment
+        objects it has never seen before, making it ideal for domain-specific applications like agricultural imagery.
+      </p>
+
+      <p>
+        The key insight is that SAM's learned representations capture fundamental visual concepts that transfer
+        across domains. While SAM wasn't trained on drone imagery or plant nurseries, it understands concepts like
+        "circular objects," "repeated patterns," and "boundaries between regions."
+      </p>
+
+      <h2>Our Approach</h2>
+
+      <p>
+        In our SciPy 2025 paper, we developed a methodology for applying SAM to drone orthomosaics:
+      </p>
+
+      <ol>
+        <li><span><strong><span class="glossary-term" data-term="tile-processing">Tile-based processing</span>:</strong> We divide large orthomosaics into overlapping tiles that fit in GPU memory</span></li>
+        <li><span><strong>Automatic prompt generation:</strong> Using grid-based point prompts to generate candidate masks</span></li>
+        <li><span><strong>Post-processing pipeline:</strong> Filtering, merging, and deduplicating detections across tiles</span></li>
+        <li><span><strong><span class="glossary-term" data-term="georeferencing">Georeferencing</span>:</strong> Converting pixel coordinates back to real-world coordinates</span></li>
+      </ol>
+
+      <h2>Results and Applications</h2>
+
+      <p>
+        We tested our approach on orthomosaics from plant nurseries, where the goal was to detect and count
+        individual plant pots. The results were impressive:
+      </p>
+
+      <ul>
+        <li>Detection accuracy exceeding 95% on well-lit imagery</li>
+        <li>Processing speed of approximately 1000 objects per minute on consumer GPU hardware</li>
+        <li>Successful generalization to different pot sizes, colors, and arrangements</li>
+      </ul>
+
+      <p>
+        The practical applications extend far beyond pot counting. This methodology can be adapted for:
+      </p>
+
+      <ul>
+        <li>Crop health monitoring and yield estimation</li>
+        <li>Infrastructure inspection (solar panels, rooftops)</li>
+        <li>Environmental monitoring (tree counting, wildlife surveys)</li>
+        <li>Construction progress tracking</li>
+      </ul>
+
+      <h2>Key Takeaways</h2>
+
+      <p>
+        <span class="glossary-term" data-term="foundation-model">Foundation models</span> like SAM are changing how we approach computer vision problems. Instead of training
+        specialized models from scratch for each domain, we can leverage pre-trained representations and adapt
+        them with minimal domain-specific data.
+      </p>
+
+      <p>
+        The combination of drone technology and foundation models opens new possibilities for automated
+        geospatial analysis. As these models continue to improve, we can expect even more applications
+        in precision agriculture, environmental science, and beyond.
+      </p>
+
+      <blockquote>
+        Read the full paper: <a href="https://doi.org/10.25080/uhje9464" target="_blank" rel="noopener">Performing Object Detection on Drone Orthomosaics with Meta's Segment Anything Model (SAM)</a>
+      </blockquote>
+    </article>
+  </main>
+
+  <!-- Glossary Modal -->
+  <div class="modal-overlay glossary-modal" id="glossary-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="glossary-term-title"></h3>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="glossary-term-definition"></p>
+        <p class="context-note" id="glossary-term-context"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Glossary term definitions
+    const glossaryTerms = {
+      'orthomosaic': {
+        title: 'Orthomosaic',
+        definition: 'A geometrically corrected aerial image composed of many individual photos stitched together. Unlike raw aerial photos, orthomosaics have uniform scale and can be used for accurate measurements since distortions from camera angle and terrain have been removed.',
+        context: 'In this work, we process drone orthomosaics from plant nurseries—gigapixel images where each pixel corresponds to a known real-world location, enabling automated counting and mapping of objects.'
+      },
+      'sam': {
+        title: 'Segment Anything Model (SAM)',
+        definition: 'A foundation model for image segmentation developed by Meta AI. Trained on over 1 billion masks from 11 million images, SAM can segment any object in an image given a prompt (point, box, or text), without task-specific training.',
+        context: 'We leverage SAM\'s zero-shot capabilities to detect pots in aerial imagery without needing to train a custom model—SAM\'s general understanding of object boundaries transfers directly to our agricultural domain.'
+      },
+      'zero-shot': {
+        title: 'Zero-Shot Generalization',
+        definition: 'The ability of a model to perform a task it was never explicitly trained on. Zero-shot models learn such rich representations during pre-training that they can generalize to new domains, object types, or tasks without additional training examples.',
+        context: 'SAM\'s zero-shot capability is crucial here—it can segment plant pots despite never seeing nursery imagery during training, because it learned general concepts like "circular objects" and "boundaries between regions."'
+      },
+      'tile-processing': {
+        title: 'Tile-Based Processing',
+        definition: 'A technique for handling images too large to fit in memory by dividing them into smaller, overlapping tiles. Each tile is processed independently, then results are merged while handling duplicates at tile boundaries.',
+        context: 'Drone orthomosaics can exceed 100 megapixels. We divide them into overlapping 1024×1024 tiles, run SAM on each tile, then merge detections—handling objects that span tile boundaries through overlap regions.'
+      },
+      'georeferencing': {
+        title: 'Georeferencing',
+        definition: 'The process of associating pixel coordinates in an image with real-world geographic coordinates (latitude/longitude or a projected coordinate system). This enables measurements, mapping, and integration with GIS systems.',
+        context: 'After detecting pots in pixel space, we convert each detection to GPS coordinates using the orthomosaic\'s geospatial metadata—enabling export to mapping software and precise field navigation.'
+      },
+      'foundation-model': {
+        title: 'Foundation Model',
+        definition: 'A large AI model trained on broad data at scale, designed to be adapted to a wide range of downstream tasks. Examples include GPT for language and SAM for vision. They learn general representations that transfer across domains.',
+        context: 'SAM exemplifies the foundation model paradigm—instead of training a pot detector from scratch, we use SAM\'s pre-trained visual understanding and adapt it to our specific task with minimal effort.'
+      }
+    };
+
+    // Modal functionality
+    const modal = document.getElementById('glossary-modal');
+    const titleEl = document.getElementById('glossary-term-title');
+    const definitionEl = document.getElementById('glossary-term-definition');
+    const contextEl = document.getElementById('glossary-term-context');
+    const closeBtn = modal.querySelector('.modal-close');
+
+    // Open modal on term click
+    document.querySelectorAll('.glossary-term').forEach(term => {
+      term.addEventListener('click', () => {
+        const termId = term.dataset.term;
+        const termData = glossaryTerms[termId];
+
+        if (termData) {
+          titleEl.textContent = termData.title;
+          definitionEl.textContent = termData.definition;
+          contextEl.textContent = termData.context;
+          modal.classList.add('active');
+        }
+      });
+    });
+
+    // Close modal
+    closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('active');
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') modal.classList.remove('active');
+    });
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

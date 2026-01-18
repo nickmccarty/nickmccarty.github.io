@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circuit Extraction: Interpreting Object Detectors | Nick McCarty</title>
+  <meta name="description" content="Using activation patching and co-activation analysis to extract the minimal computational circuit for pot detection in Faster R-CNN.">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <a href="../blog.html" class="back-link">&larr; Back to Blog</a>
+
+    <article>
+      <h1>Circuit Extraction: Interpreting Object Detectors</h1>
+      <div class="post-meta">January 13, 2026 &bull; 14 min read</div>
+
+      <p>
+        <span class="glossary-term" data-term="sparse-probing">Sparse probing</span> identifies which channels matter; circuit extraction reveals how they work together.
+        By systematically ablating channels and analyzing co-activation patterns, we can map the minimal
+        computational <span class="glossary-term" data-term="neural-circuit">circuit</span> that implements pot detection in a Faster R-CNN model. This mechanistic
+        understanding goes beyond feature importance to expose the actual information flow.
+      </p>
+
+      <h2>The Circuit Extraction Framework</h2>
+
+      <p>
+        A neural circuit consists of nodes (channels) and edges (functional relationships). For object
+        detection in ResNet layer4, we want to identify: (1) which of the 2048 channels are critical for
+        detection, and (2) how these channels relate to each other functionally.
+      </p>
+
+      <p>
+        The approach combines two techniques:
+      </p>
+
+      <ul>
+        <li><strong><span class="glossary-term" data-term="activation-patching">Activation patching</span>:</strong> Zero out each channel and measure impact on detection confidence</li>
+        <li><strong><span class="glossary-term" data-term="co-activation">Co-activation analysis</span>:</strong> Compute correlations between channel activations to find functional groups</li>
+      </ul>
+
+      <h2>Activation Patching</h2>
+
+      <p>
+        Activation patching (<span class="glossary-term" data-term="ablation">ablation</span>) directly measures channel importance by intervention. For each of
+        the 2048 channels, we zero out its activations during forward pass and observe how detection
+        degrades.
+      </p>
+
+      <pre><code>class ActivationPatcher:
+    def patch_channel(self, model, layer_path, channel_idx):
+        """Zero out a specific channel during forward pass."""
+        def patch_hook(module, input, output):
+            output[:, channel_idx, :, :] = 0
+            return output
+
+        layer = self._get_layer(model, layer_path)
+        return layer.register_forward_hook(patch_hook)
+
+    def measure_impact(self, model, image, baseline_output):
+        """Measure detection degradation."""
+        with torch.no_grad():
+            patched_output = model([image])
+
+        baseline_score = baseline_output[0]['scores'].max().item()
+        patched_score = patched_output[0]['scores'].max().item()
+
+        return baseline_score - patched_score  # Positive = important</code></pre>
+
+      <p>
+        Running this across all 2048 channels takes 5-10 minutes on GPU. The result is an importance
+        score for each channel&mdash;how much detection confidence drops when that channel is ablated.
+      </p>
+
+      <pre><code>def ablation_study(model, image, num_channels=2048):
+    """Test importance of each channel."""
+    baseline_output = model([image])
+    importance = np.zeros(num_channels)
+    patcher = ActivationPatcher()
+
+    for ch_idx in tqdm(range(num_channels)):
+        hook = patcher.patch_channel(model, 'backbone.body.layer4', ch_idx)
+        importance[ch_idx] = patcher.measure_impact(model, image, baseline_output)
+        hook.remove()
+
+    return importance</code></pre>
+
+      <h2>Critical Channel Selection</h2>
+
+      <p>
+        Ablation scores follow a long-tailed distribution. Most channels have near-zero impact; a small
+        subset is highly critical. We select the top 10% by ablation impact as "<span class="glossary-term" data-term="critical-channels">critical channels</span>"&mdash;these
+        form the nodes of our circuit.
+      </p>
+
+      <pre><code># Select critical channels (top 10% by ablation impact)
+threshold = np.percentile(channel_importance, 90)
+critical_indices = np.where(channel_importance >= threshold)[0]
+
+print(f"Critical channels: {len(critical_indices)} / 2048")
+# Typically ~200 channels</code></pre>
+
+      <p>
+        These critical channels account for the bulk of detection capability. Ablating all non-critical
+        channels simultaneously has minimal impact; ablating even a few critical channels significantly
+        degrades performance.
+      </p>
+
+      <h2>Co-Activation Analysis</h2>
+
+      <p>
+        Critical channels don't operate independently&mdash;they form functional groups. Co-activation
+        analysis computes pairwise correlations between channel activations across spatial locations.
+        Channels that consistently activate together likely encode related features.
+      </p>
+
+      <pre><code>def compute_coactivation(activations, critical_indices):
+    """Compute pairwise correlations between critical channels."""
+    # Flatten spatial dimensions
+    activation_vectors = []
+    for ch_idx in critical_indices:
+        activation_vectors.append(activations[ch_idx].flatten())
+
+    activation_matrix = np.stack(activation_vectors)  # (n_critical, H*W)
+    correlation_matrix = np.corrcoef(activation_matrix)
+
+    # Create edges for strong correlations
+    edges = []
+    for i, ch_i in enumerate(critical_indices):
+        for j, ch_j in enumerate(critical_indices):
+            if i < j:
+                corr = correlation_matrix[i, j]
+                if abs(corr) > 0.5:  # Threshold for "functional relationship"
+                    edges.append((ch_i, ch_j, abs(corr)))
+
+    return edges</code></pre>
+
+      <p>
+        Strong positive correlations indicate channels that respond to the same features. Strong negative
+        correlations suggest complementary roles (e.g., pot vs. background detectors). The correlation
+        threshold (0.5 in our experiments) balances specificity and coverage.
+      </p>
+
+      <h2>Semantic Role Assignment</h2>
+
+      <p>
+        Beyond importance and relationships, we want to understand what each channel computes. Heuristic
+        analysis of activation patterns assigns semantic roles:
+      </p>
+
+      <ul>
+        <li><strong>Edge detectors:</strong> High spatial gradients in activation maps</li>
+        <li><strong>Texture detectors:</strong> Low spatial autocorrelation (local patterns)</li>
+        <li><strong>Shape detectors:</strong> Moderate autocorrelation (regional patterns)</li>
+        <li><strong>Semantic features:</strong> High autocorrelation (global/object-level patterns)</li>
+      </ul>
+
+      <pre><code>def assign_channel_role(channel_activation):
+    """Categorize channel by activation pattern."""
+    # Edge strength (high-frequency content)
+    grad_y, grad_x = np.gradient(channel_activation)
+    edge_strength = np.mean(np.sqrt(grad_x**2 + grad_y**2))
+    edge_norm = edge_strength / (channel_activation.std() + 1e-8)
+
+    # Spatial autocorrelation (pattern scale)
+    flat = channel_activation.flatten()
+    autocorr = np.corrcoef(flat[:-1], flat[1:])[0, 1]
+
+    # Categorize
+    if edge_norm > 0.5:
+        return 'edge'
+    elif autocorr > 0.7:
+        return 'semantic'
+    elif autocorr < 0.3:
+        return 'texture'
+    else:
+        return 'shape'</code></pre>
+
+      <p>
+        In our pot detection circuit, we find roughly: 25% edge detectors, 30% texture detectors,
+        25% shape detectors, 20% semantic features. The distribution suggests the model uses a mix
+        of low-level and high-level features.
+      </p>
+
+      <h2>Circuit Visualization</h2>
+
+      <p>
+        The extracted circuit&mdash;nodes (critical channels), edges (co-activations), and roles
+        (semantic categories)&mdash;forms a graph. We visualize this using Plotly for interactive
+        exploration.
+      </p>
+
+      <pre><code>def visualize_circuit(circuit, save_path='circuit.html'):
+    """Create interactive circuit visualization."""
+    G = nx.Graph()
+
+    # Color map for roles
+    role_colors = {
+        'edge': '#FF6B6B',      # Red
+        'texture': '#4ECDC4',   # Cyan
+        'shape': '#45B7D1',     # Blue
+        'semantic': '#FFA07A'   # Orange
+    }
+
+    # Add nodes
+    for idx, ch_idx in enumerate(circuit['critical_channels']):
+        role = circuit['channel_roles'].get(ch_idx, 'unknown')
+        importance = circuit['importance'][idx]
+        G.add_node(f'Ch{ch_idx}',
+                   role=role,
+                   importance=importance,
+                   color=role_colors.get(role, '#CCCCCC'))
+
+    # Add edges
+    for ch_i, ch_j, weight in circuit['edges']:
+        G.add_edge(f'Ch{ch_i}', f'Ch{ch_j}', weight=weight)
+
+    # Layout and render with Plotly
+    pos = nx.spring_layout(G, k=1.5, iterations=100)
+    # ... (Plotly trace creation)</code></pre>
+
+      <p>
+        The interactive visualization allows: zooming into dense clusters, hovering for channel details,
+        filtering by role via legend, and exporting for presentations. Node size reflects ablation
+        importance; edge thickness reflects correlation strength.
+      </p>
+
+      <h2>Circuit Structure Findings</h2>
+
+      <p>
+        Analysis of the pot detection circuit reveals several patterns:
+      </p>
+
+      <p>
+        <strong>Hub channels:</strong> A few channels have unusually high connectivity (many co-activation
+        edges). These appear to be integration points that combine information from multiple feature types.
+      </p>
+
+      <p>
+        <strong>Functional modules:</strong> Channels cluster into groups by role. Edge detectors connect
+        primarily to other edge detectors and to shape detectors. Semantic channels form a separate,
+        highly interconnected cluster.
+      </p>
+
+      <p>
+        <strong>Sparsity:</strong> The circuit uses only ~200 of 2048 channels (10%) for pot detection.
+        This matches sparse probing results and suggests the network has significant unused capacity&mdash;or
+        that other channels handle other tasks in the original COCO training.
+      </p>
+
+      <h2>Causal Validation</h2>
+
+      <p>
+        The circuit hypothesis predicts that preserving critical channels while ablating others should
+        maintain detection. We test this:
+      </p>
+
+      <pre><code># Ablate all non-critical channels
+def ablate_non_critical(model, layer_path, critical_indices):
+    all_channels = set(range(2048))
+    non_critical = all_channels - set(critical_indices)
+
+    def hook(module, input, output):
+        for ch in non_critical:
+            output[:, ch, :, :] = 0
+        return output
+
+    layer = model.backbone.body.layer4
+    return layer.register_forward_hook(hook)
+
+# Test detection with only critical channels
+hook = ablate_non_critical(model, 'backbone.body.layer4', critical_indices)
+sparse_output = model([image])
+hook.remove()
+
+print(f"Full model detections: {len(baseline_output[0]['boxes'])}")
+print(f"Sparse circuit detections: {len(sparse_output[0]['boxes'])}")
+# Typically maintains 90%+ of detections</code></pre>
+
+      <p>
+        The circuit maintains most detection capability, validating that we've identified the essential
+        computation. The small performance drop likely reflects edge cases where non-critical channels
+        provide useful but not essential information.
+      </p>
+
+      <h2>Applications</h2>
+
+      <p>
+        Understanding the circuit enables several applications:
+      </p>
+
+      <p>
+        <strong>Debugging:</strong> When detection fails, examine which circuit components are inactive.
+        Missing edge detector activation suggests the object lacks expected boundaries; missing semantic
+        features suggest it doesn't match learned pot representations.
+      </p>
+
+      <p>
+        <strong>Transfer analysis:</strong> Compare circuits across models trained on different data.
+        Shared channels indicate universal features; divergent channels indicate domain-specific learning.
+      </p>
+
+      <p>
+        <strong>Adversarial robustness:</strong> The circuit identifies which features an attacker must
+        disrupt to fool the detector. Targeted perturbations to critical channels are more effective
+        than random noise.
+      </p>
+
+      <p>
+        <strong>Model compression:</strong> Prune non-critical channels for faster inference. The circuit
+        provides a principled pruning criterion beyond simple magnitude-based approaches.
+      </p>
+
+      <h2>Limitations</h2>
+
+      <p>
+        Circuit extraction has limitations. The analysis is image-specific&mdash;different images may
+        activate different subsets of the circuit. Averaging across multiple images provides more robust
+        estimates but increases computational cost.
+      </p>
+
+      <p>
+        The method focuses on layer4; cross-layer circuits (how layer1-3 features flow into layer4)
+        require additional analysis. Full hierarchical circuit extraction is computationally expensive
+        but would reveal the complete information flow.
+      </p>
+
+      <p>
+        Co-activation correlations capture functional relationships but not causal dependencies. Two
+        channels might correlate because they respond to the same input feature, not because one
+        influences the other.
+      </p>
+
+      <div class="related-post">
+        <span class="related-label">Related</span>
+        <a href="./sparse-probing-pot-detection.html">
+          <h4>Sparse Linear Probing for Efficient Detection</h4>
+          <p>A complementary approach: using L1 regularization to identify important channels.</p>
+          <span class="read-more">Read more &rarr;</span>
+        </a>
+      </div>
+
+      <div class="related-post">
+        <span class="related-label">Related</span>
+        <a href="./mechanistic-interpretability.html">
+          <h4>Mechanistic Interpretability for Agricultural AI</h4>
+          <p>The broader research program: understanding what vision models learn about agricultural environments.</p>
+          <span class="read-more">Read more &rarr;</span>
+        </a>
+      </div>
+    </article>
+  </main>
+
+  <!-- Glossary Modal -->
+  <div class="modal-overlay glossary-modal" id="glossary-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="glossary-term-title"></h3>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="glossary-term-definition"></p>
+        <p class="context-note" id="glossary-term-context"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Glossary term definitions
+    const glossaryTerms = {
+      'sparse-probing': {
+        title: 'Sparse Probing',
+        definition: 'A technique that trains L1-regularized linear classifiers on neural network activations to identify the minimal subset of features (channels) sufficient for a task. The sparsity penalty forces the probe to use only the most informative channels.',
+        context: 'Sparse probing tells us which channels matter for pot detection, but not how they work together. This article extends that analysis with circuit extraction to reveal the functional relationships between important channels.'
+      },
+      'neural-circuit': {
+        title: 'Neural Circuit',
+        definition: 'A minimal subset of neurons (or channels in CNNs) that together implement a specific computation. In object detection, a circuit represents the essential pathway from input features to detection output.',
+        context: 'In this article, we extract the pot detection circuit from Faster R-CNN\'s ResNet backbone—identifying which of the 2048 layer4 channels are essential and how they functionally relate.'
+      },
+      'activation-patching': {
+        title: 'Activation Patching',
+        definition: 'An interpretability technique that modifies (patches) activations during a model\'s forward pass to measure their causal importance. By zeroing out specific channels and observing performance changes, we identify which components are critical.',
+        context: 'Here, we patch each of the 2048 channels by setting them to zero and measure how much detection confidence drops—channels with large drops are deemed critical.'
+      },
+      'co-activation': {
+        title: 'Co-activation Analysis',
+        definition: 'Computing pairwise correlations between neural activations to discover functional relationships. Channels that consistently activate together across spatial locations likely encode related features.',
+        context: 'We use co-activation to find the edges in our circuit graph—channels with correlation > 0.5 are connected, revealing functional modules like edge detectors and semantic feature clusters.'
+      },
+      'ablation': {
+        title: 'Ablation',
+        definition: 'Systematically removing or disabling components of a model to understand their contribution. In neural networks, this typically means zeroing activations or removing connections entirely.',
+        context: 'Ablation is our primary tool for measuring channel importance—we ablate each channel individually and measure detection degradation to build an importance ranking.'
+      },
+      'critical-channels': {
+        title: 'Critical Channels',
+        definition: 'The subset of neural network channels that have the largest impact on task performance when ablated. These form the nodes of the computational circuit.',
+        context: 'We define critical channels as the top 10% by ablation impact (~200 of 2048 channels). Remarkably, preserving only these channels maintains 90%+ detection accuracy.'
+      }
+    };
+
+    // Modal functionality
+    const modal = document.getElementById('glossary-modal');
+    const titleEl = document.getElementById('glossary-term-title');
+    const definitionEl = document.getElementById('glossary-term-definition');
+    const contextEl = document.getElementById('glossary-term-context');
+    const closeBtn = modal.querySelector('.modal-close');
+
+    // Open modal on term click
+    document.querySelectorAll('.glossary-term').forEach(term => {
+      term.addEventListener('click', () => {
+        const termId = term.dataset.term;
+        const termData = glossaryTerms[termId];
+
+        if (termData) {
+          titleEl.textContent = termData.title;
+          definitionEl.textContent = termData.definition;
+          contextEl.textContent = termData.context;
+          modal.classList.add('active');
+        }
+      });
+    });
+
+    // Close modal
+    closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('active');
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') modal.classList.remove('active');
+    });
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

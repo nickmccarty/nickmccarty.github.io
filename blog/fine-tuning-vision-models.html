@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fine-Tuning Vision Foundation Models | Nick McCarty</title>
+  <meta name="description" content="A practical guide to fine-tuning strategies for vision models like SAM and Faster R-CNN.">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <a href="../blog.html" class="back-link">&larr; Back to Blog</a>
+
+    <article>
+      <h1>Fine-Tuning Vision Foundation Models</h1>
+      <div class="post-meta">December 28, 2025 &bull; 12 min read</div>
+
+      <p>
+        Foundation models like SAM and CLIP have transformed computer vision by providing powerful pre-trained
+        representations that transfer across domains. But how do you effectively adapt these models to your
+        specific use case? In this post, I'll share practical insights from fine-tuning vision models for
+        agricultural applications.
+      </p>
+
+      <h2>The Fine-Tuning Landscape</h2>
+
+      <p>
+        When adapting a foundation model, you have several options, each with different trade-offs:
+      </p>
+
+      <h3>Full Fine-Tuning</h3>
+
+      <p>
+        Update all model parameters on your domain-specific data. This offers maximum flexibility but requires
+        significant compute and risks <span class="glossary-term" data-term="catastrophic-forgetting">catastrophic forgetting</span> of pre-trained knowledge.
+      </p>
+
+      <ul class="icon-list">
+        <li>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#10b981" viewBox="0 0 16 16">
+            <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/>
+          </svg>
+          <span><strong>Pros:</strong> Maximum adaptation, best potential performance</span>
+        </li>
+        <li>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#ef4444" viewBox="0 0 16 16">
+            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+          </svg>
+          <span><strong>Cons:</strong> High compute cost, requires large datasets, risk of overfitting</span>
+        </li>
+        <li>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#3b82f6" viewBox="0 0 16 16">
+            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+          </svg>
+          <span><strong>When to use:</strong> Abundant labeled data, significant domain shift</span>
+        </li>
+      </ul>
+
+      <h3>Decoder-Only Fine-Tuning</h3>
+
+      <p>
+        Freeze the encoder (feature extractor) and only update the decoder/head. This preserves pre-trained
+        representations while adapting the output layer to your task.
+      </p>
+
+      <ul class="icon-list">
+        <li>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#10b981" viewBox="0 0 16 16">
+            <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/>
+          </svg>
+          <span><strong>Pros:</strong> Fast training, preserves foundation model knowledge</span>
+        </li>
+        <li>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#ef4444" viewBox="0 0 16 16">
+            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+          </svg>
+          <span><strong>Cons:</strong> Limited adaptation, may underperform on novel domains</span>
+        </li>
+        <li>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#3b82f6" viewBox="0 0 16 16">
+            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+          </svg>
+          <span><strong>When to use:</strong> Limited data, similar domain to pre-training</span>
+        </li>
+      </ul>
+
+      <h3>Parameter-Efficient Fine-Tuning (PEFT)</h3>
+
+      <p>
+        Techniques like <span class="glossary-term" data-term="lora">LoRA (Low-Rank Adaptation)</span> and adapters add small trainable modules while keeping
+        the base model frozen. This offers a middle ground between full fine-tuning and decoder-only approaches.
+      </p>
+
+      <ul class="icon-list">
+        <li>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#10b981" viewBox="0 0 16 16">
+            <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/>
+          </svg>
+          <span><strong>Pros:</strong> Low compute cost, maintains base model, easily switchable adapters</span>
+        </li>
+        <li>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#ef4444" viewBox="0 0 16 16">
+            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+          </svg>
+          <span><strong>Cons:</strong> Added complexity, may not reach full fine-tuning performance</span>
+        </li>
+        <li>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#3b82f6" viewBox="0 0 16 16">
+            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+          </svg>
+          <span><strong>When to use:</strong> Multiple tasks, resource constraints, need to preserve base model</span>
+        </li>
+      </ul>
+
+      <h2>Comparing SAM and Faster R-CNN</h2>
+
+      <p>
+        In our agricultural research, we've worked extensively with both SAM (Vision Transformer-based) and
+        Faster R-CNN (CNN-based). Here's what we've learned about fine-tuning each:
+      </p>
+
+      <h3>SAM (Segment Anything Model)</h3>
+
+      <p>
+        SAM's architecture separates the heavy image encoder from the lightweight mask decoder. This makes
+        decoder-only fine-tuning particularly effective:
+      </p>
+
+      <ul>
+        <li>The ViT-B encoder has 89M parameters; the decoder has only 4M</li>
+        <li>Decoder-only training achieves 80-90% of full fine-tuning performance at 5% of the cost</li>
+        <li>Prompt engineering (choosing good point locations) can be as important as fine-tuning</li>
+      </ul>
+
+      <h3>Faster R-CNN</h3>
+
+      <p>
+        Faster R-CNN's ResNet-FPN backbone offers different fine-tuning dynamics:
+      </p>
+
+      <ul>
+        <li>Layer-wise learning rates work well: lower rates for early layers, higher for later layers</li>
+        <li>Feature Pyramid Network (FPN) layers are often the best candidates for fine-tuning</li>
+        <li>Region Proposal Network (RPN) anchors may need adjustment for your object sizes</li>
+      </ul>
+
+      <h2>Data Efficiency Strategies</h2>
+
+      <p>
+        When working with limited labeled data (common in specialized domains), consider these strategies:
+      </p>
+
+      <h3><span class="glossary-term" data-term="active-learning">Active Learning</span></h3>
+
+      <p>
+        Instead of randomly labeling data, use model uncertainty to prioritize which samples to annotate.
+        In our experiments, active learning achieved target performance with 40% less labeled data compared
+        to random sampling.
+      </p>
+
+      <h3>Semi-Supervised Learning</h3>
+
+      <p>
+        Leverage unlabeled data through techniques like <span class="glossary-term" data-term="pseudo-labeling">pseudo-labeling</span> or consistency regularization.
+        Foundation models' strong zero-shot capabilities make them excellent teachers for generating
+        pseudo-labels.
+      </p>
+
+      <h3><span class="glossary-term" data-term="data-augmentation">Data Augmentation</span></h3>
+
+      <p>
+        Domain-appropriate augmentations can dramatically improve generalization. For aerial imagery,
+        we found rotations and scale variations more important than color augmentations.
+      </p>
+
+      <h2>Practical Recommendations</h2>
+
+      <p>
+        Based on our experience fine-tuning vision models for agricultural applications:
+      </p>
+
+      <ol>
+        <li>
+          <span><strong>Start with zero-shot evaluation.</strong> Foundation models often perform better out-of-the-box
+          than expected. Establish baselines before investing in fine-tuning.</span>
+        </li>
+        <li>
+          <span><strong>Try decoder-only first.</strong> For SAM and similar architectures, decoder-only fine-tuning
+          offers excellent performance per compute dollar.</span>
+        </li>
+        <li>
+          <span><strong>Monitor for overfitting.</strong> Domain-specific datasets are often small. Use validation
+          metrics religiously and employ <span class="glossary-term" data-term="early-stopping">early stopping</span>.</span>
+        </li>
+        <li>
+          <span><strong>Consider your deployment constraints.</strong> If running on edge devices, model size matters.
+          PEFT approaches let you keep the base model while swapping task-specific adapters.</span>
+        </li>
+        <li>
+          <span><strong>Invest in data quality over quantity.</strong> Clean, consistently labeled data is worth more
+          than a larger noisy dataset.</span>
+        </li>
+      </ol>
+
+      <h2>Looking Forward</h2>
+
+      <p>
+        The field of foundation model adaptation is evolving rapidly. Techniques like visual instruction tuning
+        and multimodal prompting are opening new possibilities for domain adaptation without traditional
+        fine-tuning. The key is to stay experimental and measure everything.
+      </p>
+
+      <p>
+        Whatever approach you choose, remember that fine-tuning is a means to an end. Focus on the downstream
+        task performance that matters for your application, and let that guide your technical decisions.
+      </p>
+
+      <div class="related-post">
+        <span class="related-label">Related</span>
+        <a href="./sam-vs-fasterrcnn-comparison.html">
+          <h4>SAM vs Faster R-CNN: A Practical Comparison</h4>
+          <p>Empirical comparison of these two architectures for aerial object detection&mdash;speed, accuracy, and deployment trade-offs.</p>
+          <span class="read-more">Read more &rarr;</span>
+        </a>
+      </div>
+
+      <div class="related-post">
+        <span class="related-label">Related</span>
+        <a href="./training-faster-rcnn-geospatial.html">
+          <h4>Training Faster R-CNN for Geospatial Object Detection</h4>
+          <p>End-to-end training pipeline for Faster R-CNN on aerial imagery, from SAM masks to production detector.</p>
+          <span class="read-more">Read more &rarr;</span>
+        </a>
+      </div>
+    </article>
+  </main>
+
+  <!-- Glossary Modal -->
+  <div class="modal-overlay glossary-modal" id="glossary-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="glossary-term-title"></h3>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="glossary-term-definition"></p>
+        <p class="context-note" id="glossary-term-context"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Glossary term definitions
+    const glossaryTerms = {
+      'catastrophic-forgetting': {
+        title: 'Catastrophic Forgetting',
+        definition: 'A phenomenon where a neural network loses previously learned knowledge when trained on new data. Full fine-tuning can cause the model to "forget" useful representations from pre-training as it adapts to the new domain.',
+        context: 'When fine-tuning foundation models, catastrophic forgetting is a real risk. Techniques like decoder-only training or LoRA help preserve pre-trained knowledge while still adapting to agricultural imagery.'
+      },
+      'lora': {
+        title: 'LoRA (Low-Rank Adaptation)',
+        definition: 'A parameter-efficient fine-tuning technique that adds small, trainable low-rank matrices to frozen model weights. Instead of updating millions of parameters, LoRA trains only thousands while achieving comparable performance.',
+        context: 'LoRA is especially useful when you need to fine-tune for multiple tasks—each task gets its own small adapter, while the base model stays frozen and shared. Great for resource-constrained agricultural deployments.'
+      },
+      'active-learning': {
+        title: 'Active Learning',
+        definition: 'A training strategy where the model helps select which data points to label next, typically choosing samples where it\'s most uncertain. This maximizes the value of each labeled example.',
+        context: 'Labeling aerial imagery is expensive. Active learning lets us achieve target performance with 40% less labeled data by focusing annotation efforts on the most informative samples.'
+      },
+      'pseudo-labeling': {
+        title: 'Pseudo-Labeling',
+        definition: 'A semi-supervised technique where a model generates labels for unlabeled data, which are then used as training targets. High-confidence predictions become "pseudo" ground truth for further training.',
+        context: 'Foundation models like SAM have strong zero-shot capabilities—we can use their predictions as pseudo-labels to train simpler, faster models for deployment without manual annotation.'
+      },
+      'data-augmentation': {
+        title: 'Data Augmentation',
+        definition: 'Artificially expanding training data by applying transformations (rotations, flips, color shifts, crops) to existing samples. This improves generalization by exposing the model to more variation.',
+        context: 'For aerial imagery, geometric augmentations (rotations, scales) matter more than color changes since drone images are captured from consistent altitudes and lighting. Domain-appropriate augmentation is key.'
+      },
+      'early-stopping': {
+        title: 'Early Stopping',
+        definition: 'A regularization technique that stops training when validation performance stops improving, preventing the model from overfitting to training data. You save the best checkpoint rather than the final one.',
+        context: 'With small agricultural datasets, overfitting is a constant risk. Early stopping ensures we capture the model at peak generalization rather than letting it memorize training examples.'
+      }
+    };
+
+    // Modal functionality
+    const modal = document.getElementById('glossary-modal');
+    const titleEl = document.getElementById('glossary-term-title');
+    const definitionEl = document.getElementById('glossary-term-definition');
+    const contextEl = document.getElementById('glossary-term-context');
+    const closeBtn = modal.querySelector('.modal-close');
+
+    // Open modal on term click
+    document.querySelectorAll('.glossary-term').forEach(term => {
+      term.addEventListener('click', () => {
+        const termId = term.dataset.term;
+        const termData = glossaryTerms[termId];
+
+        if (termData) {
+          titleEl.textContent = termData.title;
+          definitionEl.textContent = termData.definition;
+          contextEl.textContent = termData.context;
+          modal.classList.add('active');
+        }
+      });
+    });
+
+    // Close modal
+    closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('active');
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') modal.classList.remove('active');
+    });
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

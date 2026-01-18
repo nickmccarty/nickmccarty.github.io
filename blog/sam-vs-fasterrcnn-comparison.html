@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAM vs Faster R-CNN: A Practical Comparison | Nick McCarty</title>
+  <meta name="description" content="Comparing Segment Anything Model and Faster R-CNN for aerial object detection&mdash;architecture, fine-tuning approaches, and when to use each.">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <a href="../blog.html" class="back-link">&larr; Back to Blog</a>
+
+    <article>
+      <h1>SAM vs Faster R-CNN: A Practical Comparison for Aerial Imagery</h1>
+      <div class="post-meta">January 3, 2026 &bull; 10 min read</div>
+
+      <p>
+        When building object detection systems for aerial imagery, you face a fundamental architectural choice:
+        convolutional detectors like Faster R-CNN or transformer-based segmentation models like SAM. Both can
+        detect objects in drone orthomosaics, but they make different tradeoffs in speed, accuracy, and
+        deployment complexity. This post compares the two approaches using empirical results from pot detection
+        in agricultural imagery.
+      </p>
+
+      <h2>Architecture Differences</h2>
+
+      <p>
+        <strong>Faster R-CNN</strong> uses a ResNet50-FPN backbone&mdash;a convolutional architecture with 2048
+        channels in its deepest layer. The <span class="glossary-term" data-term="fpn">Feature Pyramid Network</span> merges features at multiple scales, making
+        it effective for objects of varying sizes. The entire model is end-to-end trainable: feed in an image,
+        get back <span class="glossary-term" data-term="bounding-box">bounding boxes</span> with confidence scores.
+      </p>
+
+      <p>
+        <strong>SAM (Segment Anything Model)</strong> uses a ViT-B image encoder&mdash;a vision transformer with
+        1024-dimensional embeddings. Unlike Faster R-CNN, SAM requires prompts: bounding boxes, points, or text
+        to guide segmentation. It outputs pixel-precise masks rather than bounding boxes.
+      </p>
+
+      <pre><code># Architecture summary
+Faster R-CNN:  Image → ResNet50-FPN (2048 ch) → Boxes + Scores
+SAM:           Image → ViT-B (1024 ch) → Prompt → Masks</code></pre>
+
+      <h2>Fine-Tuning Approaches</h2>
+
+      <p>
+        The models require different fine-tuning strategies. Faster R-CNN benefits from full model training&mdash;all
+        41 million parameters adapt to the new domain. For aerial imagery with distinctive features (overhead views,
+        consistent lighting, specific object types), this comprehensive adaptation pays off.
+      </p>
+
+      <p>
+        SAM's ViT encoder is so powerful that freezing it works well. We fine-tune only the lightweight mask
+        decoder (~4 million parameters), keeping the encoder's learned representations intact. This parameter-efficient
+        approach trains faster and requires less data.
+      </p>
+
+      <pre><code># SAM decoder-only fine-tuning
+for param in sam_model.image_encoder.parameters():
+    param.requires_grad = False  # Freeze encoder
+
+for param in sam_model.mask_decoder.parameters():
+    param.requires_grad = True   # Train decoder only
+
+# ~4M trainable vs 93M total parameters</code></pre>
+
+      <p>
+        The learning rate matters more for SAM. We use 1e-4 (Adam optimizer) versus 5e-3 (SGD) for Faster R-CNN.
+        The transformer-based decoder is more sensitive to large updates.
+      </p>
+
+      <h2>Speed Comparison</h2>
+
+      <p>
+        For autonomous detection, Faster R-CNN is faster. On a 1024x1024 tile with an RTX 3080:
+      </p>
+
+      <pre><code>Faster R-CNN: ~50ms per tile (detection only)
+SAM:          ~150ms per tile (with bbox prompts)</code></pre>
+
+      <p>
+        SAM requires two passes: one to encode the image, another to decode masks from prompts. If you're using
+        SAM with Faster R-CNN boxes as prompts (a hybrid approach), total inference time is ~200ms per tile.
+      </p>
+
+      <p>
+        For large orthomosaics with hundreds of tiles, this difference compounds. A 15,000x12,000 pixel image
+        at 1024x1024 tiles with 128px overlap requires ~200 tiles. Faster R-CNN processes this in ~10 seconds;
+        SAM with prompts takes ~40 seconds.
+      </p>
+
+      <h2>Accuracy and Output Quality</h2>
+
+      <p>
+        SAM produces pixel-precise segmentation masks; Faster R-CNN produces bounding boxes. For circular objects
+        like plant pots, the difference is significant&mdash;SAM captures the actual shape while boxes include
+        background pixels.
+      </p>
+
+      <p>
+        However, for navigation and counting tasks, bounding boxes often suffice. The additional precision of
+        segmentation masks only matters when you need exact object boundaries (quality inspection, volume estimation,
+        occlusion handling).
+      </p>
+
+      <p>
+        In our pot detection experiments, Faster R-CNN achieves comparable detection rates to SAM when using
+        <span class="glossary-term" data-term="iou">IoU</span> metrics that account for the box-vs-mask difference. Mean IoU between Faster R-CNN boxes and SAM
+        masks on the same detections is ~0.7&mdash;the box is a reasonable approximation.
+      </p>
+
+      <h2>Feature Representations</h2>
+
+      <p>
+        Comparing internal representations reveals architectural differences. ResNet features are <span class="glossary-term" data-term="translation-equivariant">translation
+        equivariant</span>&mdash;the same filter activates wherever a pattern appears. ViT features incorporate global
+        context from the start through <span class="glossary-term" data-term="self-attention">self-attention</span>.
+      </p>
+
+      <p>
+        PCA visualization of backbone features shows this clearly. ResNet layer4 features (2048 channels) cluster
+        spatially&mdash;nearby pixels have similar representations. ViT features (1024 channels) show more
+        semantic grouping, with similar objects having similar representations regardless of position.
+      </p>
+
+      <p>
+        For interpretability research, both representations are useful but reveal different aspects of what the
+        model has learned.
+      </p>
+
+      <h2>When to Use Each</h2>
+
+      <p>
+        <strong>Use Faster R-CNN when:</strong>
+      </p>
+      <ul>
+        <li>You need autonomous detection without prompts</li>
+        <li>Bounding boxes are sufficient for your task</li>
+        <li>Real-time or near-real-time performance is critical</li>
+        <li>Deploying on edge devices with limited memory</li>
+        <li>Training data is abundant</li>
+      </ul>
+
+      <p>
+        <strong>Use SAM when:</strong>
+      </p>
+      <ul>
+        <li>Pixel-precise masks are necessary</li>
+        <li>Training data is limited (parameter-efficient fine-tuning)</li>
+        <li>Interactive refinement is valuable (human-in-loop workflows)</li>
+        <li>Multi-task learning is planned (health assessment, size estimation)</li>
+        <li>Transfer to new object types with minimal retraining</li>
+      </ul>
+
+      <p>
+        <strong>Use a hybrid approach when:</strong>
+      </p>
+      <ul>
+        <li>Speed matters but you also need precise masks</li>
+        <li>Faster R-CNN handles detection, SAM refines boundaries</li>
+        <li>Best of both: fast detection + precise segmentation</li>
+      </ul>
+
+      <h2>Practical Recommendations</h2>
+
+      <p>
+        For most aerial object detection tasks, start with Faster R-CNN. It's simpler to deploy, faster at inference,
+        and produces outputs that integrate easily with downstream systems. The training pipeline is well-documented
+        and the model is robust.
+      </p>
+
+      <p>
+        Consider SAM when mask precision matters or when you're building interactive tools where users refine
+        detections. The decoder-only fine-tuning approach makes SAM surprisingly data-efficient&mdash;a few hundred
+        annotated examples can produce strong results.
+      </p>
+
+      <p>
+        For research into what models learn (mechanistic interpretability), both architectures offer valuable
+        perspectives. ResNet's hierarchical features are easier to interpret; ViT's attention patterns reveal
+        different <span class="glossary-term" data-term="inductive-bias">inductive biases</span>.
+      </p>
+
+      <div class="related-post">
+        <span class="related-label">Related</span>
+        <a href="./fine-tuning-vision-models.html">
+          <h4>Fine-Tuning Vision Foundation Models</h4>
+          <p>Practical strategies for adapting SAM, Faster R-CNN, and other vision models to domain-specific tasks.</p>
+          <span class="read-more">Read more &rarr;</span>
+        </a>
+      </div>
+
+      <div class="related-post">
+        <span class="related-label">Related</span>
+        <a href="./extracting-vision-features.html">
+          <h4>Extracting Features from Vision Model Backbones</h4>
+          <p>How to extract and analyze internal representations from SAM and Faster R-CNN for interpretability research.</p>
+          <span class="read-more">Read more &rarr;</span>
+        </a>
+      </div>
+    </article>
+  </main>
+
+  <!-- Glossary Modal -->
+  <div class="modal-overlay glossary-modal" id="glossary-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="glossary-term-title"></h3>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="glossary-term-definition"></p>
+        <p class="context-note" id="glossary-term-context"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Glossary term definitions
+    const glossaryTerms = {
+      'fpn': {
+        title: 'Feature Pyramid Network (FPN)',
+        definition: 'A multi-scale feature extraction architecture that combines high-resolution, semantically weak features from early layers with low-resolution, semantically strong features from deep layers. This creates a pyramid of features at different scales.',
+        context: 'FPN makes Faster R-CNN effective for detecting objects at varying sizes in aerial imagery—small pots far from the camera and large ones close up are all captured by different pyramid levels.'
+      },
+      'bounding-box': {
+        title: 'Bounding Box',
+        definition: 'A rectangular region defined by coordinates (x, y, width, height) or (x1, y1, x2, y2) that encloses an object. Bounding boxes are the standard output format for object detection models like Faster R-CNN.',
+        context: 'For pot detection, bounding boxes are often sufficient—they tell you where pots are located for counting and navigation. SAM produces more precise masks, but boxes integrate more easily with downstream systems.'
+      },
+      'iou': {
+        title: 'IoU (Intersection over Union)',
+        definition: 'A metric measuring overlap between two regions: the area of intersection divided by the area of union. IoU ranges from 0 (no overlap) to 1 (perfect overlap). Common detection threshold is 0.5.',
+        context: 'We use IoU to compare Faster R-CNN boxes with SAM masks. An IoU of 0.7 means 70% overlap—indicating boxes are reasonable approximations of the true object boundaries for most practical purposes.'
+      },
+      'translation-equivariant': {
+        title: 'Translation Equivariant',
+        definition: 'A property where shifting the input causes an equivalent shift in the output. CNNs with convolutions are translation equivariant—the same pattern detector fires regardless of where in the image the pattern appears.',
+        context: 'ResNet\'s translation equivariance means it applies the same learned filters everywhere. A pot detector learned in one image region works in all regions—useful for aerial imagery with repeated objects.'
+      },
+      'self-attention': {
+        title: 'Self-Attention',
+        definition: 'A mechanism where each position in a sequence attends to all other positions to compute a weighted sum of their values. In vision transformers, each image patch can attend to every other patch, capturing global relationships.',
+        context: 'ViT\'s self-attention lets SAM reason about global context from the first layer—understanding that this circular shape is a pot because similar shapes appear elsewhere in the nursery image.'
+      },
+      'inductive-bias': {
+        title: 'Inductive Bias',
+        definition: 'The set of assumptions a model architecture makes about the data. CNNs assume local patterns and translation invariance; transformers assume that any element might relate to any other. Different biases suit different problems.',
+        context: 'ResNet\'s inductive bias toward local patterns makes it naturally suited for detecting objects by edges and textures. ViT\'s global attention bias lets SAM reason about object relationships across the entire image.'
+      }
+    };
+
+    // Modal functionality
+    const modal = document.getElementById('glossary-modal');
+    const titleEl = document.getElementById('glossary-term-title');
+    const definitionEl = document.getElementById('glossary-term-definition');
+    const contextEl = document.getElementById('glossary-term-context');
+    const closeBtn = modal.querySelector('.modal-close');
+
+    // Open modal on term click
+    document.querySelectorAll('.glossary-term').forEach(term => {
+      term.addEventListener('click', () => {
+        const termId = term.dataset.term;
+        const termData = glossaryTerms[termId];
+
+        if (termData) {
+          titleEl.textContent = termData.title;
+          definitionEl.textContent = termData.definition;
+          contextEl.textContent = termData.context;
+          modal.classList.add('active');
+        }
+      });
+    });
+
+    // Close modal
+    closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('active');
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') modal.classList.remove('active');
+    });
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

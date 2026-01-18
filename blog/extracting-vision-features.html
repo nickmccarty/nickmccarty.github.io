@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extracting Features from Vision Model Backbones | Nick McCarty</title>
+  <meta name="description" content="A technical guide to extracting and visualizing internal representations from SAM and Faster R-CNN for interpretability research.">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <a href="../blog.html" class="back-link">&larr; Back to Blog</a>
+
+    <article>
+      <h1>Extracting Features from Vision Model Backbones</h1>
+      <div class="post-meta">January 7, 2026 &bull; 12 min read</div>
+
+      <p>
+        Understanding what vision models learn requires looking inside them. Both SAM's ViT encoder and Faster
+        R-CNN's ResNet50 <span class="glossary-term" data-term="backbone">backbone</span> produce rich intermediate representations&mdash;2048 channels for ResNet layer4,
+        1024 channels for ViT. This post covers the practical mechanics of extracting, processing, and visualizing
+        these features from large geospatial imagery.
+      </p>
+
+      <h2>Why Extract Features?</h2>
+
+      <p>
+        Feature extraction serves multiple purposes. For interpretability, we want to understand which channels
+        respond to which visual patterns. For downstream tasks, frozen features can train lightweight classifiers
+        without expensive full-model fine-tuning. For quality analysis, comparing fine-tuned vs. pretrained
+        features reveals what adaptation changes.
+      </p>
+
+      <p>
+        The key insight: intermediate features often contain more information than final outputs. A bounding box
+        tells you where an object is; the features that produced it tell you how the model recognized it.
+      </p>
+
+      <h2>Tiled Extraction for Large Images</h2>
+
+      <p>
+        Drone orthomosaics exceed 10,000 pixels per side&mdash;far too large to process in one pass. The solution
+        mirrors inference: tile the image, extract features from each tile, and stitch results back together.
+        With overlapping tiles, we average features in overlap regions to avoid boundary artifacts.
+      </p>
+
+      <pre><code>def extract_features_tiled(model, image, tile_size=1024, overlap=128):
+    """Extract features with tile-based processing."""
+    h, w = image.shape[:2]
+    step = tile_size - overlap
+
+    # Initialize feature array (downsampled for memory)
+    downsample = 4
+    feat_h, feat_w = h // downsample, w // downsample
+    full_features = np.zeros((num_channels, feat_h, feat_w))
+    count_map = np.zeros((feat_h, feat_w))
+
+    for y in range(0, h, step):
+        for x in range(0, w, step):
+            tile = image[y:y+tile_size, x:x+tile_size]
+            features = extract_single_tile(model, tile)
+
+            # Upsample to downsampled target and accumulate
+            # ... (handle coordinates and overlap averaging)
+
+    # Average overlapping regions
+    full_features /= count_map
+    return full_features</code></pre>
+
+      <p>
+        Memory management matters. Full-resolution features for a 15,000x12,000 image with 2048 channels would
+        require ~1.4 TB. Downsampling by 4x reduces this to ~22 GB&mdash;still large but manageable. For analysis,
+        this resolution captures the essential spatial structure.
+      </p>
+
+      <h2>Forward Hooks for Feature Capture</h2>
+
+      <p>
+        PyTorch's <span class="glossary-term" data-term="forward-hooks">forward hooks</span> let us intercept activations at any layer without modifying the model. Register
+        a hook, run inference, and the hook captures the output tensor before it flows to the next layer.
+      </p>
+
+      <pre><code>class FeatureExtractor:
+    def __init__(self, model, layer_path):
+        self.features = {}
+
+        # Navigate to target layer
+        layer = model
+        for part in layer_path.split('.'):
+            layer = getattr(layer, part)
+
+        # Register hook
+        def hook(module, input, output):
+            self.features['output'] = output.detach()
+
+        layer.register_forward_hook(hook)
+
+    def extract(self, image_tensor):
+        self.features = {}
+        with torch.no_grad():
+            _ = model(image_tensor)
+        return self.features['output']</code></pre>
+
+      <p>
+        For Faster R-CNN, target <code>backbone.body.layer4</code> for the deepest ResNet features (2048 channels).
+        For SAM, hook the <code>image_encoder</code> output for ViT embeddings (1024 channels). Different layers
+        capture different abstraction levels&mdash;earlier layers see edges and textures, later layers see
+        semantic content.
+      </p>
+
+      <h2>Identifying Selective Channels</h2>
+
+      <p>
+        Not all channels are equally relevant. Some respond strongly to target objects (pots), others to background.
+        Computing <span class="glossary-term" data-term="channel-selectivity">channel selectivity</span> requires detection results to define positive and negative regions.
+      </p>
+
+      <pre><code>def compute_channel_selectivity(features, detection_boxes):
+    """Identify channels that discriminate objects from background."""
+    C, H, W = features.shape
+
+    # Create mask from detections
+    pot_mask = np.zeros((H, W), dtype=bool)
+    for box in detection_boxes:
+        # Scale box to feature resolution
+        pot_mask[y1:y2, x1:x2] = True
+
+    background_mask = ~pot_mask
+
+    # Compute selectivity per channel
+    selectivity = []
+    for ch in range(C):
+        pot_mean = features[ch][pot_mask].mean()
+        bg_mean = features[ch][background_mask].mean()
+        selectivity.append(pot_mean - bg_mean)
+
+    return np.array(selectivity)</code></pre>
+
+      <p>
+        Positive selectivity means the channel activates more on pots; negative means it prefers background.
+        In our experiments, about 15% of ResNet layer4 channels show strong selectivity (|score| > 0.1).
+      </p>
+
+      <h2>PCA Visualization</h2>
+
+      <p>
+        With thousands of channels, dimensionality reduction helps visualization. <span class="glossary-term" data-term="pca">PCA</span> projects the high-dimensional
+        feature space to three components, which we map to RGB for display.
+      </p>
+
+      <pre><code>def visualize_features_pca(features, n_components=3):
+    """Project features to RGB for visualization."""
+    C, H, W = features.shape
+
+    # Reshape: (C, H, W) -> (H*W, C)
+    X = features.reshape(C, -1).T
+
+    # Subsample for PCA fitting (memory)
+    sample_idx = np.random.choice(X.shape[0], 200000, replace=False)
+
+    # Fit and transform
+    scaler = StandardScaler()
+    pca = PCA(n_components=n_components)
+    pca.fit(scaler.fit_transform(X[sample_idx]))
+
+    X_pca = pca.transform(scaler.transform(X))
+    pca_image = X_pca.reshape(H, W, n_components)
+
+    # Normalize to [0, 1] for display
+    for c in range(n_components):
+        pca_image[..., c] = normalize_percentile(pca_image[..., c])
+
+    return pca_image</code></pre>
+
+      <p>
+        The resulting RGB image shows feature similarity spatially. Pixels with similar colors have similar
+        high-dimensional representations. For well-trained models, objects of the same type cluster together
+        visually.
+      </p>
+
+      <h2>Comparing SAM vs. Faster R-CNN Features</h2>
+
+      <p>
+        The two architectures produce qualitatively different features. ResNet features (2048 channels) show
+        strong spatial correlation&mdash;nearby pixels have similar representations due to convolutional
+        locality. ViT features (1024 channels) exhibit more semantic grouping; similar objects share
+        representations even when distant.
+      </p>
+
+      <p>
+        In PCA visualizations, ResNet features form smooth gradients across space. ViT features show more
+        discrete clustering by object type. Both are valid representations; they capture different aspects
+        of the visual structure.
+      </p>
+
+      <p>
+        Variance explained by the top 3 PCs is typically higher for ResNet (~50%) than ViT (~30%),
+        reflecting the more distributed nature of transformer representations.
+      </p>
+
+      <h2>Fine-Tuned vs. Pretrained</h2>
+
+      <p>
+        Comparing features before and after <span class="glossary-term" data-term="fine-tuning">fine-tuning</span> reveals what adaptation changes. For Faster R-CNN
+        trained on pot detection, the most selective channels show the largest differences from pretrained
+        COCO weights.
+      </p>
+
+      <pre><code># Compare same channel across models
+ch_pretrained = pretrained_features[channel_idx]
+ch_finetuned = finetuned_features[channel_idx]
+
+diff = np.abs(ch_finetuned - ch_pretrained)
+print(f"Mean absolute difference: {diff.mean():.4f}")</code></pre>
+
+      <p>
+        Changes concentrate in channels that become pot-selective. Background-preferring channels and
+        general-purpose feature detectors (edges, textures) remain relatively stable.
+      </p>
+
+      <h2>Saving Features as GeoTIFFs</h2>
+
+      <p>
+        For GIS integration, we can save features as multi-band <span class="glossary-term" data-term="geotiff">GeoTIFFs</span> that preserve georeferencing.
+        Each band represents one channel; the spatial extent matches the source imagery.
+      </p>
+
+      <pre><code># Save top selective channels
+with rasterio.open(output_path, 'w',
+                   driver='GTiff',
+                   height=height, width=width,
+                   count=n_channels,
+                   dtype='float32',
+                   crs=source_crs,
+                   transform=source_transform) as dst:
+    for i, ch_idx in enumerate(top_channels):
+        dst.write(features[ch_idx], i + 1)
+        dst.set_band_description(i + 1, f'Channel_{ch_idx}')</code></pre>
+
+      <p>
+        These feature rasters can be loaded in QGIS for spatial analysis, overlaid with detection results,
+        or used as inputs to downstream classifiers.
+      </p>
+
+      <h2>Practical Considerations</h2>
+
+      <p>
+        <strong>Memory:</strong> Full-resolution features are huge. Always downsample for storage. 4x
+        downsampling preserves enough structure for most analyses while reducing size by 16x.
+      </p>
+
+      <p>
+        <strong>Overlap averaging:</strong> Tiles must overlap to avoid boundary artifacts. Average features
+        in overlap regions rather than taking max or keeping one version.
+      </p>
+
+      <p>
+        <strong>GPU memory:</strong> Process one tile at a time and move features to CPU immediately.
+        Call <code>torch.cuda.empty_cache()</code> between tiles to prevent accumulation.
+      </p>
+
+      <p>
+        <strong>Coordinate systems:</strong> Track the relationship between feature resolution, tile
+        resolution, and original image resolution carefully. Off-by-one errors compound across tiles.
+      </p>
+
+      <p>
+        The extracted features form the foundation for deeper interpretability analysis&mdash;sparse probing,
+        circuit extraction, and mechanistic understanding of what these models actually learn.
+      </p>
+
+      <div class="related-post">
+        <span class="related-label">Related</span>
+        <a href="./sam-vs-fasterrcnn-comparison.html">
+          <h4>SAM vs Faster R-CNN: A Practical Comparison</h4>
+          <p>Comparing the two architectures for aerial object detection&mdash;speed, accuracy, and when to use each.</p>
+          <span class="read-more">Read more &rarr;</span>
+        </a>
+      </div>
+
+      <div class="related-post">
+        <span class="related-label">Related</span>
+        <a href="./sparse-probing-pot-detection.html">
+          <h4>Sparse Linear Probing for Efficient Detection</h4>
+          <p>Using L1-regularized probes to find minimal feature subsets sufficient for pot detection.</p>
+          <span class="read-more">Read more &rarr;</span>
+        </a>
+      </div>
+    </article>
+  </main>
+
+  <!-- Glossary Modal -->
+  <div class="modal-overlay glossary-modal" id="glossary-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="glossary-term-title"></h3>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="glossary-term-definition"></p>
+        <p class="context-note" id="glossary-term-context"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Glossary term definitions
+    const glossaryTerms = {
+      'backbone': {
+        title: 'Backbone',
+        definition: 'The main feature extraction network in a vision model, typically a pretrained CNN (like ResNet) or transformer (like ViT). The backbone processes raw images into rich feature representations that downstream heads (detection, segmentation) consume.',
+        context: 'We extract features from ResNet50 layer4 (2048 channels) for Faster R-CNN and from the ViT image encoder (1024 channels) for SAM. These backbone features are what we analyze for interpretability.'
+      },
+      'forward-hooks': {
+        title: 'Forward Hooks',
+        definition: 'A PyTorch mechanism that registers callback functions on model layers. During the forward pass, hooks intercept layer inputs/outputs without modifying the model code, enabling feature extraction and activation analysis.',
+        context: 'We use forward hooks to capture intermediate activations during inference. By hooking backbone.body.layer4 in Faster R-CNN, we extract the 2048-channel feature tensor without changing the model architecture.'
+      },
+      'channel-selectivity': {
+        title: 'Channel Selectivity',
+        definition: 'A measure of how much a feature channel responds differently to target objects versus background. High selectivity means the channel activates strongly for objects of interest and weakly for everything else.',
+        context: 'We compute selectivity by comparing mean activation inside pot regions versus background regions. Channels with high positive selectivity are "pot detectors"; negative selectivity indicates background preference.'
+      },
+      'pca': {
+        title: 'PCA (Principal Component Analysis)',
+        definition: 'A dimensionality reduction technique that finds orthogonal axes of maximum variance in high-dimensional data. It projects data onto fewer dimensions while preserving as much information as possible.',
+        context: 'With 2048 channels, direct visualization is impossible. PCA reduces to 3 components mapped to RGB, letting us see feature similarity spatially—pixels with similar colors have similar representations.'
+      },
+      'fine-tuning': {
+        title: 'Fine-Tuning',
+        definition: 'Continuing to train a pretrained model on a new, typically smaller dataset. The model starts with learned representations (from ImageNet, COCO, etc.) and adapts them to the target domain, often achieving better results than training from scratch.',
+        context: 'Comparing pretrained vs. fine-tuned features reveals what adaptation changes. Pot-selective channels show the largest differences, while general feature detectors (edges, textures) remain stable.'
+      },
+      'geotiff': {
+        title: 'GeoTIFF',
+        definition: 'A TIFF image format that embeds geographic metadata (coordinate system, spatial extent, resolution). GeoTIFFs can be loaded into GIS software like QGIS with correct positioning on Earth\'s surface.',
+        context: 'We save extracted features as multi-band GeoTIFFs, preserving the orthomosaic\'s georeferencing. This enables spatial analysis in GIS—overlaying features with detection results, field boundaries, or other layers.'
+      }
+    };
+
+    // Modal functionality
+    const modal = document.getElementById('glossary-modal');
+    const titleEl = document.getElementById('glossary-term-title');
+    const definitionEl = document.getElementById('glossary-term-definition');
+    const contextEl = document.getElementById('glossary-term-context');
+    const closeBtn = modal.querySelector('.modal-close');
+
+    // Open modal on term click
+    document.querySelectorAll('.glossary-term').forEach(term => {
+      term.addEventListener('click', () => {
+        const termId = term.dataset.term;
+        const termData = glossaryTerms[termId];
+
+        if (termData) {
+          titleEl.textContent = termData.title;
+          definitionEl.textContent = termData.definition;
+          contextEl.textContent = termData.context;
+          modal.classList.add('active');
+        }
+      });
+    });
+
+    // Close modal
+    closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('active');
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') modal.classList.remove('active');
+    });
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>
