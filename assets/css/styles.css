@@ -232,6 +232,14 @@ section p {
 
 .card h3 {
   margin-bottom: 0.5rem;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: filter 0.3s ease;
+}
+
+.card:hover h3 {
+  filter: brightness(1.2);
 }
 
 .card .meta {
