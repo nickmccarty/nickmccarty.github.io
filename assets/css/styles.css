@@ -544,6 +544,20 @@ article blockquote {
   font-style: italic;
 }
 
+article .responsive-img {
+    max-width: 100%; /* Prevents the image from exceeding its container width */
+    height: auto;    /* Maintains aspect ratio */
+    display: block;  /* Removes tiny gaps under the image */
+    padding-bottom: 30px;
+}
+
+@media (max-width: 600px) {
+    article .responsive-img {
+        width: 90%; /* Slight padding from the edges on small screens */
+        margin: 0 auto; /* Center it */
+    }
+}
+
 /* Back Link */
 .back-link {
   display: inline-flex;
@@ -773,6 +787,26 @@ footer .social-links a:hover {
   background: rgba(237, 70, 195, 0.1);
   border: 1px solid var(--accent-pink);
   color: var(--accent-pink);
+}
+
+/* Note Box */
+.note-box {
+  margin: 2.5rem 0;
+  padding: 1.25rem 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  border-radius: 8px;
+  border-left: 3px solid var(--accent-cyan);
+  background: linear-gradient(135deg, rgba(87, 206, 242, 0.08), rgba(168, 85, 247, 0.06));
+  color: var(--text-secondary);
+}
+
+.note-box strong {
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .note-box {
+  background: linear-gradient(135deg, rgba(9, 105, 218, 0.08), rgba(139, 92, 246, 0.06));
 }
 
 /* Related Post Card */
