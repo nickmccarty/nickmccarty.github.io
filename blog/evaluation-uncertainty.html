@@ -174,7 +174,7 @@
         <h1 style="font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.2; margin-bottom: 0.75rem;">Evaluation Uncertainty, Calibration, and Harness Reliability</h1>
         <div class="meta">April 29, 2026 &bull; 17 min read</div>
         <p style="margin-top: 1rem; font-size: 1.05rem; color: var(--text-secondary); line-height: 1.7;">
-          A point score from an LLM judge is not a measurement — it is a sample from a distribution. Conformal prediction converts that sample into a calibrated interval with guaranteed coverage. Fact-level confidence calibration reduces hallucinations without any retrieval system. Agent-as-a-Judge outperforms LLM-as-a-Judge. And the externalization framework paper (arXiv:2604.08224v1) provides the theoretical account of why the harness architecture — memory, skills, protocols, harness engineering — is not an engineering preference but a cognitive necessity.
+          A point score from an LLM judge is not a measurement — it is a sample from a distribution. Conformal prediction converts that sample into a calibrated interval with guaranteed coverage. Fact-level confidence calibration reduces hallucinations without any retrieval system. Agent-as-a-Judge outperforms LLM-as-a-Judge. And the externalization framework paper (<a href="https://arxiv.org/abs/2604.08224v1" target="_blank" rel="noopener">arXiv:2604.08224v1</a>) provides the theoretical account of why the harness architecture — memory, skills, protocols, harness engineering — is not an engineering preference but a cognitive necessity.
         </p>
       </header>
 
@@ -193,7 +193,7 @@
       <!-- ============================================================ -->
       <h2>Conformal Prediction for LLM Judges</h2>
       <p>
-        Conformal prediction (arXiv:2509.18658v1) was introduced in Post 13 as part of the judge reliability cluster. Here the focus is on the statistical machinery and its practical implications for the harness threshold decision.
+        Conformal prediction (<a href="https://arxiv.org/abs/2509.18658v1" target="_blank" rel="noopener">arXiv:2509.18658v1</a>) was introduced in Post 13 as part of the judge reliability cluster. Here the focus is on the statistical machinery and its practical implications for the harness threshold decision.
       </p>
       <p>
         The standard conformal prediction framework works as follows. Given a calibration set of (input, true_score) pairs and a new input with model score <em>ŝ</em>, conformal prediction constructs a prediction interval [<em>ŝ</em> − q, <em>ŝ</em> + q] where q is chosen such that the interval contains the true score with probability at least 1 − α on future inputs. This guarantee is distribution-free — it holds regardless of the model's score distribution, without any parametric assumptions.
@@ -207,7 +207,7 @@
       </div>
 
       <p>
-        The companion paper on VLM judges (arXiv:2604.25235v1) extends this analysis to vision-language models and identifies a failure mode called <em>ranking-scoring decoupling</em>: judges achieve high ranking correlation (correctly identifying which output is better) while producing wide, uninformative absolute intervals. This means you can trust a VLM judge to say "A is better than B" but not to say "A scores 7.5 out of 10." Interval width is driven by task difficulty and annotation quality — on clean, multi-annotator benchmarks, intervals are 4.5× narrower than on noisy single-annotator benchmarks.
+        The companion paper on VLM judges (<a href="https://arxiv.org/abs/2604.25235v1" target="_blank" rel="noopener">arXiv:2604.25235v1</a>) extends this analysis to vision-language models and identifies a failure mode called <em>ranking-scoring decoupling</em>: judges achieve high ranking correlation (correctly identifying which output is better) while producing wide, uninformative absolute intervals. This means you can trust a VLM judge to say "A is better than B" but not to say "A scores 7.5 out of 10." Interval width is driven by task difficulty and annotation quality — on clean, multi-annotator benchmarks, intervals are 4.5× narrower than on noisy single-annotator benchmarks.
       </p>
       <p>
         The ranking-scoring decoupling has a direct harness implication. The Wiggum Loop's threshold decision uses absolute scores (<code>score_r1 ≥ 8.0</code>). If the evaluator is reliable for ranking but not for absolute scoring, the threshold decision is less reliable than the revision decision. The harness could exploit this asymmetry: use absolute scores to decide whether to pass or fail, but use relative comparisons (which revision is better?) to select among multiple revision candidates.
@@ -215,7 +215,7 @@
 
       <h3>Verbal Uncertainty Estimation</h3>
       <p>
-        The personalized judge paper (arXiv:2406.11657v1) takes a different approach: instead of post-hoc interval construction, it has the evaluator express uncertainty verbally during evaluation. When the judge's confidence is below a threshold, it returns "uncertain" rather than a score; downstream decisions treat "uncertain" outputs as requiring human review. On binary evaluation tasks with this filter applied, agreement with ground truth exceeds 80% on high-certainty samples — and matches or surpasses third-party human performance.
+        The personalized judge paper (<a href="https://arxiv.org/abs/2406.11657v1" target="_blank" rel="noopener">arXiv:2406.11657v1</a>) takes a different approach: instead of post-hoc interval construction, it has the evaluator express uncertainty verbally during evaluation. When the judge's confidence is below a threshold, it returns "uncertain" rather than a score; downstream decisions treat "uncertain" outputs as requiring human review. On binary evaluation tasks with this filter applied, agreement with ground truth exceeds 80% on high-certainty samples — and matches or surpasses third-party human performance.
       </p>
       <p>
         The practical version of this for the harness: if the evaluator's score falls in a narrow band around the threshold (e.g., [7.5, 8.5] for a threshold of 8.0), add a verbal uncertainty probe — a second prompt asking "How confident are you in this score, and what would need to change to push it above/below the threshold?" This uncertainty probe can surface the specific dimensional gap that the point score obscures.
@@ -224,7 +224,7 @@
       <!-- ============================================================ -->
       <h2>Agent-as-a-Judge: Evaluating Agents with Agents</h2>
       <p>
-        Agent-as-a-Judge (arXiv:2410.10934v2) extends LLM-as-a-Judge by replacing the single-model evaluator with an agentic system that can reason about intermediate steps, access tools, and produce structured feedback. The DevAI benchmark covers 55 realistic automated AI development tasks with 365 hierarchical user requirements. On this benchmark, Agent-as-a-Judge dramatically outperforms LLM-as-a-Judge and achieves reliability comparable to human evaluation.
+        Agent-as-a-Judge (<a href="https://arxiv.org/abs/2410.10934v2" target="_blank" rel="noopener">arXiv:2410.10934v2</a>) extends LLM-as-a-Judge by replacing the single-model evaluator with an agentic system that can reason about intermediate steps, access tools, and produce structured feedback. The DevAI benchmark covers 55 realistic automated AI development tasks with 365 hierarchical user requirements. On this benchmark, Agent-as-a-Judge dramatically outperforms LLM-as-a-Judge and achieves reliability comparable to human evaluation.
       </p>
       <p>
         The failure mode that motivates Agent-as-a-Judge is the same one that experiment-03 exposed: a single-model evaluator cannot reliably assess multi-step agentic outputs because it lacks access to the intermediate state. When the harness's Qwen3-Coder:30b evaluator scored T_A runs, it could only see the final synthesis output — not the retrieval quality, the query plan, or the research cache state at each stage. Its dimensional scores for depth and specificity were inferred from the output text alone.
@@ -237,7 +237,7 @@
       <!-- ============================================================ -->
       <h2>Fact-Level Calibration and Self-Correction</h2>
       <p>
-        The fact-level calibration paper (arXiv:2411.13343v1) addresses a different aspect of evaluation quality: the calibration of the producer's self-assessed confidence. Current confidence calibration methods assign a single scalar to the entire response. This scalar fails to capture partial correctness in long-form generation — a response that is correct on four of five enumerated items is not well-characterized by a single confidence value.
+        The fact-level calibration paper (<a href="https://arxiv.org/abs/2411.13343v1" target="_blank" rel="noopener">arXiv:2411.13343v1</a>) addresses a different aspect of evaluation quality: the calibration of the producer's self-assessed confidence. Current confidence calibration methods assign a single scalar to the entire response. This scalar fails to capture partial correctness in long-form generation — a response that is correct on four of five enumerated items is not well-characterized by a single confidence value.
       </p>
       <p>
         The Fact-Level Calibration framework calibrates confidence to relevance-weighted correctness at the individual atomic fact level. The associated method, Confidence-Guided Fact-level Self-Correction (ConFix), uses these fact-level confidence signals to selectively revise low-confidence facts without external retrieval. Evaluated across four datasets and six models, ConFix demonstrably reduces hallucinations.
@@ -248,7 +248,7 @@
 
       <h3>Bayesian Prompt Ensembles for Multimodal Calibration</h3>
       <p>
-        The MMB paper (arXiv:2509.08777v1) applies a Bayesian prompt ensemble approach to calibrate multimodal evaluators. Standard prompt ensembling (average scores across multiple prompt variants) fails for multimodal evaluation because the judge's score distribution shifts with image domain. MMB assigns prompt weights dynamically based on image clustering — different prompt weights for different visual contexts — achieving superior calibration on HPSv2 and MJBench.
+        The MMB paper (<a href="https://arxiv.org/abs/2509.08777v1" target="_blank" rel="noopener">arXiv:2509.08777v1</a>) applies a Bayesian prompt ensemble approach to calibrate multimodal evaluators. Standard prompt ensembling (average scores across multiple prompt variants) fails for multimodal evaluation because the judge's score distribution shifts with image domain. MMB assigns prompt weights dynamically based on image clustering — different prompt weights for different visual contexts — achieving superior calibration on HPSv2 and MJBench.
       </p>
       <p>
         For text-only harnesses, the multimodal complexity reduces but the core insight applies: a single evaluation prompt may be systematically miscalibrated for certain task types. The autoresearch loop discovered this empirically — T_B tasks consistently scored lower despite comparable output quality, suggesting the evaluation prompt weights the best_practices task type differently. A task-type-conditioned prompt ensemble would separate this confound from genuine quality differences.
@@ -257,7 +257,7 @@
       <!-- ============================================================ -->
       <h2>Uncertainty in Multimodal Models</h2>
       <p>
-        Uncertainty-o (arXiv:2506.07575v1) introduces a model-agnostic framework for estimating uncertainty across diverse large multimodal models regardless of architecture, modality, or capability. Evaluated across 18 benchmarks and 10 models (open- and closed-source), the framework provides reliable uncertainty estimates for hallucination detection, hallucination mitigation, and uncertainty-aware Chain-of-Thought reasoning.
+        Uncertainty-o (<a href="https://arxiv.org/abs/2506.07575v1" target="_blank" rel="noopener">arXiv:2506.07575v1</a>) introduces a model-agnostic framework for estimating uncertainty across diverse large multimodal models regardless of architecture, modality, or capability. Evaluated across 18 benchmarks and 10 models (open- and closed-source), the framework provides reliable uncertainty estimates for hallucination detection, hallucination mitigation, and uncertainty-aware Chain-of-Thought reasoning.
       </p>
       <p>
         The three design questions Uncertainty-o addresses translate directly to the harness context: (1) How do you unify uncertainty evaluation across different models in the portfolio? (2) How do you prompt models to reveal uncertainty? (3) How do you quantify uncertainty for downstream decisions? The harness currently answers none of these questions — it uses a single point score and a binary threshold. Uncertainty-o's framework provides a path to all three.
@@ -271,7 +271,7 @@
       <!-- ============================================================ -->
       <h2>Inference Engine Reliability: Where the Bugs Are</h2>
       <p>
-        The LLM inference engine bugs paper (arXiv:2506.09713v2) provides an empirical analysis of bugs across five widely-used LLM inference engines based on real-world data. The four most common bug classes, in order of prevalence: memory leaks, out-of-memory errors, incorrect tensor shapes or sizes, and performance degradation from suboptimal configuration settings.
+        The LLM inference engine bugs paper (<a href="https://arxiv.org/abs/2506.09713v2" target="_blank" rel="noopener">arXiv:2506.09713v2</a>) provides an empirical analysis of bugs across five widely-used LLM inference engines based on real-world data. The four most common bug classes, in order of prevalence: memory leaks, out-of-memory errors, incorrect tensor shapes or sizes, and performance degradation from suboptimal configuration settings.
       </p>
       <p>
         These bug classes map directly to the failure modes in the harness's hardware substrate. Memory leaks in the inference engine accumulate over long sessions — the Keep-Alive Budget (A4) guards against this by cycling model processes after a configured number of calls. Out-of-memory errors are the crash signature of KV cache overflow — the Surgical Compressor (C2) guards against this by fitting documents to context budget before the inference call. Incorrect tensor shapes appear as silent numerical errors or NaN outputs — the harness's output validation step catches these as format conformance failures. Performance degradation from configuration settings is the least visibly failure mode: the model responds but at 3-5× normal latency, which compounds in the Wiggum revision loop.
@@ -284,7 +284,7 @@
       <!-- ============================================================ -->
       <h2>The Externalization Framework: Why the Harness Is the Architecture</h2>
       <p>
-        The most significant paper in this cluster is "Externalization in LLM Agents: A Unified Review of Memory, Skills, Protocols and Harness Engineering" (arXiv:2604.08224v1). It provides the theoretical framework that explains why the harness series arrived at its architecture — not from engineering preference, but from a cognitive necessity.
+        The most significant paper in this cluster is "Externalization in LLM Agents: A Unified Review of Memory, Skills, Protocols and Harness Engineering" (<a href="https://arxiv.org/abs/2604.08224v1" target="_blank" rel="noopener">arXiv:2604.08224v1</a>). It provides the theoretical framework that explains why the harness series arrived at its architecture — not from engineering preference, but from a cognitive necessity.
       </p>
       <p>
         The paper's central argument: agent capabilities are increasingly externalized to transform hard cognitive burdens into forms that models can solve more reliably. This externalization proceeds in a historical sequence: from <em>weights</em> (what the model knows parametrically) to <em>context</em> (what the model is given at inference time) to <em>harness</em> (the external infrastructure that manages what gets put in context, what gets stored, what gets routed, and what gets evaluated). The harness is not an add-on to the model — it is the primary locus of agent capability.
@@ -358,31 +358,31 @@
           <tr>
             <td>1</td>
             <td>Wrap evaluator point scores in conformal prediction intervals; use interval midpoint for threshold decisions and interval width as a reliability gate</td>
-            <td>arXiv:2509.18658v1</td>
+            <td><a href="https://arxiv.org/abs/2509.18658v1" target="_blank" rel="noopener">arXiv:2509.18658v1</a></td>
             <td>Current: raw point score vs. threshold; no uncertainty quantification</td>
           </tr>
           <tr>
             <td>2</td>
             <td>Add verbal uncertainty probe when score falls within ±0.5 of threshold; surface the specific claim that is driving low confidence</td>
-            <td>arXiv:2406.11657v1</td>
+            <td><a href="https://arxiv.org/abs/2406.11657v1" target="_blank" rel="noopener">arXiv:2406.11657v1</a></td>
             <td>Current: binary PASS/FAIL on point score; no borderline handling</td>
           </tr>
           <tr>
             <td>3</td>
             <td>Extend revision prompt from dimensional feedback to claim-level feedback using ConFix-style fact-level confidence signals</td>
-            <td>arXiv:2411.13343v1</td>
+            <td><a href="https://arxiv.org/abs/2411.13343v1" target="_blank" rel="noopener">arXiv:2411.13343v1</a></td>
             <td>Current: revision prompt targets dimensions; does not identify specific low-confidence claims</td>
           </tr>
           <tr>
             <td>4</td>
             <td>Instrument the inference engine with stage-level latency tracing; distinguish model latency from engine overhead from configuration degradation</td>
-            <td>arXiv:2506.09713v2</td>
+            <td><a href="https://arxiv.org/abs/2506.09713v2" target="_blank" rel="noopener">arXiv:2506.09713v2</a></td>
             <td>Current: Perfetto tracing is implemented but not systematically monitored for engine overhead patterns</td>
           </tr>
           <tr>
             <td>5</td>
             <td>Frame harness development as externalization engineering: each new pattern externalizes a cognitive burden previously handled inside the model's context window</td>
-            <td>arXiv:2604.08224v1</td>
+            <td><a href="https://arxiv.org/abs/2604.08224v1" target="_blank" rel="noopener">arXiv:2604.08224v1</a></td>
             <td>This is the architectural frame the series has been building toward — now grounded in the literature</td>
           </tr>
         </tbody>

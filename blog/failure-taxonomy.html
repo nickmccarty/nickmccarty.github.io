@@ -239,6 +239,9 @@
           average 0.9 points higher than those rated by a separate evaluator using the same rubric.
           The gap is largest on <em>Groundedness</em>.
         </p>
+        <div class="callout pink">
+          <p><strong>Academic grounding:</strong> A systematic evaluation of 13 LLM judges (<a href="https://arxiv.org/abs/2406.12624v6" target="_blank" rel="noopener">arXiv:2406.12624v6</a>) found that only the largest models achieve reasonable alignment with human evaluators&mdash;yet still lag inter-human agreement by up to five points. A companion prompt-sensitivity study found that eight of nine judges show always-A position bias under semantically equivalent prompt paraphrases. The harness&rsquo;s Model Role Separation (A2) and Evaluator Pool (A3) patterns are direct responses to both findings.</p>
+        </div>
         <span class="fix-ref">Fixed by: Model Role Separation (A2), Evaluator Pool (A3), Dimensional Rubric (C2)</span>
       </div>
 
@@ -293,6 +296,9 @@
           exceeding effective context length. The fix replaced wholesale injection with
           gap-targeted extraction (8K cap), selectively stitching relevant sections.
         </p>
+        <div class="callout pink">
+          <p><strong>Academic grounding:</strong> An empirical analysis of bugs across five widely-used LLM inference engines (<a href="https://arxiv.org/abs/2506.09713v2" target="_blank" rel="noopener">arXiv:2506.09713v2</a>) identifies memory leaks, out-of-memory (OOM) errors, incorrect tensor shapes, and configuration-induced performance degradation as the four most prevalent bug classes in production deployments&mdash;exactly the failure modes the harness&rsquo;s Keep-Alive Budget (A4) and Surgical Compressor (C3) were designed to prevent.</p>
+        </div>
         <span class="fix-ref">Fixed by: Keep-Alive Budget (A4), Semantic Chunker (B4), Surgical Compressor (C3)</span>
       </div>
 

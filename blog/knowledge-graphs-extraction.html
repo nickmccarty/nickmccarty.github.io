@@ -194,7 +194,7 @@
       <!-- ============================================================ -->
       <h2>Document Semantic Graphs</h2>
       <p>
-        The document semantic graph paper (arXiv:2206.07296v2) directly addresses this problem in the context of knowledge selection for grounded dialogue systems. The key insight: background knowledge documents contain internal semantic connections among sentences that existing sentence-ranking approaches ignore. By converting documents into semantic graphs — nodes are sentences/concepts, edges are semantic relationships — and performing joint sentence-level and concept-level selection, the system can retrieve not just relevant sentences but relevant clusters of connected sentences.
+        The document semantic graph paper (<a href="https://arxiv.org/abs/2206.07296v2" target="_blank" rel="noopener">arXiv:2206.07296v2</a>) directly addresses this problem in the context of knowledge selection for grounded dialogue systems. The key insight: background knowledge documents contain internal semantic connections among sentences that existing sentence-ranking approaches ignore. By converting documents into semantic graphs — nodes are sentences/concepts, edges are semantic relationships — and performing joint sentence-level and concept-level selection, the system can retrieve not just relevant sentences but relevant clusters of connected sentences.
       </p>
       <p>
         The approach uses a multi-task learning framework that jointly optimizes sentence-level ranking (which sentences are relevant?) and concept-level selection (which concepts connect the relevant sentences?). On the HollE dataset, this outperforms sentence selection baselines on both knowledge selection accuracy and end-to-end response generation quality. On the WoW (Wizard of Wikipedia) dataset, the method generalizes to unseen topics — evidence that the graph structure captures transferable retrieval patterns rather than task-specific features.
@@ -207,7 +207,7 @@
       <!-- ============================================================ -->
       <h2>Knowledge-Aware Conversation with Augmented Graphs</h2>
       <p>
-        The knowledge-aware chatting machine paper (arXiv:1903.10245v4) addresses a complementary problem: how to fuse structured knowledge (graph triples: subject, predicate, object) with unstructured knowledge (document text) for response generation. The key observation: graph paths narrow down vertex candidates — they constrain the space of relevant facts — while document texts provide the rich, expressive content needed for high-quality synthesis. Neither representation alone is sufficient.
+        The knowledge-aware chatting machine paper (<a href="https://arxiv.org/abs/1903.10245v4" target="_blank" rel="noopener">arXiv:1903.10245v4</a>) addresses a complementary problem: how to fuse structured knowledge (graph triples: subject, predicate, object) with unstructured knowledge (document text) for response generation. The key observation: graph paths narrow down vertex candidates — they constrain the space of relevant facts — while document texts provide the rich, expressive content needed for high-quality synthesis. Neither representation alone is sufficient.
       </p>
       <p>
         The augmented knowledge graph combines triples from structured KG sources with text excerpts from documents, linked by shared concepts and named entities. A knowledge selector first narrows the graph using path traversal; the knowledge-aware response generator then synthesizes a response using both the selected graph paths and the linked text excerpts. The explainability benefit: the reasoning path through the graph is a transparent record of which facts and relationships contributed to the response.
@@ -232,7 +232,7 @@
       <!-- ============================================================ -->
       <h2>Multi-Modal Extraction: OpenChemIE</h2>
       <p>
-        OpenChemIE (arXiv:2404.01462v1) addresses the hard case of structured extraction: chemistry reaction data distributed across text, tables, and figures within a single document. The pipeline operates in two stages: extract information from each modality independently (text extractor, table parser, figure analyzer), then integrate the modality-level results into a unified list of reactions.
+        OpenChemIE (<a href="https://arxiv.org/abs/2404.01462v1" target="_blank" rel="noopener">arXiv:2404.01462v1</a>) addresses the hard case of structured extraction: chemistry reaction data distributed across text, tables, and figures within a single document. The pipeline operates in two stages: extract information from each modality independently (text extractor, table parser, figure analyzer), then integrate the modality-level results into a unified list of reactions.
       </p>
       <p>
         Performance metrics: F1 = 69.5% on a dataset annotated with R-groups (the hardest chemistry extraction task, involving complex substituent patterns); direct comparison accuracy = 64.3% against Reaxys, a commercial chemistry database maintained by expert annotators. These numbers are far below the precision expected of a professional chemist — but the value proposition is scale and automation, not perfection. OpenChemIE can process thousands of papers per hour; human experts cannot.
@@ -244,7 +244,7 @@
       <!-- ============================================================ -->
       <h2>Lightweight Metadata Extraction: MeXtract</h2>
       <p>
-        MeXtract (arXiv:2510.06889v1) introduces a family of lightweight language models (0.5B to 3B parameters, fine-tuned from Qwen 2.5) for metadata extraction from scientific papers. On the MOLE benchmark, MeXtract achieves state-of-the-art performance and effectively transfers to unseen schemas — evidence that a small, fine-tuned extraction model generalizes beyond its training distribution.
+        MeXtract (<a href="https://arxiv.org/abs/2510.06889v1" target="_blank" rel="noopener">arXiv:2510.06889v1</a>) introduces a family of lightweight language models (0.5B to 3B parameters, fine-tuned from Qwen 2.5) for metadata extraction from scientific papers. On the MOLE benchmark, MeXtract achieves state-of-the-art performance and effectively transfers to unseen schemas — evidence that a small, fine-tuned extraction model generalizes beyond its training distribution.
       </p>
       <p>
         The case for lightweight extraction models in the harness is straightforward: metadata extraction does not require the depth reasoning that the producer needs for synthesis. A 0.5B MeXtract-style model extracting author, date, venue, topic tags, and key claims from fetched papers would add structured retrieval hooks to every document without consuming the VRAM budget needed for the producer and evaluator. This is the SLM efficiency insight from Post 15 applied to the extraction role: match the model to the role's binding constraint.
@@ -337,31 +337,31 @@
           <tr>
             <td>1</td>
             <td>Add a graph layer to the Dual-Backend Memory Store; convert ingested documents to entity-relationship triples at ingestion time</td>
-            <td>arXiv:2206.07296v2, arXiv:1903.10245v4</td>
+            <td><a href="https://arxiv.org/abs/2206.07296v2" target="_blank" rel="noopener">arXiv:2206.07296v2</a>, <a href="https://arxiv.org/abs/1903.10245v4" target="_blank" rel="noopener">arXiv:1903.10245v4</a></td>
             <td>Current memory is a flat vector store + SQLite; no cross-document relationship encoding</td>
           </tr>
           <tr>
             <td>2</td>
             <td>Implement graph-constrained retrieval: use graph path traversal to narrow the candidate set before dense vector retrieval</td>
-            <td>arXiv:1903.10245v4</td>
+            <td><a href="https://arxiv.org/abs/1903.10245v4" target="_blank" rel="noopener">arXiv:1903.10245v4</a></td>
             <td>Current retrieval is unconstrained nearest-neighbor; no concept-level pre-filtering</td>
           </tr>
           <tr>
             <td>3</td>
             <td>Use a lightweight extraction model (0.5B–3B parameters) for structured metadata extraction at ingestion; reserve the planner model for inferential annotation</td>
-            <td>arXiv:2510.06889v1</td>
+            <td><a href="https://arxiv.org/abs/2510.06889v1" target="_blank" rel="noopener">arXiv:2510.06889v1</a></td>
             <td>Current: all annotation done by glm4:9b; over-parameterized for surface extraction tasks</td>
           </tr>
           <tr>
             <td>4</td>
             <td>Upgrade the Novelty Gate to check conceptual overlap in the graph store, not just embedding similarity</td>
-            <td>arXiv:2206.07296v2</td>
+            <td><a href="https://arxiv.org/abs/2206.07296v2" target="_blank" rel="noopener">arXiv:2206.07296v2</a></td>
             <td>Current Novelty Gate uses cosine similarity; misses semantic equivalence with surface variation</td>
           </tr>
           <tr>
             <td>5</td>
             <td>For domain-specific corpora with figures and tables, deploy multi-modal extraction pipelines; graph construction can draw on figure-derived data not present in text</td>
-            <td>arXiv:2404.01462v1</td>
+            <td><a href="https://arxiv.org/abs/2404.01462v1" target="_blank" rel="noopener">arXiv:2404.01462v1</a></td>
             <td>Current extraction is text-only; figures and tables are ignored</td>
           </tr>
         </tbody>
