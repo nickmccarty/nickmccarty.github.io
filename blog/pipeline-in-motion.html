@@ -395,7 +395,16 @@ Round 2 → score 8.3 → PASS</code></pre>
           <span class="read-more">Read more &rarr;</span>
         </a>
       </div>
-    
+
+      <h2>What the Literature Leaves Open</h2>
+      <p>Several questions raised by this body of research remain unresolved — and bear directly on how the harness pipeline should be instrumented and refined:</p>
+      <ul style="margin: 1rem 0 1.5rem 1.5rem; line-height: 2.1;">
+        <li>Are there runtime signals observable during Stage 2 planning — query decomposition time, sub-query count, entity overlap between sub-queries — that reliably predict whether the downstream failure will be a planning failure (F2) or a retrieval failure (F1), and can the harness reroute before committing to a search strategy?</li>
+        <li>The Novelty Gate filters redundant single-hop retrievals effectively, but does it systematically miss multi-hop reasoning chains where each individual hop looks novel while the combined inference path was already traversed in a prior round?</li>
+        <li>At what point does planning overhead — the 12–18 second latency tax of Stage 2 — become unjustifiable relative to retrieval quality gains, and is there a query-complexity threshold below which skipping the planner produces equivalent output at lower cost?</li>
+        <li>Could the JSONL audit log produced by a full pipeline trace — with per-stage latency, retrieval hit rate, Novelty Gate decisions, and Wiggum scores — be used to train a lightweight planner that learns which decomposition strategies succeed on which query types?</li>
+        <li>When the harness operates in a cache-sparse regime (early in a research session, few prior retrievals) versus a cache-dense regime (late session, large memory store), should the retrieval strategy change — and how should the pipeline detect which regime it is in?</li>
+      </ul>
 
       <div class="post-pagination">
         <a href="./harness-thesis.html" class="pagination-card pagination-prev">

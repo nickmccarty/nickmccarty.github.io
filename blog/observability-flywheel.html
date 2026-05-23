@@ -372,7 +372,14 @@ def extract_dpo_dataset(runs_path: str) -> list[dict]:
         The full pattern catalog is expanding into a book — <em>Agentic Harness Engineering: Full-Stack Open Source Scaffolding Using Python and TypeScript</em> — with deeper implementation notes, consequences tables, and cross-references for all twenty-seven patterns. Each pattern documented here is a chapter in that catalog.
       </p>
 
-    
+      <h2>What the Literature Leaves Open</h2>
+      <p>Several questions raised by this body of research remain unresolved — and bear directly on how the harness flywheel should be designed and governed:</p>
+      <ul style="margin: 1rem 0 1.5rem 1.5rem; line-height: 2.1;">
+        <li>How quickly does DPO fine-tuning on harness-generated preference pairs degrade on out-of-distribution tasks — and does the harness need a held-out task battery to detect when flywheel-trained weights have overfit to the autoresearch distribution?</li>
+        <li>When the reward signal used to generate preference pairs is itself a harness-evaluated score, how many flywheel cycles does it take before reward hacking emerges — where the producer learns to maximize Wiggum scores rather than actual output quality?</li>
+        <li>What is the minimum number of preference pairs required before a DPO fine-tuning run produces a statistically measurable improvement in harness score distributions, and does that threshold vary by model size?</li>
+        <li>During early flywheel cycles — when the producer is weak, outputs are low-quality, and preference pairs are noisy — does training on this data accelerate or impede eventual quality convergence, and how should the harness handle the bootstrapping period?</li>
+      </ul>
 
       <div class="post-pagination">
         <a href="./security-patterns.html" class="pagination-card pagination-prev">

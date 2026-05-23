@@ -370,6 +370,16 @@
 
     
 
+      <h2>What the Literature Leaves Open</h2>
+      <p>Several questions raised by this body of research remain unresolved — and bear directly on how the harness memory architecture should evolve:</p>
+      <ul style="margin: 1rem 0 1.5rem 1.5rem; line-height: 2.1;">
+        <li>How well do current extraction models handle implicit relationships — those inferable from context but not stated as subject-predicate-object triples — and what recall penalty does the harness pay by ignoring them?</li>
+        <li>At what graph density does graph-constrained retrieval begin to outperform flat embedding retrieval for multi-hop queries, and does the harness's current vector-first architecture cross that threshold on a mature knowledge store?</li>
+        <li>Can a 0.5B–3B model generalize schema structures across scientific subdomains without fine-tuning, or does the harness need domain-specific extraction checkpoints to avoid systematic entity-type errors?</li>
+        <li>When the graph store is partially invalidated — because a source document is retracted or superseded — how should the Novelty Gate distinguish genuinely new information from information that merely looks novel because its prior representation was removed?</li>
+        <li>What are the failure modes of concept-level deduplication in research corpora where the same idea is expressed across dozens of papers with varying terminology, and how much graph bloat does the current cosine-similarity gate accumulate over a full autoresearch run?</li>
+      </ul>
+
       <div class="post-pagination">
         <a href="./evaluation-uncertainty.html" class="pagination-card pagination-prev">
           <span class="pagination-dir">&larr;&nbsp;Previous</span>

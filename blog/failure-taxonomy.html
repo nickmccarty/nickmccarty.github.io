@@ -366,6 +366,15 @@ print(f"Revision regressions: {fails['regression'].sum()} / {len(fails)} fails")
         implementing a solution whose consequences were measured over subsequent runs.
       </p>
 
+      <h2>What the Literature Leaves Open</h2>
+      <p>Several questions raised by this body of research remain unresolved — and bear directly on how the harness should diagnose and respond to its own failures:</p>
+      <ul style="margin: 1rem 0 1.5rem 1.5rem; line-height: 2.1;">
+        <li>Can autoresearch reliably detect cross-class failure trade-offs — cases where reducing the F2 planning rate increases the F1 retrieval rate, or where tighter evaluation thresholds inflate F5 revision counts — without a controlled experiment for each combination?</li>
+        <li>Are there runtime features observable before a PASS/FAIL verdict (latency distribution, token budget consumption, retrieval hit rate) that predict which failure class is most likely, and could the harness reroute early rather than remediate late?</li>
+        <li>How will the F6 infrastructure bug class distribution shift as the harness adopts quantized models — where memory footprint and tensor-shape behavior differ substantially from full-precision inference — and does the Keep-Alive Budget need a corresponding recalibration?</li>
+        <li>What is the right counterfactual test for distinguishing genuine quality improvement from evaluator drift: if Wiggum scores rise but user-perceived output quality does not, which diagnostic in the taxonomy catches the discrepancy first?</li>
+      </ul>
+
       <div class="related-post">
         <span class="related-label">Up next in series</span>
         <a href="./the-wiggum-loop.html">

@@ -388,8 +388,18 @@
         </tbody>
       </table>
 
+      <h2>What the Literature Leaves Open</h2>
+      <p>Several questions raised by this body of research remain unresolved — and bear directly on how the harness should evolve:</p>
+      <ul style="margin: 1rem 0 1.5rem 1.5rem; line-height: 2.1;">
+        <li>What calibration-set size and composition does a harness need to produce statistically valid conformal prediction intervals across heterogeneous task types — does a single calibration pool generalize, or must each task type maintain its own?</li>
+        <li>At what task complexity does Agent-as-a-Judge begin to outperform LLM-as-a-Judge in a harness pipeline, and does that threshold shift with the number of Wiggum revision rounds?</li>
+        <li>How does ranking-scoring decoupling behave within a six-dimensional rubric — are some dimensions (Groundedness, Specificity) more vulnerable to wide intervals than others (Relevance, Structure)?</li>
+        <li>When the evaluator pool introduces variance across pool members, how does the harness distinguish genuine evaluator disagreement from genuine output ambiguity — and which warrants a revision, which warrants recalibration?</li>
+        <li>What is the right recalibration cadence for an evaluator pool operating on a self-improving harness, where the production score distribution shifts as the flywheel improves the producer?</li>
+      </ul>
 
-    
+
+
 
       <div class="post-pagination">
         <a href="./tool-use-planning.html" class="pagination-card pagination-prev">
