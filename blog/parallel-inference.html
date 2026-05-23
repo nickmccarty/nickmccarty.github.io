@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parallel Inference: Hardware Substrates for LLM Workloads | Nick McCarty</title>
+  <meta name="description" content="GPU memory hierarchy, SM architecture, llama.cpp, vLLM, GGUF quantization, and KV cache pressure — the hardware realities that determine whether your agentic pipeline is fast or broken.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/parallel-inference.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Parallel Inference: Hardware Substrates for LLM Workloads">
+  <meta property="og:description" content="GPU memory hierarchy, SM architecture, llama.cpp, vLLM, GGUF quantization, and KV cache pressure — the hardware realities that determine whether your agentic pipeline is fast or broken. Grounded in Kirk &amp; Hwu's Programming Massively Parallel Processors.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/parallel-inference.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-22T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Parallel Inference: Hardware Substrates for LLM Workloads">
+  <meta name="twitter:description" content="GPU memory hierarchy, SM architecture, llama.cpp, vLLM, GGUF quantization, KV cache — the hardware realities behind agentic inference latency.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Parallel Inference: Hardware Substrates for LLM Workloads","description":"GPU memory hierarchy, SM architecture, llama.cpp, vLLM, GGUF quantization, and KV cache pressure — the hardware realities behind agentic inference.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-22","url":"https://nickmccarty.github.io/blog/parallel-inference.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout.purple { border-left-color: #a855f7; }
+    .callout.orange { border-left-color: #f97316; }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .pattern-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .pattern-card h4 {
+      margin: 0 0 0.5rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .pattern-card .pattern-meta {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.75rem;
+      font-style: italic;
+    }
+    .pattern-card p { margin: 0; font-size: 0.92rem; line-height: 1.65; }
+    .pattern-label {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      margin-right: 0.4rem;
+    }
+    .label-cyan { background: rgba(87,206,242,0.15); color: var(--accent-cyan); }
+    .label-pink { background: rgba(237,70,195,0.15); color: var(--accent-pink); }
+    .label-purple { background: rgba(168,85,247,0.15); color: #a855f7; }
+    .label-orange { background: rgba(249,115,22,0.15); color: #f97316; }
+    .label-green { background: rgba(52,211,153,0.15); color: #34d399; }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.55rem 0.85rem;
+      background: var(--bg-tertiary);
+      border-bottom: 2px solid var(--border-color);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    td {
+      padding: 0.55rem 0.85rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    tr:last-child td { border-bottom: none; }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+    #arch-svg text, #hier-svg text,
+    #runtime-svg text, #quant-svg text { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 22, 2026 &bull; 20 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">Parallel Inference: Hardware Substrates for LLM Workloads</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          GPU memory hierarchy, SM architecture, llama.cpp, vLLM, GGUF quantization, and KV cache pressure &mdash; the hardware realities that determine whether your agentic pipeline is fast or broken.
+        </p>
+
+      </header>
+
+      <p>
+        A cold <code>llama.cpp</code> process loading a 13B GGUF model from disk takes eight to fifteen seconds before it can process a single token. The same model, already resident in an Ollama keep-alive session, responds in under 200 milliseconds. The 50&times; latency gap is not a software artifact &mdash; it is physics. Model weights must traverse the PCIe bus from storage, fill VRAM, and warm up the SM register files before the first matmul can execute.
+      </p>
+
+      <p>
+        Most agentic pipeline practitioners treat this interface as a black box. They set <code>OLLAMA_KEEP_ALIVE=30m</code>, observe that cold starts hurt, and move on. But the black box is not opaque &mdash; and understanding what is inside it changes how you design the entire substrate layer. It explains why Pattern A4 (Keep-Alive Budget) exists, why A1 (Inference Shim) routes <code>llama.cpp</code> and <code>vLLM</code> differently, why the Wiggum Loop's evaluator must be a permanently-warm smaller model, and why RunTrace flame graphs show flat 400ms spans that have nothing to do with the model's reasoning quality.
+      </p>
+
+      <div class="callout">
+        <p>This post draws from Kirk &amp; Hwu's <em>Programming Massively Parallel Processors</em> (PMPP) for the GPU architecture fundamentals, and maps those fundamentals directly to the inference runtime landscape: <code>llama.cpp</code>, <code>vLLM</code>, GGUF quantization, and KV cache management.</p>
+      </div>
+
+      <h2>Two Design Philosophies, One Workload</h2>
+
+      <p>
+        The CPU and GPU represent fundamentally different answers to the same question: <em>how do you move data from memory to arithmetic units as fast as possible?</em> The CPU's answer is to make each memory access fast &mdash; large L3 caches, hardware prefetchers, out-of-order execution pipelines that can reorder hundreds of in-flight instructions to hide latency. A modern CPU might have 16 cores, each with a 2MB L2 cache and access to 32MB of shared LLC. It is optimized for low-latency, single-thread performance.
+      </p>
+
+      <p>
+        The GPU's answer is the opposite: don't try to hide individual memory latency &mdash; instead, maintain so many threads simultaneously that while one group waits on a DRAM fetch, a thousand others are executing. NVIDIA's GT200 architecture (the first to match a petaflop) deployed 30 Streaming Multiprocessors (SMs), each capable of holding 8 concurrent thread blocks and up to 1,024 threads, for a total of roughly 30,000 simultaneously-scheduled threads. The G80 before it sustained 86.4 GB/s of DRAM bandwidth, compared to the ~50 GB/s of contemporary CPU DDR3 systems &mdash; and the gap widens every GPU generation.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">CPU vs. GPU &mdash; Design Philosophy Comparison</div>
+        <svg id="arch-svg" width="100%" viewBox="0 0 700 340" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">CPU optimizes for single-thread latency via large caches and OOO execution. GPU optimizes for throughput via massive multithreading &mdash; thousands of threads hide DRAM latency by always having another warp ready to execute.</p>
+      </div>
+
+      <p>
+        For transformer inference, the GPU's design is nearly optimal. Every token generation step is dominated by matrix-vector multiplications: the query, key, and value projections for attention, the feed-forward up/down projections, and the final unembedding. These operations are embarrassingly parallel &mdash; each output element can be computed independently &mdash; and they are bandwidth-bound, not compute-bound. The bottleneck is how fast you can stream model weights from VRAM to the arithmetic units. GPU memory bandwidth is the key figure.
+      </p>
+
+      <div class="callout pink">
+        <p><strong>Callback &rarr; Post 4 (A1 Inference Shim):</strong> The shim's backend routing isn't just an abstraction convenience. <code>llama.cpp</code> and <code>vLLM</code> have fundamentally different latency profiles because they make different hardware tradeoffs. The shim needs to route to them differently because their response contracts &mdash; single-token streaming vs. full-response batched &mdash; reflect those hardware realities.</p>
+      </div>
+
+      <h2>The GPU Memory Hierarchy</h2>
+
+      <p>
+        PMPP Chapter 3 describes the GPU memory model in terms of four distinct levels, each with different scope, size, latency, and programmer-visibility. Understanding these four levels is the foundation for understanding why inference runtimes make the choices they do.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">GPU Memory Hierarchy &mdash; Scope, Size, and Bandwidth</div>
+        <svg id="hier-svg" width="100%" viewBox="0 0 700 340" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Memory closer to the compute units is faster but smaller and scoped to fewer threads. Global DRAM is the primary bottleneck &mdash; high bandwidth but 200&ndash;400 cycle access latency, tolerated by warp switching.</p>
+      </div>
+
+      <p>
+        <strong>Registers</strong> are the fastest storage on the chip, allocated per-thread by the compiler. The G80 gave each SM 8,192 32-bit registers; the GT200 doubled this to 16,384. They are invisible to any other thread and have near-zero access latency. For inference kernels, the per-thread accumulator registers hold the running dot-product sum during a matmul iteration.
+      </p>
+
+      <p>
+        <strong>Shared memory</strong> (also called scratchpad or L1-mode) is the most important optimization target for compute-bound kernels. It is partitioned per SM (48&ndash;96KB depending on architecture), visible to all threads within the same block, and accessible in roughly 4 cycles. Tiled matrix multiplication &mdash; the canonical CUDA optimization &mdash; works by having threads collaboratively load sub-tiles of the input matrices from global memory into shared memory, then computing from shared memory rather than issuing per-element global loads. This slashes global memory traffic by the tile size factor.
+      </p>
+
+      <p>
+        <strong>Global DRAM</strong> is the GPU's main memory: gigabytes of HBM (High Bandwidth Memory) on modern parts, accessible by all threads on the device. It is the bottleneck. A GT200 sustained 150 GB/s to its global DRAM; a modern H100 sustains 3.35 TB/s. Individual accesses to global memory incur 200&ndash;400 clock cycle latency, which the GPU tolerates not by caching but by switching to another warp whose operands are already available. This is the latency-tolerance mechanism, and it is the key to understanding why GPU inference scales with batch size in a way CPU inference does not.
+      </p>
+
+      <h2>Streaming Multiprocessors and Warp Execution</h2>
+
+      <p>
+        The SM is the GPU's fundamental compute unit. Each SM contains a set of Streaming Processors (SPs, the individual ALUs), a shared memory bank, a register file, and a warp scheduler. In PMPP's terminology, threads are organized into a three-level hierarchy: grids contain blocks, blocks contain threads. A block is assigned to exactly one SM for its entire lifetime; the SM's warp scheduler then time-slices execution across the 32-thread warps that make up that block.
+      </p>
+
+      <p>
+        The SPMD (Single Program, Multiple Data) execution model means all threads in a warp execute the same instruction at the same clock cycle, on different data. When a warp issues a load to global memory, the scheduler marks it as waiting and immediately schedules a different warp whose operands are ready. If the SM has enough resident warps, the DRAM latency is completely hidden &mdash; by the time the memory request returns, the scheduler has rotated through all other warps and is ready to resume the blocked one.
+      </p>
+
+      <p>
+        This is transparent scalability in action: the same kernel code that runs on an 8-SM consumer GPU automatically parallelizes across 30 SMs on a workstation GPU or 132 SMs on an H100 data-center card. The programmer specifies work in terms of thread counts; the hardware distributes blocks across however many SMs are available. Kirk &amp; Hwu call this the "write once, scale automatically" property, and it is precisely why <code>vLLM</code>'s attention kernels work on a 3090 and an H100 without code changes.
+      </p>
+
+      <div class="callout purple">
+        <p><strong>Warp divergence:</strong> when threads within the same warp take different branches (e.g., in a masked attention kernel), the warp must execute both paths serially, deactivating threads that shouldn't take each branch. Flash Attention 2 specifically restructures the attention computation to eliminate intra-warp divergence in the softmax normalization step &mdash; this is one of the primary reasons it achieves 2&ndash;4&times; throughput over naive attention implementation.</p>
+      </div>
+
+      <h2>The Inference Runtime Landscape</h2>
+
+      <p>
+        Two runtimes dominate the self-hosted LLM inference landscape. They represent different bets on the hardware tradeoffs above, and the right choice depends on VRAM headroom, concurrency requirements, and whether the deployment is a developer workstation or a production serving cluster.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">llama.cpp vs. vLLM &mdash; Runtime Architecture and Decision Routing</div>
+        <svg id="runtime-svg" width="100%" viewBox="0 0 700 380" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Runtime selection is primarily determined by VRAM headroom and concurrency requirements. Ollama wraps llama.cpp with process lifecycle management, implementing Pattern A4 at the OS level.</p>
+      </div>
+
+      <div class="two-col">
+        <div class="pattern-card">
+          <h4><span class="label-cyan pattern-label">llama.cpp</span> CPU-First Inference</h4>
+          <div class="pattern-meta">Quantized models &bull; Hybrid CPU+GPU &bull; Developer workstations</div>
+          <p>Written in C++ with no mandatory GPU dependency. Loads GGUF-format quantized models into system RAM, with optional GPU offload via <code>--n-gpu-layers N</code>. Each transformer block can be independently assigned to GPU or CPU. Single-user, streaming, low-latency per-token generation. Ollama wraps it with keep-alive process management.</p>
+        </div>
+        <div class="pattern-card">
+          <h4><span class="label-pink pattern-label">vLLM</span> GPU-First Serving</h4>
+          <div class="pattern-meta">Full-precision or AWQ/GPTQ quant &bull; Continuous batching &bull; Production clusters</div>
+          <p>GPU-only inference engine with PagedAttention for KV cache management and continuous (iterative) batching. Processes multiple concurrent requests by interleaving token generation at the per-step level. Achieves 2&ndash;4&times; higher throughput than static batching. Requires full model weights to fit in VRAM.</p>
+        </div>
+      </div>
+
+      <p>
+        <strong>Ollama</strong> is not a separate inference engine &mdash; it is a process manager and HTTP API layer wrapped around <code>llama.cpp</code>. Its key contribution to the harness is the <code>OLLAMA_KEEP_ALIVE</code> configuration, which maps directly to Pattern A4. When a model's keep-alive timer expires, Ollama unloads it from VRAM. The next request then pays the full cold-start cost: GGUF file read from disk, weight dequantization, VRAM allocation, SM register initialization. This is the 8&ndash;15 second gap that Pattern A4 exists to prevent.
+      </p>
+
+      <div class="callout">
+        <p><strong>Callback &rarr; Post 4 (A4 Keep-Alive Budget):</strong> The Keep-Alive Budget is not a quality-of-life feature &mdash; it is hardware cost amortization. The 8&ndash;15 second cold-start penalty is VRAM allocation time plus PCIe transfer time for model weights. A 7B Q4_K_M model is ~4GB on disk; at PCIe 4.0 x16 bandwidth (64 GB/s theoretical, ~20 GB/s practical for sequential reads), that's 200ms just for the transfer, before any compute begins.</p>
+      </div>
+
+      <h2>GGUF Quantization and the VRAM Budget</h2>
+
+      <p>
+        The GGUF format (GGML Unified Format, successor to GGML's earlier binary formats) stores quantized model weights in a self-describing container. Quantization reduces the number of bits used to represent each weight, trading a small amount of model quality for large reductions in memory footprint and, critically, in memory bandwidth consumption during inference.
+      </p>
+
+      <p>
+        The K-quant variants (<code>Q4_K_M</code>, <code>Q5_K_M</code>, <code>Q6_K</code>) use block quantization with two learned scales per 256-weight super-block. The <code>_M</code> suffix ("medium") applies higher-precision quantization to attention layers while using lower precision in feed-forward layers &mdash; a heuristic that targets the layers most sensitive to quantization error. This is materially different from uniform quantization and accounts for K-quants consistently outperforming naive Q4/Q5 on downstream benchmarks.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">VRAM Budget &mdash; Model Size &times; Quantization Level</div>
+        <svg id="quant-svg" width="100%" viewBox="0 0 700 340" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">VRAM requirements for four common model sizes across quantization tiers. Horizontal lines mark consumer GPU tiers. The KV cache (not shown) adds 1&ndash;8GB on top of model weights at typical batch sizes.</p>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Format</th>
+            <th>Bits/Weight</th>
+            <th>7B VRAM</th>
+            <th>13B VRAM</th>
+            <th>Quality vs FP16</th>
+            <th>Typical Use</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>FP16</code></td>
+            <td>16</td>
+            <td>14.0 GB</td>
+            <td>26.0 GB</td>
+            <td>Baseline</td>
+            <td>vLLM evaluator (A2), highest-fidelity scoring</td>
+          </tr>
+          <tr>
+            <td><code>Q8_0</code></td>
+            <td>8</td>
+            <td>7.7 GB</td>
+            <td>14.4 GB</td>
+            <td>&minus;0.1&ndash;0.3%</td>
+            <td>Evaluator on consumer GPU (C2 rubric scoring)</td>
+          </tr>
+          <tr>
+            <td><code>Q5_K_M</code></td>
+            <td>&asymp;5.5</td>
+            <td>5.3 GB</td>
+            <td>9.8 GB</td>
+            <td>&minus;0.5&ndash;1.0%</td>
+            <td>High-quality producer on 8GB GPU</td>
+          </tr>
+          <tr>
+            <td><code>Q4_K_M</code></td>
+            <td>&asymp;4.5</td>
+            <td>4.4 GB</td>
+            <td>8.1 GB</td>
+            <td>&minus;1.0&ndash;2.5%</td>
+            <td>Harness default producer; bandwidth-efficient</td>
+          </tr>
+          <tr>
+            <td><code>Q3_K_M</code></td>
+            <td>&asymp;3.5</td>
+            <td>3.5 GB</td>
+            <td>6.4 GB</td>
+            <td>&minus;4.0&ndash;8.0%</td>
+            <td>Avoid for production; noticeable coherence loss</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The harness default is <code>Q4_K_M</code> for the producer and <code>Q8_0</code> for the evaluator where VRAM permits. This is a deliberate asymmetry: the producer's output is revised if it scores below threshold (the Wiggum Loop will catch and correct quality regressions from quantization), but the evaluator's judgment must be reliable. An evaluator running at <code>Q3_K_M</code> or below introduces systematic scoring noise that cannot be compensated for by rubric design.
+      </p>
+
+      <div class="callout pink">
+        <p><strong>Callback &rarr; Post 6 (Wiggum Loop):</strong> The evaluator model quality floor matters more than the producer quality floor. A producer running Q4_K_M and scoring 6.8/10 can be revised to 7.5/10. An evaluator running Q3_K_M and scoring a 6.8 as a 7.5 silently poisons the entire evaluate&rarr;revise feedback loop. Keep the evaluator at Q8_0 minimum.</p>
+      </div>
+
+      <h2>KV Cache: VRAM's Hidden Tenant</h2>
+
+      <p>
+        VRAM does not hold only model weights. Every token in every active context window requires a corresponding Key and Value tensor from each attention layer &mdash; the KV cache. For a model with 32 attention layers, 32 heads, 128 head dimensions, at FP16, a single token requires:
+      </p>
+
+<pre><code>bytes_per_token = 2 (K and V) × 32 (layers) × 32 (heads) × 128 (head_dim) × 2 (FP16)
+               = 2 × 32 × 32 × 128 × 2
+               = 524,288 bytes ≈ 512 KB per token</code></pre>
+
+      <p>
+        For a context window of 8,192 tokens, that's 4GB of KV cache for a single request. A batch of four concurrent requests at 4K context each adds another 8GB on top of model weights. This is why a 24GB GPU that appears to have plenty of room for a 7B Q4_K_M model (4.4GB) can still run out of VRAM mid-inference: the KV cache is dynamic, grows with context length, and competes with the weights for the same DRAM.
+      </p>
+
+      <p>
+        vLLM's PagedAttention solves this with a virtual memory abstraction borrowed from operating systems. Rather than pre-allocating a contiguous KV cache block for each request's maximum sequence length, PagedAttention divides the KV cache into 16-token pages and allocates them lazily as sequences extend. Pages are freed when requests complete. This eliminates internal fragmentation, allows sequences with common prefixes to share pages, and enables the scheduler to accept new requests as long as any page is free &mdash; rather than rejecting requests whenever any single pre-allocated block is exhausted.
+      </p>
+
+      <div class="callout purple">
+        <p><strong>Callback &rarr; Post 5 (B3 Dual-Backend Memory Store):</strong> The Dual-Backend Memory Store's design &mdash; semantic vectors in a GPU-resident embedding index, lexical BM25 in CPU RAM &mdash; is partially motivated by this KV cache pressure. Keeping the embedding store GPU-resident is valuable for retrieval latency, but the store must give way to KV cache allocation when inference begins. The hybrid design ensures retrieval can fall back to CPU-resident lexical search when VRAM is under pressure.</p>
+      </div>
+
+      <h2>Amdahl's Law and the Hybrid Inference Ceiling</h2>
+
+      <p>
+        <code>llama.cpp</code>'s <code>--n-gpu-layers</code> flag implements a hybrid execution model: some transformer blocks run on GPU, the rest on CPU, with activations shuttling across the PCIe bus at each block boundary. Amdahl's Law governs the speedup ceiling of this arrangement. If the GPU fraction of compute delivers a 10&times; speedup over CPU, and we offload fraction <em>p</em> of layers to GPU:
+      </p>
+
+<pre><code>speedup(p, s=10) = 1 / ((1 - p) + p/s)
+
+p = 0.50  →  speedup = 1 / (0.50 + 0.05) = 1.82×
+p = 0.75  →  speedup = 1 / (0.25 + 0.075) ≈ 3.1×
+p = 0.90  →  speedup = 1 / (0.10 + 0.01) ≈ 9.1×
+p = 0.95  →  speedup = 1 / (0.05 + 0.005) ≈ 18×</code></pre>
+
+      <p>
+        The practical implication: partial offload (50&ndash;75% of layers) delivers only 2&ndash;3&times; speedup despite the GPU being 10&times; faster. The PCIe bus becomes the bottleneck as layer boundaries multiply activation transfers. PCIe 4.0 x16 provides ~64 GB/s theoretical, but practical sustained bandwidth for small activation tensors (typically 4&ndash;16 KB per boundary) runs far lower due to per-transfer overhead. The optimal strategy is usually all-or-nothing: either fit the entire model on GPU (full GPU inference via vLLM or full Ollama layer offload) or accept CPU-only inference for models that don't fit.
+      </p>
+
+      <p>
+        Kirk &amp; Hwu document this phenomenon directly: in PMPP Chapter 1, they note that even expertly optimized CUDA code achieves only 10&ndash;15&times; speedup over CPU for workloads where PCIe data transfer is on the critical path, but 45&ndash;105&times; when the workload is structured to amortize transfers across large batches. For LLM inference, "large batches" means more concurrent users &mdash; which is exactly vLLM's continuous batching argument.
+      </p>
+
+      <div class="callout orange">
+        <p><strong>Callback &rarr; Post 4 (A4 Keep-Alive Budget):</strong> The Keep-Alive Budget's warm-pool strategy amortizes the model-load transfer cost across many inference calls. But Amdahl's ceiling on partial offload explains why the budget also specifies <em>which</em> models get GPU priority: if a model doesn't fit in VRAM in full, the budget should allocate VRAM to the model that does fit fully, not split it for partial offload of the larger model.</p>
+      </div>
+
+      <h2>Continuous Batching and Latency Tolerance</h2>
+
+      <p>
+        The GPU's warp-switching mechanism &mdash; tolerating DRAM latency by maintaining thousands of in-flight threads &mdash; has a direct software analog in vLLM's continuous batching. Traditional static batching processes all requests in a batch together, from prompt to end-of-sequence, then starts the next batch. This creates a "convoy effect": a short request that finishes in 50 tokens must wait for a long request running 2,000 tokens before the GPU moves to the next item.
+      </p>
+
+      <p>
+        Continuous (iterative) batching schedules at the token level rather than the request level. After each token generation step, the scheduler checks whether any request has completed (hit EOS) and immediately fills the freed batch slot with a new request. The GPU is never idle waiting for slow requests to finish. New requests begin generating tokens within one forward-pass cycle of their arrival. This is latency tolerance at the software layer, directly analogous to warp switching at the hardware layer.
+      </p>
+
+<pre><code># Conceptual continuous batching loop
+while active_requests or pending_requests:
+    # Fill batch to capacity from pending
+    while len(batch) < MAX_BATCH and pending_requests:
+        batch.append(pending_requests.pop())
+
+    # Single forward pass across entire batch
+    next_tokens = model.forward(batch)
+
+    # Update sequences, evict completed requests
+    for req in batch:
+        req.append_token(next_tokens[req.id])
+        if req.is_done():
+            yield req.output
+            batch.remove(req)  # slot freed immediately</code></pre>
+
+      <div class="callout">
+        <p><strong>Callback &rarr; Post 10 (F1 RunTrace / F3 Chrome Trace Exporter):</strong> When you export a harness run to Chrome Trace format and open it in Perfetto, the inference spans tell the hardware story. A flat 400ms span at the start of a run labeled <code>model_load</code> is a cold-start PCIe transfer. A series of short, uniform spans is continuous-batching token generation. A single long span followed by nothing is a static batch waiting for the longest request to finish. The flame graph is the hardware manifest.</p>
+      </div>
+
+      <h2>Choosing a Runtime: A Decision Framework</h2>
+
+      <p>
+        The choice between <code>llama.cpp</code>/<code>Ollama</code> and <code>vLLM</code> is determined by three parameters: available VRAM, required concurrency, and deployment environment.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Condition</th>
+            <th>Recommended Runtime</th>
+            <th>Reasoning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>VRAM &lt; model FP16 size; single user</td>
+            <td><code>llama.cpp</code> / Ollama</td>
+            <td>GGUF quantization fits model; no concurrency pressure; keep-alive handles cold start</td>
+          </tr>
+          <tr>
+            <td>VRAM &ge; model size (full load); single user</td>
+            <td>Ollama (full GPU offload)</td>
+            <td>All layers on GPU; eliminate PCIe hop; Amdahl ceiling at 100% parallel fraction</td>
+          </tr>
+          <tr>
+            <td>Multiple concurrent users; dedicated GPU server</td>
+            <td><code>vLLM</code></td>
+            <td>PagedAttention + continuous batching; 3&ndash;4&times; throughput over static batch; scales to hundreds of req/s</td>
+          </tr>
+          <tr>
+            <td>Model too large for any single GPU</td>
+            <td>vLLM with tensor parallelism</td>
+            <td>Shards attention heads across GPUs; requires NVLink for acceptable inter-GPU bandwidth</td>
+          </tr>
+          <tr>
+            <td>No GPU available</td>
+            <td><code>llama.cpp</code> CPU-only</td>
+            <td>AMX/AVX-512 optimizations on modern CPUs; Q4_K_M maximizes throughput-per-watt; accept 10&ndash;20&times; slower than GPU</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The harness Inference Shim (Pattern A1) abstracts this decision behind a single <code>chat(model, messages)</code> call. The <code>HARNESS_ENDPOINTS</code> config maps model name tags to backend URLs and types. Switching from <code>llama.cpp</code> to <code>vLLM</code> for the producer model is a one-line config change &mdash; but it represents a fundamentally different hardware utilization pattern, and the RunTrace will show it.
+      </p>
+
+      <h2>What the Hardware Tells You</h2>
+
+      <p>
+        The patterns in this series were not designed in the abstract. They were extracted from a real pipeline where inference latency was the dominant runtime cost, where VRAM pressure caused OOM crashes during long Wiggum Loop revisions, and where partial GPU offload delivered disappointing speedups that only became explicable through Amdahl's Law. The hardware is not a detail &mdash; it is the constraint that shapes every design decision.
+      </p>
+
+      <p>
+        Pattern A4 (Keep-Alive Budget) exists because PCIe transfers are expensive and VRAM is limited. Pattern A2 (Model Role Separation) is feasible because keeping two different small models warm costs less VRAM than one large model. Pattern C3 (Surgical Compressor) reduces evaluation payloads below 6,000 characters partly because long contexts grow the KV cache during evaluation, burning VRAM that the producer needs for generation. Pattern D1 (DAG Orchestrator) spawns parallel agents partly because GPU throughput scales with concurrency &mdash; running two 256-token evaluations in parallel on <code>vLLM</code> costs less wall-clock time than running them sequentially.
+      </p>
+
+      <div class="callout pink">
+        <p><strong>Callback &rarr; Post 7 (C3 Surgical Compressor):</strong> The Surgical Compressor's 6,000-character evaluation threshold is not arbitrary. At that length, with a 32-head 7B model, the evaluator's KV cache during a single forward pass consumes roughly 512MB of additional VRAM. Above 6,000 characters, the probability of VRAM pressure during the evaluate&rarr;revise cycle rises sharply on consumer-grade hardware.</p>
+      </div>
+
+      <div class="callout orange">
+        <p><strong>Research grounding:</strong> The runtime selection decision is complicated by a documented reliability gap in the inference engines themselves. An empirical study of five widely-adopted LLM inference engines found systematic bugs in production: memory leaks, out-of-memory errors, incorrect tensor shapes, and performance degradation from suboptimal configuration settings &mdash; with no single engine uniformly stable across all workloads. (<a href="https://arxiv.org/abs/2506.09713" target="_blank" rel="noopener">arXiv:2506.09713</a>) This is the practical motivation behind the harness's RunTrace pattern (Post 10, F1): inference engine failures are documented production failure modes, not hypothetical edge cases. The Inference Shim (A1) provides the abstraction layer that makes engine substitution feasible when a specific backend exhibits instability &mdash; without it, a memory leak in one engine's Python bindings requires a surgical rewrite across every inference call site.</p>
+      </div>
+
+      <p>
+        Understanding the GPU memory hierarchy, the warp execution model, and Amdahl's Law won't make you write better Python. But it will make you understand why the patterns exist, why their thresholds are where they are, and why the Wiggum Loop's latency budget is tight. The physics does not negotiate. The patterns are a negotiation with it.
+      </p>
+
+    
+
+      <div class="post-pagination">
+        <a href="./observability-flywheel.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">10 &middot; Observability &amp; Flywheel</span>
+        </a>
+        <a href="./experimental-methodology.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">12 &middot; Experimental Methodology</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./inference-patterns.html" class="related-post-card">
+            <div class="related-post-num">Post 4</div>
+            <div class="related-post-title">Inference Patterns</div>
+            <div class="related-post-desc">The Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget.</div>
+          </a>
+          <a href="./slm-efficiency.html" class="related-post-card">
+            <div class="related-post-num">Post 15</div>
+            <div class="related-post-title">SLM Efficiency</div>
+            <div class="related-post-desc">SLM-Bench: 15 models, 9 tasks, 4 hardware configs. Accuracy and energy efficiency do not co-optimize.</div>
+          </a>
+          <a href="./harness-thesis.html" class="related-post-card">
+            <div class="related-post-num">Post 1</div>
+            <div class="related-post-title">The Harness Thesis</div>
+            <div class="related-post-desc">Why scaffolding beats model selection&mdash;the five-stage pipeline and the silent overwrite failure that started it all.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script type="module">
+    import anime from 'https://esm.sh/animejs@3.2.2';
+
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    /* ── Diagram 1: CPU vs GPU Architecture ── */
+    (function drawArch() {
+      const svg = d3.select('#arch-svg');
+      const W = 700, H = 340;
+
+      const bg2   = () => cssVar('--bg-tertiary');
+      const cyan  = () => cssVar('--accent-cyan');
+      const pink  = () => cssVar('--accent-pink');
+      const txt   = () => cssVar('--text-primary');
+      const txt2  = () => cssVar('--text-secondary');
+      const brd   = () => cssVar('--border-color');
+      const green = '#34d399';
+      const purple = '#a855f7';
+
+      // CPU side — 6 large cores + LLC
+      const cpuX = 60, cpuW = 240, cpuH = H - 60;
+      svg.append('rect').attr('x', cpuX).attr('y', 30).attr('width', cpuW).attr('height', cpuH)
+         .attr('rx', 10).attr('fill', 'none').attr('stroke', () => cyan()).attr('stroke-width', 1.5);
+      svg.append('text').attr('x', cpuX + cpuW / 2).attr('y', 20)
+         .attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 700)
+         .attr('fill', () => cyan()).attr('letter-spacing', '0.08em').text('CPU');
+
+      // 6 CPU cores
+      const coreColors = [cyan, cyan, pink, pink, cyan, pink];
+      [[0,0],[1,0],[2,0],[0,1],[1,1],[2,1]].forEach(([ci, ri], i) => {
+        const cx = cpuX + 30 + ci * 72, cy = 55 + ri * 80;
+        svg.append('rect').attr('x', cx).attr('y', cy).attr('width', 58).attr('height', 60)
+           .attr('rx', 6).attr('fill', bg2).attr('stroke', coreColors[i]).attr('stroke-width', 1.2);
+        svg.append('text').attr('x', cx + 29).attr('y', cy + 22).attr('text-anchor', 'middle')
+           .attr('font-size', 9).attr('fill', txt2).text('OOO Exec');
+        svg.append('text').attr('x', cx + 29).attr('y', cy + 36).attr('text-anchor', 'middle')
+           .attr('font-size', 8.5).attr('fill', txt2).text('L1/L2$');
+        svg.append('text').attr('x', cx + 29).attr('y', cy + 50).attr('text-anchor', 'middle')
+           .attr('font-size', 9).attr('font-weight', 600).attr('fill', coreColors[i]).text('Core');
+      });
+
+      // LLC
+      svg.append('rect').attr('x', cpuX + 15).attr('y', 230).attr('width', cpuW - 30).attr('height', 48)
+         .attr('rx', 5).attr('fill', bg2).attr('stroke', green).attr('stroke-width', 1.2);
+      svg.append('text').attr('x', cpuX + cpuW / 2).attr('y', 251).attr('text-anchor', 'middle')
+         .attr('font-size', 10).attr('font-weight', 600).attr('fill', green).text('Last-Level Cache (LLC)');
+      svg.append('text').attr('x', cpuX + cpuW / 2).attr('y', 268).attr('text-anchor', 'middle')
+         .attr('font-size', 9).attr('fill', txt2).text('32+ MB &bull; ~20 cycles');
+
+      svg.append('text').attr('x', cpuX + cpuW / 2).attr('y', 300).attr('text-anchor', 'middle')
+         .attr('font-size', 9).attr('fill', txt2).attr('font-style', 'italic').text('Optimized for single-thread latency');
+
+      // GPU side — SM grid
+      const gpuX = 390, gpuW = 250, gpuH = H - 60;
+      svg.append('rect').attr('x', gpuX).attr('y', 30).attr('width', gpuW).attr('height', gpuH)
+         .attr('rx', 10).attr('fill', 'none').attr('stroke', pink).attr('stroke-width', 1.5);
+      svg.append('text').attr('x', gpuX + gpuW / 2).attr('y', 20)
+         .attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 700)
+         .attr('fill', pink).attr('letter-spacing', '0.08em').text('GPU');
+
+      // 15 SMs in 3×5 grid, each SM has 4 tiny SPs
+      const smCols = 5, smRows = 3;
+      for (let r = 0; r < smRows; r++) {
+        for (let c = 0; c < smCols; c++) {
+          const sx = gpuX + 18 + c * 45, sy = 50 + r * 70;
+          svg.append('rect').attr('x', sx).attr('y', sy).attr('width', 38).attr('height', 56)
+             .attr('rx', 4).attr('fill', bg2).attr('stroke', pink).attr('stroke-width', 0.8).attr('opacity', 0.9);
+          svg.append('text').attr('x', sx + 19).attr('y', sy + 9).attr('text-anchor', 'middle')
+             .attr('font-size', 6.5).attr('fill', txt2).text('SM');
+          // 4 tiny SPs
+          [[0,0],[1,0],[0,1],[1,1]].forEach(([spc, spr]) => {
+            svg.append('rect').attr('x', sx + 4 + spc * 16).attr('y', sy + 14 + spr * 16)
+               .attr('width', 13).attr('height', 13).attr('rx', 2)
+               .attr('fill', pink).attr('opacity', 0.35);
+          });
+          svg.append('text').attr('x', sx + 19).attr('y', sy + 50).attr('text-anchor', 'middle')
+             .attr('font-size', 6).attr('fill', txt2).text('Shmem');
+        }
+      }
+
+      // HBM DRAM
+      svg.append('rect').attr('x', gpuX + 15).attr('y', 270).attr('width', gpuW - 30).attr('height', 38)
+         .attr('rx', 5).attr('fill', bg2).attr('stroke', purple).attr('stroke-width', 1.2);
+      svg.append('text').attr('x', gpuX + gpuW / 2).attr('y', 287).attr('text-anchor', 'middle')
+         .attr('font-size', 10).attr('font-weight', 600).attr('fill', purple).text('HBM / Global DRAM');
+      svg.append('text').attr('x', gpuX + gpuW / 2).attr('y', 300).attr('text-anchor', 'middle')
+         .attr('font-size', 9).attr('fill', txt2).text('80–3,350 GB/s');
+
+      svg.append('text').attr('x', gpuX + gpuW / 2).attr('y', 327).attr('text-anchor', 'middle')
+         .attr('font-size', 9).attr('fill', txt2).attr('font-style', 'italic').text('Optimized for parallel throughput');
+
+      // VS label
+      svg.append('text').attr('x', W / 2).attr('y', H / 2 + 5).attr('text-anchor', 'middle')
+         .attr('font-size', 14).attr('font-weight', 700).attr('fill', txt2).text('vs.');
+    })();
+
+    /* ── Diagram 2: GPU Memory Hierarchy ── */
+    (function drawHier() {
+      const svg = d3.select('#hier-svg');
+      const W = 700, H = 340;
+
+      const cyan   = () => cssVar('--accent-cyan');
+      const pink   = () => cssVar('--accent-pink');
+      const txt    = () => cssVar('--text-primary');
+      const txt2   = () => cssVar('--text-secondary');
+      const green  = '#34d399';
+      const purple = '#a855f7';
+      const orange = '#f97316';
+      const bg2    = () => cssVar('--bg-tertiary');
+
+      const layers = [
+        { label: 'Registers',         sub: 'Per-thread &bull; 64K/SM &bull; < 1 cycle',  bw: '—',          col: cyan,   y: 30,  tw: 220, th: 52 },
+        { label: 'Shared Memory / L1',sub: 'Per-block &bull; 48–96 KB/SM &bull; ~4 cycles', bw: '~19 TB/s*', col: green,  y: 97,  tw: 340, th: 52 },
+        { label: 'L2 Cache',          sub: 'Device-wide &bull; 40–50 MB &bull; ~200 cycles', bw: '~7 TB/s*',  col: purple, y: 164, tw: 470, th: 52 },
+        { label: 'Global DRAM (HBM)', sub: 'Device-wide &bull; 40–80 GB &bull; 400+ cycles',bw: 'up to 3.35 TB/s', col: orange, y: 231, tw: 620, th: 52 },
+      ];
+
+      const cx = W / 2;
+      layers.forEach(({ label, sub, bw, col, y, tw, th }) => {
+        const x = cx - tw / 2;
+        svg.append('rect').attr('x', x).attr('y', y).attr('width', tw).attr('height', th)
+           .attr('rx', 7).attr('fill', bg2).attr('stroke', col).attr('stroke-width', 1.5);
+        svg.append('text').attr('x', cx).attr('y', y + 20).attr('text-anchor', 'middle')
+           .attr('font-size', 11).attr('font-weight', 700).attr('fill', col).text(label);
+        svg.append('text').attr('x', cx - 10).attr('y', y + 36).attr('text-anchor', 'middle')
+           .attr('font-size', 8.5).attr('fill', txt2).text(sub);
+        if (bw !== '—') {
+          svg.append('text').attr('x', cx + tw / 2 - 8).attr('y', y + 30).attr('text-anchor', 'end')
+             .attr('font-size', 9).attr('font-weight', 600).attr('fill', col).text(bw);
+        }
+        // connector
+        if (y < 231) {
+          svg.append('line').attr('x1', cx).attr('y1', y + th).attr('x2', cx).attr('y2', y + th + 15)
+             .attr('stroke', txt2).attr('stroke-width', 1).attr('stroke-dasharray', '3,3');
+        }
+      });
+
+      // Left annotation bar
+      svg.append('line').attr('x1', 58).attr('y1', 30).attr('x2', 58).attr('y2', 283)
+         .attr('stroke', txt2).attr('stroke-width', 1);
+      svg.append('text').attr('x', 14).attr('y', 157).attr('text-anchor', 'middle')
+         .attr('font-size', 9).attr('fill', txt2).attr('transform', 'rotate(-90,14,157)').text('Smaller / Faster / More expensive');
+
+      svg.append('text').attr('x', cx).attr('y', 312).attr('text-anchor', 'middle')
+         .attr('font-size', 8.5).attr('fill', txt2).attr('font-style', 'italic')
+         .text('* Intra-chip bandwidth estimates. Global DRAM bandwidth (HBM3e on H100) is the primary inference bottleneck.');
+    })();
+
+    /* ── Diagram 3: llama.cpp vs vLLM Runtime Decision ── */
+    (function drawRuntime() {
+      const svg = d3.select('#runtime-svg');
+      const W = 700, H = 380;
+
+      const cyan   = () => cssVar('--accent-cyan');
+      const pink   = () => cssVar('--accent-pink');
+      const txt    = () => cssVar('--text-primary');
+      const txt2   = () => cssVar('--text-secondary');
+      const green  = '#34d399';
+      const purple = '#a855f7';
+      const orange = '#f97316';
+      const bg2    = () => cssVar('--bg-tertiary');
+      const brd    = () => cssVar('--border-color');
+
+      const arrow = (x1, y1, x2, y2, lbl, col) => {
+        svg.append('line').attr('x1', x1).attr('y1', y1).attr('x2', x2).attr('y2', y2)
+           .attr('stroke', col || txt2).attr('stroke-width', 1.3)
+           .attr('marker-end', `url(#arrowhead-${col ? 'col' : 'def'})`);
+        if (lbl) {
+          svg.append('text').attr('x', (x1+x2)/2 + 4).attr('y', (y1+y2)/2 - 4)
+             .attr('font-size', 8.5).attr('fill', col || txt2).text(lbl);
+        }
+      };
+
+      // arrowheads
+      const defs = svg.append('defs');
+      ['def','col'].forEach(id => {
+        defs.append('marker').attr('id', `arrowhead-${id}`).attr('markerWidth', 7).attr('markerHeight', 7)
+            .attr('refX', 6).attr('refY', 3.5).attr('orient', 'auto')
+          .append('polygon').attr('points', '0 0, 7 3.5, 0 7').attr('fill', txt2);
+      });
+
+      // Top entry node: Inference Request
+      svg.append('rect').attr('x', 265).attr('y', 14).attr('width', 170).attr('height', 38)
+         .attr('rx', 8).attr('fill', bg2).attr('stroke', cyan).attr('stroke-width', 1.5);
+      svg.append('text').attr('x', 350).attr('y', 37).attr('text-anchor', 'middle')
+         .attr('font-size', 11).attr('font-weight', 700).attr('fill', cyan).text('Inference Request');
+
+      // Decision: VRAM headroom?
+      const diaX = 350, diaY = 100, diaW = 160, diaH = 46;
+      const points = `${diaX},${diaY-diaH/2} ${diaX+diaW/2},${diaY} ${diaX},${diaY+diaH/2} ${diaX-diaW/2},${diaY}`;
+      svg.append('polygon').attr('points', points).attr('fill', bg2).attr('stroke', orange).attr('stroke-width', 1.5);
+      svg.append('text').attr('x', diaX).attr('y', diaY - 4).attr('text-anchor', 'middle')
+         .attr('font-size', 9.5).attr('fill', orange).text('Model fits in VRAM?');
+      svg.append('text').attr('x', diaX).attr('y', diaY + 10).attr('text-anchor', 'middle')
+         .attr('font-size', 8.5).attr('fill', txt2).text('(after KV cache reservation)');
+
+      // Arrow from request to decision
+      arrow(350, 52, 350, 77);
+
+      // YES → vLLM path (right)
+      svg.append('text').attr('x', 465).attr('y', 97).attr('font-size', 9).attr('fill', green).text('YES');
+      arrow(430, 100, 560, 100, null, green);
+
+      // vLLM box
+      svg.append('rect').attr('x', 560).attr('y', 72).attr('width', 120).attr('height', 56)
+         .attr('rx', 8).attr('fill', bg2).attr('stroke', green).attr('stroke-width', 1.5);
+      svg.append('text').attr('x', 620).attr('y', 96).attr('text-anchor', 'middle')
+         .attr('font-size', 11).attr('font-weight', 700).attr('fill', green).text('vLLM');
+      svg.append('text').attr('x', 620).attr('y', 110).attr('text-anchor', 'middle')
+         .attr('font-size', 8.5).attr('fill', txt2).text('PagedAttention');
+      svg.append('text').attr('x', 620).attr('y', 122).attr('text-anchor', 'middle')
+         .attr('font-size', 8.5).attr('fill', txt2).text('Continuous batching');
+
+      // NO → llama.cpp path (left)
+      svg.append('text').attr('x', 200).attr('y', 97).attr('text-anchor', 'end').attr('font-size', 9).attr('fill', pink).text('NO');
+      arrow(270, 100, 160, 100, null, pink);
+
+      // llama.cpp box
+      svg.append('rect').attr('x', 20).attr('y', 72).attr('width', 140).attr('height', 56)
+         .attr('rx', 8).attr('fill', bg2).attr('stroke', pink).attr('stroke-width', 1.5);
+      svg.append('text').attr('x', 90).attr('y', 96).attr('text-anchor', 'middle')
+         .attr('font-size', 11).attr('font-weight', 700).attr('fill', pink).text('llama.cpp');
+      svg.append('text').attr('x', 90).attr('y', 110).attr('text-anchor', 'middle')
+         .attr('font-size', 8.5).attr('fill', txt2).text('GGUF quantization');
+      svg.append('text').attr('x', 90).attr('y', 122).attr('text-anchor', 'middle')
+         .attr('font-size', 8.5).attr('fill', txt2).text('CPU+GPU hybrid');
+
+      // Second decision under llama.cpp: --n-gpu-layers
+      const d2X = 90, d2Y = 215, d2W = 170, d2H = 46;
+      const p2 = `${d2X},${d2Y-d2H/2} ${d2X+d2W/2},${d2Y} ${d2X},${d2Y+d2H/2} ${d2X-d2W/2},${d2Y}`;
+      arrow(90, 128, 90, 192);
+      svg.append('polygon').attr('points', p2).attr('fill', bg2).attr('stroke', orange).attr('stroke-width', 1.5);
+      svg.append('text').attr('x', d2X).attr('y', d2Y - 5).attr('text-anchor', 'middle')
+         .attr('font-size', 9.5).attr('fill', orange).text('GPU layers available?');
+      svg.append('text').attr('x', d2X).attr('y', d2Y + 9).attr('text-anchor', 'middle')
+         .attr('font-size', 8.5).attr('fill', txt2).text('(--n-gpu-layers)');
+
+      // Hybrid offload box
+      arrow(90, 238, 90, 275);
+      svg.append('text').attr('x', 96).attr('y', 258).attr('font-size', 9).attr('fill', green).text('YES');
+      svg.append('rect').attr('x', 20).attr('y', 275).attr('width', 140).attr('height', 48)
+         .attr('rx', 8).attr('fill', bg2).attr('stroke', purple).attr('stroke-width', 1.5);
+      svg.append('text').attr('x', 90).attr('y', 297).attr('text-anchor', 'middle')
+         .attr('font-size', 10).attr('font-weight', 700).attr('fill', purple).text('Hybrid Offload');
+      svg.append('text').attr('x', 90).attr('y', 311).attr('text-anchor', 'middle')
+         .attr('font-size', 8.5).attr('fill', txt2).text('Amdahl ceiling applies');
+      svg.append('text').attr('x', 90).attr('y', 323).attr('text-anchor', 'middle')
+         .attr('font-size', 8.5).attr('fill', txt2).text('PCIe is bottleneck');
+
+      // CPU only box
+      arrow(5, 215, 5, 275);
+      arrow(5, 215, -75, 215);
+      // Actually let's draw it more simply:
+      svg.append('text').attr('x', -10).attr('y', 198).attr('text-anchor', 'end').attr('font-size', 9).attr('fill', pink).text('NO');
+      // horizontal line to CPU only
+      svg.append('line').attr('x1', 5).attr('y1', 215).attr('x2', 5).attr('y2', 215).attr('stroke', txt2); // placeholder
+      // CPU only label at bottom left... let me just draw a simple box
+      svg.append('rect').attr('x', 20).attr('y', 345).attr('width', 140).attr('height', 28)
+         .attr('rx', 6).attr('fill', bg2).attr('stroke', txt2).attr('stroke-width', 1);
+      svg.append('text').attr('x', 90).attr('y', 363).attr('text-anchor', 'middle')
+         .attr('font-size', 9.5).attr('font-weight', 600).attr('fill', txt2).text('CPU-only (AVX-512/AMX)');
+
+      // NO arrow from d2 downward past hybrid box to cpu-only
+      svg.append('line').attr('x1', 5).attr('y1', 215).attr('x2', 5).attr('y2', 360)
+         .attr('stroke', pink).attr('stroke-width', 1.3);
+      svg.append('line').attr('x1', 5).attr('y1', 360).attr('x2', 20).attr('y2', 360)
+         .attr('stroke', pink).attr('stroke-width', 1.3).attr('marker-end', 'url(#arrowhead-def)');
+      svg.append('text').attr('x', 0).attr('y', 246).attr('text-anchor', 'middle')
+         .attr('font-size', 9).attr('fill', pink).attr('transform', 'rotate(-90,0,246)').text('NO');
+
+      // Ollama wrapper label
+      svg.append('rect').attr('x', 20).attr('y', 346).attr('width', 0).attr('height', 0).attr('opacity', 0); // reset
+      // Ollama bracket around llama.cpp + below
+      svg.append('rect').attr('x', 12).attr('y', 62).attr('width', 156).attr('height', 320)
+         .attr('rx', 10).attr('fill', 'none').attr('stroke', cyan).attr('stroke-dasharray', '5,4').attr('stroke-width', 1).attr('opacity', 0.4);
+      svg.append('text').attr('x', 90).attr('y', 393).attr('text-anchor', 'middle')
+         .attr('font-size', 8.5).attr('fill', cyan).attr('opacity', 0.7).text('Ollama wraps (process + keep-alive)');
+
+      // Ollama + vLLM flow to output
+      arrow(620, 128, 620, 200);
+      svg.append('rect').attr('x', 558).attr('y', 200).attr('width', 124).attr('height', 36)
+         .attr('rx', 6).attr('fill', bg2).attr('stroke', brd).attr('stroke-width', 1);
+      svg.append('text').attr('x', 620).attr('y', 222).attr('text-anchor', 'middle')
+         .attr('font-size', 10).attr('fill', txt).text('OllamaLike response');
+
+      // A1 shim label
+      svg.append('rect').attr('x', 265).attr('y', 240).attr('width', 170).attr('height', 36)
+         .attr('rx', 6).attr('fill', bg2).attr('stroke', cyan).attr('stroke-width', 1.3);
+      svg.append('text').attr('x', 350).attr('y', 257).attr('text-anchor', 'middle')
+         .attr('font-size', 9.5).attr('font-weight', 600).attr('fill', cyan).text('A1 Inference Shim');
+      svg.append('text').attr('x', 350).attr('y', 270).attr('text-anchor', 'middle')
+         .attr('font-size', 8.5).attr('fill', txt2).text('normalizes response envelope');
+    })();
+
+    /* ── Diagram 4: Quantization VRAM Budget ── */
+    (function drawQuant() {
+      const svg = d3.select('#quant-svg');
+      const W = 700, H = 340;
+      const margin = { top: 28, right: 20, bottom: 50, left: 160 };
+      const iW = W - margin.left - margin.right;
+      const iH = H - margin.top - margin.bottom;
+
+      const cyan   = () => cssVar('--accent-cyan');
+      const pink   = () => cssVar('--accent-pink');
+      const txt    = () => cssVar('--text-primary');
+      const txt2   = () => cssVar('--text-secondary');
+      const green  = '#34d399';
+      const purple = '#a855f7';
+      const orange = '#f97316';
+      const bg2    = () => cssVar('--bg-tertiary');
+
+      const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+      const data = [
+        { label: '70B · FP16',    gb: 140,  col: () => pink  },
+        { label: '70B · Q4_K_M',  gb: 42,   col: () => pink  },
+        { label: '13B · FP16',    gb: 26.0, col: () => purple },
+        { label: '13B · Q4_K_M',  gb: 8.1,  col: () => purple },
+        { label: '7B · FP16',     gb: 14.0, col: () => cyan  },
+        { label: '7B · Q5_K_M',   gb: 5.3,  col: () => cyan  },
+        { label: '7B · Q4_K_M',   gb: 4.4,  col: () => cyan  },
+        { label: '7B · Q8_0',     gb: 7.7,  col: () => cyan  },
+      ];
+
+      const maxGB = 145;
+      const xScale = d3.scaleLinear().domain([0, maxGB]).range([0, iW]);
+      const yScale = d3.scaleBand().domain(data.map(d => d.label)).range([0, iH]).padding(0.28);
+
+      // GPU tier lines
+      const tiers = [
+        { gb: 8,  label: '8GB VRAM',  col: green  },
+        { gb: 16, label: '16GB VRAM', col: orange },
+        { gb: 24, label: '24GB VRAM', col: purple },
+        { gb: 80, label: '80GB (A100)', col: pink  },
+      ];
+
+      tiers.forEach(({ gb, label, col }) => {
+        const xv = xScale(gb);
+        g.append('line').attr('x1', xv).attr('y1', 0).attr('x2', xv).attr('y2', iH)
+         .attr('stroke', col).attr('stroke-width', 1).attr('stroke-dasharray', '4,3').attr('opacity', 0.65);
+        g.append('text').attr('x', xv + 2).attr('y', -6).attr('font-size', 8).attr('fill', col).text(label);
+      });
+
+      // Bars
+      data.forEach(d => {
+        const bw = xScale(d.gb);
+        g.append('rect')
+          .attr('x', 0).attr('y', yScale(d.label)).attr('width', 0).attr('height', yScale.bandwidth())
+          .attr('rx', 4).attr('fill', d.col()).attr('opacity', 0.75)
+          .attr('data-w', bw);
+        g.append('text').attr('x', bw + 4).attr('y', yScale(d.label) + yScale.bandwidth() * 0.68)
+          .attr('font-size', 9).attr('fill', d.col()).text(`${d.gb} GB`);
+      });
+
+      // Y axis labels
+      data.forEach(d => {
+        g.append('text').attr('x', -8).attr('y', yScale(d.label) + yScale.bandwidth() * 0.68)
+         .attr('text-anchor', 'end').attr('font-size', 10).attr('fill', txt2).text(d.label);
+      });
+
+      // X axis
+      g.append('line').attr('x1', 0).attr('y1', iH).attr('x2', iW).attr('y2', iH)
+       .attr('stroke', txt2).attr('stroke-width', 0.8).attr('opacity', 0.4);
+      [0, 20, 40, 60, 80, 100, 120, 140].forEach(v => {
+        g.append('text').attr('x', xScale(v)).attr('y', iH + 16).attr('text-anchor', 'middle')
+         .attr('font-size', 9).attr('fill', txt2).text(`${v}GB`);
+      });
+
+      // Animate bars
+      svg.selectAll('rect[data-w]').each(function() {
+        const target = +d3.select(this).attr('data-w');
+        anime({ targets: this, width: [0, target], duration: 1000, easing: 'easeOutQuart', delay: 200 });
+      });
+    })();
+
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

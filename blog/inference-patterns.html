@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inference Patterns: The Substrate Layer | Nick McCarty</title>
+  <meta name="description" content="Four patterns governing how LLM calls are issued, routed, and kept warm — the Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/inference-patterns.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Inference Patterns: The Substrate Layer">
+  <meta property="og:description" content="Four patterns governing how LLM calls are issued, routed, and kept warm — the Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget — and why getting this substrate right is prerequisite to everything else.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/inference-patterns.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-22T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Inference Patterns: The Substrate Layer">
+  <meta name="twitter:description" content="Four patterns governing how LLM calls are issued, routed, and kept warm — the Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Inference Patterns: The Substrate Layer","description":"Four patterns governing how LLM calls are issued, routed, and kept warm — Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-22","url":"https://nickmccarty.github.io/blog/inference-patterns.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink {
+      border-left-color: var(--accent-pink);
+    }
+    .callout p {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .pattern-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .pattern-card h4 {
+      margin: 0 0 0.5rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .pattern-card .pattern-meta {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.75rem;
+      font-style: italic;
+    }
+    .pattern-card p {
+      margin: 0;
+      font-size: 0.92rem;
+      line-height: 1.65;
+    }
+    .pattern-label {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      margin-right: 0.4rem;
+    }
+    .label-cyan { background: rgba(87,206,242,0.15); color: var(--accent-cyan); }
+    .label-pink { background: rgba(237,70,195,0.15); color: var(--accent-pink); }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code {
+      background: none;
+      padding: 0;
+      font-size: inherit;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.55rem 0.85rem;
+      background: var(--bg-tertiary);
+      border-bottom: 2px solid var(--border-color);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    td {
+      padding: 0.55rem 0.85rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    tr:last-child td { border-bottom: none; }
+    #shim-svg text, #roles-svg text,
+    #pool-svg text, #vram-svg text { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 22, 2026 &bull; 16 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">Inference Patterns: The Substrate Layer</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          Four patterns governing how language model calls are issued, routed, and kept warm. Everything else in the pipeline depends on getting this substrate right.
+        </p>
+
+      </header>
+
+      <p>
+        Every agentic pipeline eventually touches a language model. The questions are mundane on the surface — which backend? which model? how long does it stay loaded? — but the answers echo through every downstream component. Get the inference substrate wrong and you inherit compounding latency, self-evaluation bias, and VRAM thrashing in the patterns that depend on it. Get it right and the rest of the catalog snaps into place cleanly.
+      </p>
+
+      <p>
+        Section A of the pattern catalog covers four patterns that together form the substrate layer: <strong>The Inference Shim</strong> (A1), which hides backend diversity behind a single interface; <strong>Model Role Separation</strong> (A2), which enforces that no model evaluates its own output; <strong>The Evaluator Pool</strong> (A3), which converts systematic per-model scoring bias into measurable variance; and <strong>The Keep-Alive Budget</strong> (A4), which eliminates the cold-start gaps that dominate pipeline latency traces.
+      </p>
+
+      <div class="callout">
+        <p>These four patterns are prerequisite infrastructure — they do not produce visible outputs, they prevent invisible failures. None of them are optional once the pipeline reaches production scale.</p>
+      </div>
+
+      <h2>A1 &mdash; The Inference Shim</h2>
+
+      <p>
+        The fastest way to accumulate technical debt in an agentic system is to scatter backend-specific inference calls throughout the codebase. Three months of development later, the agent module is importing <code>ollama</code> directly, the evaluator is calling <code>openai.ChatCompletion</code>, and the planner is using a subprocess call to <code>llama-cli</code>. Switching any one backend requires a surgical search across a dozen files.
+      </p>
+
+      <p>
+        The Inference Shim closes that off at the start. <code>harness/inference.py</code> exposes exactly one public function:
+      </p>
+
+<pre><code>def chat(model: str, messages: list[dict]) -> OllamaLike:
+    endpoint = HARNESS_ENDPOINTS.get(model)
+    if endpoint["type"] == "ollama":
+        return _call_ollama(endpoint["url"], model, messages)
+    elif endpoint["type"] == "vllm":
+        return _call_vllm(endpoint["url"], model, messages)
+    elif endpoint["type"] == "openai":
+        return _call_openai(endpoint["url"], model, messages)
+    raise ValueError(f"unknown backend type: {endpoint['type']}")</code></pre>
+
+      <p>
+        The return type — <code>OllamaLike</code> — is a minimal dataclass that normalizes every backend's response envelope to expose <code>.message.content</code> and <code>.message.role</code>. The agent, evaluator, and planner never import backend SDKs. Every component receives the same interface regardless of where the model is actually running.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">A1 &mdash; Inference Shim: Routing Architecture</div>
+        <svg id="shim-svg" width="100%" viewBox="0 0 680 280" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">All calling code issues a single <code>chat(model, messages)</code> call. The shim routes to the appropriate backend and normalizes the response.</p>
+      </div>
+
+      <p>
+        <code>HARNESS_ENDPOINTS</code> is a JSON file (or <code>HARNESS_ENDPOINTS</code> environment variable) mapping model name tags to backend URLs and types. Swapping a model from Ollama to vLLM is a one-line config change. The shim adds one function-call layer of overhead — negligible against inference latency, which starts at several hundred milliseconds even for small models.
+      </p>
+
+      <h2>A2 &mdash; Model Role Separation</h2>
+
+      <p>
+        If the Inference Shim is infrastructure, Model Role Separation is policy. The rule is simple: within a single run, no model evaluates its own output. The harness enforces this structurally through the <code>ModelConfig</code> dataclass:
+      </p>
+
+<pre><code>@dataclass
+class ModelConfig:
+    producer: str
+    evaluator: str
+    planner: str
+
+    def __post_init__(self):
+        if self.producer == self.evaluator:
+            raise ConfigurationError(
+                "producer and evaluator must be different models; "
+                "self-evaluation bias measured at +0.9 points mean inflation"
+            )</code></pre>
+
+      <p>
+        The three roles are non-overlapping by design. The <strong>producer</strong> is the largest available model, optimized for long-form synthesis — coherent multi-section documents that integrate dozens of sources. The <strong>evaluator</strong> is always a <em>different model family</em>, not just a different model — cross-family selection (e.g., GLM4 evaluating Qwen3 output) reduces shared training distribution bias at the cost of some calibration variance. The <strong>planner</strong> is the smallest fast model available, since planning latency affects perceived responsiveness: a 9B model returning a structured plan in 12 seconds outperforms a 70B model returning one in 45 seconds.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">A2 &mdash; Three-Role Architecture: ModelConfig</div>
+        <svg id="roles-svg" width="100%" viewBox="0 0 680 300" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">The three roles use separate model instances and never share a model within the same run. The evaluator is always a different family from the producer.</p>
+      </div>
+
+      <p>
+        Why does the self-evaluation bias number matter? Across 1,500 logged runs, the mean Wiggum score when the same model evaluates its own synthesis is <strong>0.9 points higher</strong> than cross-model evaluation on identical outputs, measured using blind reruns with evaluator identity withheld from scoring analytics. A pipeline that uses the same model as both producer and evaluator will systematically pass outputs it should reject. The <code>ConfigurationError</code> at construction time is the most important error in the codebase.
+      </p>
+
+      <h2>A3 &mdash; The Evaluator Pool</h2>
+
+      <p>
+        Role separation prevents self-evaluation, but it doesn't prevent <em>per-model bias</em>. A single evaluator model, used exclusively across thousands of runs, accumulates systematic scoring patterns that are invisible until you run calibration experiments. One model consistently over-scores <em>Groundedness</em> by 0.4 points. Another inflates <em>Completeness</em> for outputs that cite many sources regardless of whether those sources support the claims. These biases are not bugs in the models — they reflect calibration differences in how each model was trained to use the rubric.
+      </p>
+
+      <p>
+        The Evaluator Pool converts systematic per-model bias into measurable variance. The implementation is small:
+      </p>
+
+<pre><code>HARNESS_EVALUATOR_POOL = os.getenv(
+    "HARNESS_EVALUATOR_POOL", "glm4:latest,mistral:latest"
+).split(",")
+
+def select_evaluator(seed: str) -> str:
+    idx = int(hashlib.md5(seed.encode()).hexdigest(), 16) % len(HARNESS_EVALUATOR_POOL)
+    return HARNESS_EVALUATOR_POOL[idx]</code></pre>
+
+      <p>
+        The seed is typically the run ID — a UTC timestamp plus UUID4 hex prefix. Hash-based selection means the same run ID always selects the same evaluator (reproducibility is preserved), but different runs are distributed across the pool. The key insight: a bias that inflates one dimension by 0.5 points <em>for all runs</em> is invisible to analytics because it looks like the baseline. The same bias distributed across four evaluators shows up as evaluator-correlated score variance — a pattern that is diagnosable, quantifiable, and correctable.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">A3 &mdash; Evaluator Pool: Hash-Based Rotation</div>
+        <svg id="pool-svg" width="100%" viewBox="0 0 680 320" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Run IDs hash deterministically to evaluator models. The same run always uses the same evaluator. Different runs distribute across the pool, converting systematic bias into measurable variance.</p>
+      </div>
+
+      <p>
+        To diagnose evaluator drift, group <code>runs.jsonl</code> by <code>evaluator_model</code> and compare dimensional score distributions:
+      </p>
+
+<pre><code>import pandas as pd, json
+
+runs = pd.DataFrame(
+    json.loads(line) for line in open("data/runs.jsonl")
+)
+dims = ["relevance","completeness","depth","specificity","structure","groundedness"]
+
+# per-evaluator mean per dimension — look for columns that diverge
+pivot = (
+    runs.explode("wiggum_dimensions")
+        .assign(**{d: lambda r, d=d: r.wiggum_dimensions.str[d] for d in dims})
+        .groupby("evaluator_model")[dims].mean()
+)
+print(pivot.round(2))</code></pre>
+
+      <h2>A4 &mdash; The Keep-Alive Budget</h2>
+
+      <p>
+        Cold-start latency is the silent killer of pipeline throughput. Loading a 7B model into VRAM takes 5–10 seconds. Loading a 30B model takes 20–45 seconds. In a pipeline that uses three separate model roles — planner, producer, evaluator — an unmanaged warm cache means every stage transition potentially pays a cold-start penalty. On a standard research run, that adds up to 60–90 seconds of pure overhead per run, visible as flat gaps in the Chrome Trace flame graph between stage blocks.
+      </p>
+
+      <p>
+        Ollama's <code>keep_alive</code> parameter controls VRAM residency. Set to <code>-1</code>, a model stays loaded indefinitely. The <code>_estimate_keep_alive()</code> function in <code>harness/agent.py</code> sets it adaptively based on how soon the model will be called again:
+      </p>
+
+<pre><code>def _estimate_keep_alive(role: str, task_type: str) -> int:
+    """Returns keep_alive seconds. -1 = indefinite."""
+    if role == "planner":
+        # Planner finishes before synthesis; release VRAM for producer
+        return 120 if task_type == "orchestrated" else 60
+    if role == "producer":
+        # Producer stays warm through evaluation (revision may follow)
+        return -1
+    if role == "evaluator":
+        # Evaluator stays warm through all revision rounds
+        return -1
+    return 300  # default</code></pre>
+
+      <div class="diagram-container">
+        <div class="diagram-title">A4 &mdash; Keep-Alive Budget: VRAM Residency Timeline</div>
+        <svg id="vram-svg" width="100%" viewBox="0 0 680 280" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Standard 24 GB VRAM budget. Planner releases after planning phase; producer and evaluator stay warm through the Wiggum Loop's revision rounds. Cold-start overhead drops from ~75 s to ~8 s.</p>
+      </div>
+
+      <p>
+        The three-model sequencing strategy applies when VRAM is constrained (e.g., 8–16 GB). Each model loads, runs its stage, then releases — planner first, then producer, then evaluator. Each transition costs 5–15 seconds instead of 30–60 for a cold start because the model weights are still in system RAM (paged out of VRAM) and don't need to be re-read from disk. On 24+ GB VRAM, all three models stay warm simultaneously and the Keep-Alive Budget reduces to managing <em>when to release the planner</em> to free headroom for the producer's context window.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>VRAM Tier</th>
+            <th>Strategy</th>
+            <th>Cold-Start Overhead</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>8 GB</td>
+            <td>Sequential load/unload per stage</td>
+            <td>~45–75 s per run</td>
+            <td>Each transition still benefits from system RAM cache</td>
+          </tr>
+          <tr>
+            <td>16 GB</td>
+            <td>Producer + evaluator warm; planner sequential</td>
+            <td>~15–25 s per run</td>
+            <td>Planner loads once, plans, then releases before synthesis</td>
+          </tr>
+          <tr>
+            <td>24 GB</td>
+            <td>All three roles warm simultaneously</td>
+            <td>~5–10 s per run</td>
+            <td>Planner released after planning to free headroom for producer KV cache</td>
+          </tr>
+          <tr>
+            <td>40+ GB</td>
+            <td>All three warm + vision model for image tasks</td>
+            <td>&lt;5 s per run</td>
+            <td>Vision Bridge (B5) adds a fourth model slot to the budget</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The diagnostic: open a run's Chrome Trace file in Perfetto UI (<code>ui.perfetto.dev</code>). Cold-start overhead appears as a flat white block at the start of each stage block in the flame graph — no computation, just model loading. If the block between "plan complete" and "research start" is wider than 10 seconds, the planner is not staying warm across the planning call. If the block between "synthesis complete" and "eval start" is wider than 15 seconds, the evaluator is not pre-loaded. Both are fixable with one environment variable change.
+      </p>
+
+      <h2>How the Four Patterns Compose</h2>
+
+      <p>
+        The four inference patterns form a dependency chain. The Inference Shim is the foundation — every model call in every other pattern goes through it. Model Role Separation partitions those calls into three non-overlapping functional slots, preventing self-evaluation bias at the structural level. The Evaluator Pool rotates which model fills the evaluator slot across runs, converting systematic bias into observable variance. The Keep-Alive Budget manages VRAM residency so that all three model slots stay warm without starving each other.
+      </p>
+
+      <div class="callout pink">
+        <p>A2 depends on A1 (role-separated calls still go through the shim). A3 depends on A2 (pool selection provides the evaluator model name to ModelConfig). A4 depends on all three (it manages residency for the producer, evaluator, and planner that A2 defines, using the backend-specific <code>keep_alive</code> parameter that A1 abstracts).</p>
+      </div>
+
+      <p>
+        The consequence is that inference substrate errors compound upward. A misconfigured <code>HARNESS_ENDPOINTS</code> breaks every call in every pattern. An accidental same-model assignment in <code>ModelConfig</code> biases evaluation scores for every run until it's caught. An unmanaged keep-alive drains throughput and shows up in all latency metrics. The patterns are boring infrastructure. Their absence is not.
+      </p>
+
+      <p>
+        The next post covers Section B — Context Engineering Patterns — which address what information reaches the synthesis model before a single token of output is produced. With the inference substrate in place, context quality becomes the primary lever on output quality.
+      </p>
+
+    
+
+      <div class="post-pagination">
+        <a href="./failure-taxonomy.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">3 &middot; Failure Taxonomy</span>
+        </a>
+        <a href="./context-engineering.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">5 &middot; Context Engineering</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./context-engineering.html" class="related-post-card">
+            <div class="related-post-num">Post 5</div>
+            <div class="related-post-title">Context Engineering</div>
+            <div class="related-post-desc">Planner-First, Novelty Gate, Dual-Backend Memory Store, and Semantic Chunker.</div>
+          </a>
+          <a href="./parallel-inference.html" class="related-post-card">
+            <div class="related-post-num">Post 11</div>
+            <div class="related-post-title">Parallel Inference</div>
+            <div class="related-post-desc">GPU memory hierarchy, llama.cpp, vLLM, GGUF quantization, and KV cache pressure.</div>
+          </a>
+          <a href="./slm-efficiency.html" class="related-post-card">
+            <div class="related-post-num">Post 15</div>
+            <div class="related-post-title">SLM Efficiency</div>
+            <div class="related-post-desc">SLM-Bench: 15 models, 9 tasks, 4 hardware configs. Accuracy and energy efficiency do not co-optimize.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script type="module">
+    import anime from 'https://esm.sh/animejs@3.2.2';
+
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    /* ── A1: Inference Shim routing diagram ─────────────────────────── */
+    (function drawShim() {
+      const svg = d3.select('#shim-svg');
+      const W = 680, H = 280;
+      const bg2 = cssVar('--bg-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bdr = cssVar('--border-color');
+
+      // Callers on left
+      const callers = [
+        { label: 'Agent Loop', y: 60 },
+        { label: 'Wiggum Eval', y: 130 },
+        { label: 'Planner', y: 200 },
+      ];
+
+      // Backends on right
+      const backends = [
+        { label: 'Ollama', sublabel: ':11434', y: 55 },
+        { label: 'vLLM', sublabel: ':8000', y: 125 },
+        { label: 'llama.cpp', sublabel: ':8080', y: 195 },
+        { label: 'OpenAI-compat', sublabel: ':443', y: 245 },
+      ];
+
+      const callerX = 30, callerW = 120;
+      const shimX = 230, shimW = 160, shimH = 200, shimY = 40;
+      const backX = 490, backW = 140;
+
+      svg.append('rect').attr('x', shimX).attr('y', shimY).attr('width', shimW).attr('height', shimH)
+        .attr('rx', 10).attr('fill', bg3).attr('stroke', cyan).attr('stroke-width', 2)
+        .attr('opacity', 0);
+
+      svg.append('text').attr('x', shimX + shimW / 2).attr('y', shimY + 20)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+        .attr('fill', cyan).attr('letter-spacing', 1).attr('text-transform', 'uppercase')
+        .attr('opacity', 0).text('INFERENCE SHIM');
+
+      svg.append('text').attr('x', shimX + shimW / 2).attr('y', shimY + 40)
+        .attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', txt2).attr('opacity', 0)
+        .text('chat(model, messages)');
+
+      svg.append('text').attr('x', shimX + shimW / 2).attr('y', shimY + 60)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', txt2).attr('opacity', 0)
+        .text('→ OllamaLike');
+
+      // Horizontal separator inside shim
+      svg.append('line')
+        .attr('x1', shimX + 10).attr('y1', shimY + 70)
+        .attr('x2', shimX + shimW - 10).attr('y2', shimY + 70)
+        .attr('stroke', bdr).attr('stroke-width', 1).attr('opacity', 0);
+
+      // Route labels inside shim
+      const routes = ['Ollama → _call_ollama()', 'vLLM → _call_vllm()', 'OAI → _call_openai()'];
+      routes.forEach((r, i) => {
+        svg.append('text').attr('x', shimX + 14).attr('y', shimY + 95 + i * 28)
+          .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text(r);
+      });
+
+      // Caller boxes
+      callers.forEach((c, i) => {
+        const g = svg.append('g').attr('opacity', 0).attr('class', `caller-${i}`);
+        g.append('rect').attr('x', callerX).attr('y', c.y).attr('width', callerW).attr('height', 36)
+          .attr('rx', 6).attr('fill', bg3).attr('stroke', pink).attr('stroke-width', 1.5);
+        g.append('text').attr('x', callerX + callerW / 2).attr('y', c.y + 22)
+          .attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 600).attr('fill', txt)
+          .text(c.label);
+      });
+
+      // Backend boxes
+      backends.forEach((b, i) => {
+        const g = svg.append('g').attr('opacity', 0).attr('class', `backend-${i}`);
+        g.append('rect').attr('x', backX).attr('y', b.y).attr('width', backW).attr('height', 36)
+          .attr('rx', 6).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5);
+        g.append('text').attr('x', backX + backW / 2).attr('y', b.y + 15)
+          .attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 600).attr('fill', txt)
+          .text(b.label);
+        g.append('text').attr('x', backX + backW / 2).attr('y', b.y + 28)
+          .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2)
+          .text(b.sublabel);
+      });
+
+      // Arrow helpers
+      function arrow(x1, y1, x2, y2, col) {
+        const m = (x1 + x2) / 2;
+        svg.append('path')
+          .attr('d', `M${x1},${y1} C${m},${y1} ${m},${y2} ${x2},${y2}`)
+          .attr('fill', 'none').attr('stroke', col).attr('stroke-width', 1.5)
+          .attr('marker-end', `url(#arr-${col === cyan ? 'c' : 'p'})`)
+          .attr('opacity', 0).attr('class', 'arrow');
+      }
+
+      // Defs arrowhead
+      const defs = svg.append('defs');
+      ['c','p'].forEach((k, i) => {
+        const col = k === 'c' ? cyan : pink;
+        const m = defs.append('marker').attr('id', `arr-${k}`)
+          .attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('refY', 0)
+          .attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+        m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', col);
+      });
+
+      // Caller → shim arrows (pink)
+      callers.forEach(c => arrow(callerX + callerW, c.y + 18, shimX, c.y + 18, pink));
+      // Shim → backend arrows (cyan)
+      const shimMidY = shimY + shimH / 2;
+      backends.forEach(b => arrow(shimX + shimW, shimMidY, backX, b.y + 18, cyan));
+
+      // OllamaLike label below shim
+      svg.append('text').attr('x', shimX + shimW / 2).attr('y', shimY + shimH + 22)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', txt2).attr('opacity', 0)
+        .text('Normalized: .message.content / .message.role');
+
+      // Animate
+      const allRects = svg.selectAll('rect, path.arrow, text, line').nodes();
+      anime({
+        targets: '#shim-svg rect, #shim-svg text, #shim-svg line, #shim-svg path',
+        opacity: [0, 1],
+        duration: 600,
+        delay: anime.stagger(40),
+        easing: 'easeOutQuad',
+      });
+    })();
+
+    /* ── A2: Three-Role Architecture ────────────────────────────────── */
+    (function drawRoles() {
+      const svg = d3.select('#roles-svg');
+      const W = 680, H = 300;
+      const bg3 = cssVar('--bg-tertiary');
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bdr = cssVar('--border-color');
+
+      const roles = [
+        { id: 'planner', label: 'PLANNER', model: '9B fast model', desc: 'Decompose → queries + gaps', x: 40, col: '#a855f7' },
+        { id: 'producer', label: 'PRODUCER', model: 'Largest available', desc: 'Synthesize → long-form output', x: 255, col: pink },
+        { id: 'evaluator', label: 'EVALUATOR', model: 'Different family', desc: 'Score → dimensional feedback', x: 470, col: cyan },
+      ];
+
+      const boxW = 160, boxH = 130, boxY = 60;
+
+      // ModelConfig central element
+      svg.append('rect').attr('x', 240).attr('y', 220).attr('width', 200).attr('height', 46)
+        .attr('rx', 8).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', 340).attr('y', 237).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 700).attr('fill', txt2).attr('letter-spacing', 1)
+        .attr('opacity', 0).text('ModelConfig');
+      svg.append('text').attr('x', 340).attr('y', 253).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0)
+        .text('producer ≠ evaluator  (ConfigurationError)');
+
+      roles.forEach((r, i) => {
+        const g = svg.append('g').attr('opacity', 0);
+        g.append('rect').attr('x', r.x).attr('y', boxY).attr('width', boxW).attr('height', boxH)
+          .attr('rx', 10).attr('fill', bg3).attr('stroke', r.col).attr('stroke-width', 2);
+        g.append('text').attr('x', r.x + boxW / 2).attr('y', boxY + 24)
+          .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+          .attr('fill', r.col).attr('letter-spacing', 1).text(r.label);
+        g.append('text').attr('x', r.x + boxW / 2).attr('y', boxY + 48)
+          .attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', txt).text(r.model);
+        g.append('text').attr('x', r.x + boxW / 2).attr('y', boxY + 75)
+          .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2)
+          .text(r.desc.split('→')[0].trim());
+        g.append('text').attr('x', r.x + boxW / 2).attr('y', boxY + 92)
+          .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', r.col)
+          .text('→ ' + r.desc.split('→')[1].trim());
+
+        // Connection line to ModelConfig
+        svg.append('line')
+          .attr('x1', r.x + boxW / 2).attr('y1', boxY + boxH)
+          .attr('x2', 340).attr('y2', 220)
+          .attr('stroke', r.col).attr('stroke-width', 1.5)
+          .attr('stroke-dasharray', '4 3').attr('opacity', 0).attr('class', 'conn');
+      });
+
+      // "Different family" annotation
+      svg.append('text').attr('x', 340).attr('y', 45).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('fill', txt2).attr('opacity', 0)
+        .text('Producer ≠ Evaluator — cross-family selection required');
+
+      anime({
+        targets: '#roles-svg g, #roles-svg rect, #roles-svg text, #roles-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(50),
+        easing: 'easeOutQuad',
+      });
+    })();
+
+    /* ── A3: Evaluator Pool rotation diagram ─────────────────────────── */
+    (function drawPool() {
+      const svg = d3.select('#pool-svg');
+      const W = 680, H = 320;
+      const bg3 = cssVar('--bg-tertiary');
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bdr = cssVar('--border-color');
+      const purple = '#a855f7';
+
+      const cx = 340, cy = 160, R = 110;
+      const numRuns = 8;
+
+      // Evaluator pool boxes (4 models, arranged in a horizontal row at bottom)
+      const evalModels = ['glm4', 'mistral', 'gemma2', 'phi3'];
+      const evalColors = [cyan, pink, purple, '#f97316'];
+      const evalY = 258;
+      const evalW = 120, evalGap = 20;
+      const totalW = evalModels.length * evalW + (evalModels.length - 1) * evalGap;
+      const evalStartX = (W - totalW) / 2;
+
+      evalModels.forEach((m, i) => {
+        const ex = evalStartX + i * (evalW + evalGap);
+        svg.append('rect').attr('x', ex).attr('y', evalY).attr('width', evalW).attr('height', 36)
+          .attr('rx', 6).attr('fill', bg3).attr('stroke', evalColors[i]).attr('stroke-width', 1.5)
+          .attr('opacity', 0);
+        svg.append('text').attr('x', ex + evalW / 2).attr('y', evalY + 14)
+          .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+          .attr('fill', evalColors[i]).attr('opacity', 0).text(m);
+        svg.append('text').attr('x', ex + evalW / 2).attr('y', evalY + 28)
+          .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2).attr('opacity', 0)
+          .text('evaluator model');
+      });
+
+      // Central hash box
+      svg.append('rect').attr('x', cx - 70).attr('y', cy - 28).attr('width', 140).attr('height', 56)
+        .attr('rx', 8).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', cx).attr('y', cy - 8).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 700).attr('fill', txt2).attr('letter-spacing', 1)
+        .attr('opacity', 0).text('MD5(run_id)');
+      svg.append('text').attr('x', cx).attr('y', cy + 12).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('fill', txt2).attr('opacity', 0).text('% pool_size → index');
+
+      // Run ID circles arranged in arc above
+      for (let i = 0; i < numRuns; i++) {
+        const angle = Math.PI + (i / (numRuns - 1)) * Math.PI;
+        const rx = cx + R * Math.cos(angle);
+        const ry = cy + R * Math.sin(angle) - 30;
+        const col = evalColors[i % 4];
+        svg.append('circle').attr('cx', rx).attr('cy', ry).attr('r', 22)
+          .attr('fill', bg3).attr('stroke', col).attr('stroke-width', 1.5).attr('opacity', 0);
+        svg.append('text').attr('x', rx).attr('y', ry - 4)
+          .attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', txt2).attr('opacity', 0)
+          .text(`run`);
+        svg.append('text').attr('x', rx).attr('y', ry + 9)
+          .attr('text-anchor', 'middle').attr('font-size', 9).attr('font-weight', 700)
+          .attr('fill', col).attr('opacity', 0).text(`#${i + 1}`);
+
+        // Arrow from run circle to central hash
+        const angle2 = Math.PI + (i / (numRuns - 1)) * Math.PI;
+        const x1 = cx + (R - 22) * Math.cos(angle2);
+        const y1 = (cy - 30) + (R - 22) * Math.sin(angle2);
+        svg.append('line')
+          .attr('x1', x1).attr('y1', y1)
+          .attr('x2', cx).attr('y2', cy - 28)
+          .attr('stroke', col).attr('stroke-width', 1).attr('stroke-dasharray', '3 3')
+          .attr('opacity', 0);
+      }
+
+      // Arrows from hash to eval models
+      evalModels.forEach((m, i) => {
+        const ex = evalStartX + i * (evalW + evalGap) + evalW / 2;
+        svg.append('line')
+          .attr('x1', cx).attr('y1', cy + 28)
+          .attr('x2', ex).attr('y2', evalY)
+          .attr('stroke', evalColors[i]).attr('stroke-width', 1.5)
+          .attr('stroke-dasharray', '5 3').attr('opacity', 0);
+      });
+
+      // Label
+      svg.append('text').attr('x', W / 2).attr('y', 22).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('fill', txt2).attr('opacity', 0)
+        .text('Runs 1-8 → hashed to 4 evaluator models (deterministic per run ID)');
+
+      anime({
+        targets: '#pool-svg circle, #pool-svg rect, #pool-svg text, #pool-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(35),
+        easing: 'easeOutQuad',
+      });
+    })();
+
+    /* ── A4: VRAM Keep-Alive Gantt ───────────────────────────────────── */
+    (function drawVRAM() {
+      const svg = d3.select('#vram-svg');
+      const W = 680, H = 280;
+      const bg3 = cssVar('--bg-tertiary');
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bdr = cssVar('--border-color');
+      const purple = '#a855f7';
+
+      const marginL = 100, marginR = 30, marginT = 40, marginB = 50;
+      const gW = W - marginL - marginR;
+      const gH = H - marginT - marginB;
+
+      // Time axis: 0 to 300 seconds
+      const totalTime = 300;
+      const xScale = d3.scaleLinear().domain([0, totalTime]).range([marginL, marginL + gW]);
+
+      // Three rows: Planner, Producer, Evaluator
+      const rows = ['Planner', 'Producer', 'Evaluator'];
+      const rowColors = [purple, pink, cyan];
+      const rowH = gH / 3;
+
+      // Segments: [row, start, end, state]  state: warm, cold, active
+      const segments = [
+        // Planner: loads at 0, active 0-15, warm 15-75, unloaded after
+        { row: 0, start: 0, end: 15, state: 'active', label: 'Planning (15s)' },
+        { row: 0, start: 15, end: 75, state: 'warm', label: 'warm' },
+        { row: 0, start: 75, end: 300, state: 'cold', label: 'released' },
+        // Producer: warm from 10, active 30-180
+        { row: 1, start: 0, end: 30, state: 'warm', label: 'loading (8s)' },
+        { row: 1, start: 30, end: 150, state: 'active', label: 'Synthesis (120s)' },
+        { row: 1, start: 150, end: 240, state: 'warm', label: 'warm (revision)' },
+        { row: 1, start: 240, end: 300, state: 'warm', label: 'warm' },
+        // Evaluator: loads at 120, active 150-210, 220-260
+        { row: 2, start: 0, end: 150, state: 'warm', label: 'loading (8s)' },
+        { row: 2, start: 150, end: 210, state: 'active', label: 'Eval R1 (60s)' },
+        { row: 2, start: 210, end: 220, state: 'warm', label: '' },
+        { row: 2, start: 220, end: 265, state: 'active', label: 'Eval R2 (45s)' },
+        { row: 2, start: 265, end: 300, state: 'warm', label: '' },
+      ];
+
+      const stateAlpha = { active: 1, warm: 0.35, cold: 0.08 };
+
+      // Axis
+      svg.append('line')
+        .attr('x1', marginL).attr('y1', marginT + gH)
+        .attr('x2', marginL + gW).attr('y2', marginT + gH)
+        .attr('stroke', bdr).attr('stroke-width', 1);
+
+      [0, 60, 120, 180, 240, 300].forEach(t => {
+        const x = xScale(t);
+        svg.append('line').attr('x1', x).attr('y1', marginT + gH).attr('x2', x).attr('y2', marginT + gH + 5)
+          .attr('stroke', bdr).attr('stroke-width', 1);
+        svg.append('text').attr('x', x).attr('y', marginT + gH + 17)
+          .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2)
+          .text(t === 0 ? '0s' : `${t}s`);
+      });
+
+      svg.append('text').attr('x', marginL + gW / 2).attr('y', H - 8)
+        .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2)
+        .text('Pipeline time (seconds)');
+
+      // Row labels + bars
+      rows.forEach((r, ri) => {
+        const rowY = marginT + ri * rowH;
+        svg.append('text').attr('x', marginL - 8).attr('y', rowY + rowH / 2 + 4)
+          .attr('text-anchor', 'end').attr('font-size', 10.5).attr('font-weight', 600)
+          .attr('fill', rowColors[ri]).text(r);
+
+        // Background row
+        svg.append('rect').attr('x', marginL).attr('y', rowY + 4)
+          .attr('width', gW).attr('height', rowH - 8)
+          .attr('rx', 3).attr('fill', bg3).attr('opacity', 0.4);
+
+        segments.filter(s => s.row === ri).forEach(seg => {
+          const x = xScale(seg.start);
+          const w = xScale(seg.end) - xScale(seg.start);
+          const alpha = stateAlpha[seg.state];
+
+          svg.append('rect')
+            .attr('x', x).attr('y', rowY + 4)
+            .attr('width', 0).attr('height', rowH - 8)
+            .attr('rx', 3)
+            .attr('fill', rowColors[ri]).attr('fill-opacity', alpha)
+            .attr('data-w', w)
+            .attr('class', 'vram-bar');
+
+          if (seg.label && w > 50) {
+            svg.append('text')
+              .attr('x', x + w / 2).attr('y', rowY + rowH / 2 + 4)
+              .attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', txt).attr('opacity', 0)
+              .attr('class', 'vram-label')
+              .text(seg.label);
+          }
+        });
+      });
+
+      // Cold-start avoided annotation
+      svg.append('text').attr('x', xScale(150)).attr('y', marginT - 12)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', cyan).attr('opacity', 0)
+        .attr('class', 'annotation')
+        .text('← All three models warm; cold-start overhead eliminated →');
+
+      // Animate bars growing
+      const bars = document.querySelectorAll('#vram-svg .vram-bar');
+      bars.forEach((bar, i) => {
+        anime({
+          targets: bar,
+          width: parseFloat(bar.getAttribute('data-w')),
+          duration: 700,
+          delay: 200 + i * 40,
+          easing: 'easeOutQuad',
+        });
+      });
+
+      anime({
+        targets: '#vram-svg .vram-label, #vram-svg .annotation, #vram-svg text:not(.vram-label):not(.annotation)',
+        opacity: [0, 1],
+        duration: 500,
+        delay: 600,
+        easing: 'easeOutQuad',
+      });
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

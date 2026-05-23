@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Experimental Methodology: Four Experiments, One Pipeline | Nick McCarty</title>
+  <meta name="description" content="A progression through four completely randomized designs that exposed the evaluator ceiling, the producer ceiling, and the bottleneck that neither model upgrade could fix — the synthesis instruction.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/experimental-methodology.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Experimental Methodology: Four Experiments, One Pipeline">
+  <meta property="og:description" content="Four CRD experiments tracing the harness from a 9/9 evaluator ceiling to a broken T_A producer ceiling to a T_B synthesis bottleneck — and the autoresearch loop designed to fix it.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/experimental-methodology.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-23T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Experimental Methodology: Four Experiments, One Pipeline">
+  <meta name="twitter:description" content="From dual-search regime shift to producer ceiling to autoresearch — four experiments, 43 runs, and what the data actually said.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Experimental Methodology: Four Experiments, One Pipeline","description":"Four CRD experiments tracing the evaluator ceiling, producer ceiling, and synthesis bottleneck in a local open-source agent harness.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-23","url":"https://nickmccarty.github.io/blog/experimental-methodology.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout.purple { border-left-color: #a855f7; }
+    .callout.orange { border-left-color: #f97316; }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .callout p + p { margin-top: 0.6rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.88rem;
+    }
+    th {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    tr:last-child td { border-bottom: none; }
+    .pass { color: #34d399; font-weight: 600; }
+    .fail { color: var(--accent-pink); font-weight: 600; }
+    .neutral { color: var(--text-secondary); }
+    #regime-svg text, #exp-prog-svg text, #bottleneck-svg text, #arch-svg text { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.797l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 23, 2026 &bull; 18 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">Experimental Methodology: Four Experiments, One Pipeline</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          A progression through four completely randomized designs that exposed the evaluator ceiling, the producer ceiling, and the bottleneck that neither model upgrade could fix — the synthesis instruction itself.
+        </p>
+
+      </header>
+
+      <p>
+        The patterns described across this series were not designed in advance. They were derived from a controlled empirical process: observe a failure, diagnose its root cause, apply a targeted intervention, measure whether behavior changed. This post documents that process — the experimental designs, the data, and what each experiment forced the next one to test.
+      </p>
+
+      <p>
+        The framework uses Montgomery-style <strong>completely randomized designs (CRDs)</strong> — the same statistical methodology used in industrial process improvement. Each factor level (task type) receives a fixed number of replications, run order is randomized to prevent confounding from search cache drift or model warm-up effects, and response variables are specified before any run begins. Hypotheses are written before data is collected so that "interesting" post-hoc patterns don't masquerade as confirmations.
+      </p>
+
+      <h2>The Measurement Infrastructure</h2>
+
+      <p>
+        Before the first formal experiment, the pipeline needed an audit trail. Every run appends one JSON record to <code>runs.jsonl</code>:
+      </p>
+
+<pre><code>{
+  "task": "top 5 context engineering techniques...",
+  "producer_model": "pi-qwen",
+  "evaluator_model": "glm4:9b",
+  "total_search_chars": 3125,
+  "output_bytes": 1525,
+  "output_lines": 20,
+  "wiggum_scores": [9.0],
+  "wiggum_dims": {"relevance": 9, "completeness": 9, "depth": 8, "specificity": 8, "structure": 10},
+  "wiggum_rounds": 1,
+  "final": "PASS",
+  "run_duration_s": 142.3,
+  "input_tokens": 8240,
+  "output_tokens": 1621
+}</code></pre>
+
+      <p>
+        The append-only format means every run is recoverable regardless of what happens downstream. <code>analytics.py</code> reads the log and computes cross-run summaries; <code>inspect_run.py</code> gives per-run forensics. This infrastructure made the regime shift visible before the formal experiments began.
+      </p>
+
+      <h2>The Foundational Finding: Dual-Search Regime Shift</h2>
+
+      <p>
+        The first hypothesis the pipeline data tested was not experimental — it was observational. A comparison of six runs (three single-search, three dual-search) produced a finding stark enough to anchor every subsequent experiment:
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Metric</th><th>Single Search (n=3)</th><th>Dual Search (n=3)</th><th>Delta</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Avg output bytes</td><td>1,149</td><td>1,817</td><td class="pass">+58%</td></tr>
+          <tr><td>Avg output lines</td><td>10.7</td><td>31.0</td><td class="pass">+190%</td></tr>
+          <tr><td>First Wiggum score</td><td>7.7</td><td>9.0</td><td class="pass">+1.3</td></tr>
+          <tr><td>Avg Wiggum rounds</td><td>1.3</td><td>1.0</td><td class="pass">&minus;0.3</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        Every metric improved with dual search. The prior correlation between search chars and output quality appeared strongly positive (r ≈ +0.9). Dual search was made the default: always run two queries before synthesizing, with a 1,800-char quality floor that triggers a fallback if merged results fall short.
+      </p>
+
+      <div class="callout">
+        <p>The positive correlation between search chars and output quality held at <em>regime scale</em> — single-search vs dual-search runs are qualitatively different. Later experiments would show that within the dual-search regime (all runs 2,900–3,600 chars), search volume becomes a non-predictor (r = −0.577, noise). Leading indicators lose their predictive value once the floor they measured has been consistently cleared.</p>
+      </div>
+
+      <div class="diagram-container">
+        <div class="diagram-title">Dual-Search Regime Shift &mdash; Output Bytes and First-Pass Score</div>
+        <svg id="regime-svg" width="100%" viewBox="0 0 680 240" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Single-search vs dual-search runs. Each bar is one run. The regime boundary (dashed) corresponds to enabling dual search by default. Score axis (right) shown as dots.</p>
+      </div>
+
+      <h2>Experiment Design Framework</h2>
+
+      <p>
+        The four formal experiments used the same task set and CRD structure, enabling direct cross-experiment comparisons. The factor is task type at three levels:
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Type</th><th>Count constraint</th><th>Domain</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>T_A</strong></td><td>enumerated</td><td>Top 5 (explicit)</td><td>Context engineering techniques</td></tr>
+          <tr><td><strong>T_B</strong></td><td>best_practices</td><td>Open-ended</td><td>Cost envelope management</td></tr>
+          <tr><td><strong>T_C</strong></td><td>enumerated</td><td>Top 3 (explicit)</td><td>Agent failure modes</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        Three replications per task type, randomized run order (independent permutation per experiment). The identical task prompts across all four experiments mean that differences in output metrics are attributable to harness changes, not task variation. Response variables are collected automatically from <code>runs.jsonl</code>.
+      </p>
+
+      <h2>Experiment 01: Pipeline Generalization Study</h2>
+
+      <p>
+        <strong>Question:</strong> Does the dual-search harness produce consistent quality across different task types and count constraints?
+      </p>
+
+      <p>
+        Nine runs, 3 × 3 CRD. Producer: <code>qwen2.5:7b</code>. Evaluator: <code>glm4:9b</code>. Pass threshold: score ≥ 8.
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Run</th><th>Task</th><th>Search chars</th><th>Output bytes</th><th>Score r1</th><th>Rounds</th><th>Final</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>T_C</td><td>3,174</td><td>1,322</td><td>9</td><td>1</td><td class="pass">PASS</td></tr>
+          <tr><td>2</td><td>T_A</td><td>3,125</td><td>1,525</td><td>9</td><td>1</td><td class="pass">PASS</td></tr>
+          <tr><td>3</td><td>T_B</td><td>3,201</td><td>2,501</td><td>9</td><td>1</td><td class="pass">PASS</td></tr>
+          <tr><td>4</td><td>T_A</td><td>3,031</td><td>3,332</td><td>9</td><td>1</td><td class="pass">PASS</td></tr>
+          <tr><td>5</td><td>T_C</td><td>3,577</td><td>1,291</td><td>9</td><td>1</td><td class="pass">PASS</td></tr>
+          <tr><td>6</td><td>T_B</td><td>3,154</td><td>3,262</td><td>9</td><td>1</td><td class="pass">PASS</td></tr>
+          <tr><td>7</td><td>T_C</td><td>3,165</td><td>2,649</td><td>9</td><td>1</td><td class="pass">PASS</td></tr>
+          <tr><td>8</td><td>T_B</td><td>2,952</td><td>2,952</td><td>9</td><td>1</td><td class="pass">PASS</td></tr>
+          <tr><td>9</td><td>T_A</td><td>3,484</td><td>2,110</td><td>9</td><td>1</td><td class="pass">PASS</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        <strong>Pass rate: 9/9.</strong> The wiggum loop generalized across all task types without failure. But the per-task statistics told a less tidy story:
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Task</th><th>Bytes mean</th><th>Bytes std</th><th>CV</th><th>Score mean</th><th>Rounds mean</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>T_A</td><td>2,322</td><td>922</td><td>39.7%</td><td>9.0</td><td>1.0</td></tr>
+          <tr><td>T_B</td><td>2,905</td><td>383</td><td>13.2%</td><td>9.0</td><td>1.0</td></tr>
+          <tr><td>T_C</td><td>1,754</td><td>775</td><td>44.2%</td><td>9.0</td><td>1.0</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        T_C — the most explicitly constrained task ("top 3") — had the highest output variance at CV = 44.2%, exceeding the 40% falsification threshold. T_B, the open-ended task, was the most consistent at CV = 13.2%. <strong>Counterintuitive finding:</strong> explicit count constraints introduce brittleness. When the model over-delivers (Run 7 produced 7 failure modes for a "top 3" task), the evaluator passed it at 9/10 without enforcing the count rule. The Wiggum loop was correct that the output was good — but the task wasn't completed as specified.
+      </p>
+
+      <div class="callout pink">
+        <p><strong>Evaluator ceiling detected.</strong> All 18 runs across experiments 01 and 02 returned <code>wiggum_rounds = 1</code> with <code>score_r1 = 9.0</code>. The revision loop — the mechanism that should surface and fix quality gaps — was completely dormant. The root cause: <code>glm4:9b</code> assigns 9/10 to any output that is structurally complete and topically correct, regardless of depth or specificity. Raising the pass threshold from 8 to 9 in experiment 02 had zero effect because the evaluator's score distribution never moved. Threshold changes are a no-op if the evaluator never scores below the new threshold.</p>
+      </div>
+
+      <h2>Experiment 02: Harness Upgrade Impact Study</h2>
+
+      <p>
+        <strong>Question:</strong> Does adding count constraint enforcement, a raised pass threshold, and task-type-specific evaluator criteria improve consistency?
+      </p>
+
+      <p>
+        Same CRD. Three changes under test: (1) harness-side count check re-synthesizes if item count is wrong, (2) pass threshold raised to 9, (3) per-task-type scoring criteria injected (<code>enumerated</code> / <code>best_practices</code> / <code>research</code>).
+      </p>
+
+      <p>
+        <strong>Results:</strong> 9/9 PASS again. Zero <code>count_check_retry</code> events (count was right on every first synthesis). All 9 correct task-type routing. CV improved for constrained tasks: T_A 39.7% → 22.8%, T_C 44.2% → 32.4%. T_B remained the most stable.
+      </p>
+
+      <p>
+        But the central hypothesis — that raising the threshold would surface runs requiring revision — was definitively falsified. The evaluator scored 9/10 on every first pass, identical to experiment 01. The harness improvements had measurable effects on consistency but zero effect on the metric that mattered: revision loop activation. The ceiling was an evaluator problem, not a threshold or criteria problem.
+      </p>
+
+      <div class="callout">
+        <p><strong>Design implication:</strong> when every run scores the same, the metric has become uninformative. A uniformly high first-pass score means either quality is genuinely high, the evaluator is too lenient, or the pass threshold is too low. Distinguish these by using a stricter evaluator before concluding the harness has no room to improve. Experiment 03 was designed exactly to test this.</p>
+      </div>
+
+      <h2>Experiment 03: Evaluator Upgrade</h2>
+
+      <p>
+        <strong>Question:</strong> Does replacing <code>glm4:9b</code> with <code>Qwen3-Coder:30b</code> produce genuine score variance and activate the revision loop?
+      </p>
+
+      <p>
+        Same CRD and task set. Evaluator changed to <code>Qwen3-Coder:30b</code> (30B parameters, 3× the capacity of glm4). Evaluator prompt updated with calibration anchors and a rule requiring named issues for any dimension scored ≤8. Pass threshold: 8.0.
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Run</th><th>Task</th><th>Score r1</th><th>Score final</th><th>Rounds</th><th>Gain</th><th>Final</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>T_C</td><td>7.0</td><td>8.8</td><td>2</td><td>+1.8</td><td class="pass">PASS</td></tr>
+          <tr><td>2</td><td>T_A</td><td>7.0</td><td>6.9</td><td>3</td><td>&minus;0.1</td><td class="fail">FAIL</td></tr>
+          <tr><td>3</td><td>T_C</td><td>7.0</td><td>7.0</td><td>3</td><td>0.0</td><td class="fail">FAIL</td></tr>
+          <tr><td>4</td><td>T_B</td><td>6.0</td><td>7.2</td><td>3</td><td>+1.2</td><td class="fail">FAIL</td></tr>
+          <tr><td>5</td><td>T_A</td><td>7.0</td><td>6.8</td><td>3</td><td>&minus;0.2</td><td class="fail">FAIL</td></tr>
+          <tr><td>6</td><td>T_B</td><td>8.1</td><td>8.1</td><td>1</td><td>0</td><td class="pass">PASS</td></tr>
+          <tr><td>7</td><td>T_C</td><td>7.0</td><td>8.1</td><td>2</td><td>+1.1</td><td class="pass">PASS</td></tr>
+          <tr><td>8</td><td>T_B</td><td>7.5</td><td>8.2</td><td>2</td><td>+0.7</td><td class="pass">PASS</td></tr>
+          <tr><td>9</td><td>T_A</td><td>7.0</td><td>7.0</td><td>3</td><td>0.0</td><td class="fail">FAIL</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        <strong>Overall: 4/9 PASS. T_A: 0/3.</strong> The evaluator upgrade worked exactly as intended — first-pass score std rose from effectively 0 to 0.55, mean dropped from 9.0 to 7.07, revision loop activated in 8/9 runs. The unexpected result was what the revision loop revealed: <code>qwen2.5:7b</code> could not respond to depth feedback on T_A.
+      </p>
+
+      <p>
+        Two distinct failure modes appeared in T_A revision:
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Mode</th><th>Pattern</th><th>Mechanism</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Regression</strong></td><td>7.0 → 6.8 (runs 2, 5)</td><td>Producer rewrites sections and removes content while trying to add depth; shorter, shallower result</td></tr>
+          <tr><td><strong>Stagnation</strong></td><td>7.0 → 7.0 (runs 3, 9)</td><td>Producer edits surface wording without addressing the underlying depth gap the evaluator identified</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout pink">
+        <p><strong>Producer ceiling exposed.</strong> The wiggum loop design was correct; the evaluator was now calibrated. The bottleneck was the producer. <code>qwen2.5:7b</code> can produce output that scores ≥8.0 on open-ended tasks (T_B) and short enumerated tasks (T_C) when depth per item is achievable. For T_A — five items, each requiring a concrete implementation note — the ceiling was ~7.0 regardless of revision. The evaluator correctly identified missing depth per item, but the producer could not add it. Depth and specificity dimensions both scored 6.0 on every T_A first pass, and revision did not move them.</p>
+      </div>
+
+      <h2>Experiment 04: Producer Upgrade</h2>
+
+      <p>
+        <strong>Question:</strong> Does replacing <code>qwen2.5:7b</code> with <code>qwen2.5:32b Q4_K_M</code> break the T_A ceiling?
+      </p>
+
+      <p>
+        Same task set, same evaluator, same threshold. Producer changed to the 32B parameter model (approximately 20GB at Q4_K_M quantization). The experiment ran 16 total records rather than 9 due to a MarkItDown URL enrichment integration mid-run.
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Task</th><th>Score r1 mean</th><th>Rounds mean</th><th>Pass rate</th><th>Depth r1</th><th>Spc r1</th><th>Bytes mean</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>T_A</td><td>8.00 ±0.74</td><td>1.25</td><td class="pass">4/4 (100%)</td><td>7.2</td><td>7.0</td><td>2,293</td></tr>
+          <tr><td>T_B</td><td>6.97 ±0.53</td><td>2.71</td><td class="neutral">4/7 (57%)</td><td>6.1</td><td>5.9</td><td>2,198</td></tr>
+          <tr><td>T_C</td><td>7.54 ±0.80</td><td>2.00</td><td class="pass">4/5 (80%)</td><td>6.8</td><td>6.4</td><td>1,491</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        <strong>Overall: 12/16 PASS (75%).</strong> Experiment 03 was 4/9 (44%). All five hypotheses confirmed:
+      </p>
+
+      <ul>
+        <li><strong>T_A ceiling broken.</strong> 4/4 PASS. score_r1 improved from 7.0 ±0.00 to 8.00 ±0.74. Depth +1.2, specificity +1.0 vs experiment 03. Revision rounds: 3.0 → 1.25.</li>
+        <li><strong>Zero revision regressions.</strong> Experiment 03 had two regression events (7.0 → 6.8). The 32B consistently improves on evaluator feedback rather than degrading. This matters more than first-pass score: a reliable revision loop means the ceiling is now set by the synthesis instruction and evaluator, not by the producer's ability to respond to feedback.</li>
+        <li><strong>Overall first-pass quality improved.</strong> Mean score_r1 rose from 7.07 to 7.41.</li>
+      </ul>
+
+      <div class="diagram-container">
+        <div class="diagram-title">Cross-Experiment Progression &mdash; T_A First-Pass Score and Pass Rate</div>
+        <svg id="exp-prog-svg" width="100%" viewBox="0 0 680 280" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">T_A (top 5 enumerated) across all four experiments. The evaluator upgrade (exp-03) activated the revision loop but exposed the producer ceiling. The producer upgrade (exp-04) broke the ceiling. T_A first-pass score went 9.0 → 9.0 → 7.0 → 8.0 across the experiment series — the drops and recovery track which component was the actual bottleneck at each stage.</p>
+      </div>
+
+      <h2>T_B: The Remaining Bottleneck</h2>
+
+      <p>
+        The most counterintuitive finding from experiment 04 was T_B. The 32B producer generates <em>shorter</em> T_B output than the 7B model — 2,198 bytes vs 3,288 bytes, a 33% reduction. Depth and specificity on first pass are essentially unchanged: T_B depth_r1 = 6.1 (vs experiment 03's 6.0). The parameter upgrade that definitively solved T_A had no effect on T_B's depth dimension.
+      </p>
+
+      <p>
+        The dimension data makes the cause clear. T_A depth improvement was +1.2 points; T_B depth improvement was +0.1 points. A 4.5× parameter increase brought no depth improvement on open-ended tasks. This is a synthesis instruction problem, not a model capability problem. The <code>SYNTH_INSTRUCTION</code> doesn't push hard enough on depth for best-practices task types, and the 32B complies faithfully with a weak instruction — it's more capable, so it follows the (insufficiently demanding) instruction more precisely.
+      </p>
+
+      <div class="callout purple">
+        <p><strong>The bottleneck has shifted three times.</strong> The dual-search change solved the research quality bottleneck. The evaluator upgrade unmasked the producer ceiling. The producer upgrade solved the producer ceiling — and unmasked the synthesis instruction as the remaining bottleneck. Each fix reveals the next constraint.</p>
+      </div>
+
+      <div class="diagram-container">
+        <div class="diagram-title">Bottleneck Chain: What Each Experiment Fixed and What It Revealed</div>
+        <svg id="bottleneck-svg" width="100%" viewBox="0 0 680 200" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Each intervention solved one constraint and made the next constraint visible. Harness improvement is a sequential bottleneck-elimination process.</p>
+      </div>
+
+      <h2>The Autoresearch Loop</h2>
+
+      <p>
+        With T_B depth/specificity identified as the synthesis instruction bottleneck, the pipeline became self-targeting. <code>autoresearch.py</code> is an autonomous optimizer that mutates the <code>SYNTH_INSTRUCTION</code> string and runs controlled experiments to measure whether the mutation improved the composite score:
+      </p>
+
+<pre><code>composite = 0.7 × mean_wiggum_r1 + 0.3 × criteria_rate × 10</code></pre>
+
+      <p>
+        Each iteration: propose a modification to the synthesis instruction (using <code>Qwen3-Coder:30b</code> as proposer, optionally <code>kimi-k2.5:cloud</code> for structural diversity), run the eval suite, keep the commit if <code>new_score − baseline > 0.1</code>, otherwise revert via <code>git reset HEAD~1 --soft</code>. The only mutable scope is the instruction string between sentinel markers — the harness itself is off-limits.
+      </p>
+
+      <p>
+        Session 3 results illustrate what the optimizer discovers and discards:
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Experiment</th><th>Change attempted</th><th>Score</th><th>Decision</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>6</td><td>Failure modes + detection/mitigation per strategy</td><td>8.350</td><td class="fail">DISCARD &minus;0.233</td></tr>
+          <tr><td>7</td><td>"When NOT to use" + input boundaries framing</td><td>8.915</td><td class="pass">KEEP +0.332</td></tr>
+          <tr><td>8</td><td>Measurable success criteria / validation tests</td><td>8.915</td><td class="neutral">DISCARD +0.000</td></tr>
+          <tr><td>9</td><td>Confidence ratings (High/Med/Low) per library</td><td>7.965</td><td class="fail">DISCARD &minus;0.950</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        The largest single negative signal: experiment 9's confidence ratings caused a −0.950 regression. The evaluator reads uncertainty markers as lack of authority. Hedging actively hurts depth scores. This finding is impossible to derive from first principles — it requires running the pipeline and measuring it.
+      </p>
+
+      <p>
+        The largest single positive: experiment 7's "when NOT to use" framing (+0.332) was discovered by Kimi (a cloud-based proposer), which explored structurally different angles from the local proposer. Local sessions 1–2 converged on "add more code / implementation detail." Session 3's cloud proposer immediately tried constraint framing and boundary conditions — approaches the local proposer never reached.
+      </p>
+
+      <div class="callout">
+        <p><strong>The autoresearch loop encodes the full experimental methodology in software.</strong> It runs controlled experiments (each proposal is one experiment), measures a response variable (composite score), applies a decision rule (keep if delta > threshold), and maintains a git-auditable history of what worked. The <code>runs.jsonl</code> audit log described in <a href="./observability-flywheel.html">Post 10</a> provides the data; the autoresearch loop is the systematic optimizer that acts on it.</p>
+      </div>
+
+      <h2>Statistical Addendum: What Three Replications Can and Cannot Tell You</h2>
+
+      <p>
+        Three replications per task type is the practical floor for a CRD. It is insufficient for most inferential statistics. The experiments do not report Mann-Whitney U tests or confidence intervals on the per-task means because three samples produce unreliable estimates of those quantities.
+      </p>
+
+      <p>
+        What three replications <em>can</em> reliably detect: large effects. The T_A failure in experiment 03 (0/3 PASS with regression on 2/3 attempts) does not require a test to interpret. The 4/4 T_A success in experiment 04 following a single producer change does not require a test. The signal-to-noise ratio at these effect sizes is high enough that informal reasoning suffices.
+      </p>
+
+      <p>
+        The coefficient of variation (CV) analysis — <code>std / mean</code> per task per experiment — is the primary summary statistic used. It is dimensionless, interpretable, and does not require distributional assumptions. The 20% stability threshold used throughout the experiments is a practical engineering criterion, not a statistical one: at CV &lt; 20%, the pipeline produces outputs consistent enough to serve as training data for the Data Flywheel (Post 10) without requiring per-sample human review.
+      </p>
+
+      <p>
+        Formal inference would require at least 6–8 replications per condition to detect medium-sized effects with reasonable power. That cost is not warranted for iterative engineering decisions — the right tool is rapid pilot experiments followed by a single confirmatory run, which is precisely what the autoresearch loop implements.
+      </p>
+
+      <h2>Three-Model Architecture</h2>
+
+      <p>
+        The four experiments converged on a three-model architecture where each model occupies its correct niche:
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Role</th><th>Model</th><th>Size</th><th>Rationale</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Producer</td><td>qwen2.5:32b Q4_K_M</td><td>~20 GB</td><td>Breaks enumerated task ceiling; reliable revision without regression</td></tr>
+          <tr><td>Evaluator</td><td>Qwen3-Coder:30b</td><td>~18 GB</td><td>Different architecture family; scores critically; names specific issues</td></tr>
+          <tr><td>Planner / Compressor</td><td>glm4:9b</td><td>~5 GB</td><td>Fast; handles lightweight JSON generation and memory compression</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        The key constraint is that the evaluator must be more capable than the producer in the dimensions being evaluated — not necessarily larger in total parameters, but specifically more discriminating on depth and specificity. <code>glm4:9b</code> failed as evaluator not because it was small but because it was not calibrated to penalize shallow outputs. A smaller model with better calibration would work. The experiments happened to find a calibrated model that was also larger.
+      </p>
+
+      <div class="callout">
+        <p>The harness patterns described throughout this series — dual-backend memory (Post 5), the Wiggum Loop (Post 6), dimensional rubrics (Post 7), the Data Flywheel (Post 10) — were all validated or refined against the <code>runs.jsonl</code> audit log. The experimental methodology is not separate from the harness; it is the mechanism by which the harness was built. Every pattern in Posts 1–11 has a row in a JSONL file that justified it.</p>
+      </div>
+
+    
+
+      <div class="post-pagination">
+        <a href="./parallel-inference.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">11 &middot; Parallel Inference</span>
+        </a>
+        <a href="./judge-reliability.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">13 &middot; Judge Reliability</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./harness-thesis.html" class="related-post-card">
+            <div class="related-post-num">Post 1</div>
+            <div class="related-post-title">The Harness Thesis</div>
+            <div class="related-post-desc">Why scaffolding beats model selection&mdash;the five-stage pipeline and the silent overwrite failure that started it all.</div>
+          </a>
+          <a href="./judge-reliability.html" class="related-post-card">
+            <div class="related-post-num">Post 13</div>
+            <div class="related-post-title">Judge Reliability</div>
+            <div class="related-post-desc">Best judges lag human agreement by 5 points. Omni-Judge wrong in 96.4% of expert disagreements.</div>
+          </a>
+          <a href="./the-wiggum-loop.html" class="related-post-card">
+            <div class="related-post-num">Post 6</div>
+            <div class="related-post-title">The Wiggum Loop</div>
+            <div class="related-post-desc">The producer&ndash;evaluator separation pattern and score trajectory data from 1,500 production runs.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Nick McCarty &bull; <a href="https://github.com/nickmccarty" target="_blank" rel="noopener">GitHub</a></p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // --- Diagram 1: Dual-Search Regime Shift ---
+    (function() {
+      const svg = d3.select('#regime-svg');
+      const W = 680, H = 240;
+      const m = {top: 30, right: 70, bottom: 45, left: 60};
+      const w = W - m.left - m.right, h = H - m.top - m.bottom;
+      const g = svg.append('g').attr('transform', `translate(${m.left},${m.top})`);
+
+      const runs = [
+        {i:1,regime:'single',bytes:1264,score:8},{i:2,regime:'single',bytes:683,score:7},{i:3,regime:'single',bytes:1499,score:8},
+        {i:4,regime:'dual',bytes:2014,score:9},{i:5,regime:'dual',bytes:1485,score:9},
+        {i:6,regime:'dual',bytes:1322,score:9},{i:7,regime:'dual',bytes:1817,score:9},{i:8,regime:'dual',bytes:1525,score:9}
+      ];
+
+      const cyan = cssVar('--accent-cyan') || '#57cef2';
+      const pink = cssVar('--accent-pink') || '#ed46c3';
+      const border = cssVar('--border-color') || '#30363d';
+      const textSec = cssVar('--text-secondary') || '#8b949e';
+
+      const xScale = d3.scaleBand().domain(runs.map(r=>r.i)).range([0,w]).padding(0.25);
+      const yLeft = d3.scaleLinear().domain([0,4000]).range([h,0]);
+      const yRight = d3.scaleLinear().domain([0,10]).range([h,0]);
+
+      // grid
+      g.append('g').selectAll('line').data(yLeft.ticks(4)).join('line')
+        .attr('x1',0).attr('x2',w).attr('y1',d=>yLeft(d)).attr('y2',d=>yLeft(d))
+        .attr('stroke',border).attr('stroke-dasharray','3,4').attr('opacity',0.5);
+
+      // bars
+      g.selectAll('rect').data(runs).join('rect')
+        .attr('x',d=>xScale(d.i)).attr('y',d=>yLeft(d.bytes))
+        .attr('width',xScale.bandwidth()).attr('height',d=>h-yLeft(d.bytes))
+        .attr('fill',d=>d.regime==='dual'?cyan:pink).attr('opacity',0.75).attr('rx',3);
+
+      // regime boundary
+      const boundX = (xScale(4) + xScale(3) + xScale.bandwidth()) / 2;
+      g.append('line').attr('x1',boundX).attr('x2',boundX).attr('y1',-10).attr('y2',h)
+        .attr('stroke',textSec).attr('stroke-dasharray','5,4').attr('opacity',0.7);
+      g.append('text').attr('x',boundX+5).attr('y',8).attr('fill',textSec).attr('font-size',11).text('dual search →');
+
+      // score dots
+      g.selectAll('circle').data(runs).join('circle')
+        .attr('cx',d=>xScale(d.i)+xScale.bandwidth()/2).attr('cy',d=>yRight(d.score))
+        .attr('r',5).attr('fill','#f97316').attr('stroke','#0d1117').attr('stroke-width',1.5);
+
+      // axes
+      g.append('g').attr('transform',`translate(0,${h})`).call(d3.axisBottom(xScale).tickFormat(d=>`R${d}`))
+        .selectAll('text').attr('fill',textSec).attr('font-size',11);
+      g.append('g').call(d3.axisLeft(yLeft).ticks(4).tickFormat(d=>d<1000?d:`${d/1000}k`))
+        .selectAll('text').attr('fill',textSec).attr('font-size',11);
+      g.append('g').attr('transform',`translate(${w},0)`).call(d3.axisRight(yRight).ticks(5))
+        .selectAll('text').attr('fill','#f97316').attr('font-size',11);
+
+      g.append('text').attr('x',w/2).attr('y',h+38).attr('text-anchor','middle').attr('fill',textSec).attr('font-size',11).text('Run');
+      g.append('text').attr('transform','rotate(-90)').attr('y',-45).attr('x',-h/2).attr('text-anchor','middle').attr('fill',textSec).attr('font-size',11).text('Output bytes');
+      g.append('text').attr('transform','rotate(90)').attr('y',-w-55).attr('x',h/2).attr('text-anchor','middle').attr('fill','#f97316').attr('font-size',11).text('Wiggum score');
+
+      // legend
+      const lg = g.append('g').attr('transform',`translate(${w-160},${h-70})`);
+      lg.append('rect').attr('width',10).attr('height',10).attr('fill',pink).attr('opacity',0.75).attr('rx',2);
+      lg.append('text').attr('x',15).attr('y',9).attr('fill',textSec).attr('font-size',11).text('Single search');
+      lg.append('rect').attr('y',18).attr('width',10).attr('height',10).attr('fill',cyan).attr('opacity',0.75).attr('rx',2);
+      lg.append('text').attr('x',15).attr('y',27).attr('fill',textSec).attr('font-size',11).text('Dual search');
+      lg.append('circle').attr('cx',5).attr('cy',44).attr('r',5).attr('fill','#f97316');
+      lg.append('text').attr('x',15).attr('y',47).attr('fill',textSec).attr('font-size',11).text('Score (right axis)');
+
+      svg.selectAll('.domain,.tick line').attr('stroke', border);
+    })();
+
+    // --- Diagram 2: Cross-Experiment T_A Progression ---
+    (function() {
+      const svg = d3.select('#exp-prog-svg');
+      const W = 680, H = 280;
+      const m = {top: 40, right: 80, bottom: 50, left: 60};
+      const w = W - m.left - m.right, h = H - m.top - m.bottom;
+      const g = svg.append('g').attr('transform', `translate(${m.left},${m.top})`);
+
+      const cyan = cssVar('--accent-cyan') || '#57cef2';
+      const pink = cssVar('--accent-pink') || '#ed46c3';
+      const border = cssVar('--border-color') || '#30363d';
+      const textSec = cssVar('--text-secondary') || '#8b949e';
+      const purple = '#a855f7';
+      const orange = '#f97316';
+
+      const exps = ['Exp-01\n(glm4 eval)','Exp-02\n(harness+)','Exp-03\n(30B eval)','Exp-04\n(32B prod)'];
+      const taScore = [9.0, 9.0, 7.0, 8.0];
+      const passRate = [3, 3, 0, 4];
+      const maxPass = 4;
+
+      const xScale = d3.scaleBand().domain(exps).range([0,w]).padding(0.3);
+      const yScore = d3.scaleLinear().domain([0,10]).range([h,0]);
+      const yPass = d3.scaleLinear().domain([0,maxPass]).range([h,0]);
+
+      // grid
+      g.append('g').selectAll('line').data([0,2,4,6,8,10]).join('line')
+        .attr('x1',0).attr('x2',w).attr('y1',d=>yScore(d)).attr('y2',d=>yScore(d))
+        .attr('stroke',border).attr('stroke-dasharray','3,4').attr('opacity',0.5);
+
+      // threshold line at 8.0
+      g.append('line').attr('x1',0).attr('x2',w).attr('y1',yScore(8)).attr('y2',yScore(8))
+        .attr('stroke',orange).attr('stroke-dasharray','5,3').attr('opacity',0.7);
+      g.append('text').attr('x',w+4).attr('y',yScore(8)+4).attr('fill',orange).attr('font-size',10).text('8.0 pass');
+
+      // score bars
+      g.selectAll('.score-bar').data(exps).join('rect').attr('class','score-bar')
+        .attr('x',d=>xScale(d)).attr('y',d=>yScore(taScore[exps.indexOf(d)]))
+        .attr('width',xScale.bandwidth()*0.55).attr('height',d=>h-yScore(taScore[exps.indexOf(d)]))
+        .attr('fill',cyan).attr('opacity',0.7).attr('rx',3);
+
+      // pass rate bars
+      g.selectAll('.pass-bar').data(exps).join('rect').attr('class','pass-bar')
+        .attr('x',d=>xScale(d)+xScale.bandwidth()*0.58).attr('y',d=>yPass(passRate[exps.indexOf(d)]))
+        .attr('width',xScale.bandwidth()*0.42).attr('height',d=>h-yPass(passRate[exps.indexOf(d)]))
+        .attr('fill',d=>passRate[exps.indexOf(d)]>0?purple:pink).attr('opacity',0.75).attr('rx',3);
+
+      // value labels
+      exps.forEach((e,i) => {
+        g.append('text').attr('x',xScale(e)+xScale.bandwidth()*0.275).attr('y',yScore(taScore[i])-5)
+          .attr('text-anchor','middle').attr('fill',cyan).attr('font-size',11).attr('font-weight',600).text(taScore[i].toFixed(1));
+        g.append('text').attr('x',xScale(e)+xScale.bandwidth()*0.79).attr('y',yPass(passRate[i])-5)
+          .attr('text-anchor','middle').attr('fill',passRate[i]>0?purple:pink).attr('font-size',11).attr('font-weight',600).text(`${passRate[i]}/${i<2?3:i===2?3:4}`);
+      });
+
+      // x axis with line breaks
+      g.append('g').attr('transform',`translate(0,${h})`).call(d3.axisBottom(xScale).tickFormat(d=>d.split('\n')[0]))
+        .selectAll('text').attr('fill',textSec).attr('font-size',11);
+      // second line of labels
+      exps.forEach((e,i) => {
+        const parts = e.split('\n');
+        if(parts[1]) g.append('text').attr('x',xScale(e)+xScale.bandwidth()/2).attr('y',h+28)
+          .attr('text-anchor','middle').attr('fill',textSec).attr('font-size',10).text(parts[1]);
+      });
+
+      g.append('g').call(d3.axisLeft(yScore).ticks(5)).selectAll('text').attr('fill',textSec).attr('font-size',11);
+
+      // legend
+      const lg = g.append('g').attr('transform',`translate(${w-180},-30)`);
+      lg.append('rect').attr('width',10).attr('height',10).attr('fill',cyan).attr('opacity',0.7).attr('rx',2);
+      lg.append('text').attr('x',14).attr('y',9).attr('fill',textSec).attr('font-size',11).text('T_A score r1 (left axis)');
+      lg.append('rect').attr('x',0).attr('y',18).attr('width',10).attr('height',10).attr('fill',purple).attr('opacity',0.75).attr('rx',2);
+      lg.append('text').attr('x',14).attr('y',27).attr('fill',textSec).attr('font-size',11).text('T_A pass count (right)');
+
+      svg.selectAll('.domain,.tick line').attr('stroke', border);
+    })();
+
+    // --- Diagram 3: Bottleneck Chain ---
+    (function() {
+      const svg = d3.select('#bottleneck-svg');
+      const W = 680, H = 200;
+      const g = svg.append('g');
+
+      const cyan = cssVar('--accent-cyan') || '#57cef2';
+      const pink = cssVar('--accent-pink') || '#ed46c3';
+      const border = cssVar('--border-color') || '#30363d';
+      const textPri = cssVar('--text-primary') || '#e6edf3';
+      const textSec = cssVar('--text-secondary') || '#8b949e';
+      const bgSec = cssVar('--bg-secondary') || '#161b22';
+      const purple = '#a855f7';
+      const orange = '#f97316';
+      const green = '#34d399';
+
+      const stages = [
+        {x: 40, label: 'Research\nQuality', fix: 'Dual Search', color: green, solved: true},
+        {x: 200, label: 'Evaluator\nCalibration', fix: '30B Evaluator', color: cyan, solved: true},
+        {x: 360, label: 'Producer\nCeiling', fix: '32B Producer', color: purple, solved: true},
+        {x: 520, label: 'Synthesis\nInstruction', fix: 'Autoresearch', color: orange, solved: false},
+      ];
+      const bw = 120, bh = 60;
+
+      stages.forEach((s,i) => {
+        // box
+        const col = s.solved ? s.color : orange;
+        g.append('rect').attr('x',s.x).attr('y',60).attr('width',bw).attr('height',bh)
+          .attr('fill', bgSec).attr('stroke',col).attr('stroke-width',s.solved?1.5:2.5).attr('rx',6);
+
+        // label
+        s.label.split('\n').forEach((line,li) => {
+          g.append('text').attr('x',s.x+bw/2).attr('y',83+li*16).attr('text-anchor','middle')
+            .attr('fill',col).attr('font-size',12).attr('font-weight',600).text(line);
+        });
+
+        // arrow to next
+        if(i < stages.length-1) {
+          const ax = s.x + bw + 2, ay = 90;
+          g.append('line').attr('x1',ax).attr('x2',ax+16).attr('y1',ay).attr('y2',ay)
+            .attr('stroke',textSec).attr('stroke-width',1.5).attr('marker-end','url(#arr)');
+        }
+
+        // fix label above
+        g.append('text').attr('x',s.x+bw/2).attr('y',50).attr('text-anchor','middle')
+          .attr('fill',textSec).attr('font-size',10).text(s.fix);
+        // status
+        g.append('text').attr('x',s.x+bw/2).attr('y',140).attr('text-anchor','middle')
+          .attr('fill',s.solved?green:orange).attr('font-size',10).text(s.solved?'✓ solved':'← active bottleneck');
+      });
+
+      // arrowhead
+      const defs = svg.append('defs');
+      defs.append('marker').attr('id','arr').attr('viewBox','0 0 8 8').attr('refX',6).attr('refY',4)
+        .attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
+        .append('path').attr('d','M0,0 L8,4 L0,8 z').attr('fill',textSec);
+
+      g.append('text').attr('x',340).attr('y',185).attr('text-anchor','middle')
+        .attr('fill',textSec).attr('font-size',11).text('Each fix reveals the next constraint — harness improvement is sequential bottleneck elimination');
+    })();
+  </script>
+</body>
+</html>

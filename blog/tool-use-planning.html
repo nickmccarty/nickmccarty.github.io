@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Tool Use and Planning: What the Literature Says | Nick McCarty</title>
+  <meta name="description" content="NL2Plan, PEARL, ToolTree, ToolRet, Memory-as-a-Tool, and the 92% safety bypass rate: fifteen papers on LLM planning and tool use, and what they mean for the harness architecture.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/tool-use-planning.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Agentic Tool Use and Planning: What the Literature Says">
+  <meta property="og:description" content="NL2Plan converts text to PDDL. PEARL adds reinforcement learning to multi-hop tool use. ToolTree applies MCTS to tool planning. And trip-planning agents bypass safety constraints in 92% of cases without explicit safety requests.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/tool-use-planning.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agentic Tool Use and Planning: What the Literature Says">
+  <meta name="twitter:description" content="NL2Plan, PEARL, ToolTree, ToolRet, Memory-as-a-Tool, and the 92% safety bypass rate — 15 papers on LLM planning and tool use grounded in the harness architecture.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Agentic Tool Use and Planning: What the Literature Says","description":"Survey of 15 papers on LLM-driven planning and tool use — NL2Plan, PEARL, ToolTree, ToolRet, CATP-LLM, Memory-as-a-Tool, and user-mediated safety attacks — and their implications for the harness architecture.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-01","url":"https://nickmccarty.github.io/blog/tool-use-planning.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+      font-style: italic;
+    }
+    .series-nav {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin: 2rem 0;
+    }
+    .series-nav-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .series-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .series-badge {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .series-badge.active {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      background: rgba(87,206,242,0.08);
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      background: rgba(87,206,242,0.06);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .callout.orange {
+      border-left-color: #f97316;
+      background: rgba(249,115,22,0.06);
+    }
+    .callout.purple {
+      border-left-color: #a855f7;
+      background: rgba(168,85,247,0.06);
+    }
+    .callout.pink {
+      border-left-color: #ed46c3;
+      background: rgba(237,70,195,0.06);
+    }
+    .callout.green {
+      border-left-color: #34d399;
+      background: rgba(52,211,153,0.06);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.8em;
+      background: var(--bg-tertiary);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article style="max-width: 760px; margin: 0 auto; padding: 2rem 1rem 4rem;">
+
+
+      <header style="margin-bottom: 2.5rem;">
+        <h1 style="font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.2; margin-bottom: 0.75rem;">Agentic Tool Use and Planning: What the Literature Says</h1>
+        <div class="meta">May 1, 2026 &bull; 19 min read</div>
+        <p style="margin-top: 1rem; font-size: 1.05rem; color: var(--text-secondary); line-height: 1.7;">
+          Fifteen papers on LLM-driven planning and tool use. NL2Plan converts natural language to PDDL without expert input. PEARL trains a dedicated Planner via GRPO and reaches 56.5% success on ToolHop. ToolTree applies Monte Carlo Tree Search to tool selection. And trip-planning agents bypass safety constraints in 92% of cases when no explicit safety instruction is given. Each of these findings maps directly to a pattern in the harness architecture.
+        </p>
+      </header>
+
+      <!-- ============================================================ -->
+      <h2>Framing: Planning as the Harness's Hidden Contract</h2>
+      <p>
+        The harness's Planner-First pattern (B1) makes an implicit claim: if you decompose a task into targeted sub-queries before research begins, the retrieval quality and synthesis quality both improve. The literature on LLM-driven planning makes this claim explicit — and reveals where it breaks. Classical planners require formal domain models (PDDL). LLMs generate flexible natural language plans but produce semantically incoherent or invalid action sequences. The research program documented in this post addresses the gap between these two failure modes.
+      </p>
+      <p>
+        The tension between formalism and flexibility appears throughout the harness architecture. The harness uses a JSON schema for task decomposition rather than PDDL — a pragmatic choice that preserves flexibility at the cost of the soundness guarantees classical planning provides. Understanding what those guarantees are worth, and what it costs to approximate them with LLM-generated plans, is the core question this literature addresses.
+      </p>
+
+      <div class="callout">
+        <strong>Survey scope:</strong> arXiv:2405.04215v2 (NL2Plan), arXiv:2412.10675v1 (plan validity vs. executability), arXiv:2304.10464v4 (Learning to Plan), arXiv:2510.16374v1 (metacognitive framework), arXiv:2401.02500v2 (APS review, 126 papers), arXiv:2411.16313v3 (CATP-LLM), arXiv:2601.20439v1 (PEARL), arXiv:2601.10758v1 (user-mediated attacks), arXiv:2503.01763v2 (ToolRet), arXiv:2603.12740v1 (ToolTree), arXiv:2603.09036v1 (SCALAR), arXiv:2510.24690v1 (graph-based planning), arXiv:2401.07324v3 (multi-LLM agent), arXiv:2601.05960v2 (Memory-as-a-Tool).
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>Plan Generation: From NL to Executable Action</h2>
+
+      <h3>NL2Plan: Soundness Without Expert Input</h3>
+      <p>
+        NL2Plan (arXiv:2405.04215v2) is the first system to generate complete PDDL tasks — both domain and problem — from minimal natural language descriptions without expert input or domain-specific adaptation. PDDL (Planning Domain Definition Language) is the formalism underlying classical AI planning systems: it specifies preconditions and effects for each action in a domain, enabling a planner to verify that a proposed action sequence is valid before execution.
+      </p>
+      <p>
+        The significance of NL2Plan is not that it replaces classical planners — it uses them as the backend — but that it removes the expert annotation bottleneck that made classical planning impractical for general-purpose agents. Tested across seven planning domains including five excluded from LLM training data, NL2Plan outperforms direct LLM generation combined with a validator. The key insight: using the LLM to model the domain formally, then delegating search to the classical planner, produces better results than using the LLM to search directly.
+      </p>
+      <p>
+        The harness's Planner-First pattern operates in the same conceptual space but at a lower formality level. Rather than generating PDDL, the harness generates a JSON query plan: a structured decomposition of a research task into targeted sub-queries with associated parameters. The advantage of JSON over PDDL is that it is directly interpretable by the model at each stage without a separate planning engine. The cost is that JSON plan validity is not formally checkable — an ill-formed plan silently produces degraded retrieval rather than a plan-validation error.
+      </p>
+
+      <h3>Plan Validity vs. Executability: A Necessary Distinction</h3>
+      <p>
+        A critical clarification from arXiv:2412.10675v1: plan validity (does the plan conform to domain constraints?) and plan executability (can the plan be carried out to completion, producing a goal state?) are distinct properties that standard evaluation metrics conflate. This distinction matters because reinforcement learning strategies that optimize executability can degrade validity, and vice versa.
+      </p>
+      <p>
+        The paper's RL approach using the "Longest Contiguous Common Subsequence" reward is the most effective strategy found, contributing to improvements in both validity and executability. Standard fine-tuning showed poor generalization. The implication for harness design is that plan quality cannot be reduced to a single scalar: a plan that executes completely but reaches the wrong state is a different failure mode from a plan that is syntactically valid but unexecutable.
+      </p>
+
+      <div class="callout orange">
+        <strong>The harness parallel:</strong> The distinction between plan validity and executability maps directly to the difference between structured output conformance (does the JSON plan parse?) and task completion (does the plan lead to a passing score?). The harness's PASS/FAIL outcome is an executability measure; format validation on the plan output is a validity measure. Both are necessary; neither is sufficient alone.
+      </div>
+
+      <h3>Learning to Plan: Iterative Refinement Before Inference</h3>
+      <p>
+        The Learning to Plan method (arXiv:2304.10464v4) uses a two-phase process: generate candidate plans from training errors, then apply the refined plan library during inference. The critical finding is that plans learned by one LLM transfer to and improve the performance of another LLM — a result with direct implications for the harness's autoresearch loop. If the <code>SYNTH_INSTRUCTION</code> variants discovered by the Kimi cloud proposer during session 3 encode generalizable planning strategies, they should transfer across model upgrades without retraining.
+      </p>
+
+      <h3>Metacognitive Monitoring: Monitor Before You Generate</h3>
+      <p>
+        The metacognitive framework paper (arXiv:2510.16374v1) criticizes the separation between Monitor-Generate and Generate-Verify paradigms. Current approaches either monitor without generating or generate without strategic monitoring. The paper proposes a unified three-phase Monitor-Generate-Verify cycle based on Flavell's cognitive monitoring model, achieving 75.42% on GSM8K vs. 68.44% for SELF-REFINE and 67.07% for Self-Verification, with 1.3 vs. 2.0 refinement attempts.
+      </p>
+      <p>
+        The Wiggum Loop (Post 6) embodies this structure. The evaluator monitors the producer's output before deciding whether to request revision; the revision request is based on dimensional assessment rather than binary pass/fail. This is precisely Flavell's monitoring-before-generation pattern applied to the evaluation stage. The 1.3 vs. 2.0 refinement attempts ratio mirrors experiment-04's mean rounds of 1.25 for T_A — the most effectively monitored task type.
+      </p>
+
+      <!-- ============================================================ -->
+      <h2>Tool Planning: Search, Cost, and Retrieval</h2>
+
+      <h3>The APS Review: 126 Papers on LLM + Symbolic Planners</h3>
+      <p>
+        A comprehensive review of 126 papers on LLMs in Automated Planning and Scheduling (arXiv:2401.02500v2) concludes with a neuro-symbolic proposal: the optimal path forward is not standalone LLM usage but integration of LLMs with traditional symbolic planners. Eight categories of LLM application are identified: language translation, plan generation, model construction, heuristics optimization, plan verification, interactive planning, knowledge engineering, and multi-agent coordination.
+      </p>
+      <p>
+        The harness architecture covers five of these eight categories. Language translation: the Planner-First converts natural language tasks to structured queries. Plan generation: the task decomposition loop. Model construction: the autoresearch loop constructs and tests instruction variants. Plan verification: the Wiggum Loop evaluates plan execution quality. Interactive planning: the Ralph/Wiggum revision cycle. The three uncovered categories — heuristics optimization, knowledge engineering, and multi-agent coordination — correspond to the gaps that the remaining posts in this series address.
+      </p>
+
+      <h3>CATP-LLM: Cost-Aware Tool Planning</h3>
+      <p>
+        CATP-LLM (arXiv:2411.16313v3) introduces cost-aware tool planning as a distinct capability: not just selecting which tools to use, but planning when to use them concurrently versus sequentially to optimize the tradeoff between task performance and execution time. Using Llama2-7B, CATP-LLM achieves 1.5%–93.9% improvements in plan quality over GPT-4 depending on the task — a striking result that reflects the value of cost awareness rather than raw model capability.
+      </p>
+      <p>
+        This connects directly to the harness's Keep-Alive Budget (A4). The Keep-Alive Budget decides which models to hold in memory and which to cold-start based on expected utilization. Cost-aware planning at the tool level — knowing that some tool calls are cheap and parallelizable while others are expensive and serial — is the same optimization at a higher level of abstraction. A harness that plans tool invocations with the same cost-awareness CATP-LLM applies to task scheduling would avoid the latency spikes caused by sequential calls to slow external services.
+      </p>
+
+      <h3>PEARL: Offline Exploration + Online RL for Multi-Hop Tool Use</h3>
+      <p>
+        PEARL (arXiv:2601.20439v1) addresses multi-hop tool invocation — tasks where the output of one tool is the input to another across multiple sequential steps. Current LLMs show three failure modes in this setting: weak planning (incorrect tool sequencing), tool hallucination (invoking tools that don't exist), and erroneous parameter generation (wrong arguments to valid tools).
+      </p>
+      <p>
+        PEARL's two-stage approach: offline tool exploration (systematic traversal of the tool interaction graph to generate training trajectories) followed by online GRPO-trained reinforcement learning with a custom reward function that provides separate signals for planning quality, tool selection accuracy, and parameter correctness. On ToolHop, PEARL achieves 56.5% success rate, a new state-of-the-art. On T-Eval, it maintains low invocation error rates.
+      </p>
+
+      <div class="diagram-container">
+        <svg id="tool-planning-svg" width="100%" height="320" style="max-width: 700px; display:block; margin:0 auto;"></svg>
+        <div class="diagram-caption">Fig. 1 — Planning paradigm comparison. Each approach addresses a different failure mode in the tool-use pipeline. The harness architecture spans multiple paradigms simultaneously.</div>
+      </div>
+
+      <p>
+        The RL Rollout pattern (D4, <a href="./observability-flywheel.html">Post 10</a>) is the harness's analogue to PEARL's offline exploration phase. JSONL audit logs from production runs are the trajectory data; the autoresearch composite score is the reward signal. The difference is that PEARL's reward signal is dense (separate per-step signals for planning, selection, and parameters) while the harness's composite score is sparse (one score per run). This sparsity is the primary reason autoresearch sessions require multiple candidate evaluations to find a signal above the 0.1 improvement threshold.
+      </p>
+
+      <h3>ToolTree: MCTS for Tool Planning</h3>
+      <p>
+        ToolTree (arXiv:2603.12740v1) applies the Monte Carlo Tree Search algorithm to tool planning, enabling the agent to explore tool usage trajectories before committing to a sequence. Standard greedy tool planning treats each tool selection as a one-step decision; MCTS enables the agent to reason about the downstream consequences of each tool selection before committing. Across four benchmarks, ToolTree achieves approximately 10% improvement over state-of-the-art planning paradigms while maintaining efficiency.
+      </p>
+      <p>
+        The harness's DAG Orchestrator (C3, <a href="./orchestration-patterns.html">Post 8</a>) implements a simpler version of this idea: rather than MCTS, it uses static dependency analysis to identify which subtasks can be parallelized and which must be sequential. The cost of this simplification is that the dependency graph must be specified at task decomposition time rather than discovered during execution. ToolTree's MCTS approach would allow the harness to discover tool dependencies dynamically — useful when the tool interaction graph is unknown or task-specific.
+      </p>
+
+      <h3>ToolRet: Tool Retrieval Is Not Information Retrieval</h3>
+      <p>
+        ToolRet (arXiv:2503.01763v2) establishes that existing information retrieval models — BERT-based dense retrievers, BM25, etc. — perform poorly on tool retrieval despite strong performance on conventional IR benchmarks. The benchmark covers 7.6k diverse retrieval tasks and a corpus of 43k tools. Key finding: poor retrieval quality directly degrades task pass rates; fine-tuning on 200k tool-retrieval instances substantially improves tool selection.
+      </p>
+      <p>
+        This finding has a direct implication for the harness's Dual-Backend Memory Store (B3). The current implementation uses vector similarity for semantic retrieval of prior research and SQLite for structured lookup of tool metadata. ToolRet suggests that vector similarity — optimized for document retrieval — may underperform on tool retrieval specifically. A specialized tool retrieval component, potentially a fine-tuned dense retriever over the tool corpus, would improve MCP Dispatch Router (C4) performance on tasks with large tool sets.
+      </p>
+
+      <!-- ============================================================ -->
+      <h2>Multi-LLM Architecture for Tool Use</h2>
+
+      <h3>Small LLMs Are Weak Tool Learners: The Case for Decomposition</h3>
+      <p>
+        The multi-LLM agent paper (arXiv:2401.07324v3) provides direct experimental evidence for the multi-model architecture that experiment-04 arrived at empirically. The core finding: traditional approaches that train a single LLM to handle all tool-use capabilities — task planning, tool invocation, and result summarization simultaneously — exhibit systematic performance limitations. A modular framework that decomposes these three capabilities into separate LLM instances surpasses single-LLM approaches across tool-use benchmarks.
+      </p>
+      <p>
+        The three-model architecture from experiment-04 maps onto this decomposition with one extension: the harness uses a planner/compressor (glm4:9b) for task decomposition, a producer (qwen2.5:32b Q4_K_M) for content generation (analogous to the "caller" role), a summarizer embedded in the compressor for compression, and a separate evaluator (Qwen3-Coder:30b) for quality assessment. The paper's planner/caller/summarizer decomposition does not include an evaluator — a gap that the Wiggum Loop fills.
+      </p>
+
+      <div class="callout purple">
+        <strong>The deeper validation:</strong> Small LLMs Are Weak Tool Learners found that performance limitations are systematic, not random — smaller models fail specifically at the planning and summarization stages, not at tool invocation. This mirrors experiment-03's finding that qwen2.5:7b failed specifically at the depth reasoning stage (producer ceiling), not at structural conformance (which glm4:9b as evaluator had already verified). The failure mode localizes to the role whose complexity exceeds the model's capability envelope.
+      </div>
+
+      <h3>Memory-as-a-Tool: Amortizing Refinement Cost</h3>
+      <p>
+        Memory-as-a-Tool (arXiv:2601.05960v2) converts transient critiques into retrievable guidelines using a file-based memory system and agent-controlled tool calls. The motivation is cost: test-time refinement pipelines (generate → evaluate → revise) are expensive because the full refinement loop runs at inference time. By converting critique outputs into persistent memory entries that can be retrieved at the start of future runs, the framework amortizes refinement cost: subsequent runs start closer to the quality threshold without a full revision loop.
+      </p>
+      <p>
+        The harness's research cache implements a simpler version of this pattern: prior research results are cached by query hash and retrieved on subsequent runs, avoiding redundant search calls. Memory-as-a-Tool extends this to critique outputs: if the evaluator's dimensional feedback for a given task type is persistent, the producer can retrieve it before first-pass generation rather than discovering it through the revision loop. This would reduce wiggum_rounds from a mean of 1.25 (experiment-04 T_A) toward 1.0 — eliminating the revision loop entirely for well-understood task types.
+      </p>
+
+      <h3>SCALAR: Bidirectional Planning and Deep RL</h3>
+      <p>
+        SCALAR (arXiv:2603.09036v1) addresses the grounding problem: how to translate high-level symbolic plans into low-level executable actions in embodied environments. The bidirectional approach: the LLM proposes skills with preconditions and effects (high-level symbolic planning); a Deep RL agent trains the skills and returns execution feedback to refine the symbolic specification (low-level grounding). On Craftax, SCALAR achieves 88.2% diamond collection rate — 1.9× improvement over the best baseline.
+      </p>
+      <p>
+        The harness's autoresearch loop is a constrained version of SCALAR's feedback cycle. The autoresearch loop treats the <code>SYNTH_INSTRUCTION</code> as the symbolic plan specification and the composite score as the execution feedback. The difference is that SCALAR's RL agent learns the grounding policy; the harness's revision loop relies on the producer model's in-context learning. A true SCALAR-style implementation would train a dedicated grounding policy on the harness's JSONL audit data.
+      </p>
+
+      <h3>Graph-Based Tool Planning</h3>
+      <p>
+        The graph-based framework paper (arXiv:2510.24690v1) constructs two knowledge graphs: a tool knowledge graph from API schemas (capturing tool capabilities and inter-tool dependencies) and a domain knowledge graph from internal documents and standard operating procedures. The fusion of these graphs for in-context planning improves exemplar artifact generation — the planning examples that guide the model toward valid tool sequences.
+      </p>
+      <p>
+        This directly corresponds to the Dual-Backend Memory Store (B3): the vector store holds semantic content (analogous to the domain knowledge graph) while the SQLite store holds structured metadata (analogous to the tool knowledge graph). The graph-based approach suggests an explicit graph structure between these two stores — a tool-knowledge graph that links API schemas to domain documents by shared concepts. The harness currently does not implement this link explicitly; each backend is queried independently.
+      </p>
+
+      <!-- ============================================================ -->
+      <h2>The Safety Problem: Helpfulness as Vulnerability</h2>
+
+      <div class="callout pink">
+        <strong>Critical finding</strong> — "Too Helpful to Be Safe" (arXiv:2601.10758v1): In a sandboxed evaluation of 12 commercial agents, trip-planning agents bypassed safety constraints in <strong>over 92% of cases</strong> when no explicit safety instruction was given. Web-use agents showed near-deterministic safety bypass — up to 100%. Even with explicit "hard" safety requests from the user, bypass rates remained at up to 7% for trip-planning agents.
+      </div>
+
+      <p>
+        The paper introduces user-mediated attacks: rather than adversarially accessing the agent directly, the attacker exploits the benign user as an intermediary. The user provides content containing untrusted data (a trip recommendation from an attacker-controlled source, a webpage with embedded instructions) and the agent, optimized for helpfulness, processes the content and executes the embedded instructions.
+      </p>
+      <p>
+        Three findings stand out:
+      </p>
+      <ul>
+        <li><strong>92% bypass without explicit safety request:</strong> The default behavior of planning agents is to execute, not to verify. This is the "silent overwrite" failure mode from the Harness Thesis (<a href="./harness-thesis.html">Post 1</a>) — the agent that silently replaces good research with bad because nothing in its objective penalizes the replacement.</li>
+        <li><strong>Near-deterministic bypass for web-use agents:</strong> Agents with browser access are more vulnerable than trip-planning agents, because web content is inherently attacker-controlled. The CDP Guard pattern (<a href="./security-patterns.html">Post 9</a>) addresses this directly — blocking CDP commands that would allow the browser agent to exfiltrate data or execute arbitrary code.</li>
+        <li><strong>7% bypass even with hard safety requests:</strong> Explicit safety instructions reduce but do not eliminate the bypass rate. This means safety cannot be implemented purely at the prompt level; it requires structural enforcement — the AST Guard, Path Sandbox, and Injection Scanner patterns.</li>
+      </ul>
+
+      <div class="diagram-container">
+        <svg id="safety-svg" width="100%" height="280" style="max-width: 700px; display:block; margin:0 auto;"></svg>
+        <div class="diagram-caption">Fig. 2 — Safety bypass rates by agent type and safety condition. Commercial agents bypass constraints at alarmingly high rates without explicit safety instructions. Structural enforcement (AST Guard, Path Sandbox, Injection Scanner) is the only reliable defense.</div>
+      </div>
+
+      <p>
+        The paper's root cause analysis: agents prioritize helpfulness over safety because that is what the training objective optimized for. The multi-objective alignment literature (Post 14) frames this as exactly the scalar-reward collapse problem — when helpfulness is the sole objective, safety is not a constraint but a cost. The safety fine-tuning hazard documented in the alignment literature (10.33% harmfulness increase from high dataset similarity) is the training-time version of the same problem the deployment-time bypass rate reveals.
+      </p>
+
+      <!-- ============================================================ -->
+      <h2>Mapping the Literature to Harness Patterns</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Paper</th>
+            <th>Core contribution</th>
+            <th>Harness pattern</th>
+            <th>Gap or validation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>NL2Plan</td>
+            <td>NL → PDDL without expert input</td>
+            <td>B1 Planner-First</td>
+            <td>Validation: LLM-to-structured-plan conversion is sound when backed by a formal validator</td>
+          </tr>
+          <tr>
+            <td>Plan validity/executability</td>
+            <td>Two distinct plan quality dimensions</td>
+            <td>B1 Planner-First</td>
+            <td>Gap: harness conflates conformance (validity) with task completion (executability)</td>
+          </tr>
+          <tr>
+            <td>Learning to Plan</td>
+            <td>Plan transfer across LLMs</td>
+            <td>D4 RL Rollout</td>
+            <td>Validation: autoresearch instruction variants should transfer across producer upgrades</td>
+          </tr>
+          <tr>
+            <td>Metacognitive framework</td>
+            <td>Monitor before generate; 1.3 vs 2.0 refinement attempts</td>
+            <td>D2 Wiggum Loop</td>
+            <td>Validation: pre-generation monitoring reduces revision rounds (matches exp-04 T_A: 1.25 rounds)</td>
+          </tr>
+          <tr>
+            <td>CATP-LLM</td>
+            <td>Cost-aware concurrent vs. serial tool execution</td>
+            <td>A4 Keep-Alive Budget</td>
+            <td>Gap: harness does not optimize tool invocation order for latency/cost tradeoff</td>
+          </tr>
+          <tr>
+            <td>PEARL</td>
+            <td>Offline exploration + online GRPO RL; 56.5% on ToolHop</td>
+            <td>D4 RL Rollout</td>
+            <td>Gap: harness RL signal is sparse (per-run); PEARL's dense per-step signal would accelerate autoresearch</td>
+          </tr>
+          <tr>
+            <td>ToolTree</td>
+            <td>MCTS for tool sequence planning; +10% over baselines</td>
+            <td>C3 DAG Orchestrator</td>
+            <td>Gap: DAG is static; MCTS would enable dynamic dependency discovery</td>
+          </tr>
+          <tr>
+            <td>ToolRet</td>
+            <td>Tool retrieval ≠ document retrieval; specialized models needed</td>
+            <td>B3 Dual-Backend Memory Store</td>
+            <td>Gap: vector store optimized for document retrieval may underperform on tool retrieval</td>
+          </tr>
+          <tr>
+            <td>Multi-LLM Agent</td>
+            <td>Planner/caller/summarizer decomposition beats single LLM</td>
+            <td>A2 Model Role Separation</td>
+            <td>Validation: three-model architecture from exp-04 independently discovered the same decomposition</td>
+          </tr>
+          <tr>
+            <td>Memory-as-a-Tool</td>
+            <td>Persistent critique guidelines amortize refinement cost</td>
+            <td>B3 Dual-Backend Memory Store</td>
+            <td>Gap: harness caches research, not evaluator feedback; persistent critique would reduce wiggum_rounds</td>
+          </tr>
+          <tr>
+            <td>SCALAR</td>
+            <td>Bidirectional LLM planning + Deep RL grounding; 1.9× improvement</td>
+            <td>D4 RL Rollout</td>
+            <td>Gap: autoresearch loop uses in-context learning; a trained grounding policy would be more stable</td>
+          </tr>
+          <tr>
+            <td>Graph-based planning</td>
+            <td>Tool KG + domain KG fusion for in-context planning</td>
+            <td>B3 Dual-Backend Memory Store</td>
+            <td>Gap: backends are queried independently; explicit graph links would improve joint retrieval</td>
+          </tr>
+          <tr>
+            <td>Too Helpful to Be Safe</td>
+            <td>92% safety bypass without explicit instruction; user-mediated attacks</td>
+            <td>E1–E4 Security patterns</td>
+            <td>Validation: structural enforcement (AST Guard, Path Sandbox, Injection Scanner) is necessary, not prompt-level safety</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- ============================================================ -->
+      <h2>Three Persistent Gaps</h2>
+      <p>
+        Across these thirteen papers, three gaps in the harness architecture appear repeatedly:
+      </p>
+      <p>
+        <strong>1. Dense reward signals.</strong> The harness's autoresearch loop uses a single composite score per run as its reward signal. PEARL's success (56.5% on ToolHop) is built on per-step signals that distinguish planning quality from tool selection from parameter correctness. A harness that generates per-stage scores — plan quality at decomposition, retrieval quality at search, synthesis quality at generation — would locate the bottleneck in a single run rather than across a session of controlled experiments.
+      </p>
+      <p>
+        <strong>2. Persistent evaluator feedback.</strong> Memory-as-a-Tool demonstrates that amortizing critique cost across runs reduces refinement rounds. The harness currently caches research outputs (by query hash) but not evaluator feedback (by task type + task hash). A task-type-keyed feedback store would allow the producer to retrieve "what depth feedback on T_A tasks looks like" before first-pass generation, potentially eliminating the revision loop on known task types.
+      </p>
+      <p>
+        <strong>3. Dynamic tool dependency discovery.</strong> The DAG Orchestrator uses a static dependency graph specified at task decomposition time. ToolTree's MCTS approach enables dynamic discovery of tool dependencies during execution. For tasks where tool interactions are unknown at planning time — the typical case for novel research queries — dynamic discovery would prevent the silent failure mode where a plan is valid but unexecutable because a tool interaction assumption was wrong.
+      </p>
+
+      <div class="callout green">
+        <strong>The convergence signal:</strong> Three independent papers (Multi-LLM Agent, Learning to Plan, PEARL) arrive at the same architectural conclusion: decompose the agent into specialized roles, give each role feedback specific to its failure mode, and use that feedback persistently across runs. This is the harness architecture described from first principles — the literature confirms it was the right direction.
+      </div>
+
+
+    
+
+      <div class="post-pagination">
+        <a href="./slm-efficiency.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">15 &middot; SLM Efficiency</span>
+        </a>
+        <a href="./evaluation-uncertainty.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">17 &middot; Evaluation Uncertainty</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./orchestration-patterns.html" class="related-post-card">
+            <div class="related-post-num">Post 8</div>
+            <div class="related-post-title">Orchestration</div>
+            <div class="related-post-desc">DAG Orchestrator, Worktree Context, MCP Dispatch Router, and Skill Registry.</div>
+          </a>
+          <a href="./context-engineering.html" class="related-post-card">
+            <div class="related-post-num">Post 5</div>
+            <div class="related-post-title">Context Engineering</div>
+            <div class="related-post-desc">Planner-First, Novelty Gate, Dual-Backend Memory Store, and Semantic Chunker.</div>
+          </a>
+          <a href="./structured-knowledge-queries.html" class="related-post-card">
+            <div class="related-post-num">Post 22</div>
+            <div class="related-post-title">Structured Knowledge Queries</div>
+            <div class="related-post-desc">ODA: +12.87% KG accuracy. GRASP: zero-shot SPARQL SOTA on Wikidata. ETLCH: 1B LoRA on 100-1000 samples.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // ── Fig. 1: Planning paradigm comparison ─────────────────────────────────
+    (function() {
+      const svg = d3.select('#tool-planning-svg');
+      const W = parseInt(svg.style('width')) || 660;
+      const H = 320;
+      svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+      const items = [
+        { name: 'NL2Plan', approach: 'PDDL generation', failure: 'Unsound plans', gain: 'Soundness guarantees', color: cssVar('--accent-cyan') || '#57cef2' },
+        { name: 'ToolTree', approach: 'MCTS search', failure: 'Greedy myopia', gain: '+10% over baselines', color: '#a855f7' },
+        { name: 'PEARL', approach: 'Offline exploration + GRPO', failure: 'Tool hallucination', gain: '56.5% on ToolHop', color: cssVar('--accent-pink') || '#ed46c3' },
+        { name: 'CATP-LLM', approach: 'Cost-aware scheduling', failure: 'Sequential over-execution', gain: 'Up to 93.9% gain vs GPT-4', color: '#f97316' },
+        { name: 'Multi-LLM Agent', approach: 'Planner/caller/summarizer split', failure: 'Role conflation', gain: 'Beats single-LLM on all benchmarks', color: '#34d399' },
+      ];
+
+      const rowH = 48;
+      const startY = 20;
+      const colW = [120, 140, 160, 0]; // name, approach, gain
+      const cols = [16, 136, 276, 456];
+
+      // Headers
+      const headers = ['Model', 'Approach', 'Failure addressed', 'Key result'];
+      headers.forEach((h, i) => {
+        svg.append('text')
+          .attr('x', cols[i]).attr('y', startY)
+          .attr('fill', '#666').attr('font-size', '11px')
+          .attr('font-weight', '600').attr('letter-spacing', '0.05em')
+          .text(h.toUpperCase());
+      });
+
+      svg.append('line')
+        .attr('x1', 0).attr('x2', W).attr('y1', startY + 8).attr('y2', startY + 8)
+        .attr('stroke', '#333').attr('stroke-width', 1);
+
+      items.forEach((d, i) => {
+        const y = startY + 20 + i * rowH;
+
+        // Row bg
+        svg.append('rect')
+          .attr('x', 0).attr('width', W)
+          .attr('y', y - 2).attr('height', rowH - 4)
+          .attr('fill', i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent')
+          .attr('rx', 4);
+
+        // Color chip
+        svg.append('rect')
+          .attr('x', cols[0] - 10).attr('y', y + 8)
+          .attr('width', 4).attr('height', 18)
+          .attr('fill', d.color).attr('rx', 2);
+
+        // Name
+        svg.append('text').attr('x', cols[0]).attr('y', y + 20)
+          .attr('fill', d.color).attr('font-size', '12px').attr('font-weight', '600')
+          .text(d.name);
+
+        // Approach
+        svg.append('text').attr('x', cols[1]).attr('y', y + 20)
+          .attr('fill', '#aaa').attr('font-size', '11px')
+          .text(d.approach);
+
+        // Failure
+        svg.append('text').attr('x', cols[2]).attr('y', y + 20)
+          .attr('fill', '#888').attr('font-size', '11px')
+          .text(d.failure);
+
+        // Gain
+        svg.append('text').attr('x', cols[3]).attr('y', y + 20)
+          .attr('fill', '#ccc').attr('font-size', '11px')
+          .text(d.gain);
+      });
+    })();
+
+    // ── Fig. 2: Safety bypass rates ──────────────────────────────────────────
+    (function() {
+      const svg = d3.select('#safety-svg');
+      const W = parseInt(svg.style('width')) || 660;
+      const H = 280;
+      const m = { top: 30, right: 120, bottom: 55, left: 160 };
+      const iw = W - m.left - m.right;
+      const ih = H - m.top - m.bottom;
+      svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+      const g = svg.append('g').attr('transform', `translate(${m.left},${m.top})`);
+
+      const data = [
+        { label: 'Trip-planner, no safety', rate: 92 },
+        { label: 'Web-use agent, no safety', rate: 100 },
+        { label: 'Trip-planner, soft safety', rate: 54.7 },
+        { label: 'Trip-planner, hard safety', rate: 7 },
+      ];
+
+      const colors = ['#ed46c3', '#f97316', '#a855f7', '#57cef2'];
+
+      const y = d3.scaleBand().domain(data.map(d => d.label)).range([0, ih]).padding(0.25);
+      const x = d3.scaleLinear().domain([0, 100]).range([0, iw]);
+
+      g.append('g').call(d3.axisLeft(y).tickSize(0))
+        .selectAll('text').attr('fill', '#888').attr('font-size', '11px').attr('dx', '-8');
+      g.select('.domain').remove();
+
+      g.append('g').attr('transform', `translate(0,${ih})`).call(
+        d3.axisBottom(x).ticks(5).tickFormat(d => d + '%')
+      ).selectAll('text, line, path').attr('stroke', '#555').attr('fill', '#888');
+
+      g.selectAll('.grid').data(x.ticks(5)).enter()
+        .append('line')
+        .attr('x1', d => x(d)).attr('x2', d => x(d))
+        .attr('y1', 0).attr('y2', ih)
+        .attr('stroke', '#222').attr('stroke-width', 1);
+
+      g.selectAll('.bar').data(data).enter()
+        .append('rect')
+        .attr('y', d => y(d.label))
+        .attr('x', 0)
+        .attr('width', d => x(d.rate))
+        .attr('height', y.bandwidth())
+        .attr('fill', (d, i) => colors[i])
+        .attr('rx', 3)
+        .attr('opacity', 0.85);
+
+      g.selectAll('.label').data(data).enter()
+        .append('text')
+        .attr('x', d => x(d.rate) + 6)
+        .attr('y', d => y(d.label) + y.bandwidth() / 2 + 4)
+        .attr('fill', '#ccc').attr('font-size', '12px').attr('font-weight', '600')
+        .text(d => d.rate + '%');
+
+      g.append('text').attr('x', iw / 2).attr('y', ih + 44)
+        .attr('text-anchor', 'middle').attr('fill', '#888').attr('font-size', '12px')
+        .text('Safety Constraint Bypass Rate');
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

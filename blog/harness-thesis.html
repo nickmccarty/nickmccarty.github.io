@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Harness Thesis: Why Scaffolding Beats Model Selection | Nick McCarty</title>
+  <meta name="description" content="The central claim of agentic harness engineering: for a fixed task domain, the quality of the scaffolding surrounding a language model matters more than the choice of model.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/harness-thesis.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Harness Thesis: Why Scaffolding Beats Model Selection">
+  <meta property="og:description" content="The central claim of agentic harness engineering: for a fixed task domain, the quality of the scaffolding surrounding a language model matters more than the choice of model.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/harness-thesis.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-22T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Harness Thesis: Why Scaffolding Beats Model Selection">
+  <meta name="twitter:description" content="The central claim of agentic harness engineering: for a fixed task domain, the quality of the scaffolding surrounding a language model matters more than the choice of model.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Harness Thesis: Why Scaffolding Beats Model Selection","description":"The central claim of agentic harness engineering: for a fixed task domain, the quality of the scaffolding surrounding a language model matters more than the choice of model.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-22","url":"https://nickmccarty.github.io/blog/harness-thesis.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout p {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    #pipeline-svg text { font-family: inherit; }
+    #quality-svg text  { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <a href="../blog.html" class="back-link">&larr; Back to Blog</a>
+
+    <article>
+      <h1>The Harness Thesis: Why Scaffolding Beats Model Selection</h1>
+      <div class="post-meta">May 22, 2026 &bull; 12 min read</div>
+
+
+      <p>
+        The public conversation about AI agents is almost entirely about models: which foundation model
+        is best, how large the context window is, whether chain-of-thought reasoning improves output
+        quality. These are real questions. But they are the wrong level of abstraction for the
+        practitioner who needs a system that works in production&mdash;reliably, auditably, and without
+        silent failures that look like successes.
+      </p>
+
+      <p>
+        The practitioner's problem is the <strong>harness</strong>: the software layer that sits
+        between a language model and the world. The code that decomposes a task, routes each subtask
+        to the right model, evaluates the result, decides whether to revise or accept, manages state
+        across long-running runs, enforces security boundaries, and records enough telemetry to
+        understand what happened after the fact.
+      </p>
+
+      <div class="callout">
+        <p>For a fixed task domain, the quality of the scaffolding surrounding a language model
+        matters more than the choice of model. A well-designed harness lifts a 7B model above
+        the unscaffolded baseline of a 70B model.</p>
+      </div>
+
+      <div class="callout pink">
+        <p><strong>Academic grounding:</strong> A 2026 systems-level review characterizes this as a &ldquo;shift from weights to context to harness,&rdquo; arguing that &ldquo;practical agent progress depends on better external cognitive infrastructure rather than just stronger models.&rdquo; The review frames memory stores, reusable skills, and interaction protocols as distinct but coupled forms of externalization that transform hard cognitive burdens into forms models can solve more reliably. It also identifies open challenges: evaluation standards and governance for co-evolving models and infrastructure. (<a href="https://arxiv.org/abs/2604.08224" target="_blank" rel="noopener">arXiv:2604.08224</a>)</p>
+      </div>
+
+      <p>
+        That claim is falsifiable, and it has been falsified&mdash;in the expected direction.
+        Controlled A/B runs across five open-source models of varying parameter counts, held constant
+        except for the harness configuration, show that the gap between a well-designed pipeline and
+        an unscaffolded one is larger, for most task types, than the gap between a 7B and a 70B
+        model. The model matters. The harness matters more.
+      </p>
+
+      <p>
+        This is the first post in a series on <em>agentic harness engineering</em>: the discipline
+        of designing, measuring, and improving the software infrastructure around language models.
+        The series follows the structure of a book I&rsquo;m writing on the subject, grounded in
+        1,500 logged production runs and 27 named patterns spanning inference, context management,
+        verification, orchestration, security, observability, and self-improvement.
+      </p>
+
+      <h2>The Five-Stage Pipeline</h2>
+
+      <p>
+        Every research harness I&rsquo;ve built or analyzed reduces to the same five stages, regardless
+        of framework, model family, or deployment environment. Understanding them is a prerequisite
+        for understanding why any individual pattern works.
+      </p>
+
+      <!-- D3 PIPELINE DIAGRAM -->
+      <div class="diagram-container">
+        <div class="diagram-title">The Harness Pipeline</div>
+        <svg id="pipeline-svg" width="100%" style="display:block;"></svg>
+        <div class="diagram-caption">Five-stage pipeline from task entry to persisted output. Each stage is a named engineering concern with its own failure modes.</div>
+      </div>
+
+      <p>
+        <strong>Decompose.</strong> A fast planner model receives the raw task and produces
+        a structured plan: targeted search queries (never the task string itself), known facts
+        already in memory, knowledge gaps that must be filled, and a subtask decomposition hint
+        for the orchestrator. Planning adds 12&ndash;18 seconds of latency but reduces downstream
+        synthesis rounds by an average of 0.8 and token consumption by ~22%.
+      </p>
+
+      <p>
+        <strong>Research.</strong> Search and retrieval against web sources, local documents,
+        and a persistent memory store. The critical engineering concern here is <em>novelty gating</em>:
+        scoring each batch of results against the agent&rsquo;s accumulated knowledge state and
+        discarding batches that add nothing new before they reach the synthesis prompt. Without it,
+        the synthesizer drowns in redundant context.
+      </p>
+
+      <p>
+        <strong>Synthesize.</strong> The producer model&mdash;the largest, most capable model in the
+        pipeline&mdash;generates long-form output from the retrieved context. This stage is where
+        most practitioners focus their optimization energy. It is also, empirically, where the least
+        improvement per invested engineering hour is available. The synthesis model does not determine
+        the ceiling of output quality. The stages before and after it do.
+      </p>
+
+      <p>
+        <strong>Evaluate.</strong> A separate evaluator model&mdash;never the same as the
+        producer&mdash;scores the synthesis on six quality dimensions using a structured rubric.
+        Dimensional feedback (not just a composite score) routes back to the producer for targeted
+        revision. This evaluate&ndash;revise cycle repeats up to three times before a pass/fail
+        decision is finalized. This is the <a href="./the-wiggum-loop.html">Wiggum Loop</a>,
+        covered in detail in the next post.
+      </p>
+
+      <p>
+        <strong>Persist.</strong> Passing outputs are written to disk and to the agent&rsquo;s
+        dual-backend memory store (ChromaDB for semantic search, SQLite FTS5 for keyword search).
+        Every run&mdash;pass or fail&mdash;appends a structured record to <code>runs.jsonl</code>
+        and emits a Chrome Trace Events file for latency analysis. The run log is both the system&rsquo;s
+        audit trail and its training dataset for future model improvement.
+      </p>
+
+      <h2>The Coordination Gap</h2>
+
+      <p>
+        The empirical case for the harness thesis rests on what I call the
+        <em>coordination gap</em>&mdash;the difference in output quality between a model running
+        with naive scaffolding (a prompt template and an API call) versus the same model running
+        through a well-engineered pipeline.
+      </p>
+
+      <!-- D3 COORDINATION GAP CHART -->
+      <div class="diagram-container">
+        <div class="diagram-title">Coordination Gap: Harness Quality vs. Output Quality</div>
+        <svg id="quality-svg" width="100%" style="display:block;"></svg>
+        <div class="diagram-caption">Schematic representation of quality trajectories. The harness lifts a 7B model above the unscaffolded 70B baseline. Model capability sets a ceiling; harness quality determines how close you get to it.</div>
+      </div>
+
+      <p>
+        The gap is largest in the research and evaluation stages. A naive pipeline fires the task
+        string directly at the model, accepts the first-pass output, and calls it done. A
+        well-engineered pipeline intercepts the task, plans targeted queries, gates redundant
+        retrieval, uses a separate evaluator to score the output, routes dimensional feedback
+        for revision, and only persists output that has cleared a quality threshold.
+      </p>
+
+      <p>
+        The model&rsquo;s contribution is real but bounded. It determines what quality ceiling is
+        theoretically achievable given the retrieved context. The harness determines how much of
+        that ceiling is actually reached.
+      </p>
+
+      <h2>The Failure That Started This</h2>
+
+      <p>
+        The first concrete motivation for this project was a failure mode I call the
+        <em>silent overwrite</em>.
+      </p>
+
+      <p>
+        When you run multiple research agents in parallel, each agent writes its output to a file.
+        If two agents working on related subtasks derive their output filenames from a hash of the
+        task string, the filenames can collide. The second writer overwrites the first. The run log
+        shows two completions. The filesystem shows one file.
+      </p>
+
+      <p>
+        The assembly model reads the available outputs and produces a document that looks, on the
+        surface, like a complete multi-perspective synthesis. It is not. The evaluator scores it,
+        and it passes&mdash;because the evaluator cannot detect the absence of content it never saw.
+        The run goes into <code>runs.jsonl</code> as a PASS.
+      </p>
+
+      <p>
+        There is no crash. There is no warning. There is no indication that anything went wrong.
+        This failure occurred on the forty-third logged run of the first parallel orchestration
+        implementation. It was not caught until run sixty-one, when a spot-check revealed the
+        discrepancy. Eighteen runs had passed evaluation with a hidden defect.
+      </p>
+
+      <p>
+        The fix&mdash;provisioning each concurrent subtask with an isolated Git worktree before
+        dispatch&mdash;is forty lines of code. The problem is that you have to know to look for it.
+        To know to look for it, you have to have seen the failure. That pattern repeats across every
+        one of the 27 named patterns in this series.
+      </p>
+
+      <h2>The Eleven Subsystems</h2>
+
+      <p>
+        A production harness is not a single concern but eleven separable ones, each with its own
+        failure modes and its own engineering patterns:
+      </p>
+
+      <ul style="margin: 1rem 0 1rem 1.5rem; line-height: 2;">
+        <li><strong>Entry Points</strong> &mdash; CLI, web API, and slash-command skill routing</li>
+        <li><strong>Orchestration</strong> &mdash; DAG decomposition, parallel dispatch, cycle detection</li>
+        <li><strong>Core Agent Loop</strong> &mdash; the main generate&ndash;research&ndash;synthesize cycle</li>
+        <li><strong>Inference</strong> &mdash; backend abstraction, model role separation, VRAM management</li>
+        <li><strong>Research Tools</strong> &mdash; web search, document fetch, novelty gating</li>
+        <li><strong>Skills</strong> &mdash; the slash-command registry and skill handler pattern</li>
+        <li><strong>Memory</strong> &mdash; dual-backend store, retrieval, novelty-gated writes</li>
+        <li><strong>Security</strong> &mdash; AST guard, path sandbox, injection scanner, CDP guard</li>
+        <li><strong>API Routes</strong> &mdash; REST endpoints, MCP server, dashboard data</li>
+        <li><strong>Observability</strong> &mdash; RunTrace, JSONL audit log, Chrome Trace export</li>
+        <li><strong>Storage</strong> &mdash; output files, run log, memory databases</li>
+      </ul>
+
+      <p>
+        Each of these becomes an engineering concern only when it breaks. The value of naming and
+        documenting them in advance is that named failure modes are diagnosable; unnamed ones are
+        mysterious. The pattern vocabulary in this series gives you language for problems you may
+        already have encountered without knowing what to call them.
+      </p>
+
+      <h2>What This Series Covers</h2>
+
+      <p>
+        The remaining posts in this series follow the book&rsquo;s structure. Posts 2&ndash;4 cover
+        the foundational narrative: how to trace a task through the full pipeline, how to measure
+        harness quality empirically, and a complete taxonomy of the failure classes derived from
+        1,500 logged runs. Posts 5&ndash;10 are the pattern catalog, one section at a time.
+      </p>
+
+      <p>
+        The next post covers the <a href="./the-wiggum-loop.html">Wiggum Loop</a>&mdash;the
+        producer&ndash;evaluator separation pattern that forms the quality backbone of the pipeline,
+        and its relationship to the outer Ralph Loop that governs the overall task iteration cycle.
+        It&rsquo;s where the empirical case for the harness thesis is most directly visible.
+      </p>
+
+      <div class="related-post">
+        <span class="related-label">Up next in series</span>
+        <a href="./the-wiggum-loop.html">
+          <h4>The Wiggum Loop</h4>
+          <p>Cross-model evaluate&ndash;revise cycles, dimensional scoring, and the distinction between the Ralph outer loop and the Wiggum inner loop.</p>
+          <span class="read-more">Read more &rarr;</span>
+        </a>
+      </div>
+    
+
+      <div class="post-pagination">
+        <div class="pagination-card pagination-prev pagination-edge">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">Start of series</span>
+        </div>
+        <a href="./pipeline-in-motion.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">2 &middot; The Pipeline in Motion</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./pipeline-in-motion.html" class="related-post-card">
+            <div class="related-post-num">Post 2</div>
+            <div class="related-post-title">The Pipeline in Motion</div>
+            <div class="related-post-desc">A single research query traced through all eleven subsystems, from CLI entry to JSONL persistence.</div>
+          </a>
+          <a href="./failure-taxonomy.html" class="related-post-card">
+            <div class="related-post-num">Post 3</div>
+            <div class="related-post-title">Failure Taxonomy</div>
+            <div class="related-post-desc">Six failure classes ranked by frequency and cost, with diagnostic patterns from 1,500 production runs.</div>
+          </a>
+          <a href="./experimental-methodology.html" class="related-post-card">
+            <div class="related-post-num">Post 12</div>
+            <div class="related-post-title">Experimental Methodology</div>
+            <div class="related-post-desc">Four CRD experiments exposing the evaluator ceiling, producer ceiling, and synthesis bottleneck.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <!-- Glossary Modal -->
+  <div class="modal-overlay glossary-modal" id="glossary-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="glossary-term-title"></h3>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="glossary-term-definition"></p>
+        <p class="context-note" id="glossary-term-context"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+
+  <script type="module">
+    import anime from 'https://esm.sh/animejs@3.2.2';
+
+    // ── helpers ────────────────────────────────────────────────────────────────
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // ── PIPELINE DIAGRAM ───────────────────────────────────────────────────────
+    (function drawPipeline() {
+      const stages = [
+        { label: 'Decompose', sub: 'Planner' },
+        { label: 'Research',  sub: 'Search + Memory' },
+        { label: 'Synthesize', sub: 'Producer' },
+        { label: 'Evaluate', sub: 'Wiggum Loop' },
+        { label: 'Persist',  sub: 'Memory + Audit' }
+      ];
+
+      const container = document.getElementById('pipeline-svg');
+      const totalW = container.parentElement.clientWidth - 32;
+      const H = 110;
+      const padX = 20;
+      const arrowW = 28;
+      const n = stages.length;
+      const boxW = Math.max(90, Math.floor((totalW - padX * 2 - arrowW * (n - 1)) / n));
+      const boxH = 62;
+      const totalUsed = padX * 2 + boxW * n + arrowW * (n - 1);
+      const svgW = Math.max(totalUsed, 400);
+
+      container.setAttribute('height', H);
+      container.setAttribute('viewBox', `0 0 ${svgW} ${H}`);
+
+      const svg = d3.select('#pipeline-svg');
+      const g = svg.append('g').attr('transform', `translate(0,${(H - boxH) / 2})`);
+
+      const accent  = cssVar('--accent-cyan');
+      const bg2     = cssVar('--bg-tertiary');
+      const textPri = cssVar('--text-primary');
+      const textSec = cssVar('--text-secondary');
+      const border  = cssVar('--border-color');
+
+      // defs: arrowhead
+      svg.append('defs').append('marker')
+        .attr('id', 'arrowhead')
+        .attr('viewBox', '0 0 10 10')
+        .attr('refX', 9).attr('refY', 5)
+        .attr('markerWidth', 6).attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M 0 0 L 10 5 L 0 10 z')
+        .attr('fill', accent);
+
+      stages.forEach((s, i) => {
+        const x = padX + i * (boxW + arrowW);
+
+        // connector arrow (not after last)
+        if (i < n - 1) {
+          g.append('line')
+            .attr('class', 'pipe-arrow')
+            .attr('x1', x + boxW).attr('y1', boxH / 2)
+            .attr('x2', x + boxW + arrowW - 2).attr('y2', boxH / 2)
+            .attr('stroke', accent)
+            .attr('stroke-width', 1.5)
+            .attr('marker-end', 'url(#arrowhead)')
+            .style('opacity', 0);
+        }
+
+        // box
+        const box = g.append('rect')
+          .attr('class', 'pipe-box')
+          .attr('x', x).attr('y', 0)
+          .attr('width', boxW).attr('height', boxH)
+          .attr('rx', 8)
+          .attr('fill', bg2)
+          .attr('stroke', i === 3 ? accent : border)
+          .attr('stroke-width', i === 3 ? 1.5 : 1)
+          .style('opacity', 0);
+
+        // label
+        g.append('text')
+          .attr('class', 'pipe-label')
+          .attr('x', x + boxW / 2).attr('y', boxH / 2 - 5)
+          .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+          .attr('fill', i === 3 ? accent : textPri)
+          .attr('font-size', Math.min(13, boxW / 7))
+          .attr('font-weight', '600')
+          .text(s.label)
+          .style('opacity', 0);
+
+        // sublabel
+        g.append('text')
+          .attr('class', 'pipe-sub')
+          .attr('x', x + boxW / 2).attr('y', boxH / 2 + 13)
+          .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+          .attr('fill', textSec)
+          .attr('font-size', Math.min(10, boxW / 9))
+          .text(s.sub)
+          .style('opacity', 0);
+      });
+
+      // animate in with anime.js
+      const boxes  = document.querySelectorAll('.pipe-box');
+      const labels = document.querySelectorAll('.pipe-label');
+      const subs   = document.querySelectorAll('.pipe-sub');
+      const arrows = document.querySelectorAll('.pipe-arrow');
+
+      const tl = anime.timeline({ easing: 'easeOutCubic' });
+
+      tl.add({
+        targets: boxes,
+        opacity: [0, 1],
+        translateY: [10, 0],
+        delay: anime.stagger(100),
+        duration: 400
+      }).add({
+        targets: labels,
+        opacity: [0, 1],
+        delay: anime.stagger(100),
+        duration: 300
+      }, '-=250').add({
+        targets: subs,
+        opacity: [0, 1],
+        delay: anime.stagger(100),
+        duration: 300
+      }, '-=350').add({
+        targets: arrows,
+        opacity: [0, 1],
+        delay: anime.stagger(100),
+        duration: 250
+      }, '-=400');
+    })();
+
+    // ── COORDINATION GAP CHART ─────────────────────────────────────────────────
+    (function drawQualityChart() {
+      const container = document.getElementById('quality-svg');
+      const W = container.parentElement.clientWidth - 32;
+      const H = 240;
+      const margin = { top: 20, right: 30, bottom: 50, left: 50 };
+      const innerW = W - margin.left - margin.right;
+      const innerH = H - margin.top - margin.bottom;
+
+      container.setAttribute('height', H);
+      container.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+      const accent  = cssVar('--accent-cyan');
+      const pink    = cssVar('--accent-pink');
+      const textSec = cssVar('--text-secondary');
+      const border  = cssVar('--border-color');
+
+      const svg = d3.select('#quality-svg');
+      const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+      const x = d3.scaleLinear().domain([7, 70]).range([0, innerW]);
+      const y = d3.scaleLinear().domain([0, 10]).range([innerH, 0]);
+
+      // Gridlines
+      g.append('g').attr('class', 'grid')
+        .call(d3.axisLeft(y).ticks(5).tickSize(-innerW).tickFormat(''))
+        .call(g => g.selectAll('line').attr('stroke', border).attr('stroke-dasharray', '3,3').attr('stroke-opacity', 0.5))
+        .call(g => g.select('.domain').remove());
+
+      // Axes
+      const xAxis = g.append('g')
+        .attr('transform', `translate(0,${innerH})`)
+        .call(d3.axisBottom(x).tickValues([7, 13, 30, 70]).tickFormat(d => `${d}B`));
+      xAxis.selectAll('text').attr('fill', textSec).attr('font-size', 11);
+      xAxis.selectAll('line, path').attr('stroke', border);
+
+      const yAxis = g.append('g')
+        .call(d3.axisLeft(y).ticks(5));
+      yAxis.selectAll('text').attr('fill', textSec).attr('font-size', 11);
+      yAxis.selectAll('line, path').attr('stroke', border);
+
+      // Axis labels
+      g.append('text').attr('x', innerW / 2).attr('y', innerH + 42)
+        .attr('text-anchor', 'middle').attr('fill', textSec).attr('font-size', 11)
+        .text('Model Parameter Count');
+      g.append('text')
+        .attr('transform', 'rotate(-90)')
+        .attr('x', -innerH / 2).attr('y', -38)
+        .attr('text-anchor', 'middle').attr('fill', textSec).attr('font-size', 11)
+        .text('Output Quality Score');
+
+      // Data curves
+      // Unscaffolded: starts low, rises fast initially, plateaus early
+      const unscaffolded = [
+        {x:7,y:3.8}, {x:13,y:5.4}, {x:30,y:6.5}, {x:70,y:7.1}
+      ];
+      // Well-harnessed (same models): baseline shift from better pipeline
+      const harnessed = [
+        {x:7,y:6.2}, {x:13,y:7.4}, {x:30,y:8.3}, {x:70,y:9.1}
+      ];
+
+      const line = d3.line()
+        .x(d => x(d.x))
+        .y(d => y(d.y))
+        .curve(d3.curveCatmullRom);
+
+      // Shade between curves
+      const area = d3.area()
+        .x(d => x(d.x))
+        .y0((d, i) => y(unscaffolded[i].y))
+        .y1(d => y(d.y))
+        .curve(d3.curveCatmullRom);
+
+      g.append('path')
+        .datum(harnessed)
+        .attr('fill', accent)
+        .attr('fill-opacity', 0.08)
+        .attr('d', area);
+
+      // Unscaffolded line
+      const pathU = g.append('path')
+        .datum(unscaffolded)
+        .attr('fill', 'none')
+        .attr('stroke', pink)
+        .attr('stroke-width', 2)
+        .attr('stroke-dasharray', '5,4')
+        .attr('d', line);
+
+      // Harnessed line
+      const pathH = g.append('path')
+        .datum(harnessed)
+        .attr('fill', 'none')
+        .attr('stroke', accent)
+        .attr('stroke-width', 2.5)
+        .attr('d', line);
+
+      // Gap arrow at 7B
+      const gapX = x(7);
+      const gapY0 = y(unscaffolded[0].y);
+      const gapY1 = y(harnessed[0].y);
+
+      svg.append('defs').append('marker')
+        .attr('id', 'gap-arrow')
+        .attr('viewBox', '0 0 10 10').attr('refX', 5).attr('refY', 5)
+        .attr('markerWidth', 4).attr('markerHeight', 4).attr('orient', 'auto')
+        .append('path').attr('d', 'M 0 0 L 10 5 L 0 10 z').attr('fill', accent);
+
+      g.append('line')
+        .attr('x1', gapX + 30).attr('y1', gapY0 - 4)
+        .attr('x2', gapX + 30).attr('y2', gapY1 + 4)
+        .attr('stroke', accent).attr('stroke-width', 1)
+        .attr('marker-end', 'url(#gap-arrow)');
+
+      g.append('text')
+        .attr('x', gapX + 35).attr('y', (gapY0 + gapY1) / 2)
+        .attr('dominant-baseline', 'middle')
+        .attr('fill', accent).attr('font-size', 10).attr('font-weight', '600')
+        .text('coordination gap');
+
+      // Labels
+      g.append('text')
+        .attr('x', x(70) - 5).attr('y', y(harnessed[3].y) - 8)
+        .attr('text-anchor', 'end').attr('fill', accent).attr('font-size', 10).attr('font-weight', '600')
+        .text('well-harnessed');
+      g.append('text')
+        .attr('x', x(70) - 5).attr('y', y(unscaffolded[3].y) + 16)
+        .attr('text-anchor', 'end').attr('fill', pink).attr('font-size', 10).attr('font-weight', '600')
+        .text('unscaffolded');
+
+      // Animate paths
+      const len_h = pathH.node().getTotalLength();
+      const len_u = pathU.node().getTotalLength();
+
+      pathH.attr('stroke-dasharray', `${len_h} ${len_h}`).attr('stroke-dashoffset', len_h);
+      pathU.attr('stroke-dasharray', `${len_u} ${len_u} 5 4`).attr('stroke-dashoffset', len_u);
+
+      anime({
+        targets: pathH.node(),
+        strokeDashoffset: [len_h, 0],
+        duration: 900,
+        easing: 'easeInOutCubic',
+        delay: 300
+      });
+      anime({
+        targets: pathU.node(),
+        strokeDashoffset: [len_u, 0],
+        duration: 900,
+        easing: 'easeInOutCubic',
+        delay: 500
+      });
+    })();
+
+    // ── Glossary modal ─────────────────────────────────────────────────────────
+    const modal = document.getElementById('glossary-modal');
+    if (modal) {
+      const titleEl = document.getElementById('glossary-term-title');
+      const definitionEl = document.getElementById('glossary-term-definition');
+      const contextEl = document.getElementById('glossary-term-context');
+      const closeBtn = modal.querySelector('.modal-close');
+      document.querySelectorAll('.glossary-term').forEach(term => {
+        term.addEventListener('click', () => {
+          const termData = glossaryTerms[term.dataset.term];
+          if (termData) {
+            titleEl.textContent = termData.title;
+            definitionEl.textContent = termData.definition;
+            contextEl.textContent = termData.context;
+            modal.classList.add('active');
+          }
+        });
+      });
+      closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+      modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('active'); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') modal.classList.remove('active'); });
+    }
+  </script>
+
+  <script>
+    const glossaryTerms = {};
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

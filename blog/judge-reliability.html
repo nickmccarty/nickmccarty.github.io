@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Judging the Judges: Benchmark Contamination and the Reliability Crisis in LLM Evaluation | Nick McCarty</title>
+  <meta name="description" content="Best judges lag human agreement by 5 points. Omni-Judge is wrong in 96.4% of disagreements. 8 of 9 judges show always-A position bias. What the literature says — and what it means for harness design.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/judge-reliability.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Judging the Judges: Benchmark Contamination and LLM Evaluation Reliability">
+  <meta property="og:description" content="Best judges lag human agreement by 5 points. Omni-Judge wrong in 96.4% of disagreements. 8 of 9 judges show always-A position bias. The empirical case for dimensional rubrics, evaluator diversity, and calibration anchors.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/judge-reliability.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-04-29T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Judging the Judges: Benchmark Contamination and LLM Evaluation Reliability">
+  <meta name="twitter:description" content="96.4% judge error rate. 5-point gap from human agreement. Always-A bias in 8 of 9 judges. The empirical case for better harness evaluation design.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Judging the Judges: Benchmark Contamination and the Reliability Crisis in LLM Evaluation","description":"Survey of empirical findings on LLM judge reliability, benchmark contamination, position bias, preference leakage, and conformal prediction for evaluation uncertainty.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-04-29","url":"https://nickmccarty.github.io/blog/judge-reliability.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout.purple { border-left-color: #a855f7; }
+    .callout.orange { border-left-color: #f97316; }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .callout p + p { margin-top: 0.6rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.88rem;
+    }
+    th {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    tr:last-child td { border-bottom: none; }
+    #bias-svg text, #contam-svg text, #harness-design-svg text { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.797l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 23, 2026 &bull; 15 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">Judging the Judges: Benchmark Contamination and the Reliability Crisis in LLM Evaluation</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          Best judges lag human agreement by 5 points. In complex mathematics, a leading judge is wrong in 96.4% of expert disagreements. Eight of nine judges show degenerate always-A position bias. What the literature says — and what it means for anyone running a Wiggum loop.
+        </p>
+
+      </header>
+
+      <p>
+        The verify-then-revise loop described in <a href="./the-wiggum-loop.html">Post 6</a> and grounded experimentally in <a href="./experimental-methodology.html">Post 12</a> is only as good as the judge driving it. If the judge is miscalibrated, the loop either never activates (evaluator ceiling) or fires on the wrong signal (position bias, self-preference, contamination). Both failures destroy the loop's value.
+      </p>
+
+      <p>
+        This post surveys the empirical evidence on what makes LLM judges fail — across benchmark contamination, position bias, self-preference, prompt sensitivity, and calibration gaps — and translates the findings into concrete harness design requirements.
+      </p>
+
+      <h2>The Baseline Problem: Judges Lag Human Agreement by 5 Points</h2>
+
+      <p>
+        The most comprehensive comparative study of LLM judges evaluated thirteen judge models across nine exam-taker models in high-stakes question-answering scenarios with unusually high inter-human agreement (<a href="https://arxiv.org/abs/2406.12624v6" target="_blank" rel="noopener">arXiv:2406.12624v6</a> — Judging the Judges). The central finding:
+      </p>
+
+      <div class="callout pink">
+        <p>Only the largest and best judge models achieve reasonable alignment with human evaluators — yet even these models consistently lag behind inter-human agreement and may differ by up to <strong>5 points</strong> from human-assigned scores. Smaller models and lexical metrics can still provide reasonable <em>ranking</em> signals (relative ordering), but their <em>absolute</em> scores are unreliable.</p>
+      </div>
+
+      <p>
+        The distinction between ranking and scoring is critical for harness design. A judge that cannot produce reliable absolute scores can still be useful for pairwise comparison (is output A better than output B?) — but using its scores as a quality gate requires knowing that its calibration is approximate. The 5-point gap is not random noise; it is systematic leniency.
+      </p>
+
+      <p>
+        The paper also warns against using high percent agreement as a proxy for alignment quality. A judge can agree with human rankings 80% of the time while assigning scores 4–5 points higher. Percent agreement and score calibration are independent properties.
+      </p>
+
+      <h2>Benchmark Saturation: When the Model Surpasses the Judge</h2>
+
+      <p>
+        The Omni-MATH-2 paper (<a href="https://arxiv.org/abs/2601.19532v1" target="_blank" rel="noopener">arXiv:2601.19532v1</a>) adds a structural dimension to the reliability problem. The study manually audited a mathematics benchmark (checking LaTeX compilability, solvability, and verifiability) and compared human expert annotations to automated judge decisions on disputed problems. The finding is alarming:
+      </p>
+
+      <div class="callout pink">
+        <p>On problems where Omni-Judge disagrees with GPT-4o mini, expert annotation shows the judge is <strong>wrong in 96.4% of disagreements</strong>. Current automated judges cannot differentiate between model abilities even before benchmarks saturate — judge errors mask genuine performance differences.</p>
+      </div>
+
+      <p>
+        The implication for benchmark validity is severe: benchmark saturation (the phenomenon where frontier models approach ceiling performance on standard benchmarks) may be an artifact of noisy evaluation rather than genuine model limits. When judges can no longer correctly resolve disagreements between strong models and the reference, the benchmark stops measuring what it purports to measure.
+      </p>
+
+      <p>
+        For production harness engineering, this is a call for evaluator diversity. No single automated judge should be treated as ground truth. The dimensional rubric approach described in <a href="./verification-patterns.html">Post 7</a> — scoring five separable dimensions rather than producing one holistic score — partially mitigates this by making the judgment decomposable and auditable.
+      </p>
+
+      <h2>Position Bias: 8 of 9 Judges Show Always-A Behavior</h2>
+
+      <p>
+        JudgeSense (<a href="https://arxiv.org/abs/2604.23478v1" target="_blank" rel="noopener">arXiv:2604.23478v1</a>) introduced the Judge Sensitivity Score (JSS) — the fraction of semantically equivalent prompt paraphrase pairs that yield identical judge decisions — and applied it to nine judges across factuality and pairwise comparison tasks. The finding on pairwise evaluation is definitive:
+      </p>
+
+      <div class="callout pink">
+        <p><strong>8 of 9 judges show degenerate "always-A" behavior</strong> in pairwise comparison tasks due to strong position bias. The judge systematically favors whichever response appears first in the prompt, regardless of quality. This renders pairwise comparisons unreliable without position-swapping controls.</p>
+      </div>
+
+      <p>
+        On factuality tasks, JSS clusters near 0.63 due to a polarity-inverted prompt artifact (semantically equivalent prompts phrased as opposing assertions). After correcting for this artifact, JSS rises to ~0.9 — suggesting that most factuality instability is a prompt engineering problem, not a fundamental model limitation.
+      </p>
+
+      <p>
+        The key practical finding: model scale does not predict judge consistency. Larger models are not inherently more stable judges. This means simply upgrading to a larger evaluator model does not solve position bias — it requires position-swapping the comparison, using reference-free rather than pairwise evaluation, or switching to dimensional rubric scoring (where position effects are absent by design because each dimension is scored independently).
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">Judge Failure Taxonomy &mdash; Modes and Mitigations</div>
+        <svg id="bias-svg" width="100%" viewBox="0 0 680 300" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">The five main judge failure modes and their harness-level mitigations. Position bias and self-preference affect pairwise judges; calibration and contamination affect all evaluation regimes.</p>
+      </div>
+
+      <h2>Preference Leakage: When Generator and Judge Share DNA</h2>
+
+      <p>
+        Preference leakage (<a href="https://arxiv.org/abs/2502.01534v3" target="_blank" rel="noopener">arXiv:2502.01534v3</a>) describes a contamination problem specific to pipelines that use LLMs for both data synthesis and evaluation. The authors define three types of relatedness between generator and judge that introduce systematic bias:
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Relatedness type</th><th>Example</th><th>Effect</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Same model</td><td>GPT-4o generates; GPT-4o judges</td><td>Judge systematically favors its own outputs</td></tr>
+          <tr><td>Inheritance</td><td>Model A fine-tuned from Model B; Model B judges</td><td>Judge favors outputs from its derivative</td></tr>
+          <tr><td>Same family</td><td>Qwen2.5:7b generates; Qwen2.5:72b judges</td><td>Family-shared priors create correlated scoring biases</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        The study empirically confirmed bias across all three relatedness types on multiple benchmarks. The contamination is structurally similar to self-preference bias (<a href="./the-wiggum-loop.html">Post 6</a>), but distinct: self-preference is about style and verbosity preferences; preference leakage is about architectural relatedness creating correlated scoring priors.
+      </p>
+
+      <div class="callout">
+        <p>The harness engineering implication is direct: producer and evaluator should be from <strong>different model families</strong>. Using <code>qwen2.5:32b</code> as producer and <code>Qwen3-Coder:30b</code> as evaluator introduces some family overlap risk (both are Qwen-family). A diversified evaluator pool — e.g., one Qwen evaluator and one GLM or Mistral evaluator — reduces correlated bias. The three-model architecture from <a href="./experimental-methodology.html">Post 12</a> used GLM as planner (different family entirely from the Qwen producer), which provides some insulation against preference leakage in the evaluation path.</p>
+      </div>
+
+      <h2>Benchmark Contamination: A Taxonomy</h2>
+
+      <p>
+        Data contamination in pretraining corpora inflates benchmark scores by allowing models to memorize evaluation data rather than demonstrating generalization. The contamination taxonomy paper (<a href="https://arxiv.org/abs/2407.08716v1" target="_blank" rel="noopener">arXiv:2407.08716v1</a>) categorizes contamination types and identifies which pose the highest risk to evaluation validity:
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Contamination type</th><th>Mechanism</th><th>Detection difficulty</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Exact match</td><td>Test instances appear verbatim in pretraining data</td><td>Low — n-gram overlap</td></tr>
+          <tr><td>Near-duplicate</td><td>Paraphrased or slightly modified test instances in pretraining</td><td>Medium — embedding similarity</td></tr>
+          <tr><td>Cross-direction transfer</td><td>Translation contamination spreads to unseen language pairs via target-side memorization</td><td>High — requires named entity probing</td></tr>
+          <tr><td>RL post-training contamination</td><td>Benchmark problems used as RL reward signals during fine-tuning</td><td>Very high — output entropy analysis required</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        The cross-direction contamination finding (<a href="https://arxiv.org/abs/2601.20858v1" target="_blank" rel="noopener">arXiv:2601.20858v1</a>) is particularly counterintuitive: training on English-French translation benchmark data can boost performance on unseen English-German pairs, because the model memorizes target-side patterns (the French translations) that transfer structurally to similar targets. Named entity replacement — substituting proper nouns with out-of-distribution names — is an effective probe: contaminated models show consistent BLEU score drops when entities are replaced, uncontaminated models do not.
+      </p>
+
+      <p>
+        The RL post-training contamination problem (<a href="https://arxiv.org/abs/2510.09259v2" target="_blank" rel="noopener">arXiv:2510.09259v2</a>) is newer and more insidious. The Self-Critique detection method probes for policy collapse by measuring output entropy reduction — a contaminated model produces less diverse outputs on contaminated problems because the reward gradient has pushed it toward specific response patterns. Self-Critique achieves AUC improvement of up to 30% over baselines, which perform near random guessing for RL-phase contamination.
+      </p>
+
+      <h2>Judge Reliability Harness: No Judge Is Uniformly Reliable</h2>
+
+      <p>
+        The Judge Reliability Harness paper (<a href="https://arxiv.org/abs/2603.05399v1" target="_blank" rel="noopener">arXiv:2603.05399v1</a>) stress-tested four state-of-the-art judges across four benchmarks covering safety, persuasion, misuse, and agentic behavior. The central finding:
+      </p>
+
+      <div class="callout pink">
+        <p><strong>No judge evaluated was found to be uniformly reliable across all benchmarks.</strong> Consistency issues include: sensitivity to simple text formatting changes, paraphrasing, verbosity changes, and flipping ground truth labels. A judge that performs well on safety evaluation may be inconsistent on persuasion; a judge calibrated for agentic tasks may degrade on misuse scenarios.</p>
+      </div>
+
+      <p>
+        This is the empirical basis for the C3 Surgical Compressor pattern described in <a href="./verification-patterns.html">Post 7</a>: rather than trusting a single holistic judge score, run the evaluator on a stripped version of the output (removing formatting, length padding, and stylistic variation) to reduce sensitivity to surface features. A judge that scores a 2,000-word output and an 800-word output of equal substance differently is responding to verbosity, not quality.
+      </p>
+
+      <h2>Safety Benchmark Sensitivity: Prompt Choice Drives Outcomes</h2>
+
+      <p>
+        A factorial design study on safety benchmark sensitivity (<a href="https://arxiv.org/abs/2604.24074v1" target="_blank" rel="noopener">arXiv:2604.24074v1</a>) varied 12 prompts across 2 dimensions — evaluation structure and instruction framing — while holding the judge model constant. The findings quantify how much judge configuration choices affect reported harmful response rates:
+      </p>
+
+      <ul>
+        <li>Evaluation structure (how the judge is asked to format its response) significantly affects outcomes across most safety categories</li>
+        <li>Instruction framing (how the judgment criterion is described) has category-specific effects</li>
+        <li><strong>"Harassment" is the most stable category</strong> — clear definitional guidelines reduce ambiguity and limit prompt sensitivity across all 12 configurations</li>
+        <li>Categories without clear definitional consensus show high inter-prompt variance, meaning safety scores in those categories reflect prompt engineering choices as much as model behavior</li>
+      </ul>
+
+      <p>
+        The practical implication: treating judge configuration as a fixed implementation detail rather than an experimental condition introduces uncontrolled variance into safety evaluations. Safety scores should be reported with the full judge configuration specified — which prompts, which structure, which instruction framing — or the numbers are not reproducible.
+      </p>
+
+      <h2>Conformal Prediction for Judge Uncertainty</h2>
+
+      <p>
+        The conformal prediction framework (<a href="https://arxiv.org/abs/2509.18658v1" target="_blank" rel="noopener">arXiv:2509.18658v1</a>) applies a distribution-free uncertainty quantification method to LLM judge scores. Instead of treating a single judge score as a point estimate, conformal prediction produces a prediction interval with guaranteed coverage at a specified confidence level:
+      </p>
+
+<pre><code># single judge score → point estimate
+score = judge.evaluate(output)  # e.g., 7.3
+
+# conformal prediction → interval with coverage guarantee
+interval = conformal_judge.predict(output)  # e.g., [6.8, 8.1] @ 90% coverage
+midpoint = sum(interval) / 2  # 7.45 — lower bias than raw score</code></pre>
+
+      <p>
+        The framework also introduces an ordinal boundary adjustment for discrete rating tasks (like 1–10 scoring) and suggests using the interval midpoint as a lower-bias score estimate than either the raw score or a weighted average. Experiments demonstrate valid prediction intervals with guaranteed coverage across multiple NLG evaluation tasks.
+      </p>
+
+      <p>
+        For production harnesses, this technique provides a principled way to express score uncertainty rather than treating evaluation as binary PASS/FAIL. A score of 7.3 with interval [6.1, 8.5] is qualitatively different from a score of 7.3 with interval [7.1, 7.5] — the first signals evaluator uncertainty, the second signals consistent signal. The interval width itself is a measure of how much the judge's verdict should be trusted.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">Judge Score Reliability Landscape &mdash; Key Empirical Findings</div>
+        <svg id="contam-svg" width="100%" viewBox="0 0 680 260" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Key quantitative findings from the literature, mapped to failure categories. The Omni-MATH result (96.4% error rate in expert disagreements) is the most alarming single finding.</p>
+      </div>
+
+      <h2>Harness Design Implications</h2>
+
+      <p>
+        The literature converges on five concrete design requirements for evaluation-based harnesses:
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Requirement</th><th>Rationale</th><th>Implementation</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Evaluator diversity</strong></td>
+            <td>No judge is uniformly reliable; family overlap introduces preference leakage</td>
+            <td>Producer and evaluator from different model families; panel evaluation for high-stakes decisions</td>
+          </tr>
+          <tr>
+            <td><strong>Dimensional rubrics over holistic scores</strong></td>
+            <td>Holistic scores are highly sensitive to position, length, and formatting; dimensions are separable</td>
+            <td>5-dimension rubric (relevance, completeness, depth, specificity, structure) per C2 in Post 7</td>
+          </tr>
+          <tr>
+            <td><strong>Position-swap controls</strong></td>
+            <td>8 of 9 judges show always-A bias; pairwise comparison without swap is uninformative</td>
+            <td>Run comparison in both A-then-B and B-then-A orders; take majority or abstain on disagreement</td>
+          </tr>
+          <tr>
+            <td><strong>Calibration anchors</strong></td>
+            <td>Best judges lag human scores by 5 points without anchoring; leniency is the default</td>
+            <td>Concrete score-to-behavior mappings in evaluator prompt ("a 6 means exactly one concrete example per item")</td>
+          </tr>
+          <tr>
+            <td><strong>Python enforcement for structural constraints</strong></td>
+            <td>Evaluators selectively apply rules; count constraints and format checks fail at high base-rate quality</td>
+            <td>Harness-side count check, section count validation, placeholder detection before wiggum runs</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The experimental progression described in <a href="./experimental-methodology.html">Post 12</a> independently derived several of these requirements: the evaluator ceiling exposed by glm4:9b was a calibration problem; the run-7 T_C count violation was a structural constraint enforcement problem; and the producer ceiling exposed by experiments 01–02 required an evaluator from a different capability tier. The literature validates each of these findings at scale.
+      </p>
+
+      <div class="callout">
+        <p>The deepest implication: <strong>the evaluator is not an oracle, it is a component.</strong> Every judge has biases, calibration gaps, and failure modes. The harness design task is to constrain those failure modes structurally — using Python for what Python can check, dimensional rubrics for what requires reading comprehension, calibration anchors for score distribution, and evaluator diversity for coverage of blind spots. No single judge, however capable, replaces this architecture.</p>
+      </div>
+
+    
+
+      <div class="post-pagination">
+        <a href="./experimental-methodology.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">12 &middot; Experimental Methodology</span>
+        </a>
+        <a href="./multi-objective-alignment.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">14 &middot; Multi-Objective Alignment</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./the-wiggum-loop.html" class="related-post-card">
+            <div class="related-post-num">Post 6</div>
+            <div class="related-post-title">The Wiggum Loop</div>
+            <div class="related-post-desc">The producer&ndash;evaluator separation pattern and score trajectory data from 1,500 production runs.</div>
+          </a>
+          <a href="./evaluation-uncertainty.html" class="related-post-card">
+            <div class="related-post-num">Post 17</div>
+            <div class="related-post-title">Evaluation Uncertainty</div>
+            <div class="related-post-desc">Conformal prediction turns point scores into calibrated intervals. Agent-as-a-Judge outperforms LLM-as-a-Judge.</div>
+          </a>
+          <a href="./judge-benchmarks-scaling.html" class="related-post-card">
+            <div class="related-post-num">Post 23</div>
+            <div class="related-post-title">Judge Benchmarks &amp; Scaling</div>
+            <div class="related-post-desc">JETTS: judges win at reranking, lose at beam search. Omni-Judge wrong in 96.4% of disagreements.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Nick McCarty &bull; <a href="https://github.com/nickmccarty" target="_blank" rel="noopener">GitHub</a></p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // --- Diagram 1: Bias Taxonomy ---
+    (function() {
+      const svg = d3.select('#bias-svg');
+      const W = 680, H = 300;
+      const g = svg.append('g');
+
+      const cyan = cssVar('--accent-cyan') || '#57cef2';
+      const pink = cssVar('--accent-pink') || '#ed46c3';
+      const border = cssVar('--border-color') || '#30363d';
+      const textPri = cssVar('--text-primary') || '#e6edf3';
+      const textSec = cssVar('--text-secondary') || '#8b949e';
+      const bgSec = cssVar('--bg-secondary') || '#161b22';
+      const purple = '#a855f7';
+      const orange = '#f97316';
+      const green = '#34d399';
+
+      const rows = [
+        {failure: 'Position bias', stat: '8/9 judges', mitigation: 'Position-swap or dimensional rubrics', color: pink},
+        {failure: 'Calibration leniency', stat: '5-pt gap from human', mitigation: 'Calibration anchors in prompt', color: orange},
+        {failure: 'Self/family preference', stat: 'Significant family bias', mitigation: 'Cross-family evaluator architecture', color: purple},
+        {failure: 'Structural constraint bypass', stat: 'Count rule ignored at 9/10', mitigation: 'Python enforcement before wiggum', color: cyan},
+        {failure: 'Benchmark contamination', stat: '96.4% expert error rate', mitigation: 'Named entity probing, entropy analysis', color: pink},
+      ];
+
+      const colX = [10, 220, 460];
+      const headers = ['Failure Mode', 'Evidence', 'Harness Mitigation'];
+      const rowH = 46;
+
+      // header
+      headers.forEach((h, i) => {
+        g.append('rect').attr('x',colX[i]).attr('y',0).attr('width',i<2?200:210).attr('height',28)
+          .attr('fill',cssVar('--bg-tertiary')||'#21262d').attr('rx',i===0?4:0);
+        g.append('text').attr('x',colX[i]+8).attr('y',18).attr('fill',textSec)
+          .attr('font-size',11).attr('font-weight',600).attr('letter-spacing','.06em').attr('text-transform','uppercase').text(h);
+      });
+
+      rows.forEach((r, ri) => {
+        const y = 36 + ri * rowH;
+        const bg = ri % 2 === 0 ? (cssVar('--bg-secondary')||'#161b22') : 'transparent';
+        g.append('rect').attr('x',0).attr('y',y).attr('width',W).attr('height',rowH-2).attr('fill',bg);
+
+        g.append('text').attr('x',colX[0]+8).attr('y',y+20).attr('fill',r.color).attr('font-size',12).attr('font-weight',600).text(r.failure);
+        g.append('text').attr('x',colX[1]+8).attr('y',y+20).attr('fill',textPri).attr('font-size',12).text(r.stat);
+        // mitigation wraps
+        const words = r.mitigation.split(' ');
+        let line = '', lines = [], i2 = 0;
+        words.forEach(w => {
+          if ((line + w).length > 32 && line) { lines.push(line.trim()); line = w + ' '; }
+          else line += w + ' ';
+        });
+        lines.push(line.trim());
+        lines.forEach((l, li) => {
+          g.append('text').attr('x',colX[2]+8).attr('y',y+14+li*16).attr('fill',textSec).attr('font-size',11).text(l);
+        });
+
+        g.append('line').attr('x1',0).attr('x2',W).attr('y1',y+rowH-2).attr('y2',y+rowH-2)
+          .attr('stroke',border).attr('opacity',0.4);
+      });
+    })();
+
+    // --- Diagram 2: Key Findings Bubble Chart ---
+    (function() {
+      const svg = d3.select('#contam-svg');
+      const W = 680, H = 260;
+      const m = {top:20, right:20, bottom:40, left:180};
+      const w = W - m.left - m.right, h = H - m.top - m.bottom;
+      const g = svg.append('g').attr('transform', `translate(${m.left},${m.top})`);
+
+      const cyan = cssVar('--accent-cyan') || '#57cef2';
+      const pink = cssVar('--accent-pink') || '#ed46c3';
+      const border = cssVar('--border-color') || '#30363d';
+      const textPri = cssVar('--text-primary') || '#e6edf3';
+      const textSec = cssVar('--text-secondary') || '#8b949e';
+      const purple = '#a855f7';
+      const orange = '#f97316';
+
+      const findings = [
+        {label: 'Omni-MATH-2 judge\nerror rate', value: 96.4, severity: 5, color: pink, src: '2601.19532'},
+        {label: 'JudgeSense always-A\nbias (of 9 judges)', value: 88.9, severity: 4, color: orange, src: '2604.23478'},
+        {label: 'Judging the Judges\nhuman score gap (pts)', value: 50, severity: 3, color: purple, src: '2406.12624'},
+        {label: 'Safety benchmark\nprompt sensitivity', value: 67, severity: 3, color: cyan, src: '2604.24074'},
+        {label: 'APE improvement on\nRewardBench vs GPT-4o', value: 32, severity: 1, color: '#34d399', src: '2510.06538'},
+      ];
+
+      const xScale = d3.scaleLinear().domain([0,100]).range([0,w]);
+      const yScale = d3.scaleBand().domain(findings.map(f=>f.label)).range([0,h]).padding(0.3);
+
+      // grid
+      g.append('g').selectAll('line').data([0,25,50,75,100]).join('line')
+        .attr('x1',d=>xScale(d)).attr('x2',d=>xScale(d)).attr('y1',0).attr('y2',h)
+        .attr('stroke',border).attr('stroke-dasharray','3,4').attr('opacity',0.5);
+
+      // bars
+      g.selectAll('.bar').data(findings).join('rect').attr('class','bar')
+        .attr('x',0).attr('y',d=>yScale(d.label)).attr('width',d=>xScale(d.value))
+        .attr('height',yScale.bandwidth()).attr('fill',d=>d.color).attr('opacity',0.7).attr('rx',3);
+
+      // value labels
+      g.selectAll('.val').data(findings).join('text').attr('class','val')
+        .attr('x',d=>xScale(d.value)+6).attr('y',d=>yScale(d.label)+yScale.bandwidth()*0.65)
+        .attr('fill',d=>d.color).attr('font-size',12).attr('font-weight',600)
+        .text(d=>`${d.value}%`);
+
+      // y labels (split on \n)
+      findings.forEach(f => {
+        const lines = f.label.split('\n');
+        lines.forEach((line, li) => {
+          g.append('text').attr('x',-8).attr('y',yScale(f.label)+yScale.bandwidth()*0.35+li*16)
+            .attr('text-anchor','end').attr('fill',textPri).attr('font-size',11).text(line);
+        });
+      });
+
+      // x axis
+      g.append('g').attr('transform',`translate(0,${h})`).call(d3.axisBottom(xScale).ticks(5).tickFormat(d=>`${d}%`))
+        .selectAll('text').attr('fill',textSec).attr('font-size',11);
+
+      svg.selectAll('.domain,.tick line').attr('stroke', border);
+    })();
+  </script>
+</body>
+</html>

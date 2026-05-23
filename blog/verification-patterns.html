@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verification Patterns: Measuring and Improving Output Quality | Nick McCarty</title>
+  <meta name="description" content="Three patterns that complete the verification section: the Dimensional Rubric, the Surgical Compressor, and the ReAct Comparator — the scaffolding around the Wiggum Loop.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/verification-patterns.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Verification Patterns: Measuring and Improving Output Quality">
+  <meta property="og:description" content="Three patterns completing the verification section: the Dimensional Rubric defines quality across six scored dimensions, the Surgical Compressor makes evaluation feasible for long documents, and the ReAct Comparator tells you when to switch strategies.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/verification-patterns.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-22T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Verification Patterns: Measuring and Improving Output Quality">
+  <meta name="twitter:description" content="Dimensional Rubric, Surgical Compressor, and ReAct Comparator — three patterns that complete the agentic harness verification section.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Verification Patterns: Measuring and Improving Output Quality","description":"Three patterns completing the verification section: Dimensional Rubric, Surgical Compressor, and ReAct Comparator.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-22","url":"https://nickmccarty.github.io/blog/verification-patterns.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.55rem 0.85rem;
+      background: var(--bg-tertiary);
+      border-bottom: 2px solid var(--border-color);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    td {
+      padding: 0.55rem 0.85rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    tr:last-child td { border-bottom: none; }
+    #rubric-svg text, #compressor-svg text, #react-svg text { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 22, 2026 &bull; 15 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">Verification Patterns: Measuring and Improving Output Quality</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          The Dimensional Rubric defines what "quality" means in the harness. The Surgical Compressor makes evaluation and revision feasible for long documents. The ReAct Comparator tells you when to use a different evaluation strategy entirely.
+        </p>
+
+      </header>
+
+      <p>
+        The Wiggum Loop (post 6) described the evaluate–revise cycle as a whole: a separate evaluator model scores synthesis, dimensional feedback routes back to the producer, the cycle repeats up to three times. But the loop depends on three support patterns that were left implicit: a rubric that defines what the evaluator scores, a compressor that makes scoring and revision feasible for long documents, and a decision framework for choosing between the Wiggum Loop and a ReAct evaluation strategy.
+      </p>
+
+      <p>
+        This post covers those three patterns — C2, C3, and C4 of the verification section.
+      </p>
+
+      <h2>C2 &mdash; The Dimensional Rubric</h2>
+
+      <p>
+        A composite quality score is useful for threshold gating. It tells you whether an output passed or failed. It tells you almost nothing useful for <em>revision</em>. "Your score is 6.4 out of 10" gives the producer no actionable information. "Your score on <em>Specificity</em> is 5.5 — you made four broad claims without concrete data or example, particularly in section 3" gives the producer something to act on.
+      </p>
+
+      <p>
+        The Dimensional Rubric defines quality across six named dimensions, each scored at 0.5-point resolution:
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">C2 &mdash; The Six Dimensions and Their First-Round Score Distribution</div>
+        <svg id="rubric-svg" width="100%" viewBox="0 0 680 280" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">First-round dimensional scores across 1,500 runs. Specificity (6.65) and Depth (6.97) are consistently the weakest dimensions. Relevance (7.42) is consistently the strongest.</p>
+      </div>
+
+      <p>
+        The six dimensions are:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>What it measures</th>
+            <th>Typical first-round weakness</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Relevance</strong></td>
+            <td>Does the output address the task directly?</td>
+            <td>Usually highest — the model stays on topic</td>
+          </tr>
+          <tr>
+            <td><strong>Completeness</strong></td>
+            <td>Are all major aspects of the task addressed?</td>
+            <td>Misses edge cases and limitations</td>
+          </tr>
+          <tr>
+            <td><strong>Depth</strong></td>
+            <td>Does the output go beyond surface-level treatment?</td>
+            <td>Correct but shallow; lacks mechanistic explanation</td>
+          </tr>
+          <tr>
+            <td><strong>Specificity</strong></td>
+            <td>Are claims supported by concrete data, examples, or citations?</td>
+            <td>Consistently weakest; model makes broad unanchored claims</td>
+          </tr>
+          <tr>
+            <td><strong>Structure</strong></td>
+            <td>Is the output organized with clear logical flow?</td>
+            <td>Headings present but parallel structure often weak</td>
+          </tr>
+          <tr>
+            <td><strong>Groundedness</strong></td>
+            <td>Are claims traceable to retrieved sources?</td>
+            <td>Improves when Novelty Gate reduces redundant sources</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The rubric is a structured prompt template in <code>harness/prompts/eval.py</code> that instructs the evaluator to score each dimension <em>independently</em> before computing the composite. The independence constraint is important: evaluators that score holistically tend to anchor on their initial gestalt impression and adjust each dimension toward it. Forced independence reduces this anchoring effect.
+      </p>
+
+      <p>
+        Equal weighting across the six dimensions was the result of an A/B experiment. Alternative weighting schemes (upweighting Groundedness for research tasks, upweighting Structure for formal reports) failed to produce statistically significant quality improvements over equal weights on the reference task distribution. This could change with a significantly different task type distribution.
+      </p>
+
+      <p>
+        The 8.0 composite threshold — the pass/fail line for the Wiggum Loop — was calibrated against a human-rated holdout set of 200 outputs. Outputs scoring at or above 8.0 were rated as "good enough for intended use" by human reviewers at a 90% agreement rate.
+      </p>
+
+      <div class="callout">
+        <p>The rubric is not universal. It was calibrated for long-form research synthesis. For code generation, replace <em>Groundedness</em> with <em>Correctness</em> (does the code execute and produce the expected output?) and <em>Depth</em> with <em>Parsimony</em> (is the solution unnecessarily complex?). Modifying the prompt template is a two-minute change; recalibrating the threshold takes a holdout evaluation session.</p>
+      </div>
+
+      <div class="callout" style="border-left-color: #a855f7;">
+        <p><strong>Research grounding:</strong> The independence constraint &mdash; scoring each dimension before computing the composite &mdash; is directly supported by empirical work on judge failure modes. A systematic reliability study found no judge model to be uniformly reliable across benchmarks: consistent sensitivity to formatting changes, paraphrasing, verbosity adjustments, and label flipping were observed across four state-of-the-art judges. (<a href="https://arxiv.org/abs/2603.05399" target="_blank" rel="noopener">arXiv:2603.05399</a>) A separate sensitivity analysis found 8 of 9 judges exhibit &ldquo;always-A&rdquo; position bias &mdash; when the candidate being evaluated appears first in a pairwise prompt, it receives inflated scores regardless of content. (<a href="https://arxiv.org/abs/2604.23478" target="_blank" rel="noopener">arXiv:2604.23478</a>) Forcing per-dimension scoring before any composite is computed is a structural defense against both effects: the evaluator must commit to a per-dimension verdict before it can anchor on a holistic impression, and there is no pairwise ordering when scoring individual dimensions. An ensemble approach that automatically discovers missing evaluation dimensions from judge failure cases improved GPT-4o benchmark agreement from 87.2% to 90.5% &mdash; the multi-dimensional structure is recoverable from failures in a way that holistic scores are not. (<a href="https://arxiv.org/abs/2510.06538" target="_blank" rel="noopener">arXiv:2510.06538</a>)</p>
+      </div>
+
+      <h2>C3 &mdash; The Surgical Compressor</h2>
+
+      <p>
+        The Wiggum Loop evaluates and revises synthesis outputs. Those outputs are often 4,000–12,000 characters — research summaries, technical reports, multi-section surveys. The evaluator model has a finite context window. The producer model receiving revision feedback also has a finite context window. Attempting to pass full-length documents directly to both causes context overflow on longer outputs and, more subtly, causes the evaluator to miss structure when the document is truncated mid-section.
+      </p>
+
+      <p>
+        The Surgical Compressor addresses this with <em>two distinct compression strategies</em> for two different purposes:
+      </p>
+
+<pre><code># For evaluation: preserve all section headings, condense bodies
+def summarize_for_eval(content: str, task: str,
+                       threshold: int = 6_000) -> str:
+    if len(content) <= threshold:
+        return content  # no compression needed
+    # Extract all H2/H3 headings verbatim + condensed section bodies
+    return _section_preserving_compress(content)
+
+# For revision: preserve the specific sections the evaluator criticized
+def summarize_for_revision(content: str, feedback: str,
+                           threshold: int = 5_000) -> str:
+    if len(content) <= threshold:
+        return content
+    # Parse feedback for section references, keep those verbatim
+    cited_sections = _extract_cited_sections(feedback)
+    return _section_targeted_compress(content, cited_sections)</code></pre>
+
+      <div class="diagram-container">
+        <div class="diagram-title">C3 &mdash; Surgical Compressor: Two Compression Modes</div>
+        <svg id="compressor-svg" width="100%" viewBox="0 0 680 300" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Section-preserving compression for evaluation keeps all headings visible so the evaluator can score Structure and Completeness. Section-targeted compression for revision keeps the exact passages the evaluator criticized verbatim.</p>
+      </div>
+
+      <p>
+        The asymmetry between the two modes reflects the asymmetric needs of evaluator and producer. The evaluator needs to see the document's structure — what sections exist, in what order, at what level of detail — to score <em>Structure</em> and <em>Completeness</em> accurately. If the evaluator receives a summarized document that condenses section bodies to one sentence each but preserves all headings, it can make valid structural assessments. If the evaluator receives a document truncated after the third section, it will score <em>Completeness</em> falsely low.
+      </p>
+
+      <p>
+        The producer needs the opposite: it needs to see exactly what it wrote in the passages the evaluator criticized, so it can make targeted improvements without losing track of the surrounding context. A producer receiving a fully condensed document that happens to include one-sentence summaries of the criticized sections cannot make meaningful revisions — it doesn't remember what it originally wrote. Section-targeted compression preserves the cited sections verbatim and condenses everything else.
+      </p>
+
+      <p>
+        The two-threshold design (6,000 chars for evaluation, 5,000 for revision) prevents unnecessary compression overhead on short outputs. Neither compressor fires on outputs below its threshold. The 20,000-character input cap prevents OOM errors on pathologically long outputs from skills that generate extended reports.
+      </p>
+
+      <h2>C4 &mdash; The ReAct Comparator</h2>
+
+      <p>
+        The Wiggum Loop is not the only evaluation loop available. ReAct (Reason+Act) loops are the evaluation strategy used in most published agentic frameworks: the evaluating model interleaves reasoning steps with action steps (search, code execution, lookup), observing the results of its actions and updating its assessment. This is powerful for tasks where the evaluation itself requires active investigation.
+      </p>
+
+      <p>
+        The two approaches have <em>complementary failure modes</em>, which is why choosing between them is a first-class design decision rather than a preference:
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">C4 &mdash; Wiggum Loop vs. ReAct: Failure Mode Comparison</div>
+        <svg id="react-svg" width="100%" viewBox="0 0 680 280" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Wiggum fails when the rubric doesn't capture what matters (specification error). ReAct fails when the evaluator's reasoning about what to verify is itself wrong (reasoning error). For research synthesis, Wiggum outperforms. For code verification, ReAct does.</p>
+      </div>
+
+      <p>
+        The practical decision criteria:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Task type</th>
+            <th>Recommended loop</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Long-form research synthesis</td>
+            <td><strong>Wiggum</strong></td>
+            <td>Six-dimension rubric covers the quality space; distinct evaluator model eliminates self-evaluation bias</td>
+          </tr>
+          <tr>
+            <td>Code generation / debugging</td>
+            <td><strong>ReAct</strong></td>
+            <td>Evaluator can execute code and observe errors; rubric scoring of code quality is unreliable</td>
+          </tr>
+          <tr>
+            <td>Factual Q&amp;A</td>
+            <td><strong>ReAct</strong></td>
+            <td>Evaluator can look up ground truth; dimensional rubric doesn't capture factual correctness well</td>
+          </tr>
+          <tr>
+            <td>Creative tasks</td>
+            <td><strong>Neither</strong></td>
+            <td>Both loops rely on automated evaluation; creative quality requires human assessment</td>
+          </tr>
+          <tr>
+            <td>Multi-step planning</td>
+            <td><strong>Wiggum</strong></td>
+            <td>Plan quality is assessable via rubric (Structure, Completeness); execution-level verification needs ReAct</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        There is also a hardware argument. The Wiggum Loop requires a distinct evaluator model to be loaded — two model instances in VRAM simultaneously. On 8–16 GB VRAM hardware, this forces sequential loading. A ReAct loop, using a single model to both reason and verify, fits in the same VRAM budget as a single-model pipeline. On constrained hardware, ReAct may be the only feasible evaluation strategy.
+      </p>
+
+      <div class="callout pink">
+        <p>The ReAct Comparator is reference material. It introduces no new code — it documents the decision analysis that should precede any deployment. The right time to consult it is when designing a new task type, not after observing that scores are low.</p>
+      </div>
+
+      <h2>How the Section C Patterns Compose</h2>
+
+      <p>
+        The four verification patterns (C1–C4) form a coherent subsystem around one question: <em>is this output good enough, and if not, how is it failing?</em> The Dimensional Rubric (C2) defines what "good enough" means across six dimensions. The Wiggum Loop (C1, post 6) runs the evaluate–revise cycle using the rubric as its scoring instrument. The Surgical Compressor (C3) ensures the evaluator and producer can both work with the document regardless of its length. The ReAct Comparator (C4) provides the decision framework for when this entire subsystem should be replaced.
+      </p>
+
+      <p>
+        The practical implication: the most common tuning operation in the verification subsystem is adjusting the Dimensional Rubric — updating scoring anchors, reweighting dimensions for a new task type, or adding a seventh dimension for domain-specific quality. Everything else — the loop mechanics, the compressor, the loop-selection logic — is stable infrastructure that rarely needs modification.
+      </p>
+
+      <p>
+        The next post covers Section D — Orchestration Patterns — where the harness scales from single-task runs to multi-agent parallel execution: the DAG Orchestrator, Worktree Context isolation, MCP Dispatch Router for cross-instance routing, and the Skill Registry.
+      </p>
+
+    
+
+      <div class="post-pagination">
+        <a href="./the-wiggum-loop.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">6 &middot; The Wiggum Loop</span>
+        </a>
+        <a href="./orchestration-patterns.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">8 &middot; Orchestration</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./the-wiggum-loop.html" class="related-post-card">
+            <div class="related-post-num">Post 6</div>
+            <div class="related-post-title">The Wiggum Loop</div>
+            <div class="related-post-desc">The producer&ndash;evaluator separation pattern and score trajectory data from 1,500 production runs.</div>
+          </a>
+          <a href="./judge-reliability.html" class="related-post-card">
+            <div class="related-post-num">Post 13</div>
+            <div class="related-post-title">Judge Reliability</div>
+            <div class="related-post-desc">Best judges lag human agreement by 5 points. Omni-Judge wrong in 96.4% of expert disagreements.</div>
+          </a>
+          <a href="./evaluation-robustness.html" class="related-post-card">
+            <div class="related-post-num">Post 19</div>
+            <div class="related-post-title">Eval Robustness</div>
+            <div class="related-post-desc">LLMORPH: 561K test executions. Three novel scoring biases. Holistic judges outperform atomic decomposition.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script type="module">
+    import anime from 'https://esm.sh/animejs@3.2.2';
+
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    /* ── C2: Dimensional Rubric bar chart ────────────────────────────── */
+    (function drawRubric() {
+      const svg = d3.select('#rubric-svg');
+      const W = 680, H = 280;
+      const mL = 120, mR = 30, mT = 30, mB = 50;
+      const gW = W - mL - mR, gH = H - mT - mB;
+
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const bdr = cssVar('--border-color');
+
+      const dims = [
+        { name: 'Relevance', score: 7.42 },
+        { name: 'Completeness', score: 7.18 },
+        { name: 'Structure', score: 7.09 },
+        { name: 'Groundedness', score: 7.04 },
+        { name: 'Depth', score: 6.97 },
+        { name: 'Specificity', score: 6.65 },
+      ];
+
+      const xScale = d3.scaleLinear().domain([0, 10]).range([mL, mL + gW]);
+      const barH = 30, barGap = (gH - dims.length * barH) / (dims.length + 1);
+
+      // Axes
+      svg.append('line').attr('x1', mL).attr('y1', mT).attr('x2', mL).attr('y2', mT + gH)
+        .attr('stroke', bdr).attr('stroke-width', 1);
+      [0, 2, 4, 6, 7, 8, 10].forEach(v => {
+        const x = xScale(v);
+        svg.append('line').attr('x1', x).attr('y1', mT).attr('x2', x).attr('y2', mT + gH)
+          .attr('stroke', bdr).attr('stroke-width', 0.5).attr('stroke-dasharray', v === 8 ? '4 3' : '2 3');
+        svg.append('text').attr('x', x).attr('y', mT + gH + 16)
+          .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2).text(v);
+      });
+
+      // 8.0 threshold label
+      svg.append('text').attr('x', xScale(8) + 4).attr('y', mT + 14)
+        .attr('font-size', 9).attr('fill', cyan).text('8.0 pass');
+
+      dims.forEach((d, i) => {
+        const y = mT + barGap + i * (barH + barGap) + barGap * 0.3;
+        const col = d.score < 7.0 ? pink : cyan;
+
+        svg.append('text').attr('x', mL - 8).attr('y', y + barH / 2 + 4)
+          .attr('text-anchor', 'end').attr('font-size', 11).attr('fill', txt).text(d.name);
+
+        // Background track
+        svg.append('rect').attr('x', mL).attr('y', y).attr('width', gW).attr('height', barH)
+          .attr('rx', 4).attr('fill', bg3);
+
+        // Actual bar
+        const targetW = xScale(d.score) - mL;
+        svg.append('rect').attr('x', mL).attr('y', y)
+          .attr('width', 0).attr('height', barH)
+          .attr('rx', 4).attr('fill', col).attr('fill-opacity', 0.7)
+          .attr('data-w', targetW).attr('class', 'dim-bar');
+
+        // Score label
+        svg.append('text').attr('x', mL + targetW + 6).attr('y', y + barH / 2 + 4)
+          .attr('font-size', 10).attr('font-weight', 700).attr('fill', col)
+          .attr('class', 'dim-label').attr('opacity', 0).text(d.score.toFixed(2));
+      });
+
+      const bars = document.querySelectorAll('#rubric-svg .dim-bar');
+      bars.forEach((b, i) => {
+        anime({
+          targets: b,
+          width: parseFloat(b.getAttribute('data-w')),
+          duration: 700,
+          delay: 100 + i * 80,
+          easing: 'easeOutQuart',
+        });
+      });
+
+      anime({
+        targets: '#rubric-svg .dim-label, #rubric-svg text:not(.dim-label)',
+        opacity: [0, 1],
+        duration: 400,
+        delay: anime.stagger(30),
+        easing: 'easeOutQuad',
+      });
+    })();
+
+    /* ── C3: Surgical Compressor diagram ─────────────────────────────── */
+    (function drawCompressor() {
+      const svg = d3.select('#compressor-svg');
+      const W = 680, H = 300;
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const bdr = cssVar('--border-color');
+
+      const defs = svg.append('defs');
+      ['c','p'].forEach(k => {
+        const col = k === 'c' ? cyan : pink;
+        const m = defs.append('marker').attr('id', `arr-cmp-${k}`)
+          .attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+        m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', col);
+      });
+
+      // Input document
+      svg.append('rect').attr('x', 20).attr('y', 110).attr('width', 90).attr('height', 72)
+        .attr('rx', 7).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', 65).attr('y', 130).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('font-weight', 700).attr('fill', txt).attr('opacity', 0).text('Synthesis');
+      svg.append('text').attr('x', 65).attr('y', 147).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text('output');
+      svg.append('text').attr('x', 65).attr('y', 163).attr('text-anchor', 'middle')
+        .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text('8,000 chars');
+
+      // Two compressor branches
+      svg.append('line').attr('x1', 110).attr('y1', 146).attr('x2', 195).attr('y2', 90)
+        .attr('stroke', cyan).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-cmp-c)').attr('opacity', 0);
+      svg.append('line').attr('x1', 110).attr('y1', 155).attr('x2', 195).attr('y2', 220)
+        .attr('stroke', pink).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-cmp-p)').attr('opacity', 0);
+
+      // Eval compressor box
+      const evalBox = { x: 197, y: 40, w: 180, h: 100 };
+      svg.append('rect').attr('x', evalBox.x).attr('y', evalBox.y)
+        .attr('width', evalBox.w).attr('height', evalBox.h)
+        .attr('rx', 9).attr('fill', bg3).attr('stroke', cyan).attr('stroke-width', 2).attr('opacity', 0);
+      svg.append('text').attr('x', evalBox.x + evalBox.w / 2).attr('y', evalBox.y + 18)
+        .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('font-weight', 700)
+        .attr('fill', cyan).attr('letter-spacing', 1).attr('opacity', 0).text('FOR EVALUATION');
+      svg.append('text').attr('x', evalBox.x + evalBox.w / 2).attr('y', evalBox.y + 34)
+        .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0)
+        .text('threshold: 6,000 chars');
+      ['All headings verbatim', 'Section bodies condensed', 'Evaluator sees full structure'].forEach((s, i) => {
+        svg.append('text').attr('x', evalBox.x + 12).attr('y', evalBox.y + 52 + i * 16)
+          .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text('• ' + s);
+      });
+
+      // Revision compressor box
+      const revBox = { x: 197, y: 170, w: 180, h: 100 };
+      svg.append('rect').attr('x', revBox.x).attr('y', revBox.y)
+        .attr('width', revBox.w).attr('height', revBox.h)
+        .attr('rx', 9).attr('fill', bg3).attr('stroke', pink).attr('stroke-width', 2).attr('opacity', 0);
+      svg.append('text').attr('x', revBox.x + revBox.w / 2).attr('y', revBox.y + 18)
+        .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('font-weight', 700)
+        .attr('fill', pink).attr('letter-spacing', 1).attr('opacity', 0).text('FOR REVISION');
+      svg.append('text').attr('x', revBox.x + revBox.w / 2).attr('y', revBox.y + 34)
+        .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0)
+        .text('threshold: 5,000 chars');
+      ['Cited sections verbatim', 'Other sections condensed', 'Producer sees what to fix'].forEach((s, i) => {
+        svg.append('text').attr('x', revBox.x + 12).attr('y', revBox.y + 52 + i * 16)
+          .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text('• ' + s);
+      });
+
+      // Outputs
+      const evalOut = { x: 440, y: 55 };
+      svg.append('rect').attr('x', evalOut.x).attr('y', evalOut.y).attr('width', 130).attr('height', 62)
+        .attr('rx', 7).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', evalOut.x + 65).attr('y', evalOut.y + 18)
+        .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('font-weight', 600)
+        .attr('fill', cyan).attr('opacity', 0).text('Evaluator scores');
+      ['Structure ✓', 'Completeness ✓'].forEach((s, i) => {
+        svg.append('text').attr('x', evalOut.x + 65).attr('y', evalOut.y + 36 + i * 16)
+          .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text(s);
+      });
+
+      const revOut = { x: 440, y: 190 };
+      svg.append('rect').attr('x', revOut.x).attr('y', revOut.y).attr('width', 130).attr('height', 62)
+        .attr('rx', 7).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', revOut.x + 65).attr('y', revOut.y + 18)
+        .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('font-weight', 600)
+        .attr('fill', pink).attr('opacity', 0).text('Producer revises');
+      ['Sees criticized sections', 'Verbatim context preserved'].forEach((s, i) => {
+        svg.append('text').attr('x', revOut.x + 65).attr('y', revOut.y + 36 + i * 16)
+          .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text(s);
+      });
+
+      svg.append('line').attr('x1', 378).attr('y1', 90).attr('x2', 439).attr('y2', 86)
+        .attr('stroke', cyan).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-cmp-c)').attr('opacity', 0);
+      svg.append('line').attr('x1', 378).attr('y1', 220).attr('x2', 439).attr('y2', 221)
+        .attr('stroke', pink).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-cmp-p)').attr('opacity', 0);
+
+      anime({
+        targets: '#compressor-svg rect, #compressor-svg text, #compressor-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(40),
+        easing: 'easeOutQuad',
+      });
+    })();
+
+    /* ── C4: ReAct vs Wiggum comparison ──────────────────────────────── */
+    (function drawReact() {
+      const svg = d3.select('#react-svg');
+      const W = 680, H = 280;
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const bdr = cssVar('--border-color');
+      const purple = '#a855f7';
+      const green = '#34d399';
+
+      // Wiggum column
+      const wBox = { x: 30, y: 30, w: 280, h: 220 };
+      svg.append('rect').attr('x', wBox.x).attr('y', wBox.y)
+        .attr('width', wBox.w).attr('height', wBox.h)
+        .attr('rx', 10).attr('fill', bg3).attr('stroke', cyan).attr('stroke-width', 2).attr('opacity', 0);
+      svg.append('text').attr('x', wBox.x + wBox.w / 2).attr('y', wBox.y + 22)
+        .attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 700)
+        .attr('fill', cyan).attr('letter-spacing', 1).attr('opacity', 0).text('WIGGUM LOOP');
+
+      const wigRows = [
+        { label: 'How it works', val: 'External cross-model scoring\nagainst fixed 6-dim rubric', col: txt2 },
+        { label: 'Fails when', val: 'Rubric doesn\'t capture\nwhat matters (spec error)', col: pink },
+        { label: 'Wins for', val: 'Long-form research synthesis\n(+rubric covers the space)', col: cyan },
+        { label: 'VRAM', val: '2 model instances needed', col: txt2 },
+      ];
+      wigRows.forEach((r, i) => {
+        svg.append('text').attr('x', wBox.x + 14).attr('y', wBox.y + 50 + i * 46)
+          .attr('font-size', 9.5).attr('font-weight', 700).attr('fill', txt2).attr('opacity', 0)
+          .text(r.label + ':');
+        r.val.split('\n').forEach((line, j) => {
+          svg.append('text').attr('x', wBox.x + 14).attr('y', wBox.y + 65 + i * 46 + j * 14)
+            .attr('font-size', 9.5).attr('fill', r.col).attr('opacity', 0).text(line);
+        });
+      });
+
+      // ReAct column
+      const rBox = { x: 370, y: 30, w: 280, h: 220 };
+      svg.append('rect').attr('x', rBox.x).attr('y', rBox.y)
+        .attr('width', rBox.w).attr('height', rBox.h)
+        .attr('rx', 10).attr('fill', bg3).attr('stroke', purple).attr('stroke-width', 2).attr('opacity', 0);
+      svg.append('text').attr('x', rBox.x + rBox.w / 2).attr('y', rBox.y + 22)
+        .attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 700)
+        .attr('fill', purple).attr('letter-spacing', 1).attr('opacity', 0).text('REACT LOOP');
+
+      const reactRows = [
+        { label: 'How it works', val: 'Model reasons + acts\n(search, execute, observe)', col: txt2 },
+        { label: 'Fails when', val: 'Evaluator reasoning about\nwhat to check is wrong', col: pink },
+        { label: 'Wins for', val: 'Code verification & factual Q&A\n(can execute + observe)', col: purple },
+        { label: 'VRAM', val: '1 model instance (same model\nfor both reasoning + action)', col: txt2 },
+      ];
+      reactRows.forEach((r, i) => {
+        svg.append('text').attr('x', rBox.x + 14).attr('y', rBox.y + 50 + i * 46)
+          .attr('font-size', 9.5).attr('font-weight', 700).attr('fill', txt2).attr('opacity', 0)
+          .text(r.label + ':');
+        r.val.split('\n').forEach((line, j) => {
+          svg.append('text').attr('x', rBox.x + 14).attr('y', rBox.y + 65 + i * 46 + j * 14)
+            .attr('font-size', 9.5).attr('fill', r.col).attr('opacity', 0).text(line);
+        });
+      });
+
+      // VS divider
+      svg.append('text').attr('x', W / 2).attr('y', H / 2 + 6)
+        .attr('text-anchor', 'middle').attr('font-size', 16).attr('font-weight', 700)
+        .attr('fill', bdr).attr('opacity', 0).text('VS');
+
+      anime({
+        targets: '#react-svg rect, #react-svg text, #react-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(35),
+        easing: 'easeOutQuad',
+      });
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

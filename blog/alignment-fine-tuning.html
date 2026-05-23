@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fine-Tuning and Alignment Deep Cuts: Synthetic Data, Poisoning, and Safety Recovery | Nick McCarty</title>
+  <meta name="description" content="FLR matches GPT-4-annotated reward models without any human annotation. Gradient-based label-flipping can poison RLHF with a convex optimization attack. Harmful rate drops from 33.25% to 1.74% via weight restoration in 125 fine-tuned models. Perplexity predicts SFT effectiveness better than dataset similarity.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/alignment-fine-tuning.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Fine-Tuning and Alignment Deep Cuts: Synthetic Data, Poisoning, and Safety Recovery">
+  <meta property="og:description" content="Annotation-free alignment via follow-up likelihood. Label-flipping poisoning as convex optimization. Safety recovery from 33.25% to 1.74% harmful rate. Perplexity over dataset similarity as an SFT effectiveness predictor. What the fine-tuning literature means for the harness Data Flywheel.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/alignment-fine-tuning.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Fine-Tuning and Alignment Deep Cuts: Synthetic Data, Poisoning, and Safety Recovery">
+  <meta name="twitter:description" content="FLR: annotation-free alignment competitive with GPT-4 reward models. Label-flipping attack via convex optimization. Safety recovery in 125 fine-tuned models. Perplexity predicts SFT better than dataset similarity.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Fine-Tuning and Alignment Deep Cuts: Synthetic Data, Poisoning, and Safety Recovery","description":"A deep cut into the fine-tuning and alignment literature beyond Post 14: annotation-free reward signals (FLR), synthetic preference data (rDPO), label-flipping poisoning attacks on RLHF, safety recovery after fine-tuning, SFT scaling laws, cross-lingual transfer, and multimodal alignment—and what each means for the harness Data Flywheel and RL Rollout components.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-01","url":"https://nickmccarty.github.io/blog/alignment-fine-tuning.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+      font-style: italic;
+    }
+    .series-nav {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin: 2rem 0;
+    }
+    .series-nav-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .series-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .series-badge {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .series-badge.active {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      background: rgba(87,206,242,0.08);
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      background: rgba(87,206,242,0.06);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .callout.orange {
+      border-left-color: #f97316;
+      background: rgba(249,115,22,0.06);
+    }
+    .callout.purple {
+      border-left-color: #a855f7;
+      background: rgba(168,85,247,0.06);
+    }
+    .callout.pink {
+      border-left-color: #ed46c3;
+      background: rgba(237,70,195,0.06);
+    }
+    .callout.green {
+      border-left-color: #34d399;
+      background: rgba(52,211,153,0.06);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.8em;
+      background: var(--bg-tertiary);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article style="max-width: 760px; margin: 0 auto; padding: 2rem 1rem 4rem;">
+
+
+      <header style="margin-bottom: 2.5rem;">
+        <h1 style="font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.2; margin-bottom: 0.75rem;">Fine-Tuning and Alignment Deep Cuts: Synthetic Data, Poisoning, and Safety Recovery</h1>
+        <div class="meta">May 1, 2026 &bull; 16 min read</div>
+        <p style="margin-top: 1rem; font-size: 1.05rem; color: var(--text-secondary); line-height: 1.7;">Post&nbsp;14 covered the high-level alignment methods: DPA, MO-ODPO, MGDA-Decoupled, and why high dataset similarity degrades safety guardrails. This post goes deeper: how to generate preference data without human annotators, how adversaries can poison the alignment phase with minimal label flips, how to recover safety alignment after fine-tuning has degraded it, and what actually predicts whether a supervised fine-tuning run will succeed.</p>
+      </header>
+
+      <h2>Annotation-Free Reward Signals</h2>
+
+      <p>The standard RLHF/DPO pipeline requires human-annotated preference data: pairs of responses labeled "preferred" and "rejected." This creates a cost and bottleneck, particularly for domain-specific deployments where annotation requires subject matter expertise. Two papers address this differently.</p>
+
+      <h3>Follow-up Likelihood as Reward (FLR)</h3>
+
+      <p>FLR (<a href="https://arxiv.org/abs/2409.13948v3">arXiv:2409.13948v3</a>) observes that in human conversations, follow-up reactions are natural quality signals: a good response elicits engaged follow-up; a poor response elicits correction, dismissal, or silence. The paper operationalizes this as a reward: given two candidate responses, the preferred response is the one for which a model assigns higher likelihood to the follow-up utterance in the conversation.</p>
+
+      <div class="callout green">
+        <strong>FLR matches GPT-4-annotated reward models without any human annotation.</strong> Evaluations across eight pairwise-preference and four rating-based benchmarks show that FLR is competitive with strong reward models trained on large-scale human or GPT-4-annotated preference data. The reward signal is mined automatically from base model generations against existing conversational data.
+      </div>
+
+      <p>For the harness, this is a direct enabler of the Data Flywheel described in Post&nbsp;10. The flywheel currently accumulates JSONL run traces. Each run trace includes the producer's output and the evaluator's response to that output. The evaluator's response is precisely the follow-up to the producer&mdash;and if the evaluator gives a high score with substantive follow-up detail, that is a positive preference signal for the producer's response. FLR makes it possible to extract preference data from the existing run log without any additional annotation step.</p>
+
+      <h3>Refined DPO with Synthetic Preference Pairs (rDPO)</h3>
+
+      <p>rDPO (<a href="https://arxiv.org/abs/2402.08005v1">arXiv:2402.08005v1</a>) eliminates human annotation through a different mechanism: a teacher LLM generates synthetic preference pairs via self-critique prompting, and a student LLM is trained on those pairs via DPO. The teacher generates both a "preferred" version (with improvements applied) and a "rejected" version (the original) for each training example.</p>
+
+      <p>The method improves safety and robustness against role-playing attacks, and reduces sycophancy in the student model. The released code makes this directly replicable. For the harness, rDPO represents a path to fine-tuning the producer model on domain-specific research tasks without requiring labeled preference data: the planner or evaluator model can act as the teacher, generating synthetic preferred/rejected pairs for producer outputs that already have dimensional rubric scores.</p>
+
+      <h2>Poisoning the Alignment Phase</h2>
+
+      <p>If the harness is using the Data Flywheel to generate training data for downstream fine-tuning, the alignment phase itself becomes an attack surface. The label-flipping poisoning paper (<a href="https://arxiv.org/abs/2511.09105v1">arXiv:2511.09105v1</a>) formalizes the theoretical foundations of this attack.</p>
+
+      <p>The attack targets RLHF/DPO by flipping preference labels&mdash;swapping preferred and rejected&mdash;for a subset of training examples. The minimum cost required to achieve a given behavioral change is formulated as a convex optimization problem. The paper derives lower and upper bounds on the attack cost and proposes a post-processing method that reduces the number of label flips needed compared to existing attacks while preserving the poisoning effect.</p>
+
+      <div class="callout orange">
+        <strong>Minimum-cost poisoning is a tractable optimization.</strong> The attack cost is a convex function of the dataset characteristics. In the regime where the reward model's feature dimension is small relative to dataset size (which is the common case for small fine-tuned models), the post-processing significantly reduces the required number of flips. An adversary with access to a fraction of the training pipeline can efficiently steer the resulting model's behavior.
+      </div>
+
+      <p>For the harness's RL Rollout component (Post&nbsp;10), this is a concrete threat: if the JSONL audit log that feeds into training data generation is accessible to an adversary, a small number of modified entries can systematically shift the producer's behavior in a targeted direction. The defense is data provenance: each training example in the flywheel should carry a cryptographic hash of the original run, and any modification invalidates the hash. This is the same provenance verification recommended for inter-agent messages in Post&nbsp;20.</p>
+
+      <h2>Safety Recovery After Fine-Tuning</h2>
+
+      <p>Post&nbsp;14 documented that high similarity between safety alignment datasets and downstream fine-tuning datasets degrades safety guardrails by up to 10.33%. The "Alleviating Fear" paper (<a href="https://arxiv.org/abs/2504.09757v1">arXiv:2504.09757v1</a>) addresses the complementary problem: once a model has been fine-tuned and its safety alignment has been compromised, how do you recover it without retraining from scratch?</p>
+
+      <div class="callout">
+        <strong>Results on 125 fine-tuned LLMs:</strong> A gradient descent-based process identifies the "harmful direction" in fine-tuned model weights&mdash;the weight subspace that corresponds to safety-relevant behavior. A rollback mechanism prevents aggressive restoration that would impair downstream task performance. Results: harmful response rate drops from <strong>33.25% to 1.74%</strong> while maintaining task performance. This outperforms existing safety restoration methods that either achieve limited harmful rate reduction or significantly damage functional capabilities.
+      </div>
+
+      <p>The method requires access to the original aligned model's weights (to compute the harmful direction by comparison). For the harness, this means the aligned base model checkpoint should be preserved and not overwritten when fine-tuning on domain-specific data. If safety degradation is detected (via the harness's own safety evaluation patterns, Post&nbsp;9), the restoration procedure can be applied without full retraining.</p>
+
+      <div class="diagram-container">
+        <svg id="safety-svg" width="100%" height="280"></svg>
+        <p class="diagram-caption">Safety alignment dynamics: dataset similarity impact on guardrail degradation (arXiv:2506.05346v1, covered in Post&nbsp;14) and post-fine-tuning harmful rate recovery via gradient-based weight restoration (arXiv:2504.09757v1).</p>
+      </div>
+
+      <h2>Alignment Fine-Tuning for CoT Assessment</h2>
+
+      <p>AFT (<a href="https://arxiv.org/abs/2309.02144v1">arXiv:2309.02144v1</a>) addresses a specific failure mode in reasoning fine-tuning: after fine-tuning on chain-of-thought (CoT) data, LLMs often exhibit assessment misalignment&mdash;they assign higher scores to poor-quality reasoning paths than to correct ones, despite the explicit training signal. This is a calibration failure, not a capability failure.</p>
+
+      <p>Alignment Fine-Tuning introduces a constraint alignment loss that calibrates how the model scores its own reasoning steps. The constraint penalizes cases where a negative (incorrect) reasoning path receives a higher score than a positive (correct) one, with the constraint explicitly designed to maintain score discrimination while preserving stability. Experiments on four reasoning benchmarks demonstrate AFT's effectiveness, and the analysis reveals that the overlooked "constraint" aspect is crucial for the performance of other ranking-based methods like DPO, RRHF, and PRO.</p>
+
+      <p>For the harness, the Wiggum evaluator is tasked with scoring producer output across six dimensions, including <code>depth_r1</code> and <code>breadth_r1</code>. If the evaluator model has been fine-tuned on domain data, it may exhibit the same assessment misalignment that AFT targets: scoring shallow outputs highly because they match the surface form of high-scoring examples in the training data. AFT-style constraint alignment on the evaluator fine-tuning run would address this directly.</p>
+
+      <h2>What Actually Predicts SFT Effectiveness</h2>
+
+      <p>The massive SFT experiments paper (<a href="https://arxiv.org/abs/2506.14681v2">arXiv:2506.14681v2</a>) addresses a practical question that practitioners answer by trial and error: given a base model and a fine-tuning dataset, will the SFT run be effective? The study trains over 1,000 SFT models under controlled conditions across diverse datasets and base models to find reliable predictors.</p>
+
+      <div class="callout purple">
+        <strong>Key predictors of SFT effectiveness:</strong> (1) <strong>Perplexity</strong> consistently predicts SFT effectiveness, often outperforming dataset similarity measures between training data and evaluation benchmarks. Low perplexity of training data under the base model signals high alignment with the model's learned distribution and predicts strong post-training performance. (2) <strong>Mid-layer weight changes</strong> correlate most strongly with performance gains. Shallow and deep layer modifications are less predictive than changes in the middle layers. (3) <strong>Model-specific strategies</strong> outperform generic protocols; some training-task synergies vary substantially across model families.
+      </div>
+
+      <p>For the harness's Data Flywheel, this provides a filter: before submitting a batch of generated training examples to a fine-tuning run, compute the perplexity of those examples under the target base model. Low-perplexity batches predict effective fine-tuning; high-perplexity batches signal distributional mismatch that will reduce fine-tuning gains. This is a cheap pre-screening step that avoids wasted compute on training runs likely to underperform.</p>
+
+      <h2>Federated Pluralistic Alignment</h2>
+
+      <p>The federated RLHF paper (<a href="https://arxiv.org/abs/2512.08786v2">arXiv:2512.08786v2</a>) addresses alignment in federated learning settings where raw preference data cannot be shared across parties. Standard aggregation methods (averaging preference weights across clients) fail to represent diverse viewpoints, systematically under-weighting minority preference groups.</p>
+
+      <p>The paper introduces an adaptive aggregation scheme that dynamically adjusts preference weights based on each group's historical alignment performance. Experiments on question-answering tasks using a PPO-based RLHF pipeline show consistent improvements in fairness while maintaining competitive alignment scores. The adaptive scheme achieves superior fairness compared to standard aggregation without sacrificing overall alignment quality.</p>
+
+      <p>For multi-operator harness deployments where different users or teams have different quality preferences, federated pluralistic alignment is the theoretically sound approach to aggregating those preferences without forcing a single scalar objective.</p>
+
+      <h2>Cross-Lingual and Multimodal Alignment</h2>
+
+      <p>Middle-layer representation alignment (<a href="https://arxiv.org/abs/2502.14830v3">arXiv:2502.14830v3</a>) proposes integrating a cross-lingual alignment objective directly into the task-specific training process. The insight is that middle layers offer the strongest potential for cross-lingual alignment&mdash;the abstract semantic representations learned by mid-layers generalize across languages in a way that the early (lexical) and late (task-specific) layers do not.</p>
+
+      <p>Experiments on slot filling, machine translation, and structured text generation show consistent improvements in cross-lingual transfer, particularly for lower-resource languages. The approach generalizes to languages not seen during the alignment phase. Separately trained alignment modules can be merged with task-specific modules without costly full model retraining.</p>
+
+      <p>This connects to the multilingual AaaJ finding in Post&nbsp;19: the decisive factor for reliable evaluation across languages is localizing the judge-side instructions. The middle-layer alignment result suggests <em>why</em> this is true&mdash;the judge's alignment with its evaluation task is encoded in mid-layer representations that are language-dependent, not in the surface token predictions that are language-robust.</p>
+
+      <p>Vision-Flan (<a href="https://arxiv.org/abs/2402.11690v1">arXiv:2402.11690v1</a>) introduces a visual instruction tuning dataset with 187 tasks and 1.6 million expert-written instruction instances. The key finding for instruction tuning practice: a minimal quantity of GPT-4 synthesized data (1,000 instances) is sufficient to align VLM response format with human preferences, while the 1.6M diverse human-labeled examples provide core visual understanding capabilities. The two-stage approach&mdash;diverse human data first, targeted synthetic alignment second&mdash;significantly outperforms single-stage methods and achieves state-of-the-art on multimodal benchmarks. For the harness, this is the correct ordering for any fine-tuning pipeline: diversity for capability, targeted synthesis for format alignment.</p>
+
+      <div class="diagram-container">
+        <svg id="sft-svg" width="100%" height="280"></svg>
+        <p class="diagram-caption">SFT effectiveness predictors: the relationship between perplexity and alignment quality (left), and mid-layer vs. other-layer weight change correlation with performance (right), from arXiv:2506.14681v2.</p>
+      </div>
+
+      <h2>Design Implications</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Finding</th>
+            <th>Source</th>
+            <th>Harness Implication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Follow-up likelihood matches GPT-4 reward models without annotation</td>
+            <td>FLR (2409.13948)</td>
+            <td>The evaluator's response to producer output is a native preference signal; mine it from existing run logs via FLR to generate training data without human labeling</td>
+          </tr>
+          <tr>
+            <td>Teacher LLM self-critique generates effective synthetic preference pairs (rDPO)</td>
+            <td>rDPO (2402.08005)</td>
+            <td>Use planner or evaluator as teacher to generate preferred/rejected pairs for producer outputs that already have dimensional rubric scores</td>
+          </tr>
+          <tr>
+            <td>Label-flipping poisoning is a convex optimization problem with tractable minimum cost</td>
+            <td>Poisoning (2511.09105)</td>
+            <td>Attach cryptographic hash to each Data Flywheel training example; invalidate on modification; treat the run log as a tamper-evident data store</td>
+          </tr>
+          <tr>
+            <td>Harmful rate drops 33.25%→1.74% via targeted weight restoration in 125 fine-tuned models</td>
+            <td>Alleviating Fear (2504.09757)</td>
+            <td>Preserve the aligned base model checkpoint; apply gradient-based safety restoration if post-fine-tuning safety evaluation detects degradation</td>
+          </tr>
+          <tr>
+            <td>Perplexity predicts SFT effectiveness better than dataset similarity; mid-layer changes correlate with gains</td>
+            <td>Massive SFT (2506.14681)</td>
+            <td>Pre-screen flywheel training batches by computing perplexity under the target base model; discard high-perplexity batches before submitting fine-tuning runs</td>
+          </tr>
+          <tr>
+            <td>AFT constraint alignment loss fixes CoT assessment misalignment</td>
+            <td>AFT (2309.02144)</td>
+            <td>Apply AFT-style constraint loss when fine-tuning the Wiggum evaluator to prevent it from assigning high scores to shallow outputs that match high-scoring surface forms</td>
+          </tr>
+        </tbody>
+      </table>
+
+
+    
+
+      <div class="post-pagination">
+        <a href="./prompt-injection-security.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">20 &middot; Injection Security</span>
+        </a>
+        <a href="./structured-knowledge-queries.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">22 &middot; Structured Knowledge Queries</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./multi-objective-alignment.html" class="related-post-card">
+            <div class="related-post-num">Post 14</div>
+            <div class="related-post-title">Multi-Objective Alignment</div>
+            <div class="related-post-desc">DPA, MO-ODPO, MGDA-Decoupled, and the safety fine-tuning hazard: high similarity degrades safety by 10.33%.</div>
+          </a>
+          <a href="./observability-flywheel.html" class="related-post-card">
+            <div class="related-post-num">Post 10</div>
+            <div class="related-post-title">Observability &amp; Flywheel</div>
+            <div class="related-post-desc">RunTrace, JSONL Audit Log, Chrome Trace Exporter, Data Flywheel, RL Rollout, and Lit Review Pipeline.</div>
+          </a>
+          <a href="./prompt-injection-security.html" class="related-post-card">
+            <div class="related-post-num">Post 20</div>
+            <div class="related-post-title">Injection Security</div>
+            <div class="related-post-desc">HouYi compromises 86% of real LLM apps. Prompt Infection replicates virally through multi-agent DAGs.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    /* ── Diagram 1: Safety alignment dynamics ── */
+    (function() {
+      const container = document.getElementById('safety-svg');
+      const W = container.parentElement.clientWidth || 700;
+      const H = 280;
+      container.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      const svg = d3.select(container);
+
+      const cyan = '#57cef2';
+      const muted = '#8b949e';
+      const green = '#34d399';
+      const orange = '#f97316';
+      const pink = '#ed46c3';
+      const borderColor = '#30363d';
+      const panelW = W / 2;
+      const margin = { top: 50, right: 20, bottom: 40, left: 55 };
+      const innerW = panelW - margin.left - margin.right;
+      const innerH = H - margin.top - margin.bottom;
+
+      svg.append('text').attr('x', panelW / 2).attr('y', 22).attr('text-anchor', 'middle').attr('fill', '#e6edf3').attr('font-size', 12).attr('font-weight', '600').text('Safety Guardrail Degradation');
+      svg.append('text').attr('x', panelW / 2).attr('y', 36).attr('text-anchor', 'middle').attr('fill', muted).attr('font-size', 10).text('Harmfulness score by dataset similarity');
+
+      const leftG = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+      const leftData = [
+        { label: 'Low sim.', value: 14, color: green },
+        { label: 'Med. sim.', value: 19, color: orange },
+        { label: 'High sim.', value: 24.33, color: pink },
+      ];
+      const lx = d3.scaleBand().domain(leftData.map(d => d.label)).range([0, innerW]).padding(0.3);
+      const ly = d3.scaleLinear().domain([0, 30]).range([innerH, 0]);
+
+      leftG.append('g').attr('transform', `translate(0,${innerH})`).call(d3.axisBottom(lx).tickSize(0)).call(g => g.select('.domain').remove()).selectAll('text').attr('fill', muted).attr('font-size', 10);
+      leftG.append('g').call(d3.axisLeft(ly).ticks(4)).call(g => g.select('.domain').remove()).call(g => g.selectAll('.tick line').attr('stroke', borderColor).attr('stroke-dasharray', '3,3').attr('x2', innerW)).call(g => g.selectAll('.tick text').attr('fill', muted).attr('font-size', 10));
+      leftG.append('text').attr('x', -margin.left + 4).attr('y', -8).attr('fill', muted).attr('font-size', 9).text('harmful score');
+
+      leftData.forEach(d => {
+        const bx = lx(d.label), bw = lx.bandwidth(), by = ly(d.value), bh = innerH - by;
+        leftG.append('rect').attr('x', bx).attr('y', by).attr('width', bw).attr('height', bh).attr('rx', 4).attr('fill', d.color).attr('opacity', 0.75);
+        leftG.append('text').attr('x', bx + bw / 2).attr('y', by - 5).attr('text-anchor', 'middle').attr('fill', d.color).attr('font-size', 11).attr('font-weight', '700').text(d.value.toFixed(1));
+      });
+
+      // Right panel: recovery
+      svg.append('text').attr('x', panelW + panelW / 2).attr('y', 22).attr('text-anchor', 'middle').attr('fill', '#e6edf3').attr('font-size', 12).attr('font-weight', '600').text('Safety Recovery After Fine-Tuning');
+      svg.append('text').attr('x', panelW + panelW / 2).attr('y', 36).attr('text-anchor', 'middle').attr('fill', muted).attr('font-size', 10).text('Harmful response rate across 125 LLMs');
+
+      const rightG = svg.append('g').attr('transform', `translate(${panelW + margin.left},${margin.top})`);
+      const rightData = [
+        { label: 'Before', value: 33.25, color: pink },
+        { label: 'After', value: 1.74, color: green },
+      ];
+      const rx = d3.scaleBand().domain(rightData.map(d => d.label)).range([0, innerW]).padding(0.4);
+      const ry = d3.scaleLinear().domain([0, 40]).range([innerH, 0]);
+
+      rightG.append('g').attr('transform', `translate(0,${innerH})`).call(d3.axisBottom(rx).tickSize(0)).call(g => g.select('.domain').remove()).selectAll('text').attr('fill', muted).attr('font-size', 11);
+      rightG.append('g').call(d3.axisLeft(ry).ticks(4).tickFormat(d => d + '%')).call(g => g.select('.domain').remove()).call(g => g.selectAll('.tick line').attr('stroke', borderColor).attr('stroke-dasharray', '3,3').attr('x2', innerW)).call(g => g.selectAll('.tick text').attr('fill', muted).attr('font-size', 10));
+
+      rightData.forEach(d => {
+        const bx = rx(d.label), bw = rx.bandwidth(), by = ry(d.value), bh = innerH - by;
+        rightG.append('rect').attr('x', bx).attr('y', by).attr('width', bw).attr('height', bh).attr('rx', 4).attr('fill', d.color).attr('opacity', 0.75);
+        rightG.append('text').attr('x', bx + bw / 2).attr('y', by - 5).attr('text-anchor', 'middle').attr('fill', d.color).attr('font-size', 13).attr('font-weight', '700').text(d.value + '%');
+      });
+
+      // Arrow
+      rightG.append('path').attr('d', `M ${rx('Before') + rx.bandwidth() + 6} ${ry(33.25) + 12} L ${rx('After') - 6} ${ry(1.74) + 12}`).attr('stroke', green).attr('stroke-width', 1.5).attr('stroke-dasharray', '4,3').attr('fill', 'none');
+      rightG.append('text').attr('x', (rx('Before') + rx.bandwidth() + rx('After')) / 2).attr('y', ry(17) - 6).attr('text-anchor', 'middle').attr('fill', green).attr('font-size', 10).text('−94.8%');
+    })();
+
+    /* ── Diagram 2: SFT predictors ── */
+    (function() {
+      const container = document.getElementById('sft-svg');
+      const W = container.parentElement.clientWidth || 700;
+      const H = 280;
+      container.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      const svg = d3.select(container);
+
+      const cyan = '#57cef2';
+      const muted = '#8b949e';
+      const green = '#34d399';
+      const orange = '#f97316';
+      const purple = '#a855f7';
+      const borderColor = '#30363d';
+      const panelW = W / 2;
+      const margin = { top: 50, right: 20, bottom: 40, left: 55 };
+      const innerW = panelW - margin.left - margin.right;
+      const innerH = H - margin.top - margin.bottom;
+
+      // Left: perplexity as predictor (conceptual scatter)
+      svg.append('text').attr('x', panelW / 2).attr('y', 22).attr('text-anchor', 'middle').attr('fill', '#e6edf3').attr('font-size', 12).attr('font-weight', '600').text('Perplexity vs. SFT Effectiveness');
+      svg.append('text').attr('x', panelW / 2).attr('y', 36).attr('text-anchor', 'middle').attr('fill', muted).attr('font-size', 10).text('Lower perplexity → better alignment');
+
+      const leftG = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+      const ppx = d3.scaleLinear().domain([1, 10]).range([0, innerW]);
+      const ppy = d3.scaleLinear().domain([0, 100]).range([innerH, 0]);
+
+      leftG.append('g').attr('transform', `translate(0,${innerH})`).call(d3.axisBottom(ppx).ticks(4)).call(g => g.select('.domain').remove()).call(g => g.selectAll('.tick text').attr('fill', muted).attr('font-size', 10));
+      leftG.append('text').attr('x', innerW / 2).attr('y', innerH + 32).attr('text-anchor', 'middle').attr('fill', muted).attr('font-size', 9).text('Perplexity of training data under base model');
+      leftG.append('g').call(d3.axisLeft(ppy).ticks(4).tickFormat(d => d + '%')).call(g => g.select('.domain').remove()).call(g => g.selectAll('.tick line').attr('stroke', borderColor).attr('stroke-dasharray', '3,3').attr('x2', innerW)).call(g => g.selectAll('.tick text').attr('fill', muted).attr('font-size', 10));
+      leftG.append('text').attr('x', -margin.left + 4).attr('y', -8).attr('fill', muted).attr('font-size', 9).text('alignment gain');
+
+      // Simulated scatter
+      const pts = [[2.1, 85], [2.8, 78], [3.4, 72], [4.2, 60], [5.1, 50], [6.3, 38], [7.5, 28], [8.9, 18], [9.8, 10]];
+      // Trend line
+      leftG.append('path').datum(pts).attr('d', d3.line().x(d => ppx(d[0])).y(d => ppy(d[1])).curve(d3.curveCatmullRom)).attr('stroke', cyan).attr('stroke-width', 1.5).attr('fill', 'none').attr('stroke-dasharray', '5,3').attr('opacity', 0.6);
+      pts.forEach(p => {
+        leftG.append('circle').attr('cx', ppx(p[0])).attr('cy', ppy(p[1])).attr('r', 4).attr('fill', cyan).attr('opacity', 0.7);
+      });
+
+      // Right: layer importance
+      svg.append('text').attr('x', panelW + panelW / 2).attr('y', 22).attr('text-anchor', 'middle').attr('fill', '#e6edf3').attr('font-size', 12).attr('font-weight', '600').text('Layer Weight Change Correlation');
+      svg.append('text').attr('x', panelW + panelW / 2).attr('y', 36).attr('text-anchor', 'middle').attr('fill', muted).attr('font-size', 10).text('with performance gain');
+
+      const rightG = svg.append('g').attr('transform', `translate(${panelW + margin.left},${margin.top})`);
+      const layerData = [
+        { label: 'Early', corr: 0.31, color: muted },
+        { label: 'Middle', corr: 0.74, color: cyan },
+        { label: 'Late', corr: 0.40, color: purple },
+      ];
+      const rx = d3.scaleBand().domain(layerData.map(d => d.label)).range([0, innerW]).padding(0.3);
+      const ry = d3.scaleLinear().domain([0, 1]).range([innerH, 0]);
+
+      rightG.append('g').attr('transform', `translate(0,${innerH})`).call(d3.axisBottom(rx).tickSize(0)).call(g => g.select('.domain').remove()).selectAll('text').attr('fill', muted).attr('font-size', 11);
+      rightG.append('g').call(d3.axisLeft(ry).ticks(4).tickFormat(d => d.toFixed(1))).call(g => g.select('.domain').remove()).call(g => g.selectAll('.tick line').attr('stroke', borderColor).attr('stroke-dasharray', '3,3').attr('x2', innerW)).call(g => g.selectAll('.tick text').attr('fill', muted).attr('font-size', 10));
+      rightG.append('text').attr('x', -margin.left + 4).attr('y', -8).attr('fill', muted).attr('font-size', 9).text('correlation r');
+
+      layerData.forEach(d => {
+        const bx = rx(d.label), bw = rx.bandwidth(), by = ry(d.corr), bh = innerH - by;
+        rightG.append('rect').attr('x', bx).attr('y', by).attr('width', bw).attr('height', bh).attr('rx', 4).attr('fill', d.color).attr('opacity', 0.75);
+        rightG.append('text').attr('x', bx + bw / 2).attr('y', by - 5).attr('text-anchor', 'middle').attr('fill', d.color).attr('font-size', 12).attr('font-weight', '700').text(d.corr.toFixed(2));
+      });
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

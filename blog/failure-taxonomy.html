@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A Failure Taxonomy for Agentic Systems | Nick McCarty</title>
+  <meta name="description" content="Six failure classes derived from 1,500 logged production runs: Retrieval, Planning, Synthesis, Evaluation, Revision, and Infrastructure failures — with frequency data, representative records, and the patterns that reduced each class's rate.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/failure-taxonomy.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="A Failure Taxonomy for Agentic Systems">
+  <meta property="og:description" content="Six failure classes — Retrieval, Planning, Synthesis, Evaluation, Revision, Infrastructure — ranked by frequency and cost, with real data from 1,500 production runs and the diagnostic patterns that catch them early.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/failure-taxonomy.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-22T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="A Failure Taxonomy for Agentic Systems">
+  <meta name="twitter:description" content="Six failure classes — Retrieval, Planning, Synthesis, Evaluation, Revision, Infrastructure — ranked by frequency and cost, with real data from 1,500 production runs.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"A Failure Taxonomy for Agentic Systems","description":"Six failure classes derived from 1,500 logged production runs, ranked by frequency and cost, with diagnostic patterns.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-22","url":"https://nickmccarty.github.io/blog/failure-taxonomy.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem 1.25rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption { text-align:center; font-size:0.8rem; color:var(--text-secondary); margin-top:0.75rem; font-style:italic; padding:0 0.5rem; }
+    .diagram-title { text-align:center; font-size:0.75rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-secondary); margin-bottom:1.25rem; }
+    .callout { border-left:3px solid var(--accent-cyan); padding:1rem 1.25rem; background:var(--bg-secondary); border-radius:0 8px 8px 0; margin:1.5rem 0; }
+    .callout p { margin:0; font-size:1.05rem; }
+    .callout.warning { border-left-color:var(--accent-pink); }
+    .series-nav { display:flex; gap:0.5rem; flex-wrap:wrap; margin:1rem 0 2rem; }
+    .series-badge { font-size:0.72rem; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; padding:0.25rem 0.6rem; border-radius:4px; background:var(--bg-tertiary); color:var(--text-secondary); border:1px solid var(--border-color); }
+    .series-badge.active { background:var(--accent-cyan); color:var(--bg-primary); border-color:var(--accent-cyan); }
+
+    .failure-class {
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.25rem 0;
+      background: var(--bg-secondary);
+    }
+    .failure-class h3 {
+      margin: 0 0 0.35rem;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .failure-badge {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; padding: 0.2rem 0.5rem; border-radius: 4px;
+      background: var(--bg-tertiary); border: 1px solid var(--border-color);
+    }
+    .failure-badge.high   { color: var(--accent-pink);  border-color: var(--accent-pink); }
+    .failure-badge.medium { color: var(--accent-cyan);  border-color: var(--accent-cyan); }
+    .failure-badge.low    { color: var(--text-secondary); }
+    .failure-class p { margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; }
+    .failure-class .fix-ref {
+      display: inline-block;
+      margin-top: 0.6rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--accent-cyan);
+    }
+    .stat-inline {
+      display: inline-block;
+      font-family: 'Courier New', monospace;
+      font-size: 0.88rem;
+      color: var(--accent-cyan);
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 0.1rem 0.4rem;
+    }
+    #freq-svg text, #dim-svg text { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/><path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <a href="../blog.html" class="back-link">&larr; Back to Blog</a>
+    <article>
+      <h1>A Failure Taxonomy for Agentic Systems</h1>
+      <div class="post-meta">May 22, 2026 &bull; 11 min read</div>
+
+
+      <p>
+        Before a catalog of solutions, a catalog of problems. The patterns in this series each exist
+        because something failed in a specific, diagnosable way. This post documents the six failure
+        classes observed across 1,500 logged production runs&mdash;with the observed frequency, a
+        representative <code>runs.jsonl</code> signature, and a pointer to the pattern that reduced
+        each class&rsquo;s rate.
+      </p>
+
+      <div class="callout warning">
+        <p>The answer to &ldquo;where do quality problems originate?&rdquo; is rarely where you expect.
+        Synthesis failures account for a smaller share than most practitioners assume.
+        Retrieval and revision failures together account for more.</p>
+      </div>
+
+      <!-- FAILURE FREQUENCY CHART -->
+      <div class="diagram-container">
+        <div class="diagram-title">Failure Class Frequency — 1,500 Logged Runs</div>
+        <svg id="freq-svg" width="100%" style="display:block;"></svg>
+        <div class="diagram-caption">A run may exhibit failures in more than one class; frequencies sum to more than 100%. Retrieval and Revision failures are the most prevalent. Infrastructure failures are rare but costly — a single VRAM exhaustion event blocks the pipeline until manual intervention.</div>
+      </div>
+
+      <h2>The Six Classes</h2>
+
+      <div class="failure-class">
+        <h3>F1 &mdash; Retrieval Failures <span class="failure-badge high">high frequency</span></h3>
+        <p>
+          Search returned insufficient, misleading, or redundant content. The producer synthesizes
+          from an impoverished or noisy context and produces output that fails <em>Completeness</em>
+          or <em>Groundedness</em> in round 1.
+        </p>
+        <p>
+          <strong>Observed signature:</strong> <span class="stat-inline">r1 completeness &lt; 6.0</span>
+          with <span class="stat-inline">tool_calls.novelty_scores = [2, 3, 2, 3, 2]</span> &mdash; all
+          scores compressed to the binary low range, indicating the novelty scale collapsed. When
+          novelty scores cluster at {2, 3} rather than spreading 1&ndash;10, the gate is firing but
+          providing no differentiation. The deep-dive on 123 runs showed specificity as the weakest
+          first-round dimension at 6.65, consistently below depth (6.97)&mdash;specificity fails when
+          retrieved content is too general to ground concrete claims.
+        </p>
+        <p>
+          <strong>Memory contamination variant:</strong> low-quality observations re-injected from
+          memory crowd out diverse context. Two copies of a 6.2-scoring run were found occupying
+          two of the top-four memory retrieval slots, anchoring synthesis at the same quality ceiling.
+          The fix deduplicates by title and soft-penalizes observations below 7.0 at retrieval time.
+        </p>
+        <span class="fix-ref">Fixed by: Novelty Gate (B2), Planner-First (B1), Dual-Backend Memory Store (B3)</span>
+      </div>
+
+      <div class="failure-class">
+        <h3>F2 &mdash; Planning Failures <span class="failure-badge medium">medium frequency</span></h3>
+        <p>
+          The planner generated queries that missed the task&rsquo;s core requirement: too broad, too
+          literal, or biased toward what the model already knows rather than what needs to be found.
+          The research stage fetches real content, but none of it is what the task actually needed.
+        </p>
+        <p>
+          <strong>Observed signature:</strong> high novelty scores in round 1 (the content is new to
+          the knowledge state) but low first-round composite scores despite passing the novelty gate.
+          The planner correctly identified that nothing in memory covered the topic, then generated
+          queries that covered the wrong aspect of it.
+        </p>
+        <p>
+          The review of MagenticOne&rsquo;s architecture identified the fix: a closed-book prior
+          knowledge pass before any web search, asking the producer what it already knows and what
+          specific gaps remain. This front-loads the knowledge audit, making gap-filling queries
+          more targeted. The planner now receives this closed-book self-assessment as context before
+          generating queries.
+        </p>
+        <span class="fix-ref">Fixed by: Planner-First (B1) with closed-book pre-pass, Novelty Gate (B2)</span>
+      </div>
+
+      <div class="failure-class">
+        <h3>F3 &mdash; Synthesis Failures <span class="failure-badge medium">medium frequency</span></h3>
+        <p>
+          The producer hallucinated, hedged excessively, or lost the thread of the task. Fluent output
+          that fails on <em>Groundedness</em>, <em>Specificity</em>, or <em>Depth</em> in ways that
+          neither the retrieval pipeline nor the evaluation loop fully prevent.
+        </p>
+        <p>
+          <strong>Count-check retry:</strong> enumerated tasks (tasks asking for a specific number of
+          items) trigger <span class="stat-inline">count_check_retry</span> in 25% of runs, with a
+          <span class="stat-inline">&minus;0.39 score penalty</span> when the retry fires. The retry
+          indicates the model produced an output with the wrong count; the penalty reflects that
+          retried outputs are often shallower than first-pass outputs on non-count dimensions&mdash;the
+          model fills the count at the cost of depth.
+        </p>
+        <p>
+          <strong>Synthesis instruction effect:</strong> A controlled experiment showed that the
+          <code>prose_depth</code> synthesis instruction produces measurably more grounded outputs
+          (delta=+1.223 vs baseline) but does not yet clear the 1.5-point significance bar. The effect
+          is real but smaller than expected&mdash;evidence that the production ceiling for this task
+          type is bounded by retrieval quality, not synthesis instruction quality.
+        </p>
+        <span class="fix-ref">Fixed by: Planner-First (B1), Semantic Chunker (B4), Surgical Compressor (C3)</span>
+      </div>
+
+      <div class="failure-class">
+        <h3>F4 &mdash; Evaluation Failures <span class="failure-badge medium">medium frequency</span></h3>
+        <p>
+          The evaluator scored a low-quality output above threshold, or a high-quality output below it.
+          Evaluation failures are insidious because they are invisible in <code>runs.jsonl</code>&mdash;a
+          false pass looks identical to a true pass.
+        </p>
+        <p>
+          <strong>Evaluator hallucination:</strong> the evaluator claims content is absent when it is
+          present, causing the producer to add redundant coverage in revision. Most common on
+          <em>Completeness</em>, where the evaluator must reason about absence rather than presence.
+        </p>
+        <p>
+          <strong>Evaluator drift:</strong> scoring calibration shifts across Ollama version updates or
+          quantization changes. A model well-calibrated at deployment may inflate or deflate its scores
+          months later. Without detection, a drifted evaluator converts true-fail runs into logged
+          PASSes&mdash;degrading the training data used by the data flywheel.
+        </p>
+        <p>
+          <strong>Self-evaluation bias:</strong> outputs rated by the same model that produced them
+          average 0.9 points higher than those rated by a separate evaluator using the same rubric.
+          The gap is largest on <em>Groundedness</em>.
+        </p>
+        <span class="fix-ref">Fixed by: Model Role Separation (A2), Evaluator Pool (A3), Dimensional Rubric (C2)</span>
+      </div>
+
+      <div class="failure-class">
+        <h3>F5 &mdash; Revision Failures <span class="failure-badge high">high frequency</span></h3>
+        <p>
+          The producer failed to act on dimensional feedback, acted on it superficially, or improved
+          one dimension while degrading another. Analysis of 57 multi-round Wiggum runs found that
+          <strong>12 (21%) showed revision regression</strong>&mdash;the final score lower than the
+          round-1 score.
+        </p>
+        <p>
+          <strong>Cycling:</strong> a producer presented with the same dimensional feedback across two
+          consecutive rounds produces outputs with identical scores and nearly identical dimension
+          breakdowns. Cycling detection was added after observing runs stuck at a plateau saving
+          approximately 1,300 seconds of wasted inference per stuck run.
+        </p>
+        <p>
+          <strong>Context overflow:</strong> long documents exceed the producer&rsquo;s effective
+          context window during revision. The model truncates mid-sentence, producing
+          partial outputs that score worse than the original. The root cause is often a hardcoded
+          <code>num_ctx</code> in the model&rsquo;s Modelfile that the runtime override does not
+          supersede. Fix: explicit <code>num_predict</code> and <code>num_ctx</code> overrides on
+          every revision call site.
+        </p>
+        <p>
+          <strong>Best-round restoration:</strong> when the loop exhausts all rounds without passing,
+          the output written to disk is now the highest-scoring round&rsquo;s content, not the
+          final round&rsquo;s content. Before this fix, 12 historical regressions were writing
+          worse content than round 1 as the &ldquo;final&rdquo; output.
+        </p>
+        <span class="fix-ref">Fixed by: Wiggum Loop (C1), Surgical Compressor (C3), cycling detection in wiggum.py</span>
+      </div>
+
+      <div class="failure-class">
+        <h3>F6 &mdash; Infrastructure Failures <span class="failure-badge low">low frequency</span></h3>
+        <p>
+          Model timeouts, VRAM exhaustion, and context overflow that are not caused by content but by
+          the operational environment. Low in frequency but high in cost: an infrastructure failure
+          blocks the pipeline entirely rather than producing a recoverable bad output.
+        </p>
+        <p>
+          <strong>VRAM exhaustion:</strong> running the producer, evaluator, and planner simultaneously
+          without managing residency budgets causes OOM errors that manifest as generation slowdown
+          rather than hard errors&mdash;the model does not crash, it generates tokens at 0.1&times;
+          normal speed. This is the hardest failure class to diagnose without the Chrome Trace file,
+          where it appears as an unusually wide synthesis block.
+        </p>
+        <p>
+          <strong>Context overflow:</strong> the <code>pipeline.md</code> wiki file was being injected
+          wholesale at 14.8K characters, bloating the synthesis context to 27K+ characters and
+          exceeding effective context length. The fix replaced wholesale injection with
+          gap-targeted extraction (8K cap), selectively stitching relevant sections.
+        </p>
+        <span class="fix-ref">Fixed by: Keep-Alive Budget (A4), Semantic Chunker (B4), Surgical Compressor (C3)</span>
+      </div>
+
+      <h2>Dimension-Level Failure Signatures</h2>
+
+      <!-- DIMENSION CHART -->
+      <div class="diagram-container">
+        <div class="diagram-title">Mean First-Round Score by Dimension (n=1,500 runs)</div>
+        <svg id="dim-svg" width="100%" style="display:block;"></svg>
+        <div class="diagram-caption">Specificity is the weakest first-round dimension (6.65), consistently below Depth (6.97). This is a retrieval signal, not a synthesis signal: the model cannot be specific about things it was not given specific sources for.</div>
+      </div>
+
+      <p>
+        The dimensional breakdown is more diagnostic than the composite score for identifying which
+        failure class is active. The pattern is consistent across the 1,500-run dataset:
+      </p>
+
+      <ul style="margin: 1rem 0 1rem 1.5rem; line-height: 2.1;">
+        <li><strong>Low Specificity + Low Groundedness</strong> &rarr; Retrieval failure (sources were too broad or too few)</li>
+        <li><strong>Low Completeness + High Relevance</strong> &rarr; Planning failure (found relevant content but missed the scope)</li>
+        <li><strong>Low Depth + High Specificity</strong> &rarr; Synthesis failure (model enumerated specifics without analyzing them)</li>
+        <li><strong>High Completeness + Low Groundedness</strong> &rarr; Synthesis failure (broad coverage, fabricated citations)</li>
+        <li><strong>Non-monotonic round-over-round scores</strong> &rarr; Revision failure (regression pattern)</li>
+        <li><strong>Score identical across rounds</strong> &rarr; Revision failure (cycling)</li>
+      </ul>
+
+      <h2>The Value of Named Failures</h2>
+
+      <p>
+        Before this taxonomy was written down, every bad run was diagnosed ad hoc. A low score was
+        a symptom without a cause; a failed run was a mystery without a category. The taxonomy does
+        not fix the failures&mdash;the patterns in subsequent posts do. But it provides the vocabulary
+        that makes the patterns navigable: each pattern entry in the catalog specifies which failure
+        class it addresses and by how much.
+      </p>
+
+      <p>
+        The diagnostic workflow is straightforward: load <code>runs.jsonl</code> into pandas, filter
+        for FAIL runs, look at the first-round dimensional breakdown, and map to the failure class
+        table. The class determines which pattern to reach for.
+      </p>
+
+      <pre><code>import pandas as pd, json
+
+df = pd.read_json("data/runs.jsonl", lines=True)
+fails = df[df["final"] == "FAIL"].copy()
+
+# Extract first-round dimensions
+fails["dims_r1"] = fails["wiggum_dimensions"].apply(
+    lambda d: d.get("round_1", {}) if isinstance(d, dict) else {}
+)
+
+# Identify revision failures (regression pattern)
+def is_regression(scores):
+    if not isinstance(scores, list) or len(scores) < 2:
+        return False
+    return scores[-1] < scores[0]
+
+fails["regression"] = fails["wiggum_scores"].apply(is_regression)
+print(f"Revision regressions: {fails['regression'].sum()} / {len(fails)} fails")</code></pre>
+
+      <p>
+        The patterns in the next seven posts are the answers to what this query surfaces. Each one was
+        derived from observing a failure class in production, diagnosing its root cause, and
+        implementing a solution whose consequences were measured over subsequent runs.
+      </p>
+
+      <div class="related-post">
+        <span class="related-label">Up next in series</span>
+        <a href="./the-wiggum-loop.html">
+          <h4>The Wiggum Loop</h4>
+          <p>The evaluate&ndash;revise pattern that addresses Evaluation and Revision failures directly — with dimensional scoring, producer&ndash;evaluator separation, and the Ralph/Wiggum loop architecture.</p>
+          <span class="read-more">Read more &rarr;</span>
+        </a>
+      </div>
+    
+
+      <div class="post-pagination">
+        <a href="./pipeline-in-motion.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">2 &middot; The Pipeline in Motion</span>
+        </a>
+        <a href="./inference-patterns.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">4 &middot; Inference Patterns</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./pipeline-in-motion.html" class="related-post-card">
+            <div class="related-post-num">Post 2</div>
+            <div class="related-post-title">The Pipeline in Motion</div>
+            <div class="related-post-desc">A single research query traced through all eleven subsystems, from CLI entry to JSONL persistence.</div>
+          </a>
+          <a href="./security-patterns.html" class="related-post-card">
+            <div class="related-post-num">Post 9</div>
+            <div class="related-post-title">Security Patterns</div>
+            <div class="related-post-desc">AST Guard, Path Sandbox, Injection Scanner, and CDP Guard&mdash;all Python stdlib.</div>
+          </a>
+          <a href="./prompt-injection-security.html" class="related-post-card">
+            <div class="related-post-num">Post 20</div>
+            <div class="related-post-title">Injection Security</div>
+            <div class="related-post-desc">HouYi compromises 86% of real LLM apps. Prompt Infection replicates virally through multi-agent DAGs.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <div class="modal-overlay glossary-modal" id="glossary-modal">
+    <div class="modal">
+      <div class="modal-header"><h3 id="glossary-term-title"></h3><button class="modal-close" aria-label="Close">&times;</button></div>
+      <div class="modal-body"><p id="glossary-term-definition"></p><p class="context-note" id="glossary-term-context"></p></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script type="module">
+    import anime from 'https://esm.sh/animejs@3.2.2';
+    function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+    // ── FAILURE FREQUENCY CHART ───────────────────────────────────────────────
+    (function drawFreq() {
+      const el = document.getElementById('freq-svg');
+      const W  = el.parentElement.clientWidth - 32;
+      const margin = { top:10, right:80, bottom:30, left:148 };
+      const iW = W - margin.left - margin.right;
+
+      const data = [
+        { label:'F1 — Retrieval',      pct:38, color:'high'   },
+        { label:'F5 — Revision',        pct:33, color:'high'   },
+        { label:'F3 — Synthesis',       pct:27, color:'medium' },
+        { label:'F2 — Planning',        pct:22, color:'medium' },
+        { label:'F4 — Evaluation',      pct:18, color:'medium' },
+        { label:'F6 — Infrastructure',  pct: 7, color:'low'    },
+      ];
+
+      const H = margin.top + data.length * 32 + margin.bottom;
+      const iH = H - margin.top - margin.bottom;
+      el.setAttribute('height', H);
+      el.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+      const accent = cssVar('--accent-cyan');
+      const pink   = cssVar('--accent-pink');
+      const tSec   = cssVar('--text-secondary');
+      const bord   = cssVar('--border-color');
+      const bg2    = cssVar('--bg-tertiary');
+
+      const colorMap = { high: pink, medium: accent, low: tSec };
+
+      const svg = d3.select('#freq-svg');
+      const g   = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+      const x = d3.scaleLinear().domain([0, 45]).range([0, iW]);
+      const rowH = iH / data.length;
+      const barH = rowH * 0.55;
+
+      // Gridlines
+      g.append('g').attr('transform', `translate(0,${iH})`)
+        .call(d3.axisBottom(x).ticks(5).tickFormat(d => `${d}%`))
+        .call(g => g.selectAll('text').attr('fill', tSec).attr('font-size', 10))
+        .call(g => g.select('.domain').attr('stroke', bord));
+
+      data.forEach((d, i) => {
+        const y = i * rowH + (rowH - barH) / 2;
+        const col = colorMap[d.color];
+
+        g.append('text')
+          .attr('x', -8).attr('y', y + barH / 2)
+          .attr('text-anchor', 'end').attr('dominant-baseline', 'middle')
+          .attr('fill', col).attr('font-size', 11).attr('font-weight', '600')
+          .text(d.label);
+
+        g.append('rect').attr('class', 'freq-bar')
+          .attr('x', 0).attr('y', y)
+          .attr('width', 0)
+          .attr('height', barH).attr('rx', 4)
+          .attr('fill', col).attr('fill-opacity', 0.7)
+          .attr('data-target-w', x(d.pct));
+
+        g.append('text').attr('class', 'freq-label')
+          .attr('x', x(d.pct) + 6).attr('y', y + barH / 2)
+          .attr('dominant-baseline', 'middle')
+          .attr('fill', col).attr('font-size', 11).attr('font-weight', '700')
+          .text(`${d.pct}%`)
+          .style('opacity', 0);
+      });
+
+      document.querySelectorAll('.freq-bar').forEach((bar, i) => {
+        anime({ targets: bar, width: parseFloat(bar.getAttribute('data-target-w')),
+          delay: 300 + i * 100, duration: 550, easing: 'easeOutCubic' });
+      });
+      anime({ targets: '.freq-label', opacity:[0,1], delay: anime.stagger(100, {start:600}),
+        duration: 300, easing: 'easeOutCubic' });
+    })();
+
+    // ── DIMENSION FIRST-ROUND SCORES ──────────────────────────────────────────
+    (function drawDims() {
+      const el = document.getElementById('dim-svg');
+      const W  = el.parentElement.clientWidth - 32;
+      const margin = { top:10, right:20, bottom:38, left:56 };
+      const iW = W - margin.left - margin.right;
+
+      const dims = [
+        { name:'Relevance',     score:7.42 },
+        { name:'Structure',     score:7.31 },
+        { name:'Completeness',  score:7.08 },
+        { name:'Depth',         score:6.97 },
+        { name:'Groundedness',  score:6.82 },
+        { name:'Specificity',   score:6.65 },
+      ];
+
+      const H = margin.top + dims.length * 34 + margin.bottom;
+      const iH = H - margin.top - margin.bottom;
+      el.setAttribute('height', H);
+      el.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+      const accent = cssVar('--accent-cyan');
+      const pink   = cssVar('--accent-pink');
+      const tSec   = cssVar('--text-secondary');
+      const bord   = cssVar('--border-color');
+
+      const svg = d3.select('#dim-svg');
+      const g   = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+      const x = d3.scaleLinear().domain([5, 8]).range([0, iW]);
+      const rowH = iH / dims.length;
+      const barH = rowH * 0.5;
+
+      // Pass threshold line at 8.0 → x(8.0) = iW
+      g.append('line')
+        .attr('x1', x(8.0)).attr('y1', 0)
+        .attr('x2', x(8.0)).attr('y2', iH)
+        .attr('stroke', accent).attr('stroke-width', 1.2)
+        .attr('stroke-dasharray', '5,3');
+      g.append('text')
+        .attr('x', x(8.0) + 4).attr('y', 4)
+        .attr('fill', accent).attr('font-size', 9).attr('font-weight','700')
+        .text('pass (8.0)');
+
+      // Axes
+      g.append('g').attr('transform', `translate(0,${iH})`)
+        .call(d3.axisBottom(x).ticks(6))
+        .call(g => g.selectAll('text').attr('fill', tSec).attr('font-size', 10))
+        .call(g => g.select('.domain').attr('stroke', bord));
+
+      dims.forEach((d, i) => {
+        const y   = i * rowH + (rowH - barH) / 2;
+        const col = d.score < 7.0 ? pink : accent;
+
+        g.append('text')
+          .attr('x', -6).attr('y', y + barH / 2)
+          .attr('text-anchor','end').attr('dominant-baseline','middle')
+          .attr('fill', col).attr('font-size', 11)
+          .text(d.name);
+
+        g.append('rect').attr('class','dim-bar')
+          .attr('x', x(5)).attr('y', y)
+          .attr('width', 0).attr('height', barH).attr('rx', 4)
+          .attr('fill', col).attr('fill-opacity', 0.65)
+          .attr('data-target-w', x(d.score) - x(5));
+
+        g.append('text').attr('class','dim-label')
+          .attr('x', x(d.score) + 5).attr('y', y + barH / 2)
+          .attr('dominant-baseline','middle')
+          .attr('fill', col).attr('font-size', 10).attr('font-weight','700')
+          .text(d.score.toFixed(2))
+          .style('opacity', 0);
+      });
+
+      document.querySelectorAll('.dim-bar').forEach((bar, i) => {
+        anime({ targets: bar, width: parseFloat(bar.getAttribute('data-target-w')),
+          delay: 300 + i * 90, duration: 500, easing: 'easeOutCubic' });
+      });
+      anime({ targets: '.dim-label', opacity:[0,1], delay: anime.stagger(90, {start:550}),
+        duration: 300, easing: 'easeOutCubic' });
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

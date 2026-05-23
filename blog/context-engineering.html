@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Context Engineering: What Reaches the Model | Nick McCarty</title>
+  <meta name="description" content="Five patterns governing what information reaches the synthesis model — the Planner-First, Novelty Gate, Dual-Backend Memory Store, Semantic Chunker, and Vision Bridge.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/context-engineering.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Context Engineering: What Reaches the Model">
+  <meta property="og:description" content="Five patterns governing the research half of the pipeline: Planner-First converts tasks into targeted queries, Novelty Gate filters redundant content, Dual-Backend Memory Store injects prior knowledge, and Semantic Chunker fits documents to context budget.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/context-engineering.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-22T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Context Engineering: What Reaches the Model">
+  <meta name="twitter:description" content="Five patterns governing what reaches the synthesis model: Planner-First, Novelty Gate, Dual-Backend Memory Store, Semantic Chunker, and Vision Bridge.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Context Engineering: What Reaches the Model","description":"Five patterns governing what information reaches the synthesis model — Planner-First, Novelty Gate, Dual-Backend Memory Store, Semantic Chunker, and Vision Bridge.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-22","url":"https://nickmccarty.github.io/blog/context-engineering.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.55rem 0.85rem;
+      background: var(--bg-tertiary);
+      border-bottom: 2px solid var(--border-color);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    td {
+      padding: 0.55rem 0.85rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    tr:last-child td { border-bottom: none; }
+    #planner-svg text, #novelty-svg text,
+    #memory-svg text, #chunker-svg text { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 22, 2026 &bull; 18 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">Context Engineering: What Reaches the Model</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          Five patterns governing the research half of the pipeline: how tasks are decomposed into targeted queries, how redundant content is filtered before synthesis, and how memory persists knowledge across runs.
+        </p>
+
+      </header>
+
+      <p>
+        A language model synthesizes what it is given. The evaluator scores the synthesis. The evaluator's feedback guides revision. But none of that matters if what is given to the model at synthesis time is wrong — incomplete, redundant, stale, or irrelevant. The failure taxonomy showed that Retrieval Failures are the most common class (38%) and that planning failures are the third most common (22%). Both happen before a single synthesis token is generated.
+      </p>
+
+      <p>
+        Section B of the pattern catalog addresses the research half of the pipeline: five patterns that govern what information reaches the synthesis model. <strong>The Planner-First</strong> (B1) intercepts every task and converts it into targeted search queries. <strong>The Novelty Gate</strong> (B2) discards result batches that add no new information. <strong>The Dual-Backend Memory Store</strong> (B3) combines vector search and full-text retrieval to inject relevant prior knowledge. <strong>The Semantic Chunker</strong> (B4) extracts the most relevant sections from documents too large to fit the context window. <strong>The Vision Bridge</strong> (B5) converts image paths in the task into structured text before any other processing.
+      </p>
+
+      <div class="callout">
+        <p>These patterns run before synthesis. Their combined effect: the synthesis model receives a context window that is targeted, non-redundant, enriched by prior runs, and bounded to fit available context. The quality ceiling for synthesis is determined here.</p>
+      </div>
+
+      <h2>B1 &mdash; The Planner-First</h2>
+
+      <p>
+        The simplest possible research loop issues the task string directly as a search query. This works for narrow factual lookups. It fails for every research task that requires judgment about what to look for — which is most of them. The raw task <code>"survey speculative decoding techniques in transformer inference"</code> is a reasonable human prompt and a poor search query. What the pipeline actually needs is: <em>what aspect of speculative decoding?</em> Which deployment context? Which model families? What does the agent already know?
+      </p>
+
+      <p>
+        The Planner-First intercepts every task before any search query is issued and produces four outputs:
+      </p>
+
+<pre><code>@dataclass
+class Plan:
+    search_queries: list[str]   # concrete targeted queries, never the raw task
+    known_facts: list[str]      # already in memory — skip re-fetching
+    knowledge_gaps: list[str]   # what must be found
+    subtasks: list[str]         # decomposition hint for orchestrator</code></pre>
+
+      <p>
+        The agent loop uses <code>plan.search_queries</code> exclusively. The raw task string never hits a search API. A typical plan converts one vague task into three to five targeted queries that each address a specific knowledge gap — methods, benchmarks, deployment considerations, limitations.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">B1 &mdash; Planner-First: Task Decomposition Flow</div>
+        <svg id="planner-svg" width="100%" viewBox="0 0 680 260" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">The planner converts one task string into targeted search queries and a knowledge gap list. The raw task string never reaches a search API.</p>
+      </div>
+
+      <p>
+        Logged run comparisons show that planner-guided search reduces the number of Wiggum Loop rounds needed to pass by an average of 0.8 and cuts total token consumption by ~22%. Planning latency — 12–18 seconds for a 9B model — is the cost. That cost is dominated by model load time on cold starts; a warm planner (see Keep-Alive Budget, A4) typically returns the plan in under 5 seconds.
+      </p>
+
+      <h2>B2 &mdash; The Novelty Gate</h2>
+
+      <p>
+        The Planner-First generates better queries. It doesn't prevent result batches from being redundant with each other. A pipeline that runs five search rounds and accumulates all results before synthesis will almost always present the model with a context window where the same core concepts appear four to six times, rephrased but not substantively different. The evaluator's <em>Completeness</em> dimension is fooled by this: high citation count reads as comprehensive coverage, and the composite score inflates even though no new information was added.
+      </p>
+
+      <p>
+        The Novelty Gate scores each batch against the accumulated knowledge state before that batch reaches the synthesis prompt:
+      </p>
+
+<pre><code>async def gather_research(task: str, plan: Plan) -> list[SearchResult]:
+    knowledge_state = plan.known_facts.copy()
+    passing_results = []
+
+    for query in plan.search_queries:
+        batch = await search(query)
+        novelty = await memory.assess_novelty(batch, knowledge_state)
+
+        if novelty < NOVELTY_THRESHOLD:  # default: 3.0
+            trace.record_tool_call(query, novelty_score=novelty, discarded=True)
+            continue
+
+        passing_results.extend(batch)
+        knowledge_state.extend([r.snippet for r in batch])
+
+    return passing_results</code></pre>
+
+      <div class="diagram-container">
+        <div class="diagram-title">B2 &mdash; Novelty Gate: Incremental Saturation Scoring</div>
+        <svg id="novelty-svg" width="100%" viewBox="0 0 680 300" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Each result batch is scored against accumulated knowledge. Batches below the novelty threshold are discarded before synthesis. The threshold applies incrementally — later batches face a higher bar.</p>
+      </div>
+
+      <p>
+        Two implementation details matter. First, the threshold applies <em>incrementally</em>: after each passing batch, the knowledge state is updated. Later batches that overlap with earlier passing content get penalized. Early batches retrieve foundational content; later batches need to introduce something genuinely new to pass. Second, <code>RESEARCH_CACHE=1</code> caches results keyed by query string so Wiggum revision rounds don't re-fetch content that was already retrieved and assessed in round one.
+      </p>
+
+      <p>
+        Novelty scores for each search round are recorded in <code>runs.jsonl</code> tool call records. A run where every round scores above 7.0 suggests the planner is generating maximally diverse queries. A run where rounds 2–5 all score below 3.5 suggests either the topic is narrow (expected) or the planner is generating near-duplicate queries (a planning failure pattern).
+      </p>
+
+      <h2>B3 &mdash; The Dual-Backend Memory Store</h2>
+
+      <p>
+        Research pipelines that run in isolation are inefficient. The same foundational concepts get re-retrieved on every run. The Dual-Backend Memory Store makes prior runs available as retrievable context, injecting the four most relevant prior observations into the synthesis prompt before any new search occurs.
+      </p>
+
+      <p>
+        Neither vector search nor full-text search alone is sufficient for knowledge retrieval. Vector search finds semantically related content even when no words overlap — useful for concept-level similarity. Full-text search finds exact keyword matches — indispensable for proper nouns, model names, and technical terms that don't embed semantically. The two backends have complementary blind spots, which is why the store uses both:
+      </p>
+
+<pre><code>def get_context(task: str, top_k: int = 4) -> list[Observation]:
+    # Stage 1: semantic similarity via ChromaDB
+    chroma_hits = chroma_collection.query(
+        query_texts=[task],
+        n_results=top_k * 3  # oversample for re-ranking
+    )
+    # Stage 2: keyword re-ranking via SQLite FTS5
+    candidates = [Observation(**h) for h in chroma_hits["metadatas"][0]]
+    fts_scores = fts_db.execute(
+        "SELECT rowid, rank FROM observations_fts WHERE observations_fts MATCH ?",
+        [fts_query(task)]
+    ).fetchall()
+    fts_map = {row[0]: abs(row[1]) for row in fts_scores}
+
+    for obs in candidates:
+        obs.score = obs.similarity + 0.4 * fts_map.get(obs.rowid, 0)
+
+    return sorted(candidates, key=lambda o: o.score, reverse=True)[:top_k]</code></pre>
+
+      <div class="diagram-container">
+        <div class="diagram-title">B3 &mdash; Dual-Backend Memory Store: Hybrid Retrieval</div>
+        <svg id="memory-svg" width="100%" viewBox="0 0 680 300" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">ChromaDB handles semantic similarity; SQLite FTS5 handles exact keyword matching. Both are queried at retrieval time and results are re-ranked using a combined score.</p>
+      </div>
+
+      <p>
+        Every completed run writes an observation to both backends. The write path includes an injection scan (see Injection Scanner, E3) before any content reaches the memory store — injected observations have persistent effects across all future runs that retrieve them. A novelty check at write time prevents storing observations that are redundant with the existing store.
+      </p>
+
+      <p>
+        The practical effect: the second time the pipeline runs a task on a topic it has seen before, the synthesis prompt arrives enriched with structured summaries of prior findings. The planner's <code>known_facts</code> field draws from memory context, allowing it to skip re-fetching foundational content. Over hundreds of runs on a topic domain, the pipeline accumulates a navigable knowledge base without any explicit knowledge base management.
+      </p>
+
+      <h2>B4 &mdash; The Semantic Chunker</h2>
+
+      <p>
+        The Novelty Gate and memory retrieval ensure the right documents are selected. The Semantic Chunker ensures the right <em>sections</em> of those documents are extracted. A 40,000-character academic paper cannot fit in a 32K context window alongside memory context, task instructions, and output formatting. Naive truncation discards the conclusion and results sections — often the most relevant parts — in favor of the introduction.
+      </p>
+
+      <p>
+        The Chunker auto-detects document structure and applies the appropriate extraction mode:
+      </p>
+
+<pre><code>def extract(content: str, task: str, budget: int = 12_000) -> str:
+    headings = re.findall(r'^#{2,3}\s+.+', content, re.MULTILINE)
+
+    if len(headings) >= 3:
+        # Structured document: section-priority extraction
+        return _structured_extract(content, budget)
+    else:
+        # Unstructured: embedding-based chunk retrieval
+        return _semantic_extract(content, task, budget)
+
+SECTION_PRIORITY = [
+    "abstract", "conclusion", "introduction",
+    "results", "findings", "methods", "discussion", "other"
+]</code></pre>
+
+      <p>
+        For structured documents (academic papers, technical reports), sections are extracted in priority order — Abstract first, then Conclusion, Introduction, Results, Methods — until the 12,000-character budget is exhausted. This is the right priority order for research synthesis: the abstract states the contribution, the conclusion evaluates it, the introduction contextualizes it. Methods sections matter less for most synthesis tasks.
+      </p>
+
+      <p>
+        For unstructured documents (blog posts, documentation pages, news articles), the document is split into overlapping 600-character chunks with 80-character overlap, each chunk is embedded with <code>sentence-transformers</code>, and the top-K chunks ranked by cosine similarity to the task string are retained. The overlap prevents sentence-boundary artifacts from severing related content.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">B4 &mdash; Semantic Chunker: Dual-Mode Extraction</div>
+        <svg id="chunker-svg" width="100%" viewBox="0 0 680 280" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Structured documents use section-priority extraction. Unstructured documents use embedding-based chunk retrieval. Both modes operate within a 12,000-character context budget.</p>
+      </div>
+
+      <p>
+        The 12,000-character budget was chosen empirically: it leaves room for the task string (~500 chars), memory context (~3,000 chars), synthesis instructions (~1,500 chars), and the extracted document content within a 32K context window, with a safety margin of ~15K characters for the model's output. The budget is configurable via <code>HARNESS_CHUNK_BUDGET</code>.
+      </p>
+
+      <h2>B5 &mdash; The Vision Bridge</h2>
+
+      <p>
+        The five patterns above handle text-only pipelines. A common case breaks that assumption: the task string contains an image path. Architecture diagrams, benchmark plots, scanned documents, annotated screenshots — all are legitimate research artifacts that should inform synthesis but cannot be processed by text-only synthesis models.
+      </p>
+
+      <p>
+        The Vision Bridge resolves this pre-pipeline, before the Planner-First runs:
+      </p>
+
+<pre><code>def inject_vision_context(task: str) -> str:
+    """Replace image paths in task with structured text descriptions."""
+    image_exts = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'}
+
+    def replace_path(match):
+        path = match.group(0)
+        if Path(path).suffix.lower() not in image_exts:
+            return path  # not an image
+        if not Path(path).exists():
+            return path  # file not found
+        description = _extract_with_vision_model(path)
+        return f"[Image: {description}]"
+
+    return re.sub(r'\S+\.\w+', replace_path, task)</code></pre>
+
+      <p>
+        The vision model (<code>llama3.2-vision</code>, 11B parameters) receives a structured extraction prompt that requests: all visible text in the image, data points from any charts or tables, a layout description, and identified objects. The description replaces the image path in the task context. Every downstream pipeline stage sees only text — they are unaware that the task originally referenced an image.
+      </p>
+
+      <p>
+        Two constraints are enforced by design. First, the Vision Bridge only processes <em>local file paths</em>, not remote URLs — this prevents accidental disclosure of credentials or tokens embedded in URLs from being processed by the vision model. Second, the vision model must be accounted for in the Keep-Alive Budget (A4): it is a fourth model slot that competes with the planner, producer, and evaluator for VRAM.
+      </p>
+
+      <h2>How the Five Patterns Compose</h2>
+
+      <p>
+        The Section B patterns form a pipeline that runs entirely before the synthesis model is called. The Vision Bridge runs first, converting any image content to text. The Planner-First runs next, converting the task (now text-only) into targeted queries and a knowledge gap list. The Dual-Backend Memory Store is queried in parallel with planning, returning prior observations that populate <code>known_facts</code>. Research rounds run, with each batch scored by the Novelty Gate. Retrieved documents are passed through the Semantic Chunker before being appended to the synthesis prompt.
+      </p>
+
+      <div class="callout pink">
+        <p>The quality of what reaches the synthesis model is the ceiling for what synthesis can produce. The Wiggum Loop (C1) raises outputs toward that ceiling through iterative revision — but it cannot add information that was never retrieved, fix planning errors that generated the wrong queries, or recover from a context window stuffed with redundant content. Context engineering is upstream of evaluation, and upstream problems are harder to fix.</p>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Pattern</th>
+            <th>Failure it prevents</th>
+            <th>Key config</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>B1 Planner-First</strong></td>
+            <td>Planning failures (22%): wrong queries, missed task core</td>
+            <td>Planner model size; planning latency budget</td>
+          </tr>
+          <tr>
+            <td><strong>B2 Novelty Gate</strong></td>
+            <td>Synthesis failures from redundant context; false Completeness inflation</td>
+            <td><code>NOVELTY_THRESHOLD</code> (default 3.0); <code>RESEARCH_CACHE</code></td>
+          </tr>
+          <tr>
+            <td><strong>B3 Dual-Backend Memory</strong></td>
+            <td>Retrieval failures (38%): re-fetching known content; missing prior knowledge</td>
+            <td>ChromaDB embedding model; FTS5 re-ranking weight</td>
+          </tr>
+          <tr>
+            <td><strong>B4 Semantic Chunker</strong></td>
+            <td>Context overflow; naive truncation discarding relevant sections</td>
+            <td><code>HARNESS_CHUNK_BUDGET</code> (default 12,000 chars)</td>
+          </tr>
+          <tr>
+            <td><strong>B5 Vision Bridge</strong></td>
+            <td>Image paths blocking text-only pipeline; unprocessed visual artifacts</td>
+            <td>Vision model; only local paths processed (SSRF guard)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The next post covers Section C — Verification Patterns — including the Wiggum Loop in full detail, the Dimensional Rubric, the Surgical Compressor, and the ReAct Comparator. With the inference substrate (Section A) and context quality (Section B) in place, verification is where quality is measured, scored, and improved.
+      </p>
+
+    
+
+      <div class="post-pagination">
+        <a href="./inference-patterns.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">4 &middot; Inference Patterns</span>
+        </a>
+        <a href="./the-wiggum-loop.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">6 &middot; The Wiggum Loop</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./inference-patterns.html" class="related-post-card">
+            <div class="related-post-num">Post 4</div>
+            <div class="related-post-title">Inference Patterns</div>
+            <div class="related-post-desc">The Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget.</div>
+          </a>
+          <a href="./knowledge-graphs-extraction.html" class="related-post-card">
+            <div class="related-post-num">Post 18</div>
+            <div class="related-post-title">Knowledge Graphs</div>
+            <div class="related-post-desc">Document semantic graphs outperform flat-list retrieval. MeXtract: SOTA metadata extraction at 0.5B parameters.</div>
+          </a>
+          <a href="./structured-knowledge-queries.html" class="related-post-card">
+            <div class="related-post-num">Post 22</div>
+            <div class="related-post-title">Structured Knowledge Queries</div>
+            <div class="related-post-desc">ODA: +12.87% KG accuracy. GRASP: zero-shot SPARQL SOTA on Wikidata. ETLCH: 1B LoRA on 100-1000 samples.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script type="module">
+    import anime from 'https://esm.sh/animejs@3.2.2';
+
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    /* ── B1: Planner-First flow diagram ──────────────────────────────── */
+    (function drawPlanner() {
+      const svg = d3.select('#planner-svg');
+      const W = 680, H = 260;
+      const bg3 = cssVar('--bg-tertiary');
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const purple = '#a855f7';
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bdr = cssVar('--border-color');
+
+      const defs = svg.append('defs');
+      const m = defs.append('marker').attr('id', 'arr-p1')
+        .attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('refY', 0)
+        .attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+      m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', cyan);
+
+      // Task input
+      const taskBox = { x: 20, y: 105, w: 100, h: 44 };
+      svg.append('rect').attr('x', taskBox.x).attr('y', taskBox.y)
+        .attr('width', taskBox.w).attr('height', taskBox.h)
+        .attr('rx', 7).attr('fill', bg3).attr('stroke', pink).attr('stroke-width', 1.5)
+        .attr('opacity', 0);
+      svg.append('text').attr('x', taskBox.x + taskBox.w / 2).attr('y', taskBox.y + 17)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700).attr('fill', pink)
+        .attr('opacity', 0).text('TASK');
+      svg.append('text').attr('x', taskBox.x + taskBox.w / 2).attr('y', taskBox.y + 33)
+        .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2).attr('opacity', 0)
+        .text('raw prompt');
+
+      // Arrow to planner
+      svg.append('line').attr('x1', taskBox.x + taskBox.w).attr('y1', taskBox.y + taskBox.h / 2)
+        .attr('x2', 175).attr('y2', taskBox.y + taskBox.h / 2)
+        .attr('stroke', cyan).attr('stroke-width', 1.5)
+        .attr('marker-end', 'url(#arr-p1)').attr('opacity', 0);
+
+      // Planner box
+      const planBox = { x: 176, y: 70, w: 130, h: 116 };
+      svg.append('rect').attr('x', planBox.x).attr('y', planBox.y)
+        .attr('width', planBox.w).attr('height', planBox.h)
+        .attr('rx', 9).attr('fill', bg3).attr('stroke', purple).attr('stroke-width', 2)
+        .attr('opacity', 0);
+      svg.append('text').attr('x', planBox.x + planBox.w / 2).attr('y', planBox.y + 18)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+        .attr('fill', purple).attr('letter-spacing', 1).attr('opacity', 0).text('PLANNER');
+      svg.append('text').attr('x', planBox.x + planBox.w / 2).attr('y', planBox.y + 34)
+        .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0)
+        .text('9B fast model');
+      ['search_queries', 'known_facts', 'knowledge_gaps', 'subtasks'].forEach((f, i) => {
+        svg.append('text').attr('x', planBox.x + 12).attr('y', planBox.y + 56 + i * 16)
+          .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text('• ' + f);
+      });
+
+      // Outputs on right
+      const outputs = [
+        { label: 'Query 1', desc: 'speculative decoding methods', col: cyan },
+        { label: 'Query 2', desc: 'benchmarks & throughput', col: cyan },
+        { label: 'Query 3', desc: 'deployment trade-offs', col: cyan },
+        { label: 'Known facts', desc: 'from memory context', col: '#a855f7' },
+      ];
+
+      outputs.forEach((o, i) => {
+        const oy = 28 + i * 56;
+        svg.append('rect').attr('x', 370).attr('y', oy).attr('width', 180).attr('height', 40)
+          .attr('rx', 6).attr('fill', bg3).attr('stroke', o.col).attr('stroke-width', 1.2)
+          .attr('opacity', 0);
+        svg.append('text').attr('x', 380).attr('y', oy + 14)
+          .attr('font-size', 10).attr('font-weight', 700).attr('fill', o.col).attr('opacity', 0)
+          .text(o.label);
+        svg.append('text').attr('x', 380).attr('y', oy + 28)
+          .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text(o.desc);
+
+        // Arrow from planner
+        svg.append('line')
+          .attr('x1', planBox.x + planBox.w).attr('y1', planBox.y + planBox.h / 2)
+          .attr('x2', 369).attr('y2', oy + 20)
+          .attr('stroke', o.col).attr('stroke-width', 1.2).attr('stroke-dasharray', '4 3')
+          .attr('marker-end', 'url(#arr-p1)').attr('opacity', 0);
+      });
+
+      // Search API label
+      svg.append('text').attr('x', 570).attr('y', H - 12).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0)
+        .text('→ search API (never raw task)');
+
+      anime({
+        targets: '#planner-svg rect, #planner-svg text, #planner-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(45),
+        easing: 'easeOutQuad',
+      });
+    })();
+
+    /* ── B2: Novelty Gate flow ────────────────────────────────────────── */
+    (function drawNovelty() {
+      const svg = d3.select('#novelty-svg');
+      const W = 680, H = 300;
+      const bg3 = cssVar('--bg-tertiary');
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bdr = cssVar('--border-color');
+      const green = '#34d399';
+
+      const defs = svg.append('defs');
+      ['c','p','g'].forEach((k) => {
+        const col = k === 'c' ? cyan : k === 'p' ? pink : green;
+        const m = defs.append('marker').attr('id', `arr-ng-${k}`)
+          .attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+        m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', col);
+      });
+
+      // 5 search rounds down left side
+      const rounds = [1, 2, 3, 4, 5];
+      const noveltyScores = [8.4, 7.1, 5.8, 2.9, 1.6];  // round 4 & 5 fail gate
+      const passThresh = 3.0;
+
+      rounds.forEach((r, i) => {
+        const ry = 30 + i * 52;
+        const pass = noveltyScores[i] >= passThresh;
+        const col = pass ? cyan : pink;
+
+        svg.append('rect').attr('x', 20).attr('y', ry).attr('width', 100).attr('height', 38)
+          .attr('rx', 6).attr('fill', bg3).attr('stroke', col).attr('stroke-width', 1.5)
+          .attr('opacity', 0);
+        svg.append('text').attr('x', 70).attr('y', ry + 14)
+          .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('font-weight', 700)
+          .attr('fill', col).attr('opacity', 0).text(`Round ${r}`);
+        svg.append('text').attr('x', 70).attr('y', ry + 28)
+          .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2).attr('opacity', 0)
+          .text(`novelty: ${noveltyScores[i]}`);
+
+        // Arrow to gate
+        svg.append('line').attr('x1', 120).attr('y1', ry + 19).attr('x2', 195).attr('y2', ry + 19)
+          .attr('stroke', col).attr('stroke-width', 1.2)
+          .attr('marker-end', `url(#arr-ng-${pass ? 'c' : 'p'})`)
+          .attr('opacity', 0);
+      });
+
+      // Gate box
+      svg.append('rect').attr('x', 197).attr('y', 20).attr('width', 110).attr('height', 260)
+        .attr('rx', 8).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5)
+        .attr('opacity', 0);
+      svg.append('text').attr('x', 252).attr('y', 42).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 700).attr('fill', txt2).attr('letter-spacing', 1)
+        .attr('opacity', 0).text('NOVELTY GATE');
+      svg.append('text').attr('x', 252).attr('y', 60).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text(`threshold: ${passThresh}`);
+
+      svg.append('line').attr('x1', 207).attr('y1', 68).attr('x2', 297).attr('y2', 68)
+        .attr('stroke', bdr).attr('stroke-width', 1).attr('opacity', 0);
+
+      svg.append('text').attr('x', 252).attr('y', 88).attr('text-anchor', 'middle')
+        .attr('font-size', 9).attr('fill', cyan).attr('opacity', 0).text('PASS → accumulate');
+      svg.append('text').attr('x', 252).attr('y', 104).attr('text-anchor', 'middle')
+        .attr('font-size', 9).attr('fill', pink).attr('opacity', 0).text('FAIL → discard');
+      svg.append('text').attr('x', 252).attr('y', 125).attr('text-anchor', 'middle')
+        .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text('update knowledge');
+      svg.append('text').attr('x', 252).attr('y', 140).attr('text-anchor', 'middle')
+        .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text('state after pass');
+
+      // Passing → synthesis
+      svg.append('rect').attr('x', 380).attr('y', 80).attr('width', 140).attr('height', 100)
+        .attr('rx', 8).attr('fill', bg3).attr('stroke', green).attr('stroke-width', 1.5)
+        .attr('opacity', 0);
+      svg.append('text').attr('x', 450).attr('y', 100).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 700).attr('fill', green).attr('opacity', 0)
+        .text('Synthesis Prompt');
+      ['Rounds 1–3', '(novel content)', '~22% fewer tokens', 'vs naive accumulation'].forEach((line, i) => {
+        svg.append('text').attr('x', 450).attr('y', 118 + i * 16).attr('text-anchor', 'middle')
+          .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text(line);
+      });
+
+      svg.append('line').attr('x1', 308).attr('y1', 130).attr('x2', 379).attr('y2', 130)
+        .attr('stroke', green).attr('stroke-width', 1.5)
+        .attr('marker-end', 'url(#arr-ng-g)').attr('opacity', 0);
+
+      // Discarded annotation
+      svg.append('text').attr('x', 450).attr('y', 220).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('fill', pink).attr('opacity', 0)
+        .text('Rounds 4–5 discarded');
+      svg.append('text').attr('x', 450).attr('y', 238).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0)
+        .text('(below novelty threshold)');
+
+      anime({
+        targets: '#novelty-svg rect, #novelty-svg text, #novelty-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(40),
+        easing: 'easeOutQuad',
+      });
+    })();
+
+    /* ── B3: Dual-Backend Memory diagram ─────────────────────────────── */
+    (function drawMemory() {
+      const svg = d3.select('#memory-svg');
+      const W = 680, H = 300;
+      const bg3 = cssVar('--bg-tertiary');
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bdr = cssVar('--border-color');
+      const purple = '#a855f7';
+
+      const defs = svg.append('defs');
+      ['c','p','pu'].forEach(k => {
+        const col = k === 'c' ? cyan : k === 'p' ? pink : purple;
+        const m = defs.append('marker').attr('id', `arr-mem-${k}`)
+          .attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+        m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', col);
+      });
+
+      // Query box on left
+      svg.append('rect').attr('x', 20).attr('y', 120).attr('width', 100).attr('height', 50)
+        .attr('rx', 7).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', 70).attr('y', 140).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 700).attr('fill', txt).attr('opacity', 0).text('Query');
+      svg.append('text').attr('x', 70).attr('y', 158).attr('text-anchor', 'middle')
+        .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text('task string');
+
+      // Two backends in center
+      const backends = [
+        { x: 200, y: 50, w: 160, h: 80, col: cyan, title: 'ChromaDB', sub1: 'vector embeddings', sub2: 'all-MiniLM-L6-v2', sub3: 'cosine similarity' },
+        { x: 200, y: 170, w: 160, h: 80, col: purple, title: 'SQLite FTS5', sub1: 'full-text index', sub2: 'task, title, narrative', sub3: 'exact keyword match' },
+      ];
+
+      backends.forEach(b => {
+        svg.append('rect').attr('x', b.x).attr('y', b.y).attr('width', b.w).attr('height', b.h)
+          .attr('rx', 9).attr('fill', bg3).attr('stroke', b.col).attr('stroke-width', 2).attr('opacity', 0);
+        svg.append('text').attr('x', b.x + b.w / 2).attr('y', b.y + 20)
+          .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+          .attr('fill', b.col).attr('letter-spacing', 1).attr('opacity', 0).text(b.title);
+        [b.sub1, b.sub2, b.sub3].forEach((s, i) => {
+          svg.append('text').attr('x', b.x + b.w / 2).attr('y', b.y + 38 + i * 15)
+            .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2)
+            .attr('opacity', 0).text(s);
+        });
+      });
+
+      // Arrows from query to backends
+      svg.append('line').attr('x1', 120).attr('y1', 140).attr('x2', 199).attr('y2', 90)
+        .attr('stroke', cyan).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-mem-c)').attr('opacity', 0);
+      svg.append('line').attr('x1', 120).attr('y1', 145).attr('x2', 199).attr('y2', 210)
+        .attr('stroke', purple).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-mem-pu)').attr('opacity', 0);
+
+      // Re-ranker box
+      svg.append('rect').attr('x', 430).attr('y', 90).attr('width', 130).attr('height', 110)
+        .attr('rx', 9).attr('fill', bg3).attr('stroke', pink).attr('stroke-width', 2).attr('opacity', 0);
+      svg.append('text').attr('x', 495).attr('y', 112).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 700).attr('fill', pink).attr('letter-spacing', 1)
+        .attr('opacity', 0).text('RE-RANKER');
+      ['similarity score', '+ 0.4 × FTS rank', '→ top-4 results'].forEach((s, i) => {
+        svg.append('text').attr('x', 495).attr('y', 130 + i * 18)
+          .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text(s);
+      });
+
+      // Arrows from backends to re-ranker
+      svg.append('line').attr('x1', 361).attr('y1', 90).attr('x2', 429).attr('y2', 130)
+        .attr('stroke', cyan).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-mem-c)').attr('opacity', 0);
+      svg.append('line').attr('x1', 361).attr('y1', 210).attr('x2', 429).attr('y2', 160)
+        .attr('stroke', purple).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-mem-pu)').attr('opacity', 0);
+
+      // Output
+      svg.append('rect').attr('x', 580).attr('y', 110).attr('width', 80).attr('height', 72)
+        .attr('rx', 7).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', 620).attr('y', 130).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 600).attr('fill', txt).attr('opacity', 0).text('Context');
+      svg.append('text').attr('x', 620).attr('y', 148).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text('top-4 obs.');
+      svg.append('text').attr('x', 620).attr('y', 167).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text('injected');
+
+      svg.append('line').attr('x1', 561).attr('y1', 145).attr('x2', 579).attr('y2', 145)
+        .attr('stroke', pink).attr('stroke-width', 1.5).attr('marker-end', 'url(#arr-mem-p)').attr('opacity', 0);
+
+      anime({
+        targets: '#memory-svg rect, #memory-svg text, #memory-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(38),
+        easing: 'easeOutQuad',
+      });
+    })();
+
+    /* ── B4: Semantic Chunker diagram ────────────────────────────────── */
+    (function drawChunker() {
+      const svg = d3.select('#chunker-svg');
+      const W = 680, H = 280;
+      const bg3 = cssVar('--bg-tertiary');
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bdr = cssVar('--border-color');
+
+      const defs = svg.append('defs');
+      ['c','p'].forEach(k => {
+        const col = k === 'c' ? cyan : pink;
+        const m = defs.append('marker').attr('id', `arr-ch-${k}`)
+          .attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+        m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', col);
+      });
+
+      // Document input
+      svg.append('rect').attr('x', 20).attr('y', 110).attr('width', 90).attr('height', 55)
+        .attr('rx', 7).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', 65).attr('y', 131).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 600).attr('fill', txt).attr('opacity', 0).text('Document');
+      svg.append('text').attr('x', 65).attr('y', 148).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text('40,000 chars');
+      svg.append('text').attr('x', 65).attr('y', 158).attr('text-anchor', 'middle')
+        .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text('(too large)');
+
+      // Detection box
+      svg.append('rect').attr('x', 160).attr('y', 104).attr('width', 110).attr('height', 65)
+        .attr('rx', 8).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', 215).attr('y', 123).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('font-weight', 700).attr('fill', txt2).attr('letter-spacing', 1)
+        .attr('opacity', 0).text('DETECT');
+      svg.append('text').attr('x', 215).attr('y', 139).attr('text-anchor', 'middle')
+        .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text('≥3 headings?');
+      svg.append('text').attr('x', 215).attr('y', 153).attr('text-anchor', 'middle')
+        .attr('font-size', 9).attr('fill', cyan).attr('opacity', 0).text('YES → structured');
+      svg.append('text').attr('x', 215).attr('y', 165).attr('text-anchor', 'middle')
+        .attr('font-size', 9).attr('fill', pink).attr('opacity', 0).text('NO → semantic');
+
+      svg.append('line').attr('x1', 110).attr('y1', 137).attr('x2', 159).attr('y2', 137)
+        .attr('stroke', bdr).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-ch-c)').attr('opacity', 0);
+
+      // Structured extraction
+      const sBox = { x: 335, y: 30, w: 160, h: 110 };
+      svg.append('rect').attr('x', sBox.x).attr('y', sBox.y).attr('width', sBox.w).attr('height', sBox.h)
+        .attr('rx', 9).attr('fill', bg3).attr('stroke', cyan).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', sBox.x + sBox.w / 2).attr('y', sBox.y + 18)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+        .attr('fill', cyan).attr('letter-spacing', 1).attr('opacity', 0).text('SECTION-PRIORITY');
+      ['Abstract', 'Conclusion', 'Introduction', 'Results', 'Methods'].forEach((s, i) => {
+        svg.append('text').attr('x', sBox.x + 14).attr('y', sBox.y + 36 + i * 16)
+          .attr('font-size', 9.5).attr('fill', i < 2 ? cyan : txt2).attr('opacity', 0)
+          .text(`${i + 1}. ${s}`);
+      });
+
+      svg.append('line').attr('x1', 271).attr('y1', 120).attr('x2', 334).attr('y2', 85)
+        .attr('stroke', cyan).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-ch-c)').attr('opacity', 0);
+
+      // Semantic extraction
+      const emBox = { x: 335, y: 165, w: 160, h: 95 };
+      svg.append('rect').attr('x', emBox.x).attr('y', emBox.y).attr('width', emBox.w).attr('height', emBox.h)
+        .attr('rx', 9).attr('fill', bg3).attr('stroke', pink).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', emBox.x + emBox.w / 2).attr('y', emBox.y + 18)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+        .attr('fill', pink).attr('letter-spacing', 1).attr('opacity', 0).text('SEMANTIC CHUNKS');
+      ['600-char chunks', '80-char overlap', 'embed + cosine rank', 'top-K retained'].forEach((s, i) => {
+        svg.append('text').attr('x', emBox.x + emBox.w / 2).attr('y', emBox.y + 36 + i * 16)
+          .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text(s);
+      });
+
+      svg.append('line').attr('x1', 271).attr('y1', 153).attr('x2', 334).attr('y2', 213)
+        .attr('stroke', pink).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-ch-p)').attr('opacity', 0);
+
+      // Budget box on far right
+      svg.append('rect').attr('x', 550).attr('y', 90).attr('width', 110).attr('height', 95)
+        .attr('rx', 8).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', 605).attr('y', 112).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 700).attr('fill', txt2).attr('letter-spacing', 1)
+        .attr('opacity', 0).text('BUDGET');
+      ['12,000 chars', '← extracted', '← memory ctx', '← instructions'].forEach((s, i) => {
+        svg.append('text').attr('x', 605).attr('y', 128 + i * 16)
+          .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text(s);
+      });
+
+      svg.append('line').attr('x1', 496).attr('y1', 137).attr('x2', 549).attr('y2', 137)
+        .attr('stroke', bdr).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-ch-c)').attr('opacity', 0);
+
+      anime({
+        targets: '#chunker-svg rect, #chunker-svg text, #chunker-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(40),
+        easing: 'easeOutQuad',
+      });
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

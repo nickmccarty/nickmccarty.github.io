@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orchestration Patterns: Scaling to Multi-Agent Execution | Nick McCarty</title>
+  <meta name="description" content="Four patterns for coordinating multiple agents: the DAG Orchestrator, Worktree Context isolation, MCP Dispatch Router for cross-instance routing, and the Skill Registry.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/orchestration-patterns.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Orchestration Patterns: Scaling to Multi-Agent Execution">
+  <meta property="og:description" content="Four patterns for coordinating multiple agents: the DAG Orchestrator decomposes tasks into parallel dependency graphs, Worktree Context isolates agent filesystems, MCP Dispatch Router routes to remote instances, and Skill Registry extends via slash commands.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/orchestration-patterns.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-22T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Orchestration Patterns: Scaling to Multi-Agent Execution">
+  <meta name="twitter:description" content="DAG Orchestrator, Worktree Context, MCP Dispatch Router, and Skill Registry — four patterns for coordinating multi-agent agentic pipelines.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Orchestration Patterns: Scaling to Multi-Agent Execution","description":"Four patterns for coordinating multiple agents: DAG Orchestrator, Worktree Context, MCP Dispatch Router, and Skill Registry.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-22","url":"https://nickmccarty.github.io/blog/orchestration-patterns.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    #dag-svg text, #worktree-svg text,
+    #mcp-svg text, #skills-svg text { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 22, 2026 &bull; 16 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">Orchestration Patterns: Scaling to Multi-Agent Execution</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          Four patterns for coordinating multiple agents: DAG decomposition with cycle detection, Git worktree isolation for parallel state, MCP-based cross-instance routing, and the slash-command Skill Registry.
+        </p>
+
+      </header>
+
+      <p>
+        The patterns in posts 4–7 govern a single agent running a single task. Most production use cases eventually outgrow this. A research task that covers five distinct subtopics can saturate a single context window; running the subtopics sequentially serializes latency that is inherently parallelizable; and specialized subtasks (security analysis, financial modeling, literature review) belong on instances tuned for those domains, not a general-purpose local harness.
+      </p>
+
+      <p>
+        Section D addresses this scaling problem with four patterns: the <strong>DAG Orchestrator</strong> (D1) decomposes tasks into a dependency graph and executes independent subtasks concurrently; the <strong>Worktree Context</strong> (D2) gives each concurrent subtask an isolated filesystem without container overhead; the <strong>MCP Dispatch Router</strong> (D3) routes subtasks to remote harness instances over HTTP; and the <strong>Skill Registry</strong> (D4) extends the agent with callable slash-command handlers that can replace or augment the standard pipeline.
+      </p>
+
+      <h2>D1 &mdash; The DAG Orchestrator</h2>
+
+      <p>
+        Single-agent execution is a special case of task orchestration where the dependency graph has one node. The DAG Orchestrator generalizes this: <code>harness/orchestrator.py</code> calls the planner for a subtask decomposition, verifies the resulting graph is acyclic, executes independent subtasks concurrently, and assembles a cross-reference synthesis from the outputs.
+      </p>
+
+<pre><code>def run(task: str, config: ModelConfig) -> str:
+    plan = planner.plan(task, memory.get_context(task))
+    subtasks = plan.subtasks  # list of {id, task, depends_on}
+
+    # Check for cycles before launching any threads
+    if not _check_dag_cycles(subtasks):
+        raise OrchestratorError("cycle detected in subtask graph")
+
+    results: dict[str, str] = {}
+    errors: dict[str, str] = {}
+
+    with ThreadPoolExecutor(max_workers=SUBTASK_MAX_WORKERS) as pool:
+        futures = {
+            pool.submit(_run_subtask, s, config): s
+            for s in _ready(subtasks, results)
+        }
+        # Process futures as they complete; submit newly-ready tasks
+        for future in as_completed(futures):
+            subtask = futures[future]
+            try:
+                results[subtask["id"]] = future.result()
+            except Exception as e:
+                errors[subtask["id"]] = str(e)
+            # Check if new tasks are now unblocked
+            for s in _ready(subtasks, results):
+                if s["id"] not in results and s["id"] not in errors:
+                    futures[pool.submit(_run_subtask, s, config)] = s
+
+    return _assemble(task, results, errors, config)</code></pre>
+
+      <p>
+        The cycle check runs <em>before</em> any threads are launched. Kahn's topological sort algorithm detects cycles in O(V + E) — a negligible cost that prevents the entire thread pool from deadlocking on a graph that will never complete. This is the right place to fail: loudly, immediately, before any compute is committed.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">D1 &mdash; DAG Orchestrator: Parallel Subtask Execution</div>
+        <svg id="dag-svg" width="100%" viewBox="0 0 680 300" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Independent subtasks execute concurrently in a thread pool. Dependent subtasks wait until their prerequisites complete. The assembler synthesizes a unified cross-reference output from all results.</p>
+      </div>
+
+      <p>
+        The assembly step is the most underspecified component of the orchestrator. An assembler that receives N independent subtask outputs must synthesize coherent cross-references — identifying where subtopics connect, contradict, or amplify each other. This task degrades with N > 8 on models below 30B parameters; at that scale, the assembler begins dropping connections between distant subtasks. The practical limit for a 7–13B assembler model is 4–6 subtasks before assembly quality degrades.
+      </p>
+
+      <h2>D2 &mdash; The Worktree Context</h2>
+
+      <p>
+        Concurrent subtasks need filesystem isolation. The naive implementation — multiple agent loops writing to the same output directory — produces the "silent overwrite" failure described in the Harness Thesis: run 43–61 all recorded PASS status, but examination revealed that later runs were overwriting earlier outputs, and the evaluation was scoring the overwritten file. No error was raised.
+      </p>
+
+      <p>
+        The Worktree Context solves this without container overhead or process isolation. Before the orchestrator dispatches any subtask, it calls Git's <code>worktree add</code> to create an isolated linked working tree on its own branch:
+      </p>
+
+<pre><code>@contextmanager
+def worktree_context(subtask_id: str):
+    branch = f"subtask/{subtask_id}"
+    path = f".worktrees/{subtask_id}"
+    try:
+        subprocess.run(
+            ["git", "worktree", "add", "-b", branch, path, "HEAD"],
+            check=True
+        )
+        yield Path(path)
+    finally:
+        subprocess.run(["git", "worktree", "remove", "--force", path])
+        subprocess.run(["git", "branch", "-D", branch])
+        subprocess.run(["git", "worktree", "prune"])</code></pre>
+
+      <div class="diagram-container">
+        <div class="diagram-title">D2 &mdash; Worktree Context: Git-Native State Isolation</div>
+        <svg id="worktree-svg" width="100%" viewBox="0 0 680 280" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Each subtask gets an isolated Git worktree on its own branch. All file operations resolve into the worktree root. Cleanup runs in a finally block regardless of failure mode.</p>
+      </div>
+
+      <p>
+        The <code>finally</code> block guarantees cleanup regardless of what goes wrong inside the subtask. <code>--force</code> handles uncommitted changes left behind by a failed subtask. <code>git worktree prune</code> removes stale metadata from interrupted runs.
+      </p>
+
+      <p>
+        Worktree creation is instantaneous — it's a pointer into the shared object store, not a full repository clone. Disk usage equals one working tree copy per concurrent subtask. Long-running subtasks can commit intermediate progress inside their worktree (<code>git commit -m "checkpoint: ..."</code>); these commits persist in the shared object store even after the worktree is removed, enabling recovery from interrupted runs.
+      </p>
+
+      <div class="callout">
+        <p>The pattern solves filesystem isolation. It does not solve coordination: subtasks cannot observe each other's intermediate findings while they are running. Cross-subtask information sharing requires the MCP Dispatch Router (D3) or explicit shared state outside the worktree (e.g., the memory store).</p>
+      </div>
+
+      <h2>D3 &mdash; The MCP Dispatch Router</h2>
+
+      <p>
+        The DAG Orchestrator executes all subtasks locally by default. Some subtasks should run elsewhere: security analysis on a security team's hardened instance, financial analysis on a compliance-controlled instance, GPU-intensive literature review on a dedicated inference server. The MCP Dispatch Router extends the orchestrator with remote execution without modifying the local execution model.
+      </p>
+
+<pre><code># HARNESS_MCP_ENDPOINTS = '{"security": "http://sec-harness:8000", "finance": "http://fin-harness:8000"}'
+
+def dispatch(subtask: dict, mcp_endpoints: dict) -> tuple[str, bool]:
+    for keyword, endpoint in mcp_endpoints.items():
+        if keyword.lower() in subtask["task"].lower():
+            response = requests.post(f"{endpoint}/run_task", json={
+                "task": subtask["task"],
+                "session_id": subtask["id"]
+            }, timeout=300)
+            data = response.json()
+            return data["content"], data["ok"]
+    return None, False  # no match → falls through to local execution</code></pre>
+
+      <div class="diagram-container">
+        <div class="diagram-title">D3 &mdash; MCP Dispatch Router: Keyword-Based Remote Routing</div>
+        <svg id="mcp-svg" width="100%" viewBox="0 0 680 260" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Subtask task strings are matched against configured keyword patterns. The first match routes the subtask to the corresponding remote endpoint. Unmatched subtasks execute locally.</p>
+      </div>
+
+      <p>
+        Matching is first-match-wins and case-insensitive substring matching. The order of entries in <code>HARNESS_MCP_ENDPOINTS</code> determines priority when keywords overlap. Remote and local execution are interchangeable from the assembly step's perspective: both return a content string and an <code>ok</code> flag.
+      </p>
+
+      <p>
+        Error handling is best-effort: a failed remote subtask is recorded in the <code>errors</code> dict passed to <code>_assemble()</code>, which notes the gap in its synthesis rather than raising. This design keeps orchestration resilient to flaky remote instances at the cost of potentially incomplete assembly output.
+      </p>
+
+      <h2>D4 &mdash; The Skill Registry</h2>
+
+      <p>
+        The standard agent loop — plan, research, synthesize, evaluate, persist — covers the general case. Some tasks need a fundamentally different loop. A literature review needs arXiv fetching, multi-persona curation, and cluster synthesis. A browser navigation task needs Playwright, not a search API. An email draft needs OAuth and a send-confirmation step. These are not variations on the standard loop — they are different loops entirely.
+      </p>
+
+      <p>
+        The Skill Registry lets each of these live in its own handler without modifying the core agent:
+      </p>
+
+<pre><code>_SKILLS: dict[str, Callable] = {
+    "/lit-review": lit_review_skill.run,
+    "/browser":    browser_skill.run,
+    "/email":      email_skill.run,
+    "/github":     github_skill.run,
+    "/deck":       deck_skill.run,
+}
+
+def dispatch_cli(task: str, config: ModelConfig) -> str:
+    for prefix, handler in _SKILLS.items():
+        if task.startswith(prefix):
+            args = task[len(prefix):].strip()
+            return handler(args, config)
+    return agent.run(task, config)  # fallback: standard loop</code></pre>
+
+      <div class="diagram-container">
+        <div class="diagram-title">D4 &mdash; Skill Registry: Slash-Command Dispatch</div>
+        <svg id="skills-svg" width="100%" viewBox="0 0 680 260" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Slash-prefixed tasks dispatch to registered skill handlers. Skills can implement pre-hooks, replace the agent loop, or add post-processing. Unmatched tasks fall through to the standard agent loop.</p>
+      </div>
+
+      <p>
+        Adding a skill requires one entry in <code>_SKILLS</code> and one handler function. No modification to the agent loop. Skills that replace the agent loop bypass the Wiggum Loop by default — skills that want evaluation must call <code>wiggum.loop()</code> explicitly. The five built-in skills span a range from high-leverage (the <code>/lit-review</code> skill runs a seven-stage pipeline that would take hours to replicate with the standard loop) to low-leverage (the <code>/deck</code> skill adds markdown-to-PowerPoint post-processing that could also be a post-hook).
+      </p>
+
+      <p>
+        The practical rule for when to implement a task as a skill versus handling it through the standard agent loop: if the task requires a fundamentally different information retrieval strategy, or a send/write action with irreversible external effects that requires an explicit confirmation step, it belongs in a skill. Everything else belongs in the standard loop.
+      </p>
+
+      <div class="callout pink">
+        <p><strong>Research context:</strong> The multi-component decomposition underlying D1&ndash;D4 is validated by a growing body of planning research. Decomposing tool use into separate planner, caller, and summarizer roles consistently outperforms monolithic single-agent approaches, particularly at smaller model sizes where a single model cannot manage combined planning, invocation, and synthesis reliably. (<a href="https://arxiv.org/abs/2401.07324" target="_blank" rel="noopener">arXiv:2401.07324</a>) MCTS-inspired planning achieves ~10% improvement over greedy reactive strategies by accounting for inter-tool dependencies &mdash; the same dependency-awareness that Kahn&rsquo;s algorithm enforces in the DAG Orchestrator. (<a href="https://arxiv.org/abs/2603.12740" target="_blank" rel="noopener">arXiv:2603.12740</a>) Separately, a study of 12 commercial planning agents found they bypassed safety constraints in over 92% of cases when no explicit safety prompts were present, with near-deterministic bypass for web-use agents. (<a href="https://arxiv.org/abs/2601.10758" target="_blank" rel="noopener">arXiv:2601.10758</a>) The E-section security patterns in the next post exist specifically because orchestration at scale produces exactly this failure mode.</p>
+      </div>
+
+      <p>
+        The next post covers Section E — Security Patterns — which constrain what the agent can do to the host system (AST Guard, Path Sandbox) and what external content can do to the agent's memory (Injection Scanner, CDP Guard).
+      </p>
+
+    
+
+      <div class="post-pagination">
+        <a href="./verification-patterns.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">7 &middot; Verification Patterns</span>
+        </a>
+        <a href="./security-patterns.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">9 &middot; Security Patterns</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./inference-patterns.html" class="related-post-card">
+            <div class="related-post-num">Post 4</div>
+            <div class="related-post-title">Inference Patterns</div>
+            <div class="related-post-desc">The Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget.</div>
+          </a>
+          <a href="./tool-use-planning.html" class="related-post-card">
+            <div class="related-post-num">Post 16</div>
+            <div class="related-post-title">Tool Use &amp; Planning</div>
+            <div class="related-post-desc">NL2Plan, PEARL, ToolTree, ToolRet, Memory-as-a-Tool, and the 92% safety bypass rate.</div>
+          </a>
+          <a href="./structured-knowledge-queries.html" class="related-post-card">
+            <div class="related-post-num">Post 22</div>
+            <div class="related-post-title">Structured Knowledge Queries</div>
+            <div class="related-post-desc">ODA: +12.87% KG accuracy. GRASP: zero-shot SPARQL SOTA on Wikidata. ETLCH: 1B LoRA on 100-1000 samples.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script type="module">
+    import anime from 'https://esm.sh/animejs@3.2.2';
+
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    /* ── D1: DAG diagram ─────────────────────────────────────────────── */
+    (function drawDAG() {
+      const svg = d3.select('#dag-svg');
+      const W = 680, H = 300;
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const bdr = cssVar('--border-color');
+      const green = '#34d399';
+      const purple = '#a855f7';
+
+      const defs = svg.append('defs');
+      ['c','p','g'].forEach(k => {
+        const col = k === 'c' ? cyan : k === 'p' ? pink : green;
+        const m = defs.append('marker').attr('id', `arr-dag-${k}`)
+          .attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+        m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', col);
+      });
+
+      // Task input
+      svg.append('rect').attr('x', 20).attr('y', 125).attr('width', 90).attr('height', 50)
+        .attr('rx', 7).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', 65).attr('y', 146).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 700).attr('fill', txt).attr('opacity', 0).text('Task');
+      svg.append('text').attr('x', 65).attr('y', 162).attr('text-anchor', 'middle')
+        .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text('→ planner');
+
+      // DAG check
+      svg.append('rect').attr('x', 160).attr('y', 118).attr('width', 100).attr('height', 62)
+        .attr('rx', 7).attr('fill', bg3).attr('stroke', purple).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', 210).attr('y', 137).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('font-weight', 700).attr('fill', purple).attr('opacity', 0).text('DAG CHECK');
+      svg.append('text').attr('x', 210).attr('y', 153).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text('Kahn\'s sort');
+      svg.append('text').attr('x', 210).attr('y', 169).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('fill', cyan).attr('opacity', 0).text('acyclic → proceed');
+
+      svg.append('line').attr('x1', 110).attr('y1', 150).attr('x2', 159).attr('y2', 150)
+        .attr('stroke', bdr).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-dag-c)').attr('opacity', 0);
+
+      // Parallel subtasks
+      const subtasks = [
+        { y: 40, label: 'Subtask A', col: cyan },
+        { y: 130, label: 'Subtask B', col: cyan },
+        { y: 220, label: 'Subtask C', col: pink },
+      ];
+
+      subtasks.forEach((s, i) => {
+        svg.append('rect').attr('x', 320).attr('y', s.y).attr('width', 110).attr('height', 46)
+          .attr('rx', 7).attr('fill', bg3).attr('stroke', s.col).attr('stroke-width', 1.5).attr('opacity', 0);
+        svg.append('text').attr('x', 375).attr('y', s.y + 18)
+          .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 600)
+          .attr('fill', s.col).attr('opacity', 0).text(s.label);
+        const extra = i === 2 ? 'depends on A' : 'independent';
+        svg.append('text').attr('x', 375).attr('y', s.y + 34)
+          .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2)
+          .attr('opacity', 0).text(extra);
+
+        // Arrow from DAG check
+        svg.append('line')
+          .attr('x1', 261).attr('y1', 150)
+          .attr('x2', 319).attr('y2', s.y + 23)
+          .attr('stroke', i === 2 ? pink : cyan).attr('stroke-width', 1.2)
+          .attr('stroke-dasharray', i === 2 ? '4 3' : '0')
+          .attr('marker-end', `url(#arr-dag-${i === 2 ? 'p' : 'c'})`)
+          .attr('opacity', 0);
+      });
+
+      // Assembler
+      svg.append('rect').attr('x', 490).attr('y', 100).attr('width', 120).attr('height', 90)
+        .attr('rx', 9).attr('fill', bg3).attr('stroke', green).attr('stroke-width', 2).attr('opacity', 0);
+      svg.append('text').attr('x', 550).attr('y', 120).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('font-weight', 700).attr('fill', green).attr('letter-spacing', 1)
+        .attr('opacity', 0).text('ASSEMBLER');
+      ['cross-reference', 'synthesis', 'from N outputs'].forEach((s, i) => {
+        svg.append('text').attr('x', 550).attr('y', 138 + i * 16)
+          .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text(s);
+      });
+
+      subtasks.forEach((s, i) => {
+        svg.append('line')
+          .attr('x1', 431).attr('y1', s.y + 23)
+          .attr('x2', 489).attr('y2', 145)
+          .attr('stroke', green).attr('stroke-width', 1.2).attr('stroke-dasharray', '4 3')
+          .attr('marker-end', 'url(#arr-dag-g)').attr('opacity', 0);
+      });
+
+      anime({
+        targets: '#dag-svg rect, #dag-svg text, #dag-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(38),
+        easing: 'easeOutQuad',
+      });
+    })();
+
+    /* ── D2: Worktree Context diagram ────────────────────────────────── */
+    (function drawWorktree() {
+      const svg = d3.select('#worktree-svg');
+      const W = 680, H = 280;
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const bdr = cssVar('--border-color');
+
+      // Main repo
+      svg.append('rect').attr('x', 20).attr('y', 100).attr('width', 100).attr('height', 72)
+        .attr('rx', 9).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', 70).attr('y', 122).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 700).attr('fill', txt).attr('opacity', 0).text('Main repo');
+      svg.append('text').attr('x', 70).attr('y', 138).attr('text-anchor', 'middle')
+        .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text('shared object');
+      svg.append('text').attr('x', 70).attr('y', 152).attr('text-anchor', 'middle')
+        .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text('store (HEAD)');
+
+      const wts = [
+        { x: 220, y: 30, id: 'subtask/abc1', col: cyan },
+        { x: 220, y: 120, id: 'subtask/def2', col: pink },
+        { x: 220, y: 210, id: 'subtask/ghi3', col: '#a855f7' },
+      ];
+
+      const defs = svg.append('defs');
+      const m = defs.append('marker').attr('id', 'arr-wt')
+        .attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+      m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', bdr);
+
+      wts.forEach(wt => {
+        svg.append('rect').attr('x', wt.x).attr('y', wt.y).attr('width', 180).attr('height', 60)
+          .attr('rx', 7).attr('fill', bg3).attr('stroke', wt.col).attr('stroke-width', 1.5).attr('opacity', 0);
+        svg.append('text').attr('x', wt.x + 90).attr('y', wt.y + 18)
+          .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('font-weight', 700)
+          .attr('fill', wt.col).attr('opacity', 0).text('.worktrees/' + wt.id.split('/')[1]);
+        svg.append('text').attr('x', wt.x + 90).attr('y', wt.y + 34)
+          .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0)
+          .text('branch: ' + wt.id);
+        svg.append('text').attr('x', wt.x + 90).attr('y', wt.y + 50)
+          .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2).attr('opacity', 0)
+          .text('isolated cwd · own output path');
+
+        svg.append('line').attr('x1', 120).attr('y1', 136).attr('x2', wt.x).attr('y2', wt.y + 30)
+          .attr('stroke', wt.col).attr('stroke-width', 1.2).attr('stroke-dasharray', '5 3')
+          .attr('marker-end', 'url(#arr-wt)').attr('opacity', 0);
+      });
+
+      // Finally block annotation
+      svg.append('rect').attr('x', 460).attr('y', 90).attr('width', 175).attr('height', 90)
+        .attr('rx', 8).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', 547).attr('y', 110).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 700).attr('fill', txt2).attr('opacity', 0)
+        .text('finally block (always runs)');
+      ['worktree remove --force', 'git branch -D', 'git worktree prune'].forEach((s, i) => {
+        svg.append('text').attr('x', 470).attr('y', 128 + i * 18)
+          .attr('font-size', 9.5).attr('fill', txt2).attr('font-family', 'SF Mono, monospace')
+          .attr('opacity', 0).text(s);
+      });
+
+      anime({
+        targets: '#worktree-svg rect, #worktree-svg text, #worktree-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(40),
+        easing: 'easeOutQuad',
+      });
+    })();
+
+    /* ── D3: MCP Router diagram ──────────────────────────────────────── */
+    (function drawMCP() {
+      const svg = d3.select('#mcp-svg');
+      const W = 680, H = 260;
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const bdr = cssVar('--border-color');
+      const green = '#34d399';
+      const orange = '#f97316';
+
+      const defs = svg.append('defs');
+      ['c','p','g','o'].forEach(k => {
+        const col = { c: cyan, p: pink, g: green, o: orange }[k];
+        const m = defs.append('marker').attr('id', `arr-mcp-${k}`)
+          .attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+        m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', col);
+      });
+
+      // Router box
+      svg.append('rect').attr('x', 200).attr('y', 90).attr('width', 130).attr('height', 76)
+        .attr('rx', 9).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', 265).attr('y', 110).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 700).attr('fill', txt2).attr('letter-spacing', 1)
+        .attr('opacity', 0).text('MCP ROUTER');
+      svg.append('text').attr('x', 265).attr('y', 127).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text('keyword matching');
+      svg.append('text').attr('x', 265).attr('y', 143).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('fill', cyan).attr('opacity', 0).text('first-match-wins');
+      svg.append('text').attr('x', 265).attr('y', 159).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text('case-insensitive');
+
+      // Subtask input
+      svg.append('rect').attr('x', 30).attr('y', 103).attr('width', 110).attr('height', 50)
+        .attr('rx', 7).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', 85).attr('y', 122).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 600).attr('fill', txt).attr('opacity', 0).text('Subtask');
+      svg.append('text').attr('x', 85).attr('y', 140).attr('text-anchor', 'middle')
+        .attr('font-size', 9').attr('fill', txt2).attr('opacity', 0).text('task string');
+      svg.append('line').attr('x1', 140).attr('y1', 128).attr('x2', 199).attr('y2', 128)
+        .attr('stroke', bdr).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-mcp-c)').attr('opacity', 0);
+
+      // Endpoints
+      const eps = [
+        { y: 40, label: 'Security Harness', kw: '"security" keyword', col: pink, url: 'http://sec-harness:8000' },
+        { y: 120, label: 'Finance Harness', kw: '"finance" keyword', col: orange, url: 'http://fin-harness:8000' },
+        { y: 200, label: 'Local Agent', kw: '(no match → fallback)', col: green, url: 'agent.run()' },
+      ];
+
+      eps.forEach(ep => {
+        svg.append('rect').attr('x', 400).attr('y', ep.y).attr('width', 245).attr('height', 55)
+          .attr('rx', 7).attr('fill', bg3).attr('stroke', ep.col).attr('stroke-width', 1.5).attr('opacity', 0);
+        svg.append('text').attr('x', 412).attr('y', ep.y + 18)
+          .attr('font-size', 10).attr('font-weight', 700).attr('fill', ep.col).attr('opacity', 0).text(ep.label);
+        svg.append('text').attr('x', 412).attr('y', ep.y + 34)
+          .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text(ep.kw);
+        svg.append('text').attr('x', 412).attr('y', ep.y + 50)
+          .attr('font-size', 9.5).attr('fill', txt2).attr('font-family', 'SF Mono, monospace')
+          .attr('opacity', 0).text(ep.url);
+
+        const colKey = ep.col === pink ? 'p' : ep.col === orange ? 'o' : 'g';
+        svg.append('line').attr('x1', 330).attr('y1', 128).attr('x2', 399).attr('y2', ep.y + 27)
+          .attr('stroke', ep.col).attr('stroke-width', 1.2).attr('stroke-dasharray', ep.y === 200 ? '4 3' : '0')
+          .attr('marker-end', `url(#arr-mcp-${colKey})`).attr('opacity', 0);
+      });
+
+      anime({
+        targets: '#mcp-svg rect, #mcp-svg text, #mcp-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(38),
+        easing: 'easeOutQuad',
+      });
+    })();
+
+    /* ── D4: Skill Registry diagram ──────────────────────────────────── */
+    (function drawSkills() {
+      const svg = d3.select('#skills-svg');
+      const W = 680, H = 260;
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const bdr = cssVar('--border-color');
+      const purple = '#a855f7';
+
+      const defs = svg.append('defs');
+      const m = defs.append('marker').attr('id', 'arr-sk')
+        .attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+      m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', cyan);
+
+      // Input
+      svg.append('rect').attr('x', 20).attr('y', 107).attr('width', 90).attr('height', 42)
+        .attr('rx', 7).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1.5).attr('opacity', 0);
+      svg.append('text').attr('x', 65).attr('y', 124).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('font-weight', 700).attr('fill', txt).attr('opacity', 0).text('CLI input');
+      svg.append('text').attr('x', 65).attr('y', 140).attr('text-anchor', 'middle')
+        .attr('font-size', 9').attr('fill', cyan).attr('opacity', 0).text('/lit-review …');
+
+      svg.append('line').attr('x1', 110).attr('y1', 128).attr('x2', 169).attr('y2', 128)
+        .attr('stroke', bdr).attr('stroke-width', 1.2).attr('marker-end', 'url(#arr-sk)').attr('opacity', 0);
+
+      // Registry box
+      svg.append('rect').attr('x', 170).attr('y', 60).attr('width', 120).attr('height', 136)
+        .attr('rx', 9).attr('fill', bg3).attr('stroke', purple).attr('stroke-width', 2).attr('opacity', 0);
+      svg.append('text').attr('x', 230).attr('y', 80).attr('text-anchor', 'middle')
+        .attr('font-size', 10).attr('font-weight', 700).attr('fill', purple).attr('letter-spacing', 1)
+        .attr('opacity', 0).text('_SKILLS');
+      ['/lit-review', '/browser', '/email', '/github', '/deck'].forEach((s, i) => {
+        svg.append('text').attr('x', 184).attr('y', 100 + i * 20)
+          .attr('font-size', 9.5).attr('fill', i === 0 ? cyan : txt2)
+          .attr('font-family', 'SF Mono, monospace').attr('opacity', 0).text(s);
+      });
+
+      // Skill handlers on right
+      const skills = [
+        { y: 28, label: '/lit-review', desc: '7-stage academic survey', col: cyan },
+        { y: 88, label: '/browser', desc: 'Playwright ARIA navigation', col: pink },
+        { y: 148, label: 'Standard loop', desc: '(no prefix match)', col: bdr },
+      ];
+
+      skills.forEach(s => {
+        svg.append('rect').attr('x', 365).attr('y', s.y).attr('width', 185).attr('height', 48)
+          .attr('rx', 7).attr('fill', bg3).attr('stroke', s.col).attr('stroke-width', 1.5).attr('opacity', 0);
+        svg.append('text').attr('x', 377).attr('y', s.y + 18)
+          .attr('font-size', 10).attr('font-weight', 700).attr('fill', s.col).attr('opacity', 0).text(s.label);
+        svg.append('text').attr('x', 377).attr('y', s.y + 34)
+          .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text(s.desc);
+
+        svg.append('line').attr('x1', 290).attr('y1', 128).attr('x2', 364).attr('y2', s.y + 24)
+          .attr('stroke', s.col).attr('stroke-width', 1.2)
+          .attr('stroke-dasharray', s.col === bdr ? '4 3' : '0')
+          .attr('marker-end', 'url(#arr-sk)').attr('opacity', 0);
+      });
+
+      anime({
+        targets: '#skills-svg rect, #skills-svg text, #skills-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(38),
+        easing: 'easeOutQuad',
+      });
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

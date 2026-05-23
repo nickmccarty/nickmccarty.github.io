@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification | Nick McCarty</title>
+  <meta name="description" content="ODA improves LLM+KG accuracy by 12.87%. GRASP achieves zero-shot SOTA on Wikidata without fine-tuning. ETLCH extracts structured JSON/KG/NER with a billion-parameter LoRA model trained on 100–1000 samples. What the ontology and SPARQL literature means for upgrading harness memory architecture.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/structured-knowledge-queries.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification">
+  <meta property="og:description" content="Six papers on bridging LLMs and knowledge graphs: observation-driven agents, low-resource structured extraction, SPARQL capability benchmarks, zero-shot federated query generation, and KB-grounded chain of verification for pharmaceutical auditing.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/structured-knowledge-queries.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-04-29T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification">
+  <meta name="twitter:description" content="ODA +12.87% accuracy via observation-action-reflection. GRASP: zero-shot SPARQL SOTA on Wikidata. ETLCH: billion-param LoRA on 100–1000 samples for structured extraction. PharmGraph-Auditor: KB-grounded CoV for prescription safety.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification","description":"Six papers on LLM-knowledge graph integration: ODA's cyclical observation-action-reflection, ETLCH low-resource extraction, LLM-KG-Bench SPARQL capabilities, agentic federated KGQA, GRASP zero-shot query generation, and PharmGraph-Auditor's KB-grounded chain of verification.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-04-29","url":"https://nickmccarty.github.io/blog/structured-knowledge-queries.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+      font-style: italic;
+    }
+    .series-nav {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin: 2rem 0;
+    }
+    .series-nav-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .series-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .series-badge {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .series-badge.active {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      background: rgba(87,206,242,0.08);
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      background: rgba(87,206,242,0.06);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .callout.orange {
+      border-left-color: #f97316;
+      background: rgba(249,115,22,0.06);
+    }
+    .callout.purple {
+      border-left-color: #a855f7;
+      background: rgba(168,85,247,0.06);
+    }
+    .callout.pink {
+      border-left-color: #ed46c3;
+      background: rgba(237,70,195,0.06);
+    }
+    .callout.green {
+      border-left-color: #34d399;
+      background: rgba(52,211,153,0.06);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.8em;
+      background: var(--bg-tertiary);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article style="max-width: 760px; margin: 0 auto; padding: 2rem 1rem 4rem;">
+
+
+      <header style="margin-bottom: 2.5rem;">
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">May 23, 2026 &bull; 15 min read</div>
+        <h1 style="font-size: clamp(1.6rem, 4vw, 2.2rem); line-height: 1.25; margin-bottom: 1rem;">Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification</h1>
+        <p style="font-size: 1.05rem; color: var(--text-secondary); line-height: 1.6;">Post 18 showed that vector stores can be augmented with graph layers. This post goes one level deeper: six papers that tackle structured query generation, low-resource ontology extraction, and KB-grounded verification &mdash; each addressing a different gap between how LLMs reason and how knowledge graphs are actually queried.</p>
+      </header>
+
+      <div class="callout">
+        <strong>Series context.</strong> The harness Dual-Backend Memory Store (Post 6) currently relies on semantic vector similarity. Posts 18 and 22 together make the case for a graph layer &mdash; but where Post 18 argued for document-level graphs, this post covers what happens when you try to write SPARQL against them: LLMs get syntax right and semantics wrong, zero-shot exploration outperforms fine-tuning on Wikidata, and grounded verification chains reduce prescription error risk to a level that ungrounded LLMs cannot approach.
+      </div>
+
+      <h2>The LLM-KG Integration Gap</h2>
+
+      <p>Knowledge graphs encode facts with machine-queryable structure. Language models encode facts with parametric weights. The combination is appealing in theory &mdash; KGs provide grounding and traceability; LLMs provide the natural-language interface. The integration is hard in practice because the query layer requires formal SPARQL, and LLMs were not trained to write semantically correct SPARQL at scale.</p>
+
+      <p>This post covers six papers that each address a different slice of that gap:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Paper</th>
+            <th>Gap addressed</th>
+            <th>Key result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>ODA</strong> <a href="https://arxiv.org/abs/2404.07677v2" target="_blank" rel="noopener" style="color: var(--accent-cyan); font-size: 0.75rem;">[2404.07677]</a></td>
+            <td>LLMs ignore KG reasoning potential</td>
+            <td>+12.87% / +8.9% accuracy over baselines</td>
+          </tr>
+          <tr>
+            <td><strong>ETLCH</strong> <a href="https://arxiv.org/abs/2509.08381v1" target="_blank" rel="noopener" style="color: var(--accent-cyan); font-size: 0.75rem;">[2509.08381]</a></td>
+            <td>Structured extraction requires expensive models</td>
+            <td>1B-param LoRA beats baselines on 100&ndash;1000 samples</td>
+          </tr>
+          <tr>
+            <td><strong>LLM-KG-Bench</strong> <a href="https://arxiv.org/abs/2409.05925v2" target="_blank" rel="noopener" style="color: var(--accent-cyan); font-size: 0.75rem;">[2409.05925]</a></td>
+            <td>SPARQL capability is unmeasured</td>
+            <td>Syntax: fine. Semantic-create: still hard.</td>
+          </tr>
+          <tr>
+            <td><strong>Agentic SPARQL</strong> <a href="https://arxiv.org/abs/2603.06582v2" target="_blank" rel="noopener" style="color: var(--accent-cyan); font-size: 0.75rem;">[2603.06582]</a></td>
+            <td>Single-endpoint KGQA misses federation</td>
+            <td>MCP-powered federated query across distributed KGs</td>
+          </tr>
+          <tr>
+            <td><strong>GRASP</strong> <a href="https://arxiv.org/abs/2507.08107v2" target="_blank" rel="noopener" style="color: var(--accent-cyan); font-size: 0.75rem;">[2507.08107]</a></td>
+            <td>Fine-tuning SPARQL generation is dataset-specific</td>
+            <td>Zero-shot SOTA on Wikidata; near best few-shot on Freebase</td>
+          </tr>
+          <tr>
+            <td><strong>PharmGraph-Auditor</strong> <a href="https://arxiv.org/abs/2603.10891v1" target="_blank" rel="noopener" style="color: var(--accent-cyan); font-size: 0.75rem;">[2603.10891]</a></td>
+            <td>LLMs lack traceability for safety-critical verification</td>
+            <td>HPKB + KB-grounded CoV enables traceable prescription auditing</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>1. ODA: Recursive Observation Handles Knowledge Explosion</h2>
+
+      <p>The Observation-Driven Agent (<strong>ODA</strong>, arXiv:2404.07677v2) starts from a diagnosis that still holds: when you connect an LLM to a KG, the LLM's tendency is to ignore what the KG offers and rely on parametric memory instead. Even when you inject KG facts into the prompt, the LLM selects only the first few hops before context pressure forces it to stop. The resulting answers look grounded but are often missing the third-order facts that change the answer.</p>
+
+      <p>ODA's architecture is a three-phase cycle: <em>observe</em> &rarr; <em>act</em> &rarr; <em>reflect</em>. In the observe phase, the agent executes a global traversal of the KG centered on the query entities. Rather than pulling a fixed-depth neighborhood, it uses a <strong>recursive observation mechanism</strong> that expands selectively: when a retrieved node contains concepts relevant to the current question state, the mechanism recurses into that node's neighborhood before returning. Nodes that don't contribute to the current reasoning thread are pruned. This controls the combinatorial explosion that makes naive KG traversal unworkable at scale.</p>
+
+      <p>The act phase executes operations against the pruned subgraph. The reflect phase checks whether the current answer is consistent with the accumulated observations, or whether a new traversal arc is needed. The cycle repeats until consistency is achieved.</p>
+
+      <div class="callout purple">
+        <strong>Results.</strong> Extensive experiments across multiple KGQA benchmarks give ODA accuracy improvements of <strong>12.87%</strong> and <strong>8.9%</strong> over existing baselines. Both numbers represent state-of-the-art at time of publication. The recursive pruning mechanism is the critical ingredient &mdash; without it, knowledge explosion degrades performance as the context window fills with irrelevant triples.
+      </div>
+
+      <p>The harness implication is specific: the Dual-Backend Memory Store currently retrieves flat lists of semantically similar chunks. ODA's observe&ndash;act&ndash;reflect cycle is a planner-level pattern that could sit <em>above</em> retrieval &mdash; deciding which KG neighborhood to expand at each planning step rather than issuing a single vector query. The recursive observation mechanism is architecturally similar to the harness's existing ReAct Comparator, which also loops until an internal consistency criterion is met.</p>
+
+      <h2>2. ETLCH: Billion-Parameter LoRA Beats the Big Models on Low Data</h2>
+
+      <p>Structured information extraction from text &mdash; converting unstructured documents into JSON objects, knowledge graph triples, or named-entity spans &mdash; has historically been owned by either hand-engineered pipelines or very large instruction-tuned models. The assumption is that small models can't handle multi-schema outputs reliably without massive training data.</p>
+
+      <p><strong>ETLCH</strong> (arXiv:2509.08381v1) challenges that assumption directly. The work fine-tunes a one-billion-parameter LLaMA-based model with low-rank adaptation (LoRA) on three structured extraction tasks simultaneously:</p>
+
+      <ul>
+        <li><strong>JSON extraction</strong>: convert free-form text into schema-conforming JSON objects</li>
+        <li><strong>Knowledge graph extraction</strong>: identify entity-relation-entity triples from documents</li>
+        <li><strong>Named entity recognition</strong>: label entity spans with ontology-grounded types</li>
+      </ul>
+
+      <p>The low-resource constraint is the headline: training set sizes range from <strong>100 to 1,000 samples per task</strong>. At every data scale tested, ETLCH outperforms strong baselines across most evaluation metrics, including baselines that use 7B+ parameter models without LoRA constraint.</p>
+
+      <div class="callout green">
+        <strong>Why this works.</strong> LoRA's rank constraint prevents catastrophic forgetting across the three tasks. The billion-parameter base provides sufficient representational capacity for multi-schema outputs. And 100&ndash;1000 samples is enough to teach the model what the target schema looks like &mdash; the hard part is schema adherence, not extraction itself. The finding argues that for domain-specific structured outputs (financial compliance, legal document analytics, multilingual KB construction), a well-tuned small model is a practical choice at a fraction of the compute cost of frontier models.
+      </div>
+
+      <p>For the harness, this is the extraction analogue of the SLM efficiency finding from Post 15: model size is not the primary lever for structured extraction quality once you have domain-specific LoRA fine-tuning. The Literature Review Pipeline's annotation step could be upgraded with an ETLCH-style extraction layer that converts fetched paper abstracts directly into structured JSONL records for the knowledge store.</p>
+
+      <h2>3. LLM-KG-Bench: Syntax Is Easy, Semantics Remains Hard</h2>
+
+      <p>Before deciding how to use LLMs to generate SPARQL, it helps to know what they can actually do. <strong>LLM-KG-Bench</strong> (arXiv:2409.05925v2) fills that measurement gap by implementing a benchmarking framework that evaluates GPT, Gemini, and Claude models across four capability dimensions:</p>
+
+      <ol>
+        <li><strong>Syntax correction</strong>: fix a malformed SPARQL query</li>
+        <li><strong>Semantic read</strong>: generate a SELECT query that correctly retrieves specified facts</li>
+        <li><strong>Semantic create</strong>: generate queries that update or insert triples</li>
+        <li><strong>KG-prompted</strong>: generate queries when relevant schema fragments are included in context</li>
+      </ol>
+
+      <p>The findings reveal a consistent asymmetry. Syntax correction is essentially solved by the best current models. Semantic read is feasible on simple patterns but degrades with query complexity. Semantic create &mdash; requiring the model to reason about update semantics, graph naming conventions, and constraint satisfaction simultaneously &mdash; remains difficult across all tested models.</p>
+
+      <div class="callout orange">
+        <strong>The practical implication.</strong> If your harness needs to query a KG at runtime, relying on a vanilla LLM to generate arbitrary SPARQL is fragile. The failure mode is not syntax errors (those are easy to catch and retry) &mdash; it's semantically plausible but factually wrong queries that silently return incorrect results. Defensive architectures should constrain the query space: template-based SPARQL with LLM-filled slots, schema-prompted context injection, or the exploration-first approach that GRASP takes.
+      </div>
+
+      <h2>4. Agentic SPARQL: MCP-Powered Federated Query Generation</h2>
+
+      <p>Single-endpoint SPARQL over a local knowledge graph is a solved enough problem. The harder case is <strong>federated query</strong>: a question whose answer requires joining facts across multiple distributed knowledge graphs at different endpoints, with potentially different schemas.</p>
+
+      <p><strong>Agentic SPARQL</strong> (arXiv:2603.06582v2) addresses federated KGQA by combining SPARQL federation with an agentic architecture. The key design choice is exposing SPARQL federation capabilities as <strong>MCP (Model Context Protocol) tools</strong> that the agent can invoke during reasoning. Rather than generating one monolithic federated query, the agent issues targeted sub-queries to individual endpoints and synthesizes results across calls.</p>
+
+      <p>This makes federation robust to schema heterogeneity: the agent can inspect the schema of each endpoint independently, adapt query patterns per endpoint, and aggregate results without requiring a unified global schema. The evaluation uses the Federated KGQA Benchmark, which tests across multiple distributed endpoints with realistic cross-graph questions.</p>
+
+      <p>The harness connection is immediate: the MCP Dispatch Router (Post 8) already routes subtasks to remote instances. An SPARQL MCP server that exposes endpoint-specific query tools would integrate directly into that architecture &mdash; the agent queries `sparql://wikidata`, `sparql://dbpedia`, and domain-specific endpoints through the same routing layer it already uses for other remote tools.</p>
+
+      <h2>5. GRASP: Zero-Shot SPARQL via Exploratory IRI Search</h2>
+
+      <p>Fine-tuning LLMs to generate SPARQL for a specific knowledge graph works, but it has a well-known failure mode: the fine-tuned model memorizes the endpoint's entity URIs and relation IRIs. When the endpoint schema changes, or when you want to query a different graph, you retrain.</p>
+
+      <p><strong>GRASP</strong> (arXiv:2507.08107v2) takes a different approach entirely. Rather than generating a complete SPARQL query from scratch, GRASP uses the LLM to <em>explore</em> the knowledge graph: it iteratively executes targeted SPARQL queries to find relevant IRIs and literals, then uses those discovered IRIs to build the final answer query. The process is zero-shot &mdash; no fine-tuning, no dataset-specific training.</p>
+
+      <div class="diagram-container">
+        <svg id="grasp-diagram" width="100%" height="220"></svg>
+        <div class="diagram-caption">GRASP's iterative IRI exploration: the LLM issues search queries to discover valid IRIs, then constructs the final answer query from confirmed identifiers.</div>
+      </div>
+
+      <div class="callout">
+        <strong>Results.</strong> On Wikidata, GRASP achieves <strong>state-of-the-art results</strong> in a zero-shot setting across multiple benchmarks. On Freebase, it performs close to the best few-shot methods despite having no training signal. On less commonly evaluated knowledge graphs, it performs well overall &mdash; suggesting the exploration strategy generalizes across endpoint types, not just the graphs it was developed on.
+      </div>
+
+      <p>The insight is that LLMs are better at exploratory search than at memorizing IRI namespaces. If you let the model discover the right identifiers before committing them to a query, you avoid the namespace-memorization failure mode while retaining the semantic reasoning that makes LLMs useful for natural-language question answering.</p>
+
+      <p>For the harness, GRASP's pattern is a natural fit: the Planner-First (Post 6) already decomposes tasks into targeted sub-queries. An SPARQL-capable planner using GRASP-style IRI exploration could handle structured knowledge retrieval without requiring a pre-built index of the endpoint's vocabulary.</p>
+
+      <h2>6. PharmGraph-Auditor: When Grounding Is a Safety Requirement</h2>
+
+      <p>The previous five papers are about capability &mdash; making LLMs better at querying and populating knowledge graphs. <strong>PharmGraph-Auditor</strong> (arXiv:2603.10891v1) is about a domain where capability is insufficient without <em>traceability</em>: prescription verification.</p>
+
+      <p>Direct application of LLMs to prescription auditing fails for three specific reasons: factual unreliability (hallucinated drug interactions), lack of traceability (no audit trail linking decisions to sources), and weakness in complex relational reasoning (drug-drug interactions are graph problems, not text problems). A model that says "this combination is safe" without a source citation is not usable in a clinical setting.</p>
+
+      <p>PharmGraph-Auditor's architecture addresses all three with a <strong>Hybrid Pharmaceutical Knowledge Base (HPKB)</strong> implemented under the Virtual Knowledge Graph paradigm. The HPKB unifies:</p>
+
+      <ul>
+        <li><strong>Relational constraints</strong>: contraindications, dosage limits, allergy interactions encoded in a relational schema</li>
+        <li><strong>Graph-based topological reasoning</strong>: drug-drug interaction networks, metabolic pathway graphs, pharmacokinetic relationships</li>
+      </ul>
+
+      <p>Schema co-evolution is handled by an <strong>Iterative Schema Refinement algorithm</strong> that updates the HPKB schema as new medical texts are ingested, without requiring manual schema redesign. The LLM's role is transformed from answer generator to <em>reasoning engine over KB-grounded facts</em> via a <strong>KB-grounded Chain of Verification (CoV)</strong>: each claim in a prescription audit trace is verified against the HPKB before it contributes to the final verdict.</p>
+
+      <div class="callout pink">
+        <strong>Why this matters beyond pharma.</strong> KB-grounded CoV is a general pattern, not a pharmaceutical-specific one. Any domain where answer claims must be traceable to authoritative sources &mdash; legal reasoning, financial compliance, scientific fact-checking &mdash; can apply the same architecture. The chain-of-verification structure is also directly compatible with the harness's ReAct loop: each verification step is a tool call that returns a grounded fact or a contradiction signal.
+      </div>
+
+      <div class="diagram-container">
+        <svg id="coverage-matrix" width="100%" height="300"></svg>
+        <div class="diagram-caption">Capability coverage across the six papers: which papers address zero-shot generalization, structured extraction, KG integration, SPARQL query generation, and grounded verification.</div>
+      </div>
+
+      <h2>Reading the Cluster as a Progression</h2>
+
+      <p>The six papers form a logical progression from measurement to mechanism to application:</p>
+
+      <ol>
+        <li><strong>LLM-KG-Bench</strong> establishes the baseline: LLMs can fix SPARQL syntax but generate wrong semantic queries. This is the gap the other papers respond to.</li>
+        <li><strong>ODA</strong> responds at the agent level: don't generate SPARQL at all &mdash; use a structured observe-act-reflect loop that lets the LLM reason over KG facts without writing formal queries.</li>
+        <li><strong>GRASP</strong> responds at the query level: let the LLM discover IRIs via exploration before committing to a final query, eliminating the namespace-memorization failure mode.</li>
+        <li><strong>Agentic SPARQL</strong> extends query generation to federated multi-endpoint settings via MCP tool exposure, making the architecture composable with existing agentic infrastructure.</li>
+        <li><strong>ETLCH</strong> closes the data-population loop: once you have query generation working, you need efficient extraction to keep the KG populated from new documents.</li>
+        <li><strong>PharmGraph-Auditor</strong> shows what a safety-critical deployment looks like: KB-grounded verification with full traceability, iterative schema refinement, and a hybrid relational+graph storage model.</li>
+      </ol>
+
+      <div class="callout green">
+        <strong>The architectural takeaway.</strong> A mature harness memory layer looks less like a vector store and more like the PharmGraph-Auditor HPKB: structured schema for typed facts, graph topology for relational reasoning, and KB-grounded verification before any fact enters the output. The GRASP and Agentic SPARQL patterns handle query-time access; ETLCH handles ingestion-time extraction; ODA handles planning-time KG integration. These aren't competing designs &mdash; they occupy different positions in a layered architecture.
+      </div>
+
+      <h2>Harness Integration Points</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Paper</th>
+            <th>Harness component</th>
+            <th>Integration pattern</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ODA</td>
+            <td>Planner-First + Memory Store</td>
+            <td>Replace flat retrieval with recursive KG traversal during observe phase</td>
+          </tr>
+          <tr>
+            <td>ETLCH</td>
+            <td>Literature Review Pipeline</td>
+            <td>Swap annotation step for 1B LoRA extractor: abstract &rarr; structured JSONL</td>
+          </tr>
+          <tr>
+            <td>LLM-KG-Bench</td>
+            <td>Evaluation Framework</td>
+            <td>Benchmark any SPARQL generation component before deploying to production</td>
+          </tr>
+          <tr>
+            <td>Agentic SPARQL</td>
+            <td>MCP Dispatch Router</td>
+            <td>Register SPARQL endpoints as MCP tools; route KG queries through existing dispatcher</td>
+          </tr>
+          <tr>
+            <td>GRASP</td>
+            <td>Planner-First query generation</td>
+            <td>Replace static SPARQL templates with IRI-exploration loop over target endpoint</td>
+          </tr>
+          <tr>
+            <td>PharmGraph-Auditor</td>
+            <td>Verification + Observability</td>
+            <td>Add KB-grounded CoV to Wiggum evaluator for traceable fact-level verification</td>
+          </tr>
+        </tbody>
+      </table>
+
+
+    
+
+      <div class="post-pagination">
+        <a href="./alignment-fine-tuning.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">21 &middot; Alignment Deep Cuts</span>
+        </a>
+        <a href="./judge-benchmarks-scaling.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">23 &middot; Judge Benchmarks &amp; Scaling</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./knowledge-graphs-extraction.html" class="related-post-card">
+            <div class="related-post-num">Post 18</div>
+            <div class="related-post-title">Knowledge Graphs</div>
+            <div class="related-post-desc">Document semantic graphs outperform flat-list retrieval. MeXtract: SOTA metadata extraction at 0.5B parameters.</div>
+          </a>
+          <a href="./context-engineering.html" class="related-post-card">
+            <div class="related-post-num">Post 5</div>
+            <div class="related-post-title">Context Engineering</div>
+            <div class="related-post-desc">Planner-First, Novelty Gate, Dual-Backend Memory Store, and Semantic Chunker.</div>
+          </a>
+          <a href="./tool-use-planning.html" class="related-post-card">
+            <div class="related-post-num">Post 16</div>
+            <div class="related-post-title">Tool Use &amp; Planning</div>
+            <div class="related-post-desc">NL2Plan, PEARL, ToolTree, ToolRet, Memory-as-a-Tool, and the 92% safety bypass rate.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // Diagram 1: GRASP IRI exploration flow
+    (function() {
+      const svg = d3.select('#grasp-diagram');
+      const W = svg.node().parentElement.clientWidth || 700;
+      const H = 220;
+      svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+      const steps = [
+        { label: 'Natural Language\nQuestion', x: 0.08 },
+        { label: 'LLM Plans\nExploration', x: 0.26 },
+        { label: 'SPARQL Search\nQueries', x: 0.44 },
+        { label: 'IRI/Literal\nDiscovery', x: 0.62 },
+        { label: 'Final Answer\nQuery', x: 0.80 }
+      ];
+
+      const cy = H / 2;
+      const r = 34;
+      const accent = '#57cef2';
+      const purple = '#a855f7';
+      const green = '#34d399';
+      const colors = [accent, purple, accent, green, accent];
+      const bgSec = cssVar('--bg-secondary') || '#161b22';
+      const borderColor = cssVar('--border-color') || '#30363d';
+      const textMuted = cssVar('--text-muted') || '#8b949e';
+
+      // Feedback arc
+      svg.append('path')
+        .attr('d', `M ${W * 0.80} ${cy - r} Q ${W * 0.63} ${cy - 75} ${W * 0.44} ${cy - r}`)
+        .attr('fill', 'none')
+        .attr('stroke', purple)
+        .attr('stroke-width', 1.5)
+        .attr('stroke-dasharray', '5,3')
+        .attr('marker-end', 'url(#arrow-purple)');
+
+      svg.append('defs').html(`
+        <marker id="arrow-c" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="${accent}"/>
+        </marker>
+        <marker id="arrow-purple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="${purple}"/>
+        </marker>
+      `);
+
+      // Connector arrows
+      steps.forEach((s, i) => {
+        if (i < steps.length - 1) {
+          svg.append('line')
+            .attr('x1', W * s.x + r)
+            .attr('y1', cy)
+            .attr('x2', W * steps[i+1].x - r)
+            .attr('y2', cy)
+            .attr('stroke', accent)
+            .attr('stroke-width', 1.5)
+            .attr('marker-end', 'url(#arrow-c)');
+        }
+      });
+
+      steps.forEach((s, i) => {
+        const cx = W * s.x;
+        svg.append('circle')
+          .attr('cx', cx).attr('cy', cy).attr('r', r)
+          .attr('fill', bgSec)
+          .attr('stroke', colors[i])
+          .attr('stroke-width', 1.5);
+
+        const lines = s.label.split('\n');
+        lines.forEach((line, li) => {
+          svg.append('text')
+            .attr('x', cx).attr('y', cy + (li - (lines.length - 1) / 2) * 14)
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'middle')
+            .attr('font-size', '9px')
+            .attr('fill', colors[i])
+            .text(line);
+        });
+      });
+
+      svg.append('text')
+        .attr('x', W * 0.62).attr('y', cy - 70)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '8px')
+        .attr('fill', purple)
+        .text('iterate if IRI not found');
+    })();
+
+    // Diagram 2: Coverage matrix (6 papers × 5 capabilities)
+    (function() {
+      const svg = d3.select('#coverage-matrix');
+      const W = svg.node().parentElement.clientWidth || 700;
+      const H = 300;
+      svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+      const papers = ['ODA', 'ETLCH', 'LLM-KG-Bench', 'Agentic SPARQL', 'GRASP', 'PharmGraph-Auditor'];
+      const caps = ['Zero-shot', 'Structured\nExtraction', 'KG Integration', 'SPARQL\nGeneration', 'Grounded\nVerification'];
+
+      const coverage = [
+        [0, 0, 1, 0, 0],   // ODA
+        [0, 1, 1, 0, 0],   // ETLCH
+        [0, 0, 1, 1, 0],   // LLM-KG-Bench
+        [0, 0, 1, 1, 0],   // Agentic SPARQL
+        [1, 0, 1, 1, 0],   // GRASP
+        [0, 0, 1, 0, 1],   // PharmGraph-Auditor
+      ];
+
+      const marginLeft = 130;
+      const marginTop = 55;
+      const cellW = (W - marginLeft - 20) / caps.length;
+      const cellH = (H - marginTop - 20) / papers.length;
+
+      const accent = '#57cef2';
+      const textMuted = cssVar('--text-muted') || '#8b949e';
+      const borderColor = cssVar('--border-color') || '#30363d';
+      const bgTertiary = cssVar('--bg-tertiary') || '#21262d';
+
+      // Column headers
+      caps.forEach((cap, ci) => {
+        const lines = cap.split('\n');
+        lines.forEach((line, li) => {
+          svg.append('text')
+            .attr('x', marginLeft + ci * cellW + cellW / 2)
+            .attr('y', marginTop - 18 + li * 11)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '9px')
+            .attr('fill', textMuted)
+            .text(line);
+        });
+      });
+
+      // Row labels
+      papers.forEach((p, pi) => {
+        svg.append('text')
+          .attr('x', marginLeft - 8)
+          .attr('y', marginTop + pi * cellH + cellH / 2)
+          .attr('text-anchor', 'end')
+          .attr('dominant-baseline', 'middle')
+          .attr('font-size', '10px')
+          .attr('fill', textMuted)
+          .text(p);
+      });
+
+      // Cells
+      papers.forEach((p, pi) => {
+        caps.forEach((cap, ci) => {
+          const covered = coverage[pi][ci];
+          svg.append('rect')
+            .attr('x', marginLeft + ci * cellW + 2)
+            .attr('y', marginTop + pi * cellH + 2)
+            .attr('width', cellW - 4)
+            .attr('height', cellH - 4)
+            .attr('rx', 4)
+            .attr('fill', covered ? 'rgba(87,206,242,0.15)' : bgTertiary)
+            .attr('stroke', covered ? accent : borderColor)
+            .attr('stroke-width', covered ? 1.5 : 0.5);
+
+          if (covered) {
+            svg.append('text')
+              .attr('x', marginLeft + ci * cellW + cellW / 2)
+              .attr('y', marginTop + pi * cellH + cellH / 2)
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'middle')
+              .attr('font-size', '13px')
+              .attr('fill', accent)
+              .text('✓');
+          }
+        });
+      });
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

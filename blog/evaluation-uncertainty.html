@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluation Uncertainty, Calibration, and Harness Reliability | Nick McCarty</title>
+  <meta name="description" content="Conformal prediction for LLM judges, fact-level confidence calibration, Agent-as-a-Judge, and the externalization framework that explains why the harness architecture works.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/evaluation-uncertainty.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Evaluation Uncertainty, Calibration, and Harness Reliability">
+  <meta property="og:description" content="Conformal prediction turns point scores into calibrated intervals. Fact-level ConFix reduces hallucinations without retrieval. Agent-as-a-Judge outperforms LLM-as-a-Judge. And the externalization framework explains why the harness is the architecture.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/evaluation-uncertainty.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-04-29T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Evaluation Uncertainty, Calibration, and Harness Reliability">
+  <meta name="twitter:description" content="Conformal prediction, Agent-as-a-Judge, fact-level calibration, Bayesian prompt ensembles — and the externalization framework that grounds the entire harness series in the literature.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Evaluation Uncertainty, Calibration, and Harness Reliability","description":"Survey of conformal prediction for LLM judges, Agent-as-a-Judge, fact-level calibration, Bayesian prompt ensembles, the externalization framework, and LLM inference engine bugs — with implications for harness evaluation quality.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-04-29","url":"https://nickmccarty.github.io/blog/evaluation-uncertainty.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+      font-style: italic;
+    }
+    .series-nav {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin: 2rem 0;
+    }
+    .series-nav-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .series-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .series-badge {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .series-badge.active {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      background: rgba(87,206,242,0.08);
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      background: rgba(87,206,242,0.06);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .callout.orange {
+      border-left-color: #f97316;
+      background: rgba(249,115,22,0.06);
+    }
+    .callout.purple {
+      border-left-color: #a855f7;
+      background: rgba(168,85,247,0.06);
+    }
+    .callout.pink {
+      border-left-color: #ed46c3;
+      background: rgba(237,70,195,0.06);
+    }
+    .callout.green {
+      border-left-color: #34d399;
+      background: rgba(52,211,153,0.06);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.8em;
+      background: var(--bg-tertiary);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article style="max-width: 760px; margin: 0 auto; padding: 2rem 1rem 4rem;">
+
+
+      <header style="margin-bottom: 2.5rem;">
+        <h1 style="font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.2; margin-bottom: 0.75rem;">Evaluation Uncertainty, Calibration, and Harness Reliability</h1>
+        <div class="meta">April 29, 2026 &bull; 17 min read</div>
+        <p style="margin-top: 1rem; font-size: 1.05rem; color: var(--text-secondary); line-height: 1.7;">
+          A point score from an LLM judge is not a measurement — it is a sample from a distribution. Conformal prediction converts that sample into a calibrated interval with guaranteed coverage. Fact-level confidence calibration reduces hallucinations without any retrieval system. Agent-as-a-Judge outperforms LLM-as-a-Judge. And the externalization framework paper (arXiv:2604.08224v1) provides the theoretical account of why the harness architecture — memory, skills, protocols, harness engineering — is not an engineering preference but a cognitive necessity.
+        </p>
+      </header>
+
+      <!-- ============================================================ -->
+      <h2>The Measurement Problem in Automated Evaluation</h2>
+      <p>
+        The harness evaluator produces a number. Experiment-01's evaluator (glm4:9b) produced 9.0 for every run. Experiment-03's evaluator (Qwen3-Coder:30b) produced a mean of 7.07 with a standard deviation of 0.55. Both numbers are point estimates. Neither tells you how confident the evaluator is in that estimate, or how wide the interval of plausible scores is.
+      </p>
+      <p>
+        This matters because the harness makes a binary decision based on the point estimate: PASS if score_final ≥ threshold, FAIL otherwise. A score of 7.9 against a threshold of 8.0 is a FAIL, but if the evaluator's uncertainty interval is [7.3, 8.5], then FAIL is only the modal outcome, not a confident verdict. The harness currently has no mechanism to express this uncertainty — it treats the point score as definitive.
+      </p>
+      <p>
+        The literature on evaluation uncertainty provides three complementary approaches to this problem: conformal prediction (convert point scores to statistically valid intervals), verbal uncertainty estimation (have the evaluator express low confidence directly), and Agent-as-a-Judge (replace the single-model evaluator with an agent that can reason about its own uncertainty).
+      </p>
+
+      <!-- ============================================================ -->
+      <h2>Conformal Prediction for LLM Judges</h2>
+      <p>
+        Conformal prediction (arXiv:2509.18658v1) was introduced in Post 13 as part of the judge reliability cluster. Here the focus is on the statistical machinery and its practical implications for the harness threshold decision.
+      </p>
+      <p>
+        The standard conformal prediction framework works as follows. Given a calibration set of (input, true_score) pairs and a new input with model score <em>ŝ</em>, conformal prediction constructs a prediction interval [<em>ŝ</em> − q, <em>ŝ</em> + q] where q is chosen such that the interval contains the true score with probability at least 1 − α on future inputs. This guarantee is distribution-free — it holds regardless of the model's score distribution, without any parametric assumptions.
+      </p>
+      <p>
+        For discrete rating tasks (1–10 Likert scales), an ordinal boundary adjustment is required: the interval must align with discrete score boundaries rather than producing fractional endpoints. The paper proposes using the interval midpoint as a low-bias estimate — the observation that the average of the lower and upper interval bounds is less biased than the raw point score, because it smooths out evaluator overconfidence.
+      </p>
+
+      <div class="callout">
+        <strong>Harness application:</strong> Replace <code>score_r1 ≥ threshold</code> with <code>interval_midpoint(score_r1) ≥ threshold</code> and add an uncertainty gate: if <code>interval_width(score_r1) > W_max</code>, trigger the revision loop regardless of the point score. A score of 9.0 with interval [7.5, 10.5] is less reliable than a score of 8.2 with interval [7.8, 8.6]. The current harness cannot distinguish these two cases.
+      </div>
+
+      <p>
+        The companion paper on VLM judges (arXiv:2604.25235v1) extends this analysis to vision-language models and identifies a failure mode called <em>ranking-scoring decoupling</em>: judges achieve high ranking correlation (correctly identifying which output is better) while producing wide, uninformative absolute intervals. This means you can trust a VLM judge to say "A is better than B" but not to say "A scores 7.5 out of 10." Interval width is driven by task difficulty and annotation quality — on clean, multi-annotator benchmarks, intervals are 4.5× narrower than on noisy single-annotator benchmarks.
+      </p>
+      <p>
+        The ranking-scoring decoupling has a direct harness implication. The Wiggum Loop's threshold decision uses absolute scores (<code>score_r1 ≥ 8.0</code>). If the evaluator is reliable for ranking but not for absolute scoring, the threshold decision is less reliable than the revision decision. The harness could exploit this asymmetry: use absolute scores to decide whether to pass or fail, but use relative comparisons (which revision is better?) to select among multiple revision candidates.
+      </p>
+
+      <h3>Verbal Uncertainty Estimation</h3>
+      <p>
+        The personalized judge paper (arXiv:2406.11657v1) takes a different approach: instead of post-hoc interval construction, it has the evaluator express uncertainty verbally during evaluation. When the judge's confidence is below a threshold, it returns "uncertain" rather than a score; downstream decisions treat "uncertain" outputs as requiring human review. On binary evaluation tasks with this filter applied, agreement with ground truth exceeds 80% on high-certainty samples — and matches or surpasses third-party human performance.
+      </p>
+      <p>
+        The practical version of this for the harness: if the evaluator's score falls in a narrow band around the threshold (e.g., [7.5, 8.5] for a threshold of 8.0), add a verbal uncertainty probe — a second prompt asking "How confident are you in this score, and what would need to change to push it above/below the threshold?" This uncertainty probe can surface the specific dimensional gap that the point score obscures.
+      </p>
+
+      <!-- ============================================================ -->
+      <h2>Agent-as-a-Judge: Evaluating Agents with Agents</h2>
+      <p>
+        Agent-as-a-Judge (arXiv:2410.10934v2) extends LLM-as-a-Judge by replacing the single-model evaluator with an agentic system that can reason about intermediate steps, access tools, and produce structured feedback. The DevAI benchmark covers 55 realistic automated AI development tasks with 365 hierarchical user requirements. On this benchmark, Agent-as-a-Judge dramatically outperforms LLM-as-a-Judge and achieves reliability comparable to human evaluation.
+      </p>
+      <p>
+        The failure mode that motivates Agent-as-a-Judge is the same one that experiment-03 exposed: a single-model evaluator cannot reliably assess multi-step agentic outputs because it lacks access to the intermediate state. When the harness's Qwen3-Coder:30b evaluator scored T_A runs, it could only see the final synthesis output — not the retrieval quality, the query plan, or the research cache state at each stage. Its dimensional scores for depth and specificity were inferred from the output text alone.
+      </p>
+
+      <div class="callout purple">
+        <strong>The Agent-as-a-Judge proposal for the harness:</strong> Instead of a single evaluator model that sees the final synthesis, a judging agent that can inspect the full JSONL audit trail — retrieval results, planner output, intermediate compression steps — would score with access to causal evidence rather than just the output. Depth_r1 could then reflect actual retrieval breadth, not just the density of hedging language in the synthesis.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>Fact-Level Calibration and Self-Correction</h2>
+      <p>
+        The fact-level calibration paper (arXiv:2411.13343v1) addresses a different aspect of evaluation quality: the calibration of the producer's self-assessed confidence. Current confidence calibration methods assign a single scalar to the entire response. This scalar fails to capture partial correctness in long-form generation — a response that is correct on four of five enumerated items is not well-characterized by a single confidence value.
+      </p>
+      <p>
+        The Fact-Level Calibration framework calibrates confidence to relevance-weighted correctness at the individual atomic fact level. The associated method, Confidence-Guided Fact-level Self-Correction (ConFix), uses these fact-level confidence signals to selectively revise low-confidence facts without external retrieval. Evaluated across four datasets and six models, ConFix demonstrably reduces hallucinations.
+      </p>
+      <p>
+        The harness connection: the dimensional rubric in the Wiggum Loop already approximates fact-level calibration at a coarser granularity — scoring six dimensions separately rather than one composite. ConFix suggests going further: score individual claims within each dimension, identify which claims are low-confidence, and target revision at those claims specifically. This would transform the revision prompt from "improve depth and specificity" to "revise claim X (low confidence) and claim Y (low confidence) while preserving claims A, B, C (high confidence)."
+      </p>
+
+      <h3>Bayesian Prompt Ensembles for Multimodal Calibration</h3>
+      <p>
+        The MMB paper (arXiv:2509.08777v1) applies a Bayesian prompt ensemble approach to calibrate multimodal evaluators. Standard prompt ensembling (average scores across multiple prompt variants) fails for multimodal evaluation because the judge's score distribution shifts with image domain. MMB assigns prompt weights dynamically based on image clustering — different prompt weights for different visual contexts — achieving superior calibration on HPSv2 and MJBench.
+      </p>
+      <p>
+        For text-only harnesses, the multimodal complexity reduces but the core insight applies: a single evaluation prompt may be systematically miscalibrated for certain task types. The autoresearch loop discovered this empirically — T_B tasks consistently scored lower despite comparable output quality, suggesting the evaluation prompt weights the best_practices task type differently. A task-type-conditioned prompt ensemble would separate this confound from genuine quality differences.
+      </p>
+
+      <!-- ============================================================ -->
+      <h2>Uncertainty in Multimodal Models</h2>
+      <p>
+        Uncertainty-o (arXiv:2506.07575v1) introduces a model-agnostic framework for estimating uncertainty across diverse large multimodal models regardless of architecture, modality, or capability. Evaluated across 18 benchmarks and 10 models (open- and closed-source), the framework provides reliable uncertainty estimates for hallucination detection, hallucination mitigation, and uncertainty-aware Chain-of-Thought reasoning.
+      </p>
+      <p>
+        The three design questions Uncertainty-o addresses translate directly to the harness context: (1) How do you unify uncertainty evaluation across different models in the portfolio? (2) How do you prompt models to reveal uncertainty? (3) How do you quantify uncertainty for downstream decisions? The harness currently answers none of these questions — it uses a single point score and a binary threshold. Uncertainty-o's framework provides a path to all three.
+      </p>
+
+      <div class="diagram-container">
+        <svg id="uncertainty-svg" width="100%" height="300" style="max-width: 700px; display:block; margin:0 auto;"></svg>
+        <div class="diagram-caption">Fig. 1 — Current harness score decision (left) vs. conformal prediction interval decision (right). Point scores near the threshold are unreliable; interval midpoints and interval width together provide a more principled PASS/FAIL signal.</div>
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>Inference Engine Reliability: Where the Bugs Are</h2>
+      <p>
+        The LLM inference engine bugs paper (arXiv:2506.09713v2) provides an empirical analysis of bugs across five widely-used LLM inference engines based on real-world data. The four most common bug classes, in order of prevalence: memory leaks, out-of-memory errors, incorrect tensor shapes or sizes, and performance degradation from suboptimal configuration settings.
+      </p>
+      <p>
+        These bug classes map directly to the failure modes in the harness's hardware substrate. Memory leaks in the inference engine accumulate over long sessions — the Keep-Alive Budget (A4) guards against this by cycling model processes after a configured number of calls. Out-of-memory errors are the crash signature of KV cache overflow — the Surgical Compressor (C2) guards against this by fitting documents to context budget before the inference call. Incorrect tensor shapes appear as silent numerical errors or NaN outputs — the harness's output validation step catches these as format conformance failures. Performance degradation from configuration settings is the least visibly failure mode: the model responds but at 3-5× normal latency, which compounds in the Wiggum revision loop.
+      </p>
+
+      <div class="callout orange">
+        <strong>The practical implication:</strong> The harness's Perfetto trace exporter (from Post 10) is the right tool for diagnosing configuration-induced performance degradation — it visualizes latency at the stage level, making it possible to distinguish a slow model from a slow inference engine from a slow network call. Without stage-level tracing, configuration-induced degradation looks identical to model-induced degradation.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>The Externalization Framework: Why the Harness Is the Architecture</h2>
+      <p>
+        The most significant paper in this cluster is "Externalization in LLM Agents: A Unified Review of Memory, Skills, Protocols and Harness Engineering" (arXiv:2604.08224v1). It provides the theoretical framework that explains why the harness series arrived at its architecture — not from engineering preference, but from a cognitive necessity.
+      </p>
+      <p>
+        The paper's central argument: agent capabilities are increasingly externalized to transform hard cognitive burdens into forms that models can solve more reliably. This externalization proceeds in a historical sequence: from <em>weights</em> (what the model knows parametrically) to <em>context</em> (what the model is given at inference time) to <em>harness</em> (the external infrastructure that manages what gets put in context, what gets stored, what gets routed, and what gets evaluated). The harness is not an add-on to the model — it is the primary locus of agent capability.
+      </p>
+
+      <div class="diagram-container">
+        <svg id="extern-svg" width="100%" height="260" style="max-width: 700px; display:block; margin:0 auto;"></svg>
+        <div class="diagram-caption">Fig. 2 — The externalization progression from weights to context to harness. Each layer externalizes cognitive burdens that the previous layer handles inefficiently or unreliably.</div>
+      </div>
+
+      <p>
+        The four-category taxonomy the paper offers — memory, skills, protocols, harness engineering — maps onto the harness architecture exactly:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Externalization category</th>
+            <th>Harness implementation</th>
+            <th>Posts</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Memory stores</td>
+            <td>Dual-Backend Memory Store (B3): vector store + SQLite; research cache; JSONL audit log</td>
+            <td>Posts 5, 10</td>
+          </tr>
+          <tr>
+            <td>Reusable skills</td>
+            <td>Skill Registry (C5): slash-command handlers that extend the agent's capability envelope</td>
+            <td>Post 8</td>
+          </tr>
+          <tr>
+            <td>Interaction protocols</td>
+            <td>Wiggum Loop (D2): the dimensional rubric evaluation protocol; count_check; task_type_routing</td>
+            <td>Posts 6, 7</td>
+          </tr>
+          <tr>
+            <td>Harness engineering</td>
+            <td>Inference Shim (A1), Keep-Alive Budget (A4), DAG Orchestrator (C3), MCP Dispatch Router (C4)</td>
+            <td>Posts 4, 8</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The paper identifies emerging directions: self-evolving harnesses and shared agent infrastructure. The autoresearch loop is the harness's implementation of self-evolution — the pipeline modifies its own synthesis instruction based on run outcomes. The MCP Dispatch Router and Skill Registry are the harness's implementation of shared infrastructure — standardized protocols for extending agent capability without retraining.
+      </p>
+      <p>
+        The paper also identifies the open challenges: evaluation and governance of externalized systems. This is precisely the problem that Post 13 (Judge Reliability), Post 17 (this post), and the autoresearch loop together address. A self-evolving harness requires trustworthy evaluation of its own output to avoid optimizing for evaluator artifacts rather than true quality — the same evaluator calibration problem that experiments 01 and 02 exposed.
+      </p>
+
+      <div class="callout green">
+        <strong>The thesis validated:</strong> The externalization framework paper was published in April 2026. The harness architecture described in this series was built from 2025 empirical data. The convergence is not coincidental — both the paper and the harness arrived at the same conclusion from different starting points: practical agent progress depends on external cognitive infrastructure, not stronger models. The four experiments in Post 12 are the empirical evidence. The externalization framework is the theoretical explanation.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>Five Design Implications</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Implication</th>
+            <th>Source</th>
+            <th>Current harness gap</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Wrap evaluator point scores in conformal prediction intervals; use interval midpoint for threshold decisions and interval width as a reliability gate</td>
+            <td>arXiv:2509.18658v1</td>
+            <td>Current: raw point score vs. threshold; no uncertainty quantification</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Add verbal uncertainty probe when score falls within ±0.5 of threshold; surface the specific claim that is driving low confidence</td>
+            <td>arXiv:2406.11657v1</td>
+            <td>Current: binary PASS/FAIL on point score; no borderline handling</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Extend revision prompt from dimensional feedback to claim-level feedback using ConFix-style fact-level confidence signals</td>
+            <td>arXiv:2411.13343v1</td>
+            <td>Current: revision prompt targets dimensions; does not identify specific low-confidence claims</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Instrument the inference engine with stage-level latency tracing; distinguish model latency from engine overhead from configuration degradation</td>
+            <td>arXiv:2506.09713v2</td>
+            <td>Current: Perfetto tracing is implemented but not systematically monitored for engine overhead patterns</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Frame harness development as externalization engineering: each new pattern externalizes a cognitive burden previously handled inside the model's context window</td>
+            <td>arXiv:2604.08224v1</td>
+            <td>This is the architectural frame the series has been building toward — now grounded in the literature</td>
+          </tr>
+        </tbody>
+      </table>
+
+
+    
+
+      <div class="post-pagination">
+        <a href="./tool-use-planning.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">16 &middot; Tool Use &amp; Planning</span>
+        </a>
+        <a href="./knowledge-graphs-extraction.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">18 &middot; Knowledge Graphs</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./judge-reliability.html" class="related-post-card">
+            <div class="related-post-num">Post 13</div>
+            <div class="related-post-title">Judge Reliability</div>
+            <div class="related-post-desc">Best judges lag human agreement by 5 points. Omni-Judge wrong in 96.4% of expert disagreements.</div>
+          </a>
+          <a href="./evaluation-robustness.html" class="related-post-card">
+            <div class="related-post-num">Post 19</div>
+            <div class="related-post-title">Eval Robustness</div>
+            <div class="related-post-desc">LLMORPH: 561K test executions. Three novel scoring biases. Holistic judges outperform atomic decomposition.</div>
+          </a>
+          <a href="./judge-benchmarks-scaling.html" class="related-post-card">
+            <div class="related-post-num">Post 23</div>
+            <div class="related-post-title">Judge Benchmarks &amp; Scaling</div>
+            <div class="related-post-desc">JETTS: judges win at reranking, lose at beam search. Omni-Judge wrong in 96.4% of disagreements.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // ── Fig. 1: Point score vs. conformal interval decision ──────────────────
+    (function() {
+      const svg = d3.select('#uncertainty-svg');
+      const W = parseInt(svg.style('width')) || 660;
+      const H = 300;
+      svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+      const cyan = cssVar('--accent-cyan') || '#57cef2';
+      const pink = cssVar('--accent-pink') || '#ed46c3';
+
+      // Left panel: point score
+      const lx = 20, lw = (W / 2) - 40;
+      svg.append('text').attr('x', lx + lw/2).attr('y', 28)
+        .attr('text-anchor', 'middle').attr('fill', '#aaa').attr('font-size', '13px').attr('font-weight', '600')
+        .text('Current: Point Score');
+
+      const scores = [
+        { score: 7.9, label: 'Run A', outcome: 'FAIL', y: 70 },
+        { score: 8.2, label: 'Run B', outcome: 'PASS', y: 120 },
+        { score: 9.0, label: 'Run C (ceiling)', outcome: 'PASS', y: 170 },
+        { score: 8.0, label: 'Run D (boundary)', outcome: 'PASS*', y: 220 },
+      ];
+
+      const sc = d3.scaleLinear().domain([6, 10]).range([lx, lx + lw]);
+
+      // Threshold line
+      svg.append('line').attr('x1', sc(8.0)).attr('x2', sc(8.0)).attr('y1', 50).attr('y2', 250)
+        .attr('stroke', '#555').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3');
+      svg.append('text').attr('x', sc(8.0) + 4).attr('y', 48)
+        .attr('fill', '#666').attr('font-size', '10px').text('threshold=8.0');
+
+      scores.forEach(d => {
+        const isPass = d.outcome.startsWith('PASS');
+        svg.append('circle').attr('cx', sc(d.score)).attr('cy', d.y).attr('r', 6)
+          .attr('fill', isPass ? cyan : pink).attr('opacity', 0.85);
+        svg.append('text').attr('x', lx).attr('y', d.y + 4)
+          .attr('fill', '#888').attr('font-size', '10px').text(d.label);
+        svg.append('text').attr('x', lx + lw + 4).attr('y', d.y + 4)
+          .attr('fill', isPass ? cyan : pink).attr('font-size', '10px').attr('font-weight', '600')
+          .text(d.outcome);
+      });
+
+      // Axis
+      svg.append('line').attr('x1', lx).attr('x2', lx + lw).attr('y1', 260).attr('y2', 260)
+        .attr('stroke', '#333');
+      [6,7,8,9,10].forEach(v => {
+        svg.append('text').attr('x', sc(v)).attr('y', 276)
+          .attr('text-anchor', 'middle').attr('fill', '#666').attr('font-size', '10px').text(v);
+      });
+
+      // Right panel: conformal intervals
+      const rx = W / 2 + 20, rw = W - rx - 20;
+      svg.append('text').attr('x', rx + rw/2).attr('y', 28)
+        .attr('text-anchor', 'middle').attr('fill', '#aaa').attr('font-size', '13px').attr('font-weight', '600')
+        .text('Conformal: Interval');
+
+      const sc2 = d3.scaleLinear().domain([6, 10]).range([rx, rx + rw]);
+      const intervals = [
+        { mid: 7.9, lo: 7.3, hi: 8.5, label: 'Run A', y: 70, outcome: 'UNCERTAIN' },
+        { mid: 8.2, lo: 7.9, hi: 8.5, label: 'Run B', y: 120, outcome: 'PASS' },
+        { mid: 9.0, lo: 8.7, hi: 9.3, label: 'Run C', y: 170, outcome: 'PASS' },
+        { mid: 8.0, lo: 7.0, hi: 9.0, label: 'Run D', y: 220, outcome: 'UNCERTAIN' },
+      ];
+
+      // Threshold line
+      svg.append('line').attr('x1', sc2(8.0)).attr('x2', sc2(8.0)).attr('y1', 50).attr('y2', 250)
+        .attr('stroke', '#555').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3');
+      svg.append('text').attr('x', sc2(8.0) + 4).attr('y', 48)
+        .attr('fill', '#666').attr('font-size', '10px').text('threshold=8.0');
+
+      intervals.forEach(d => {
+        const col = d.outcome === 'PASS' ? cyan : d.outcome === 'UNCERTAIN' ? '#f97316' : pink;
+        // Interval bar
+        svg.append('rect')
+          .attr('x', sc2(d.lo)).attr('width', sc2(d.hi) - sc2(d.lo))
+          .attr('y', d.y - 5).attr('height', 10).attr('rx', 3)
+          .attr('fill', col).attr('opacity', 0.3);
+        // Midpoint dot
+        svg.append('circle').attr('cx', sc2(d.mid)).attr('cy', d.y).attr('r', 5)
+          .attr('fill', col).attr('opacity', 0.9);
+        svg.append('text').attr('x', rx).attr('y', d.y + 4)
+          .attr('fill', '#888').attr('font-size', '10px').text(d.label);
+        svg.append('text').attr('x', rx + rw + 4).attr('y', d.y + 4)
+          .attr('fill', col).attr('font-size', '10px').attr('font-weight', '600')
+          .text(d.outcome);
+      });
+
+      // Axis
+      svg.append('line').attr('x1', rx).attr('x2', rx + rw).attr('y1', 260).attr('y2', 260)
+        .attr('stroke', '#333');
+      [6,7,8,9,10].forEach(v => {
+        svg.append('text').attr('x', sc2(v)).attr('y', 276)
+          .attr('text-anchor', 'middle').attr('fill', '#666').attr('font-size', '10px').text(v);
+      });
+
+      // Divider
+      svg.append('line').attr('x1', W/2).attr('x2', W/2).attr('y1', 40).attr('y2', 270)
+        .attr('stroke', '#2a2a2a').attr('stroke-width', 1);
+    })();
+
+    // ── Fig. 2: Externalization progression ──────────────────────────────────
+    (function() {
+      const svg = d3.select('#extern-svg');
+      const W = parseInt(svg.style('width')) || 660;
+      const H = 260;
+      svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+      const layers = [
+        { label: 'Weights', sub: 'Parametric knowledge; frozen at training time', color: '#a855f7', x: 20, y: 40, w: 180, h: 180 },
+        { label: 'Context', sub: 'Runtime documents, tools, and instructions assembled at inference time', color: '#57cef2', x: 240, y: 40, w: 180, h: 180 },
+        { label: 'Harness', sub: 'External cognitive infrastructure: memory, skills, protocols, routing', color: '#ed46c3', x: 460, y: 40, w: 180, h: 180 },
+      ];
+
+      layers.forEach(d => {
+        svg.append('rect')
+          .attr('x', d.x).attr('y', d.y).attr('width', d.w).attr('height', d.h)
+          .attr('rx', 8).attr('fill', d.color).attr('opacity', 0.08)
+          .attr('stroke', d.color).attr('stroke-width', 1.5).attr('stroke-opacity', 0.4);
+
+        svg.append('text').attr('x', d.x + d.w/2).attr('y', d.y + 32)
+          .attr('text-anchor', 'middle').attr('fill', d.color)
+          .attr('font-size', '15px').attr('font-weight', '700')
+          .text(d.label);
+
+        // Word-wrap the sub text
+        const words = d.sub.split(' ');
+        let line = '', lineY = d.y + 62;
+        words.forEach((w, i) => {
+          const test = line + w + ' ';
+          if (test.length > 22 && line !== '') {
+            svg.append('text').attr('x', d.x + d.w/2).attr('y', lineY)
+              .attr('text-anchor', 'middle').attr('fill', '#888').attr('font-size', '11px')
+              .text(line.trim());
+            line = w + ' ';
+            lineY += 16;
+          } else {
+            line = test;
+          }
+          if (i === words.length - 1) {
+            svg.append('text').attr('x', d.x + d.w/2).attr('y', lineY)
+              .attr('text-anchor', 'middle').attr('fill', '#888').attr('font-size', '11px')
+              .text(line.trim());
+          }
+        });
+      });
+
+      // Arrows between layers
+      [200, 420].forEach(x => {
+        svg.append('line').attr('x1', x).attr('x2', x + 40).attr('y1', 130).attr('y2', 130)
+          .attr('stroke', '#444').attr('stroke-width', 2)
+          .attr('marker-end', 'url(#arrow)');
+      });
+
+      // Arrow marker
+      const defs = svg.append('defs');
+      const marker = defs.append('marker').attr('id', 'arrow')
+        .attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('refY', 0)
+        .attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+      marker.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#444');
+
+      // Labels under arrows
+      svg.append('text').attr('x', 220).attr('y', 148)
+        .attr('text-anchor', 'middle').attr('fill', '#666').attr('font-size', '9px').text('externalizes');
+      svg.append('text').attr('x', 440).attr('y', 148)
+        .attr('text-anchor', 'middle').attr('fill', '#666').attr('font-size', '9px').text('externalizes');
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

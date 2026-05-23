@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Small Language Models and the Efficiency-Accuracy Frontier | Nick McCarty</title>
+  <meta name="description" content="SLM-Bench: 15 models, 9 tasks, 4 hardware configs. What the benchmark reveals about model role separation — and how the three-model architecture from experiment-04 operationalizes it.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/slm-efficiency.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Small Language Models and the Efficiency-Accuracy Frontier">
+  <meta property="og:description" content="SLM-Bench covers 15 models, 9 tasks, and 4 hardware configs. The key finding isn't which model is best — it's that accuracy and energy efficiency don't co-optimize. That's an architecture insight.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/slm-efficiency.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-08T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Small Language Models and the Efficiency-Accuracy Frontier">
+  <meta name="twitter:description" content="SLM-Bench benchmarks 15 models across accuracy, efficiency, and sustainability. What it means for harness model role separation and the three-model architecture.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Small Language Models and the Efficiency-Accuracy Frontier","description":"SLM-Bench: systematic evaluation of 15 SLMs across 9 tasks and 4 hardware configurations — and its implications for the multi-model harness architecture developed across four experiments.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-08","url":"https://nickmccarty.github.io/blog/slm-efficiency.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+      font-style: italic;
+    }
+    .series-nav {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin: 2rem 0;
+    }
+    .series-nav-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .series-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .series-badge {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .series-badge.active {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      background: rgba(87,206,242,0.08);
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      background: rgba(87,206,242,0.06);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .callout.orange {
+      border-left-color: #f97316;
+      background: rgba(249,115,22,0.06);
+    }
+    .callout.purple {
+      border-left-color: #a855f7;
+      background: rgba(168,85,247,0.06);
+    }
+    .callout.pink {
+      border-left-color: #ed46c3;
+      background: rgba(237,70,195,0.06);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.8em;
+      background: var(--bg-tertiary);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article style="max-width: 760px; margin: 0 auto; padding: 2rem 1rem 4rem;">
+
+
+      <header style="margin-bottom: 2.5rem;">
+        <h1 style="font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.2; margin-bottom: 0.75rem;">Small Language Models and the Efficiency-Accuracy Frontier</h1>
+        <div class="meta">May 8, 2026 &bull; 16 min read</div>
+        <p style="margin-top: 1rem; font-size: 1.05rem; color: var(--text-secondary); line-height: 1.7;">
+          The model selection problem in an agentic harness is not "which model is best?" It is "which model is best for this role?" SLM-Bench makes the tradeoff measurable across 15 models, 9 tasks, and 4 hardware configurations. Our four-experiment sequence operationalizes the same insight without a benchmark lab — by treating the harness itself as the measurement instrument.
+        </p>
+      </header>
+
+      <!-- ============================================================ -->
+      <h2>The Model Selection Fallacy</h2>
+      <p>
+        The default intuition when building an agentic system is to pick the most capable model available and use it everywhere. This intuition is wrong in three independent ways. First, the most capable model is not always the most calibrated evaluator — experiments 01 and 02 showed that glm4:9b, given full evaluator responsibility, awarded 9/10 to every structurally complete output regardless of actual depth, effectively removing the evaluation signal. Second, the most capable producer is not always necessary: qwen2.5:7b passed 9/9 runs against the lenient evaluator. The bottleneck was calibration, not capability. Third, when the bottleneck is the synthesis instruction rather than the model, upgrading the model changes nothing — T_B's pass rate went from 4/9 (44%) with a 7B producer to 4/7 (57%) with a 32B producer, an improvement so small it was drowned by variance.
+      </p>
+      <p>
+        These three observations share a common structure: <em>the constraint is always somewhere other than where you're looking.</em> SLM-Bench (arXiv:2508.15478v2) provides the benchmark-level evidence for why this happens. Accuracy and energy efficiency are not co-optimized by any single model architecture. The implication is that model selection is not a ranking problem — it is a matching problem between model capability profiles and role requirements.
+      </p>
+
+      <div class="callout">
+        <strong>SLM-Bench</strong> (arXiv:2508.15478v2, 2025-08-21) — the first benchmark specifically designed to evaluate small language models across three axes simultaneously: accuracy, computational efficiency, and sustainability metrics. Coverage: 15 models, 9 NLP tasks, 4 hardware configurations. Key finding: diverse trade-offs with no single model dominating all three axes.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>What SLM-Bench Measured</h2>
+      <p>
+        The benchmark is systematic in a way that ad hoc model comparisons typically are not. Rather than evaluating models on a single hardware configuration or a single task type, SLM-Bench crosses both dimensions: 15 models × 9 tasks × 4 hardware configurations. This produces a 540-cell evaluation matrix, enough to identify interaction effects that single-condition comparisons miss entirely.
+      </p>
+      <p>
+        The nine tasks span the NLP task space: classification, question answering, summarization, named entity recognition, sentiment analysis, natural language inference, machine translation, reading comprehension, and commonsense reasoning. The four hardware configurations represent the range from GPU-accelerated inference to CPU-only edge deployment. Sustainability metrics include energy consumption per inference, CO₂ equivalent per 1,000 queries, and peak memory footprint.
+      </p>
+
+      <div class="diagram-container">
+        <svg id="slm-tradeoff-svg" width="100%" height="340" style="max-width: 700px; display:block; margin:0 auto;"></svg>
+        <div class="diagram-caption">Fig. 1 — Accuracy-efficiency tradeoff across SLM model classes. No model dominates both axes. The optimal choice depends on which axis is the binding constraint for a given role.</div>
+      </div>
+
+      <p>
+        The empirical findings confirm the theoretical expectation: models that achieve highest accuracy on multi-step reasoning tasks tend to have higher energy footprints; models that achieve lowest energy cost tend to underperform on tasks requiring synthesis across multiple contexts. This is not surprising given that deeper attention patterns and larger parameter counts both improve reasoning quality and increase inference cost. What is surprising is the <em>magnitude</em> of the variance within each axis — different models at similar parameter counts can differ by 2&times; in energy consumption and by significant margins in accuracy, suggesting that architecture and quantization choices matter as much as raw size.
+      </p>
+
+      <div class="callout orange">
+        <strong>The central finding:</strong> Accuracy and energy efficiency do not co-optimize. Within a given hardware configuration, the most accurate model is rarely the most efficient, and vice versa. This holds across all nine task types, with task-specific intensity: summarization and reasoning tasks show the largest accuracy-efficiency divergence; classification tasks show the smallest.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>From Benchmark to Architecture</h2>
+      <p>
+        The practical implication of SLM-Bench's finding is that single-model architectures are suboptimal by construction. If accuracy and efficiency don't co-optimize, you cannot satisfy both by picking any one model. The solution is role separation: assign different models to roles where their capability profile is the binding constraint, and use smaller models where the role's requirements are within their capability envelope.
+      </p>
+      <p>
+        This is exactly what the <strong>Model Role Separation</strong> pattern (A2, <a href="./inference-patterns.html">Post 4</a>) describes in abstract terms. The three-model architecture that emerged from experiment-04 is its concrete instantiation:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Role</th>
+            <th>Model</th>
+            <th>Parameters</th>
+            <th>Binding constraint</th>
+            <th>Why this model</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Planner / Compressor</td>
+            <td>glm4:9b</td>
+            <td>9B</td>
+            <td>Latency, structured output</td>
+            <td>Fast JSON-mode planning; compression does not require depth reasoning</td>
+          </tr>
+          <tr>
+            <td>Evaluator</td>
+            <td>Qwen3-Coder:30b</td>
+            <td>30B</td>
+            <td>Calibration fidelity</td>
+            <td>Calibrated dimensional rubric scoring; distributes scores across 6–9 range rather than ceiling at 9</td>
+          </tr>
+          <tr>
+            <td>Producer</td>
+            <td>qwen2.5:32b Q4_K_M</td>
+            <td>32B (4-bit)</td>
+            <td>Depth on enumerated tasks</td>
+            <td>Can respond to depth feedback without revision regression; T_A depth_r1 ≥ 7.2 vs 6.0 with 7B</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The planner/compressor role is the clearest SLM case. Planning decomposition produces structured JSON from a natural language task description: it requires accurate slot-filling, fast response time, and reliable format adherence. It does not require multi-step synthesis or depth reasoning. glm4:9b satisfies these requirements at the lowest resource cost of the three models, and its latency advantage is meaningful for the Keep-Alive Budget (A4): a fast planner means the producer's context window is filled with research rather than waiting for plan tokens.
+      </p>
+      <p>
+        The evaluator role has the opposite profile. Evaluation requires <em>calibration</em> — the ability to distribute scores across a rubric rather than collapsing to the extremes. Experiments 01 and 02 established that glm4:9b as evaluator produced a ceiling distribution: every structurally complete output received 9/10. This is not a capability failure in any conventional sense — the model correctly assessed that the outputs met the structural criteria. It is a calibration failure: the model did not penalize for shallow depth or low specificity because those dimensions are harder to evaluate than structure. Qwen3-Coder:30b broke the ceiling. Its mean score_r1 dropped to 7.07 (std=0.55) across all tasks, activating the revision loop in 8/9 runs. This is the role where the larger model's depth reasoning capacity is the binding constraint.
+      </p>
+
+      <!-- ============================================================ -->
+      <h2>Task-Role Alignment: The Experimental Evidence</h2>
+      <p>
+        The four experiments trace the model selection process empirically. Each experiment held one variable constant while changing another, isolating the contribution of evaluator calibration, producer capability, and synthesis instruction quality in sequence.
+      </p>
+
+      <div class="diagram-container">
+        <svg id="task-pass-svg" width="100%" height="320" style="max-width: 700px; display:block; margin:0 auto;"></svg>
+        <div class="diagram-caption">Fig. 2 — Pass rates by task type across all four experiments. T_A recovered from 0/3 to 4/4 with the producer upgrade. T_B remained stuck at &lt;60% despite both model upgrades — evidence that the constraint was the synthesis instruction, not the model.</div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Experiment</th>
+            <th>Evaluator</th>
+            <th>Producer</th>
+            <th>T_A pass</th>
+            <th>T_B pass</th>
+            <th>T_C pass</th>
+            <th>Overall</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Exp-01</td>
+            <td>glm4:9b</td>
+            <td>qwen2.5:7b</td>
+            <td>3/3 (100%)</td>
+            <td>3/3 (100%)</td>
+            <td>3/3 (100%)</td>
+            <td>9/9 (100%)</td>
+          </tr>
+          <tr>
+            <td>Exp-02</td>
+            <td>glm4:9b (threshold raised)</td>
+            <td>qwen2.5:7b</td>
+            <td>3/3 (100%)</td>
+            <td>3/3 (100%)</td>
+            <td>3/3 (100%)</td>
+            <td>9/9 (100%)</td>
+          </tr>
+          <tr>
+            <td>Exp-03</td>
+            <td>Qwen3-Coder:30b</td>
+            <td>qwen2.5:7b</td>
+            <td>0/3 (0%)</td>
+            <td>3/3 (100%)</td>
+            <td>1/3 (33%)</td>
+            <td>4/9 (44%)</td>
+          </tr>
+          <tr>
+            <td>Exp-04</td>
+            <td>Qwen3-Coder:30b</td>
+            <td>qwen2.5:32b Q4_K_M</td>
+            <td>4/4 (100%)</td>
+            <td>4/7 (57%)</td>
+            <td>4/5 (80%)</td>
+            <td>12/16 (75%)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The T_A trajectory tells the producer-capability story cleanly. With the lenient evaluator, both 7B and 32B producers passed T_A 100% of the time — because the evaluator was not testing depth. When the calibrated evaluator entered, T_A went to 0/3 with the 7B producer. The evaluator's dimensional feedback was specific: <em>depth = 6.0, specificity = 6.0</em> on all first passes. The revision loop fired, but the 7B producer could not respond to depth feedback on five-item enumerated tasks — both revision attempts regressed to 6.8 or stagnated at 7.0. The 32B producer broke the ceiling: depth_r1 rose to 7.2, T_A went 4/4.
+      </p>
+
+      <div class="callout purple">
+        <strong>The revision regression signature</strong> (exp-03, T_A): score_r1 = 7.0 → score_final = 6.8 across two of three T_A runs. This is the harness equivalent of an optimization instability: the producer received well-specified feedback and responded by degrading the output. This is not random noise. It reflects a systematic inability of the 7B model to integrate multi-dimensional rubric feedback into a coherent revision strategy on complex enumerated tasks.
+      </div>
+
+      <p>
+        The T_B trajectory tells a different story. T_B is a <em>best_practices</em> task — open-ended synthesis rather than constrained enumeration. With the 7B producer and calibrated evaluator, T_B went 3/3 (100%). With the 32B producer, T_B went 4/7 (57%). This is counterintuitive: upgrading the producer <em>degraded</em> the pass rate. The explanation lies in the output volume change: the 32B producer generates substantially shorter T_B outputs (2,198 bytes mean vs. 3,288 bytes in exp-03), and the calibrated evaluator's depth criterion is sensitive to coverage density. The 32B model produces more structured, less comprehensive T_B outputs — good style, insufficient depth. This is a synthesis instruction problem, not a model problem.
+      </p>
+
+      <!-- ============================================================ -->
+      <h2>When the Constraint Is the Instruction</h2>
+      <p>
+        T_B's residual failure illustrates the most important lesson from the four-experiment sequence: once the model selection bottleneck is resolved, the instruction becomes the binding constraint. After upgrading to the 32B producer, T_B's depth_r1 across exp-04 was 6.1 — essentially identical to exp-03's 6.0. Two experiments, two different producers, same depth score. This is strong evidence that the evaluator is scoring something in the T_B synthesis instruction that neither 7B nor 32B producers address adequately.
+      </p>
+      <p>
+        The autoresearch loop (<code>autoresearch.py</code>) is the harness response to this. Rather than manually diagnosing and rewriting the synthesis instruction, the loop runs controlled experiments with candidate instructions, scores the results via the same composite metric used in normal operation (<code>0.7 × mean_wiggum_r1 + 0.3 × criteria_rate × 10</code>), and retains improvements above a 0.1 threshold via git commit. This is the Data Flywheel pattern (Observability post, <a href="./observability-flywheel.html">Post 10</a>) applied to configuration optimization: the pipeline's own output is used to improve the pipeline.
+      </p>
+      <p>
+        Autoresearch session 3 found that the highest-scoring instruction variant (composite score 8.915) used a "when NOT to use" framing — a constraint discovered by the Kimi cloud proposer, not by manual tuning. The lowest-scoring variant (7.965) added confidence ratings, which caused a −0.950 regression. This variance across instruction variants — 0.95 points on a 10-point scale — is comparable to the variance across model upgrades. The implication is that instruction quality and model selection are joint optimization problems of similar magnitude.
+      </p>
+
+      <div class="callout">
+        <strong>The joint optimization problem:</strong> For a fixed task domain, the harness performance ceiling is determined by the minimum of (a) model capability for the role, (b) evaluator calibration, and (c) synthesis instruction quality. Upgrading one dimension without addressing the others produces diminishing returns. The sequence of four experiments traced each bottleneck in isolation.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>Quantization and the Q4_K_M Decision</h2>
+      <p>
+        The 32B producer in experiment-04 is quantized to Q4_K_M — a 4-bit quantization format that reduces the model's effective memory footprint from approximately 64 GB (full BF16) to approximately 20 GB, making it deployable on a single consumer GPU or on-device inference hardware. The Q4_K_M format uses a K-means groupwise quantization strategy with mixed precision: sensitive weights (typically attention projections) are quantized to 5 or 6 bits while less sensitive weights use 4 bits, with the "M" suffix indicating a medium-resolution scaling configuration.
+      </p>
+      <p>
+        The relevant question for harness design is not "what is the quality cost of Q4_K_M quantization?" but "does Q4_K_M retain sufficient quality for this role?" The experimental answer is yes for the producer role on enumerated tasks: depth_r1 = 7.2 on T_A with Q4_K_M, compared to 6.0 with the full-precision 7B model. The 32B Q4_K_M model outperformed the 7B BF16 model on the depth dimension despite the quantization, because the parameter count advantage dominates the precision reduction for this task type.
+      </p>
+      <p>
+        This connects to the hardware substrate discussion in <a href="./parallel-inference.html">Post 11</a>. GGUF quantization formats like Q4_K_M are designed specifically for the llama.cpp inference stack, which handles CPU-GPU mixed-precision execution, memory-mapped weight streaming, and KV cache management automatically. The critical constraint is VRAM: a 20 GB model footprint leaves minimal headroom for the KV cache on a 24 GB GPU. Running producer and evaluator on the same device requires careful memory scheduling — which is exactly what the Keep-Alive Budget pattern (A4) is designed to manage.
+      </p>
+
+      <!-- ============================================================ -->
+      <h2>SLM-Bench Implications for Harness Design</h2>
+      <p>
+        SLM-Bench's three-axis evaluation framework (accuracy, efficiency, sustainability) maps directly onto the three binding constraints in a multi-model harness architecture:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>SLM-Bench axis</th>
+            <th>Harness binding constraint</th>
+            <th>Pattern</th>
+            <th>Experimental resolution</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Accuracy</td>
+            <td>Evaluator calibration, producer depth</td>
+            <td>A2 Model Role Separation</td>
+            <td>Evaluator upgrade (exp-02→03) exposed producer ceiling; producer upgrade (exp-03→04) broke T_A ceiling</td>
+          </tr>
+          <tr>
+            <td>Efficiency</td>
+            <td>Inference latency, VRAM budget</td>
+            <td>A4 Keep-Alive Budget</td>
+            <td>glm4:9b planner minimizes planning latency; Q4_K_M quantization makes 32B deployable within VRAM budget</td>
+          </tr>
+          <tr>
+            <td>Sustainability</td>
+            <td>Run cost per task</td>
+            <td>A1 Inference Shim</td>
+            <td>Role-appropriate model selection reduces unnecessary large-model invocations for planning and compression tasks</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        SLM-Bench establishes that no model dominates all three axes. The harness architecture accepts this as a constraint and responds with specialization: use the model whose capability profile matches the role's binding constraint. The Inference Shim (A1) routes calls to the appropriate model per role; the Keep-Alive Budget (A4) manages concurrent model processes to avoid cold-start penalties; Model Role Separation (A2) formalizes which model handles which stage.
+      </p>
+
+      <div class="callout pink">
+        <strong>The sustainability dimension</strong> is often treated as an organizational concern rather than a system design constraint. SLM-Bench argues otherwise: energy consumption per inference varies by 2× or more within the same parameter class depending on architecture and quantization. For a pipeline running thousands of runs, this variance compounds. The harness design choice to use glm4:9b for planning and compression — rather than running the 32B producer for all stages — is a sustainability decision as much as a latency decision.
+      </div>
+
+      <!-- ============================================================ -->
+      <h2>The Model Portfolio View</h2>
+      <p>
+        The framing that SLM-Bench implicitly supports, and that the four experiments confirm operationally, is that model selection in an agentic system is a <em>portfolio</em> problem rather than a ranking problem. A portfolio of models is selected not by finding the single highest performer but by finding a set of models whose capability profiles complement each other across the roles the harness requires.
+      </p>
+      <p>
+        In the three-model architecture: glm4:9b contributes fast structured output at low cost; Qwen3-Coder:30b contributes calibrated multidimensional evaluation; qwen2.5:32b Q4_K_M contributes depth reasoning on complex enumerated tasks. No single model in this portfolio is "best" in an absolute sense. glm4:9b as evaluator produced a ceiling distribution that invalidated all exp-01/02 quality signals. Qwen3-Coder:30b as producer would likely generate evaluation-biased outputs. qwen2.5:32b as planner would waste VRAM and latency on a role where 9B parameters are sufficient.
+      </p>
+      <p>
+        The portfolio is not static. The autoresearch loop represents a second level of optimization: given a fixed model portfolio, find the instruction that best extracts each model's capability for its role. Session 3 found a 0.95-point spread across instruction variants — comparable to a full model upgrade in impact. This suggests that the instruction optimization layer and the model selection layer should be treated as co-equal concerns, not as primary and secondary.
+      </p>
+
+      <!-- ============================================================ -->
+      <h2>Harness Design Implications</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Implication</th>
+            <th>Experimental grounding</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Assign models by role requirement, not by global capability ranking. The best model for evaluation is not the best model for production.</td>
+            <td>Exp-01/02 ceiling effect; exp-03 evaluator calibration breakthrough</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Use quantized large models where the role requires depth but latency and VRAM permit. Q4_K_M 32B outperforms BF16 7B on depth dimensions.</td>
+            <td>Exp-04 T_A depth_r1: 7.2 (32B Q4_K_M) vs 6.0 (7B full)</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Identify which bottleneck is active before upgrading models. If the bottleneck is the synthesis instruction, model upgrades produce marginal gains.</td>
+            <td>Exp-04 T_B: depth_r1 = 6.1 with 32B vs 6.0 with 7B — instruction-bounded</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Use the pipeline's own output to optimize instructions via controlled experiments. Autoresearch composite score separates instruction quality from model noise.</td>
+            <td>Session 3 spread: 8.915 (best) vs 7.965 (worst) — 0.95 points on 10-point scale</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Track energy and VRAM cost per role, not just accuracy. A planner that uses 10% of the VRAM budget frees headroom for the evaluator and producer KV caches.</td>
+            <td>SLM-Bench sustainability axis; Keep-Alive Budget (A4) pattern</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- ============================================================ -->
+      <h2>What Comes Next</h2>
+      <p>
+        The four experiments in this series traced the constraint chain from evaluator calibration through producer capability to synthesis instruction quality. The autoresearch loop addresses the instruction layer. The remaining open questions concern the <em>knowledge layer</em>: how the harness acquires, stores, and retrieves domain knowledge across runs.
+      </p>
+      <p>
+        The Dual-Backend Memory Store (B3, <a href="./context-engineering.html">Post 5</a>) handles this at the run level: vector similarity for semantic retrieval, SQLite for structured lookup. But the literature on retrieval-augmented generation and knowledge graphs points toward a richer architecture — one where domain knowledge is represented explicitly as a structured graph rather than implicitly as dense vectors. That is the subject of the next post.
+      </p>
+
+
+    
+
+      <div class="post-pagination">
+        <a href="./multi-objective-alignment.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">14 &middot; Multi-Objective Alignment</span>
+        </a>
+        <a href="./tool-use-planning.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">16 &middot; Tool Use &amp; Planning</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./inference-patterns.html" class="related-post-card">
+            <div class="related-post-num">Post 4</div>
+            <div class="related-post-title">Inference Patterns</div>
+            <div class="related-post-desc">The Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget.</div>
+          </a>
+          <a href="./parallel-inference.html" class="related-post-card">
+            <div class="related-post-num">Post 11</div>
+            <div class="related-post-title">Parallel Inference</div>
+            <div class="related-post-desc">GPU memory hierarchy, llama.cpp, vLLM, GGUF quantization, and KV cache pressure.</div>
+          </a>
+          <a href="./multi-objective-alignment.html" class="related-post-card">
+            <div class="related-post-num">Post 14</div>
+            <div class="related-post-title">Multi-Objective Alignment</div>
+            <div class="related-post-desc">DPA, MO-ODPO, MGDA-Decoupled, and the safety fine-tuning hazard: high similarity degrades safety by 10.33%.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // ── Fig. 1: Accuracy vs Efficiency scatter (conceptual) ─────────────────
+    (function() {
+      const svg = d3.select('#slm-tradeoff-svg');
+      const W = parseInt(svg.style('width')) || 660;
+      const H = 340;
+      const m = { top: 30, right: 40, bottom: 55, left: 60 };
+      const iw = W - m.left - m.right;
+      const ih = H - m.top - m.bottom;
+      svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+      const g = svg.append('g').attr('transform', `translate(${m.left},${m.top})`);
+
+      const models = [
+        { label: 'SLM-A (3B)', acc: 62, eff: 94, role: 'planner' },
+        { label: 'SLM-B (7B)', acc: 71, eff: 78, role: 'planner' },
+        { label: 'glm4:9b', acc: 74, eff: 72, role: 'planner' },
+        { label: 'SLM-C (13B)', acc: 78, eff: 58, role: 'evaluator' },
+        { label: 'SLM-D (20B)', acc: 82, eff: 44, role: 'evaluator' },
+        { label: 'Qwen3-Coder:30b', acc: 87, eff: 34, role: 'evaluator' },
+        { label: 'SLM-E (32B Q4)', acc: 85, eff: 38, role: 'producer' },
+        { label: 'qwen2.5:32b Q4', acc: 88, eff: 32, role: 'producer' },
+        { label: 'SLM-F (70B Q4)', acc: 91, eff: 18, role: 'producer' },
+      ];
+
+      const roleColor = {
+        planner: cssVar('--accent-cyan') || '#57cef2',
+        evaluator: cssVar('--accent-pink') || '#ed46c3',
+        producer: '#a855f7',
+      };
+
+      const x = d3.scaleLinear().domain([55, 95]).range([0, iw]);
+      const y = d3.scaleLinear().domain([10, 100]).range([ih, 0]);
+
+      // Axes
+      g.append('g').attr('transform', `translate(0,${ih})`).call(
+        d3.axisBottom(x).ticks(5).tickFormat(d => d + '%')
+      ).selectAll('text, line, path').attr('stroke', '#555').attr('fill', '#888');
+
+      g.append('g').call(
+        d3.axisLeft(y).ticks(5).tickFormat(d => d + '%')
+      ).selectAll('text, line, path').attr('stroke', '#555').attr('fill', '#888');
+
+      // Pareto frontier line (approximate)
+      const frontier = [
+        { acc: 62, eff: 94 }, { acc: 71, eff: 78 }, { acc: 74, eff: 72 },
+        { acc: 82, eff: 44 }, { acc: 88, eff: 32 }, { acc: 91, eff: 18 }
+      ];
+      g.append('path')
+        .datum(frontier)
+        .attr('fill', 'none')
+        .attr('stroke', '#444')
+        .attr('stroke-width', 1)
+        .attr('stroke-dasharray', '4 3')
+        .attr('d', d3.line().x(d => x(d.acc)).y(d => y(d.eff)).curve(d3.curveCatmullRom));
+
+      // Points
+      g.selectAll('circle').data(models).enter()
+        .append('circle')
+        .attr('cx', d => x(d.acc))
+        .attr('cy', d => y(d.eff))
+        .attr('r', 7)
+        .attr('fill', d => roleColor[d.role])
+        .attr('opacity', 0.85);
+
+      // Labels for highlighted models
+      const highlighted = ['glm4:9b', 'Qwen3-Coder:30b', 'qwen2.5:32b Q4'];
+      g.selectAll('.model-label').data(models.filter(d => highlighted.includes(d.label))).enter()
+        .append('text')
+        .attr('x', d => x(d.acc) + 10)
+        .attr('y', d => y(d.eff) + 4)
+        .attr('font-size', '11px')
+        .attr('fill', d => roleColor[d.role])
+        .text(d => d.label);
+
+      // Axis labels
+      g.append('text').attr('x', iw/2).attr('y', ih + 42)
+        .attr('text-anchor', 'middle').attr('fill', '#888').attr('font-size', '12px')
+        .text('Accuracy (%)');
+      g.append('text').attr('transform', 'rotate(-90)')
+        .attr('x', -ih/2).attr('y', -48)
+        .attr('text-anchor', 'middle').attr('fill', '#888').attr('font-size', '12px')
+        .text('Energy Efficiency (%)');
+
+      // Legend
+      const roles = ['planner', 'evaluator', 'producer'];
+      const labels = { planner: 'Planner/Compressor', evaluator: 'Evaluator', producer: 'Producer' };
+      roles.forEach((r, i) => {
+        const lx = m.left + i * (iw / 3);
+        const lg = svg.append('g').attr('transform', `translate(${lx},${H - 8})`);
+        lg.append('circle').attr('r', 5).attr('fill', roleColor[r]).attr('cy', -3);
+        lg.append('text').attr('x', 10).attr('fill', '#888').attr('font-size', '11px')
+          .text(labels[r]);
+      });
+
+      // Pareto label
+      g.append('text').attr('x', x(77)).attr('y', y(63))
+        .attr('fill', '#555').attr('font-size', '10px').attr('font-style', 'italic')
+        .text('Pareto frontier');
+    })();
+
+    // ── Fig. 2: Pass rates by task type across experiments ───────────────────
+    (function() {
+      const svg = d3.select('#task-pass-svg');
+      const W = parseInt(svg.style('width')) || 660;
+      const H = 320;
+      const m = { top: 30, right: 30, bottom: 60, left: 50 };
+      const iw = W - m.left - m.right;
+      const ih = H - m.top - m.bottom;
+      svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+      const g = svg.append('g').attr('transform', `translate(${m.left},${m.top})`);
+
+      const data = [
+        { exp: 'Exp-01', ta: 100, tb: 100, tc: 100 },
+        { exp: 'Exp-02', ta: 100, tb: 100, tc: 100 },
+        { exp: 'Exp-03', ta: 0,   tb: 100, tc: 33  },
+        { exp: 'Exp-04', ta: 100, tb: 57,  tc: 80  },
+      ];
+
+      const exps = data.map(d => d.exp);
+      const tasks = ['ta', 'tb', 'tc'];
+      const taskColor = {
+        ta: cssVar('--accent-cyan') || '#57cef2',
+        tb: '#a855f7',
+        tc: cssVar('--accent-pink') || '#ed46c3',
+      };
+      const taskLabel = { ta: 'T_A (enumerated)', tb: 'T_B (best_practices)', tc: 'T_C (enumerated)' };
+
+      const x0 = d3.scaleBand().domain(exps).range([0, iw]).paddingInner(0.2);
+      const x1 = d3.scaleBand().domain(tasks).range([0, x0.bandwidth()]).padding(0.08);
+      const y = d3.scaleLinear().domain([0, 100]).range([ih, 0]);
+
+      // Axes
+      g.append('g').attr('transform', `translate(0,${ih})`).call(
+        d3.axisBottom(x0).tickSize(0)
+      ).selectAll('text').attr('fill', '#888').attr('dy', '1.2em');
+      g.select('.domain').attr('stroke', '#333');
+
+      g.append('g').call(
+        d3.axisLeft(y).ticks(5).tickFormat(d => d + '%')
+      ).selectAll('text, line, path').attr('stroke', '#555').attr('fill', '#888');
+
+      // Gridlines
+      g.selectAll('.grid-line').data(y.ticks(5)).enter()
+        .append('line')
+        .attr('x1', 0).attr('x2', iw)
+        .attr('y1', d => y(d)).attr('y2', d => y(d))
+        .attr('stroke', '#222').attr('stroke-width', 1);
+
+      // Bars
+      const expGroups = g.selectAll('.exp-group').data(data).enter()
+        .append('g').attr('transform', d => `translate(${x0(d.exp)},0)`);
+
+      tasks.forEach(t => {
+        expGroups.append('rect')
+          .attr('x', x1(t))
+          .attr('width', x1.bandwidth())
+          .attr('y', d => y(d[t]))
+          .attr('height', d => ih - y(d[t]))
+          .attr('fill', taskColor[t])
+          .attr('rx', 3)
+          .attr('opacity', 0.85);
+
+        expGroups.append('text')
+          .attr('x', d => x1(t) + x1.bandwidth() / 2)
+          .attr('y', d => y(d[t]) - 4)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '9px')
+          .attr('fill', '#aaa')
+          .text(d => d[t] + '%');
+      });
+
+      // Legend
+      tasks.forEach((t, i) => {
+        const lx = m.left + i * (iw / 3);
+        const lg = svg.append('g').attr('transform', `translate(${lx},${H - 8})`);
+        lg.append('rect').attr('width', 10).attr('height', 10).attr('fill', taskColor[t]).attr('rx', 2).attr('y', -10);
+        lg.append('text').attr('x', 14).attr('fill', '#888').attr('font-size', '11px')
+          .text(taskLabel[t]);
+      });
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

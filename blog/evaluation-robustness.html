@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity | Nick McCarty</title>
+  <meta name="description" content="LLMORPH finds evaluator inconsistencies with 561,000 test executions. Three novel scoring biases originate in prompt design, not response content. Holistic judges match atomic decomposition on most benchmarks. What the evaluation robustness literature means for harness design.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/evaluation-robustness.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity">
+  <meta property="og:description" content="Metamorphic testing exposes evaluator inconsistencies without labels. Three novel scoring biases—rubric order, score ID, reference answer—originate in prompt design. Holistic judges outperform atomic decomposition on partially-supported cases. Hindi localization drops from 42.8% to 23.2% when only content is localized, not judge instructions.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/evaluation-robustness.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-04-29T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity">
+  <meta name="twitter:description" content="Scoring biases from prompt design, not response content. Metamorphic testing without labels. Holistic judges beat atomic decomposition. Language is an experimental variable in agentic evaluation.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity","description":"What the evaluation robustness literature—LLMORPH, scoring bias taxonomy, holistic vs atomic decomposition, multilingual AaaJ, and prompt optimization disposition—means for building reliable automated evaluation pipelines.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-04-29","url":"https://nickmccarty.github.io/blog/evaluation-robustness.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+      font-style: italic;
+    }
+    .series-nav {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin: 2rem 0;
+    }
+    .series-nav-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .series-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .series-badge {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .series-badge.active {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      background: rgba(87,206,242,0.08);
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      background: rgba(87,206,242,0.06);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .callout.orange {
+      border-left-color: #f97316;
+      background: rgba(249,115,22,0.06);
+    }
+    .callout.purple {
+      border-left-color: #a855f7;
+      background: rgba(168,85,247,0.06);
+    }
+    .callout.pink {
+      border-left-color: #ed46c3;
+      background: rgba(237,70,195,0.06);
+    }
+    .callout.green {
+      border-left-color: #34d399;
+      background: rgba(52,211,153,0.06);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.8em;
+      background: var(--bg-tertiary);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article style="max-width: 760px; margin: 0 auto; padding: 2rem 1rem 4rem;">
+
+
+      <header style="margin-bottom: 2.5rem;">
+        <h1 style="font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.2; margin-bottom: 0.75rem;">Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity</h1>
+        <div class="meta">April 29, 2026 &bull; 17 min read</div>
+        <p style="margin-top: 1rem; font-size: 1.05rem; color: var(--text-secondary); line-height: 1.7;">Evaluation pipelines are only as trustworthy as the judges running them. Post&nbsp;13 covered benchmark contamination and position bias; Post&nbsp;17 covered conformal prediction and the externalization framework. This post covers the remaining literature on making automated evaluation robust: metamorphic testing without labels, three novel scoring biases that originate in prompt design rather than response content, the holistic-vs-atomic debate, legal faithfulness failures, format sensitivity, safety benchmark instability, multilingual localization gaps, and the asymmetry of judge disposition.</p>
+      </header>
+
+      <h2>The Evaluation Stack Is Not Ground Truth</h2>
+
+      <p>There is a quiet assumption embedded in every harness that uses LLM-as-a-Judge: that the evaluator's scores are stable, that they measure what they claim to measure, and that they transfer across languages, prompt formats, and judge configurations. The literature surveyed here challenges all three assumptions systematically.</p>
+
+      <p>The findings are not a reason to abandon automated evaluation&mdash;they are a reason to treat judge configuration as an experimental condition rather than a fixed implementation detail. The harness that acts on this insight is materially more reliable than one that doesn't.</p>
+
+      <h2>LLMORPH: Testing Evaluators Without Labels</h2>
+
+      <p>The standard obstacle to automated evaluator testing is the oracle problem: to verify that a judge is consistent, you need ground truth, and ground truth is expensive. LLMORPH (<a href="https://arxiv.org/abs/2603.23611v1">arXiv:2603.23611v1</a>) sidesteps this by applying Metamorphic Testing (MT) to LLM evaluation.</p>
+
+      <p>The core idea is Metamorphic Relations (MRs): formally defined transformations on inputs where the expected change in output is known. If a judge correctly evaluates whether an answer is factually accurate, then presenting the same answer with synonymous phrasing should yield the same verdict. If it doesn't, that's an inconsistency&mdash;no labeled data required.</p>
+
+      <div class="callout">
+        <strong>LLMORPH results.</strong> 36 MRs applied to GPT-4, LLAMA3, and HERMES&nbsp;2 across four NLP benchmarks. Over 561,000 test executions. The tool successfully exposed model inconsistencies in all three systems. The inconsistency rate varies by MR type and model&mdash;not by model scale&mdash;meaning larger models are not automatically more consistent judges.
+      </div>
+
+      <p>For the harness, this is immediately actionable. The Wiggum evaluator runs on every producer output, generating dimensional scores that drive revision decisions. LLMORPH-style MRs applied to evaluator inputs&mdash;paraphrased versions of the same content, reordered sentences, synonym substitutions&mdash;would expose instability in the evaluator before it propagates to production. This is a quality gate that doesn't require human annotation; it requires only a set of well-defined relations.</p>
+
+      <p>The practical implementation would sit between the Surgical Compressor and the evaluator call: sample a fraction of evaluations, generate two MR-transformed variants of the compressed input, run all three through the evaluator, and flag cases where scores diverge beyond a threshold. Flagged runs accumulate as a diagnostic dataset.</p>
+
+      <h2>Three Novel Scoring Biases</h2>
+
+      <p>Post&nbsp;13 documented well-known evaluation biases: position bias (8 of 9 judges show always-A behavior in comparative evaluation), verbosity bias, and self-enhancement bias. These originate in properties of the <em>response</em> being evaluated. The scoring bias taxonomy paper (<a href="https://arxiv.org/abs/2506.22316v4">arXiv:2506.22316v4</a>) identifies a different class of biases&mdash;three novel types that originate entirely in the <em>scoring prompt</em> design, independent of what's being evaluated.</p>
+
+      <div class="callout orange">
+        <strong>Rubric order bias.</strong> The order in which scoring dimensions appear in the rubric affects the scores assigned to those dimensions. A dimension listed first tends to receive different treatment than the same dimension listed fourth. This applies even when the rubric dimensions are semantically independent.
+      </div>
+
+      <div class="callout orange">
+        <strong>Score ID bias.</strong> The identifiers used to label score levels (1&ndash;5 vs. A&ndash;E vs. 0&ndash;4 vs. Bad/Poor/Fair/Good/Excellent) systematically affect the distribution of scores assigned. This is a pure prompt artifact: the content being evaluated is identical; only the score label convention changes.
+      </div>
+
+      <div class="callout orange">
+        <strong>Reference answer score bias.</strong> When a reference answer is included in the scoring prompt (a common design for factuality evaluation), the explicit or implied score of the reference answer shifts the judge's scoring of candidate answers. A high-quality reference creates an anchoring effect that suppresses candidate scores even when the candidate is adequate.
+      </div>
+
+      <p>The paper demonstrates that all three biases are pervasive across "the most advanced LLMs"&mdash;meaning that frontier model capability does not eliminate prompt-induced scoring artifacts. The contribution is both diagnostic (here are three bias types you weren't measuring) and prescriptive (here is a framework to quantify them via multi-faceted metrics and an automatic data synthesis pipeline).</p>
+
+      <p>For the harness, the immediate implication is rubric stability. The Dimensional Rubric used in the Wiggum loop currently lists six dimensions in a fixed order. If rubric order bias holds, that order is not neutral&mdash;it's an experimental condition that's been held constant without acknowledgment. The remediation is either (a) run parallel evaluations with dimension order permuted and average, or (b) empirically verify that the current order produces the most consistent scores across MR variants, and document it as a justified choice rather than an arbitrary default.</p>
+
+      <div class="diagram-container">
+        <svg id="bias-taxonomy-svg" width="100%" height="340"></svg>
+        <p class="diagram-caption">Scoring bias taxonomy: five bias types classified by origin (response characteristics vs. prompt design) and evaluation mode (comparative vs. scoring). The three novel types from arXiv:2506.22316v4 are highlighted.</p>
+      </div>
+
+      <h2>Holistic vs. Atomic: The Decomposition Myth</h2>
+
+      <p>A widely held assumption in LLM evaluation is that atomic decomposition&mdash;breaking an evaluation question into sub-questions and aggregating binary answers&mdash;is more rigorous than holistic rubric evaluation. The intuition is that sub-questions constrain the judge, reducing the surface area for bias and increasing interpretability. The paper <a href="https://arxiv.org/abs/2603.28005v1">arXiv:2603.28005v1</a> tests this assumption directly with a prompt-controlled study.</p>
+
+      <p>The experimental design is clean: a self-decomposing atomic judge (which generates its own sub-questions at inference time) is compared against a holistic judge given a rubric of comparable richness, on three reference-grounded QA benchmarks (ASQA, QAMPARI, TruthfulQA) with 200 source examples each.</p>
+
+      <div class="callout green">
+        <strong>Holistic matches or exceeds atomic on ASQA and QAMPARI.</strong> The holistic advantage is statistically reliable in three of four model families. The effect is concentrated in <em>partially_supported</em> cases: the holistic judge is substantially better at detecting answers that are partially correct. The atomic judge, by committing to binary sub-questions, systematically over-credits partial answers.
+      </div>
+
+      <p>The atomic judge retains a small but statistically reliable edge on TruthfulQA, where the decomposition into true/false sub-claims aligns naturally with the task structure. This is the exception that proves the rule: atomic decomposition helps when the task itself is atomic.</p>
+
+      <p>The broader implication is that the perceived advantage of atomic judges on most tasks is attributable to prompt richness, not the decomposition architecture. A holistic judge given an equivalently detailed rubric achieves the same or better results with less computational overhead and without the failure modes introduced by LLM-generated sub-questions (which can be poorly formed, redundant, or systematically biased).</p>
+
+      <p>The Dimensional Rubric in Post&nbsp;7 is already a holistic instrument: six scored dimensions evaluated in a single pass. This paper provides empirical grounding for that design choice over the alternative of decomposing each dimension into binary sub-questions. The key is rubric richness&mdash;the dimensions must be sufficiently detailed that the judge has the information it needs. Sparse rubrics with holistic evaluation would perform poorly; the paper's holistic judges use prompts comparable in length to the atomic prompts.</p>
+
+      <h2>Faithfulness and the Abstention Failure</h2>
+
+      <p>The legal faithfulness paper (<a href="https://arxiv.org/abs/2506.00694v2">arXiv:2506.00694v2</a>) introduces an automated pipeline for measuring three properties of LLM-generated legal arguments: hallucination (inventing facts not in the source), factor utilization (using the relevant legal factors from the case), and abstention (refusing to generate arguments when insufficient shared factors exist).</p>
+
+      <p>The results split cleanly into a success and a failure:</p>
+
+      <ul>
+        <li><strong>Hallucination avoidance:</strong> Eight LLMs achieve over 90% accuracy in standard argument generation. Models largely stay within the factual bounds of the input case materials.</li>
+        <li><strong>Factor utilization:</strong> Models frequently fail to use the full set of relevant factors present in the case materials, even when those factors are provided explicitly. The failure is one of under-utilization, not fabrication.</li>
+        <li><strong>Abstention:</strong> Critical failure. When explicitly instructed to stop generating if insufficient shared factors exist, most models produce spurious arguments anyway. The instruction is syntactically present in the prompt and semantically clear&mdash;and yet the models generate as if it weren't there.</li>
+      </ul>
+
+      <div class="callout pink">
+        <strong>Abstention is not a capability gap&mdash;it's an instruction-following gap.</strong> The models know how to generate arguments. What they can't reliably do is recognize when the conditions for generation have not been met and decline to act. This is the same failure mode documented in the safety bypass literature (Post&nbsp;16): instruction-following degrades when the instruction is "don't do the thing you're good at."
+      </div>
+
+      <p>For the harness, this is a design constraint on the Planner-First component. When the planner determines that context is insufficient to answer a query at the required depth, the producer must be given an explicit, structured stop condition&mdash;not just a soft instruction. Structural mechanisms (returning an empty results list, setting a <code>context_sufficient: false</code> flag that gates the synthesis call) are more reliable than prompt-level instructions like "if you don't have enough information, say so."</p>
+
+      <h2>Format Sensitivity and the FormatSpread Tool</h2>
+
+      <p>FormatSpread (<a href="https://arxiv.org/abs/2310.11324v2">arXiv:2310.11324v2</a>) addresses a fundamental problem in evaluation methodology: prompt format affects performance, and the standard practice of evaluating on a single format produces measurements that are artifacts of that format choice.</p>
+
+      <p>The key finding is that format sensitivity persists even after increasing the number of in-context examples and even after instruction tuning. Neither approach reliably reduces the variance across plausible prompt formats. The tool uses atomic perturbations&mdash;individual changes to punctuation, whitespace, delimiter choice, label formatting&mdash;and internal representation analysis to characterize <em>why</em> certain formats outperform others for specific tasks and models.</p>
+
+      <p>The practical contribution is that "evaluate across a range of plausible formats" is a feasible and necessary step in evaluation pipeline design. FormatSpread makes this tractable without requiring access to model weights. For the harness, this means the evaluation prompts in the Wiggum loop should be audited across format variants, not just the format that was chosen during initial development. The specific format likely explains a fraction of the score variance that is currently attributed to model or content differences.</p>
+
+      <h2>Safety Benchmark Sensitivity</h2>
+
+      <p>The safety benchmark sensitivity paper (<a href="https://arxiv.org/abs/2604.24074v1">arXiv:2604.24074v1</a>) runs a factorial design experiment: 12 different judge prompts, varying across two dimensions (evaluation structure and instruction framing), applied to the same judge model evaluating the same responses. The outcome variable is the measured harmful response rate.</p>
+
+      <p>The results show significant variability in harmful response rates across prompt conditions. The same judge model, evaluating the same responses, produces materially different safety benchmark numbers depending on the prompt structure. Harassment is the notable exception&mdash;clearer guidelines in that domain reduce ambiguity and stabilize measurements across conditions.</p>
+
+      <div class="callout purple">
+        <strong>Safety benchmark numbers are not stable facts.</strong> They are artifacts of judge configuration. Treating them as fixed measurements without reporting the judge configuration alongside them is a methodological error. The recommendation is to treat judge configuration as an experimental condition that must be reported and ideally varied.
+      </div>
+
+      <p>This finding has a direct implication for the harness's security patterns (Post&nbsp;9). The Injection Scanner uses pattern matching on external content. If a safety evaluation layer is added to flag harmful outputs before delivery, the choice of evaluation structure and instruction framing will determine the scanner's false positive and false negative rates. The scanner parameters need to be treated as tunable experimental variables, not fixed configuration.</p>
+
+      <h2>Language Is an Experimental Variable</h2>
+
+      <p>The multilingual Agent-as-a-Judge paper (<a href="https://arxiv.org/abs/2604.04532v1">arXiv:2604.04532v1</a>) localizes the full AaaJ prompt stack to five typologically diverse languages and evaluates 55 DevAI development tasks across three developer-agent frameworks and six judge backbones&mdash;4,950 judge runs total. The study design allows a controlled comparison between two localization strategies.</p>
+
+      <p>The critical finding comes from a controlled ablation: localizing only the benchmark content (the tasks and requirements) while leaving the judge-side evaluation instructions in English produces a sharp accuracy drop. For Hindi, satisfaction drops from 42.8% under full localization to 23.2% under partial (content-only) localization.</p>
+
+      <div class="callout">
+        <strong>Judge-side instruction localization is decisive.</strong> The dominant effect is not whether the benchmark content is in the target language&mdash;it's whether the evaluation instructions are. Localizing only the content while keeping judge instructions in English cuts measured satisfaction nearly in half. This means that English-language judge prompts are not language-agnostic; they are optimized for English evaluation and degrade in other languages.
+      </div>
+
+      <p>The inter-backbone agreement results add a second layer of concern: Fleiss' &kappa; &le; 0.231 across six judge backbones evaluating the same requirements in the same language. Even before multilingual complexity is introduced, different judge models disagree substantially on individual requirement-level judgments. Backbone choice is not interchangeable.</p>
+
+      <p>For the harness, this means two things. First, if the pipeline is ever deployed against non-English research corpora, the evaluation instructions must be localized, not just the task prompts. Second, judge backbone choice should be documented as a measurement parameter. A harness that switches its Wiggum evaluator from one model to another may be measuring different things even on identical inputs.</p>
+
+      <h2>Judge Disposition and Prompt Optimization Transfer</h2>
+
+      <p>The prompt optimization disposition paper (<a href="https://arxiv.org/abs/2604.20726v2">arXiv:2604.20726v2</a>) tests whether automatic prompt optimization outperforms human-centered prompt design for LLM-as-a-Judge evaluation in free-text legal QA. The answer is yes, consistently, on the LEXam benchmark. But the more interesting finding is about transfer.</p>
+
+      <p>Prompts optimized with a <em>lenient</em> judge during optimization transfer more effectively to strict judges than the reverse. Prompts optimized with strict feedback produce prompts that are tailored to the strict judge's criteria and generalize poorly. Lenient feedback produces prompts with broader applicability.</p>
+
+      <div class="callout green">
+        <strong>Disposition asymmetry.</strong> Lenient feedback &rarr; broadly transferable prompts. Strict feedback &rarr; overfitted prompts. The implication is that when optimizing evaluation prompts against a training set, the judge used during optimization should be lenient, even if the target deployment judge is strict. The optimization process will naturally develop prompts that satisfy stricter criteria when tested; strict optimization feedback prematurely narrows the search space.
+      </div>
+
+      <p>This connects to the Surgical Compressor in Post&nbsp;7. The compressor uses a separate LLM call to distill long documents before evaluation. The tone of the compression instruction&mdash;how aggressively it prioritizes concision over completeness&mdash;functions like judge disposition in the optimization framing. A compressor instruction that is too strict (demanding maximum brevity) will produce compressed inputs that lose edge cases and partially-supported content, exactly the material where the holistic judge advantage (from the previous section) is most pronounced. The compression instruction should be lenient about what to include, leaving the evaluator to weigh completeness against length.</p>
+
+      <div class="diagram-container">
+        <svg id="robustness-svg" width="100%" height="320"></svg>
+        <p class="diagram-caption">Evaluation robustness metrics from two papers: (left) Hindi Agent-as-a-Judge satisfaction rate under full vs. partial localization (arXiv:2604.04532v1); (right) MMI scoring QWK for multi-agent prompting vs. specialized fine-tuned baseline (arXiv:2602.02360v1).</p>
+      </div>
+
+      <h2>Multi-Agent MMI Scoring</h2>
+
+      <p>The MMI scoring paper (<a href="https://arxiv.org/abs/2602.02360v1">arXiv:2602.02360v1</a>) addresses automated assessment of soft skills (empathy, ethical judgment) in Multiple Mini-Interviews. The contribution is a multi-agent prompting framework that decomposes evaluation into two sequential stages: transcript refinement followed by criterion-specific scoring, using 3-shot in-context learning with a large instruct-tuned model.</p>
+
+      <p>The performance gap is substantial: average Quadratic Weighted Kappa (QWK) of 0.62 versus 0.32 for specialized fine-tuned baselines, with no additional training required. The framework generalizes to the ASAP benchmark (a different domain), rivaling domain-specific state-of-the-art models that were explicitly trained for that task.</p>
+
+      <p>The mechanism is the decomposition architecture itself. Rationale-based fine-tuning on MMI transcripts fails because it treats the abstract, context-dependent nature of soft-skill narratives as a pattern-matching problem. The multi-agent approach treats it as a reasoning problem: first extract and clean the evaluatively relevant content from the transcript, then apply criterion-specific scoring to that cleaned content. The separation between understanding and scoring is what produces the reliability gain.</p>
+
+      <p>This mirrors the structure of the Wiggum loop almost exactly: the Surgical Compressor extracts evaluatively relevant content from producer output, and the dimensional evaluator then scores that extracted content. The MMI paper provides independent empirical evidence that this two-stage architecture is not just a latency optimization&mdash;it produces materially more reliable scores than end-to-end evaluation on raw output.</p>
+
+      <h2>Bi-Level Prompt Optimization for Multimodal Judges</h2>
+
+      <p>BLPO (<a href="https://arxiv.org/abs/2602.11340v1">arXiv:2602.11340v1</a>) extends automatic prompt optimization to multimodal judges. Standard text-only APO fails for image evaluation tasks because multimodal models face a context window bottleneck: visual examples require significantly more context tokens than text examples, limiting how many trial-and-error refinements can fit in a single optimization pass.</p>
+
+      <p>BLPO addresses this by jointly optimizing two prompts: the judge evaluation prompt and an image-to-text (I2T) conversion prompt that converts images into textual representations preserving evaluation-relevant visual cues. The bi-level optimization improves alignment with human judgments on four datasets across three LLM judges.</p>
+
+      <p>The harness is currently text-only in its evaluation pipeline. The BLPO finding is relevant when the pipeline is extended to multimodal outputs&mdash;if the producer ever generates image-accompanied content, single-prompt APO on the judge will underperform a bi-level approach that jointly optimizes the visual representation step. The pattern generalizes: whenever evaluation involves a transformation step before scoring (compression, extraction, modality conversion), the transformation step needs to be co-optimized with the scoring step, not treated as a fixed upstream preprocessing operation.</p>
+
+      <h2>Factored Evaluation for Actionable Feedback</h2>
+
+      <p>The LLM evaluation challenges paper (<a href="https://arxiv.org/abs/2406.03339v2">arXiv:2406.03339v2</a>) surveys evaluation methods for domain-specific chatbots and introduces a factored evaluation mechanism designed to produce actionable feedback. The core finding is that factor-based evaluation&mdash;where specific dimensions or factors are evaluated independently and then aggregated&mdash;generates superior insights into which aspects require improvement, outperforming holistic single-score approaches on actionability.</p>
+
+      <p>The paper also notes that human evaluation remains important in critical domains where direct retrieval is not the primary function. Purely automated or LLM-based assessments have limitations that are particularly visible in medical and psychological chatbot contexts, where judgment about appropriate boundaries is not easily formalized into rubric language.</p>
+
+      <p>This nuance is worth noting in the context of the harness experiments. The T_B task type (best practices, cost management) consistently produced lower <code>depth_r1</code> scores than T_A and T_C tasks across all four CRD experiments&mdash;a bottleneck identified as instruction-level rather than model-level. The factored evaluation framing suggests the right diagnosis: the T_B rubric may be under-specifying the depth factor, leaving the evaluator without sufficient guidance to discriminate between shallow and deep cost management responses. Factor-specific rubric refinement, rather than model substitution, is the correct intervention.</p>
+
+      <h2>Design Implications</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Finding</th>
+            <th>Source</th>
+            <th>Harness Implication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Metamorphic testing exposes evaluator inconsistency without ground truth labels</td>
+            <td>LLMORPH (2603.23611)</td>
+            <td>Apply MR-transformed variants to a sample of Wiggum evaluator calls as a continuous quality gate; accumulate flagged runs as diagnostic data</td>
+          </tr>
+          <tr>
+            <td>Rubric order, score ID, and reference answer are novel prompt-level scoring biases affecting all SOTA models</td>
+            <td>Scoring Bias (2506.22316)</td>
+            <td>Audit the Dimensional Rubric for rubric order effects; test multiple score ID conventions; avoid anchoring by explicit reference answer scores</td>
+          </tr>
+          <tr>
+            <td>Holistic judges with rich rubrics match or exceed atomic decomposition on most benchmarks; advantage concentrated in partially-supported cases</td>
+            <td>Holistic vs Atomic (2603.28005)</td>
+            <td>Retain the holistic Dimensional Rubric; ensure rubric detail is sufficient for the judge to identify partial credit</td>
+          </tr>
+          <tr>
+            <td>Models fail to abstain even when explicitly instructed; instruction-following degrades when the instruction is to not generate</td>
+            <td>Legal Faithfulness (2506.00694)</td>
+            <td>Replace soft abstention instructions with structural gates: a <code>context_sufficient</code> flag that conditionally bypasses the synthesis call entirely</td>
+          </tr>
+          <tr>
+            <td>Hindi satisfaction drops 42.8%&rarr;23.2% when judge-side instructions are not localized</td>
+            <td>Multilingual AaaJ (2604.04532)</td>
+            <td>Treat evaluation language as an experimental variable; localize judge instructions (not just task content) for non-English deployments</td>
+          </tr>
+          <tr>
+            <td>Lenient judge feedback during optimization produces more transferable prompts than strict feedback</td>
+            <td>Disposition Asymmetry (2604.20726)</td>
+            <td>Use a lenient compression instruction in the Surgical Compressor to preserve partially-relevant content for holistic evaluation</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout purple">
+        <strong>The cumulative view.</strong> Posts&nbsp;13, 17, and 19 together document a coherent picture: automated evaluation is not objective measurement. It is a measurement instrument with known failure modes (position bias, verbosity bias, contamination, format sensitivity, rubric order bias, score ID bias, reference anchoring, language instability, disposition effects). A harness that treats evaluator output as ground truth is building on sand. A harness that treats evaluator configuration as an experimental condition, monitors for consistency via MR testing, and designs rubrics to avoid known prompt-level biases is building on something measurably more solid.
+      </div>
+
+
+    
+
+      <div class="post-pagination">
+        <a href="./knowledge-graphs-extraction.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">18 &middot; Knowledge Graphs</span>
+        </a>
+        <a href="./prompt-injection-security.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">20 &middot; Injection Security</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./judge-reliability.html" class="related-post-card">
+            <div class="related-post-num">Post 13</div>
+            <div class="related-post-title">Judge Reliability</div>
+            <div class="related-post-desc">Best judges lag human agreement by 5 points. Omni-Judge wrong in 96.4% of expert disagreements.</div>
+          </a>
+          <a href="./evaluation-uncertainty.html" class="related-post-card">
+            <div class="related-post-num">Post 17</div>
+            <div class="related-post-title">Evaluation Uncertainty</div>
+            <div class="related-post-desc">Conformal prediction turns point scores into calibrated intervals. Agent-as-a-Judge outperforms LLM-as-a-Judge.</div>
+          </a>
+          <a href="./judge-benchmarks-scaling.html" class="related-post-card">
+            <div class="related-post-num">Post 23</div>
+            <div class="related-post-title">Judge Benchmarks &amp; Scaling</div>
+            <div class="related-post-desc">JETTS: judges win at reranking, lose at beam search. Omni-Judge wrong in 96.4% of disagreements.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    /* ── Diagram 1: Scoring Bias Taxonomy ── */
+    (function() {
+      const container = document.getElementById('bias-taxonomy-svg');
+      const W = container.parentElement.clientWidth || 700;
+      const H = 340;
+      container.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+      const biasTypes = [
+        { name: 'Position bias',             origin: 'Response', mode: 'Comparative', novel: false },
+        { name: 'Verbosity bias',            origin: 'Response', mode: 'Scoring',     novel: false },
+        { name: 'Rubric order bias',         origin: 'Prompt',   mode: 'Scoring',     novel: true  },
+        { name: 'Score ID bias',             origin: 'Prompt',   mode: 'Scoring',     novel: true  },
+        { name: 'Reference answer score bias', origin: 'Prompt', mode: 'Scoring',     novel: true  },
+      ];
+
+      const svg = d3.select(container);
+      const margin = { top: 40, right: 120, bottom: 20, left: 200 };
+      const innerW = W - margin.left - margin.right;
+      const innerH = H - margin.top - margin.bottom;
+
+      const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+      const colDefs = [
+        { key: 'origin', label: 'Origin', values: ['Response', 'Prompt'] },
+        { key: 'mode',   label: 'Eval Mode', values: ['Comparative', 'Scoring'] },
+        { key: 'novel',  label: 'Status',    values: [false, true] },
+      ];
+
+      const colW = innerW / colDefs.length;
+      const rowH = innerH / biasTypes.length;
+
+      const cyan = '#57cef2';
+      const muted = '#8b949e';
+      const bgTertiary = '#21262d';
+      const borderColor = '#30363d';
+
+      // Column headers
+      colDefs.forEach((col, ci) => {
+        g.append('text')
+          .attr('x', ci * colW + colW / 2)
+          .attr('y', -16)
+          .attr('text-anchor', 'middle')
+          .attr('fill', muted)
+          .attr('font-size', 11)
+          .attr('font-weight', '600')
+          .attr('letter-spacing', '0.05em')
+          .attr('text-transform', 'uppercase')
+          .text(col.label.toUpperCase());
+      });
+
+      biasTypes.forEach((bias, ri) => {
+        const y = ri * rowH + rowH / 2;
+
+        // Row label
+        g.append('text')
+          .attr('x', -12)
+          .attr('y', y)
+          .attr('text-anchor', 'end')
+          .attr('dominant-baseline', 'middle')
+          .attr('fill', bias.novel ? cyan : muted)
+          .attr('font-size', 12)
+          .attr('font-weight', bias.novel ? '600' : '400')
+          .text(bias.name);
+
+        // Novel badge
+        if (bias.novel) {
+          g.append('rect')
+            .attr('x', -margin.left + 4)
+            .attr('y', y - 9)
+            .attr('width', 38)
+            .attr('height', 16)
+            .attr('rx', 8)
+            .attr('fill', 'rgba(87,206,242,0.12)')
+            .attr('stroke', cyan)
+            .attr('stroke-width', 0.8);
+          g.append('text')
+            .attr('x', -margin.left + 23)
+            .attr('y', y)
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'middle')
+            .attr('fill', cyan)
+            .attr('font-size', 9)
+            .attr('font-weight', '700')
+            .text('NEW');
+        }
+
+        // Cells
+        colDefs.forEach((col, ci) => {
+          const cellX = ci * colW;
+          const val = bias[col.key];
+
+          // Cell bg
+          g.append('rect')
+            .attr('x', cellX + 4)
+            .attr('y', y - rowH / 2 + 3)
+            .attr('width', colW - 8)
+            .attr('height', rowH - 6)
+            .attr('rx', 6)
+            .attr('fill', bgTertiary)
+            .attr('stroke', borderColor)
+            .attr('stroke-width', 0.5);
+
+          const displayVal = col.key === 'novel'
+            ? (val ? 'Novel' : 'Known')
+            : String(val);
+
+          const fillColor = col.key === 'novel'
+            ? (val ? cyan : muted)
+            : col.key === 'origin'
+              ? (val === 'Prompt' ? '#f97316' : '#a855f7')
+              : (val === 'Scoring' ? '#34d399' : '#ed46c3');
+
+          g.append('text')
+            .attr('x', cellX + colW / 2)
+            .attr('y', y)
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'middle')
+            .attr('fill', fillColor)
+            .attr('font-size', 11)
+            .attr('font-weight', '500')
+            .text(displayVal);
+        });
+      });
+
+      // Legend
+      const legendX = W - margin.right + 8;
+      const legendItems = [
+        { color: '#a855f7', label: 'Response origin' },
+        { color: '#f97316', label: 'Prompt origin' },
+        { color: '#ed46c3', label: 'Comparative mode' },
+        { color: '#34d399', label: 'Scoring mode' },
+        { color: muted,     label: 'Known bias' },
+        { color: cyan,      label: 'Novel bias' },
+      ];
+      legendItems.forEach((item, i) => {
+        svg.append('circle')
+          .attr('cx', legendX + 7)
+          .attr('cy', margin.top + i * 22 + 8)
+          .attr('r', 5)
+          .attr('fill', item.color);
+        svg.append('text')
+          .attr('x', legendX + 18)
+          .attr('y', margin.top + i * 22 + 8)
+          .attr('dominant-baseline', 'middle')
+          .attr('fill', muted)
+          .attr('font-size', 10)
+          .text(item.label);
+      });
+    })();
+
+    /* ── Diagram 2: Evaluation Robustness Metrics ── */
+    (function() {
+      const container = document.getElementById('robustness-svg');
+      const W = container.parentElement.clientWidth || 700;
+      const H = 320;
+      container.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+      const svg = d3.select(container);
+      const cyan = '#57cef2';
+      const muted = '#8b949e';
+      const green = '#34d399';
+      const orange = '#f97316';
+      const borderColor = '#30363d';
+      const bgTertiary = '#21262d';
+
+      const panelW = W / 2;
+      const margin = { top: 50, right: 30, bottom: 60, left: 55 };
+      const innerW = panelW - margin.left - margin.right;
+      const innerH = H - margin.top - margin.bottom;
+
+      // ── Left panel: Hindi AaaJ localization ──
+      const leftData = [
+        { label: 'Full\nLocalization', value: 42.8, color: green },
+        { label: 'Partial\nLocalization', value: 23.2, color: orange },
+      ];
+
+      const leftG = svg.append('g').attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+      svg.append('text')
+        .attr('x', panelW / 2)
+        .attr('y', 22)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#e6edf3')
+        .attr('font-size', 12)
+        .attr('font-weight', '600')
+        .text('Hindi AaaJ Satisfaction Rate');
+
+      svg.append('text')
+        .attr('x', panelW / 2)
+        .attr('y', 37)
+        .attr('text-anchor', 'middle')
+        .attr('fill', muted)
+        .attr('font-size', 10)
+        .text('Judge-side instruction localization matters most');
+
+      const leftX = d3.scaleBand().domain(leftData.map(d => d.label)).range([0, innerW]).padding(0.35);
+      const leftY = d3.scaleLinear().domain([0, 55]).range([innerH, 0]);
+
+      leftG.append('g')
+        .attr('transform', `translate(0,${innerH})`)
+        .call(d3.axisBottom(leftX).tickSize(0))
+        .call(g => g.select('.domain').remove())
+        .selectAll('text')
+        .attr('fill', muted)
+        .attr('font-size', 11)
+        .each(function(d) {
+          const el = d3.select(this);
+          const lines = d.split('\n');
+          el.text(null);
+          lines.forEach((line, i) => {
+            el.append('tspan').attr('x', 0).attr('dy', i === 0 ? '0.8em' : '1.1em').text(line);
+          });
+        });
+
+      leftG.append('g')
+        .call(d3.axisLeft(leftY).ticks(5).tickFormat(d => d + '%'))
+        .call(g => g.select('.domain').remove())
+        .call(g => g.selectAll('.tick line').attr('stroke', borderColor).attr('stroke-dasharray', '3,3').attr('x2', innerW))
+        .call(g => g.selectAll('.tick text').attr('fill', muted).attr('font-size', 10));
+
+      leftData.forEach(d => {
+        const bx = leftX(d.label);
+        const bw = leftX.bandwidth();
+        const by = leftY(d.value);
+        const bh = innerH - by;
+
+        leftG.append('rect')
+          .attr('x', bx).attr('y', by)
+          .attr('width', bw).attr('height', bh)
+          .attr('rx', 4)
+          .attr('fill', d.color)
+          .attr('opacity', 0.8);
+
+        leftG.append('text')
+          .attr('x', bx + bw / 2).attr('y', by - 6)
+          .attr('text-anchor', 'middle')
+          .attr('fill', d.color)
+          .attr('font-size', 13)
+          .attr('font-weight', '700')
+          .text(d.value + '%');
+      });
+
+      // Drop arrow
+      leftG.append('path')
+        .attr('d', `M ${leftX(leftData[0].label) + leftX.bandwidth() + 6} ${leftY(leftData[0].value) + 8} L ${leftX(leftData[1].label) - 6} ${leftY(leftData[1].value) + 8}`)
+        .attr('stroke', orange)
+        .attr('stroke-width', 1.5)
+        .attr('stroke-dasharray', '4,3')
+        .attr('fill', 'none')
+        .attr('marker-end', 'url(#arrowOrange)');
+
+      svg.append('defs').append('marker')
+        .attr('id', 'arrowOrange')
+        .attr('viewBox', '0 -4 8 8')
+        .attr('refX', 6).attr('refY', 0)
+        .attr('markerWidth', 6).attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,-4L8,0L0,4')
+        .attr('fill', orange);
+
+      leftG.append('text')
+        .attr('x', leftX(leftData[0].label) + leftX.bandwidth() / 2 + (leftX(leftData[1].label) - leftX(leftData[0].label)) / 2)
+        .attr('y', leftY(leftData[0].value) - 4)
+        .attr('text-anchor', 'middle')
+        .attr('fill', orange)
+        .attr('font-size', 10)
+        .text('−46%');
+
+      // ── Right panel: MMI QWK comparison ──
+      const rightData = [
+        { label: 'Multi-agent\nPrompting', value: 0.62, color: cyan },
+        { label: 'Fine-tuned\nBaseline', value: 0.32, color: muted },
+      ];
+
+      const rightG = svg.append('g').attr('transform', `translate(${panelW + margin.left}, ${margin.top})`);
+
+      svg.append('text')
+        .attr('x', panelW + panelW / 2)
+        .attr('y', 22)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#e6edf3')
+        .attr('font-size', 12)
+        .attr('font-weight', '600')
+        .text('MMI Scoring: QWK');
+
+      svg.append('text')
+        .attr('x', panelW + panelW / 2)
+        .attr('y', 37)
+        .attr('text-anchor', 'middle')
+        .attr('fill', muted)
+        .attr('font-size', 10)
+        .text('Multi-agent decomposition vs. specialized fine-tuning');
+
+      const rightX = d3.scaleBand().domain(rightData.map(d => d.label)).range([0, innerW]).padding(0.35);
+      const rightY = d3.scaleLinear().domain([0, 0.8]).range([innerH, 0]);
+
+      rightG.append('g')
+        .attr('transform', `translate(0,${innerH})`)
+        .call(d3.axisBottom(rightX).tickSize(0))
+        .call(g => g.select('.domain').remove())
+        .selectAll('text')
+        .attr('fill', muted)
+        .attr('font-size', 11)
+        .each(function(d) {
+          const el = d3.select(this);
+          const lines = d.split('\n');
+          el.text(null);
+          lines.forEach((line, i) => {
+            el.append('tspan').attr('x', 0).attr('dy', i === 0 ? '0.8em' : '1.1em').text(line);
+          });
+        });
+
+      rightG.append('g')
+        .call(d3.axisLeft(rightY).ticks(5).tickFormat(d => d.toFixed(1)))
+        .call(g => g.select('.domain').remove())
+        .call(g => g.selectAll('.tick line').attr('stroke', borderColor).attr('stroke-dasharray', '3,3').attr('x2', innerW))
+        .call(g => g.selectAll('.tick text').attr('fill', muted).attr('font-size', 10));
+
+      rightData.forEach(d => {
+        const bx = rightX(d.label);
+        const bw = rightX.bandwidth();
+        const by = rightY(d.value);
+        const bh = innerH - by;
+
+        rightG.append('rect')
+          .attr('x', bx).attr('y', by)
+          .attr('width', bw).attr('height', bh)
+          .attr('rx', 4)
+          .attr('fill', d.color)
+          .attr('opacity', d.color === muted ? 0.5 : 0.8);
+
+        rightG.append('text')
+          .attr('x', bx + bw / 2).attr('y', by - 6)
+          .attr('text-anchor', 'middle')
+          .attr('fill', d.color)
+          .attr('font-size', 13)
+          .attr('font-weight', '700')
+          .text(d.value.toFixed(2));
+      });
+
+      // Human expert line
+      rightG.append('line')
+        .attr('x1', 0).attr('y1', rightY(0.62))
+        .attr('x2', innerW).attr('y2', rightY(0.62))
+        .attr('stroke', cyan)
+        .attr('stroke-width', 1)
+        .attr('stroke-dasharray', '4,3')
+        .attr('opacity', 0.4);
+
+      rightG.append('text')
+        .attr('x', innerW - 4)
+        .attr('y', rightY(0.62) - 4)
+        .attr('text-anchor', 'end')
+        .attr('fill', cyan)
+        .attr('font-size', 9)
+        .attr('opacity', 0.7)
+        .text('≈ human expert reliability');
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

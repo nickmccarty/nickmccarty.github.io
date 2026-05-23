@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Observability and the Data Flywheel | Nick McCarty</title>
+  <meta name="description" content="Six patterns closing the loop: the RunTrace and JSONL Audit Log make every run auditable; the Chrome Trace Exporter visualizes latency; the Data Flywheel, RL Rollout, and Literature Review Pipeline turn pipeline output into training data.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/observability-flywheel.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Observability and the Data Flywheel">
+  <meta property="og:description" content="Six patterns closing the loop: RunTrace and JSONL Audit Log make every run auditable, Chrome Trace Exporter visualizes latency in Perfetto, and the Data Flywheel, RL Rollout, and Literature Review Pipeline extract training data as a byproduct of normal operation.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/observability-flywheel.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-22T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Observability and the Data Flywheel">
+  <meta name="twitter:description" content="RunTrace, JSONL Audit Log, Chrome Trace Exporter, Data Flywheel, RL Rollout, Literature Review Pipeline — six patterns that close the agentic loop.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Observability and the Data Flywheel","description":"Six patterns closing the loop: RunTrace, JSONL Audit Log, Chrome Trace Exporter, Data Flywheel, RL Rollout, and Literature Review Pipeline.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-22","url":"https://nickmccarty.github.io/blog/observability-flywheel.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    #runtrace-svg text, #flywheel-svg text, #litreview-svg text { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 22, 2026 &bull; 17 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">Observability and the Data Flywheel</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          Sections F and G close the loop: three observability patterns that make every run auditable and diagnosable, and three self-improvement patterns that extract training data from the pipeline as a byproduct of normal operation.
+        </p>
+
+      </header>
+
+      <p>
+        The prior nine posts covered the pipeline from entry point to output. This final post covers the two feedback loops that operate outside and around the pipeline: observability, which makes the pipeline's internal behavior visible and diagnosable, and self-improvement, which feeds the pipeline's outputs back into the models that generate them.
+      </p>
+
+      <p>
+        Section F contains three observability patterns. Section G contains three self-improvement patterns. Together they form the flywheel that turns a harness that runs well into a harness that runs better.
+      </p>
+
+      <h2>F1 &mdash; The RunTrace</h2>
+
+      <p>
+        A harness run that fails silently is worse than one that fails loudly. Silent failures produce PASS records in <code>runs.jsonl</code> while actual outputs are empty, truncated, or overwritten. The RunTrace pattern uses a Python context manager to guarantee that telemetry is recorded for every run, including runs that fail mid-execution.
+      </p>
+
+<pre><code>with RunTrace(run_id, task, model_config) as trace:
+    trace.enter_stage("plan")
+    plan = planner.plan(task, memory_context)
+
+    trace.enter_stage("research")
+    for query in plan.search_queries:
+        results = search(query)
+        novelty = memory.assess_novelty(results)
+        trace.record_tool_call("search", query, results, novelty_score=novelty)
+
+    trace.enter_stage("synthesize")
+    output = agent.synthesize(plan, results, model_config)
+
+    trace.enter_stage("evaluate")
+    scores, feedback = wiggum.loop(output, task, model_config)
+
+    trace.finalize("PASS", output, scores)  # writes to runs.jsonl + .trace.json</code></pre>
+
+      <p>
+        <code>trace.finalize()</code> is called inside the <code>with</code> block's <code>__exit__</code>, which runs even if an exception is raised. If the synthesize stage crashes, the trace record is finalized with <code>status="ERROR"</code> and the exception message, not silently omitted. Every run produces a <code>runs.jsonl</code> record and a Chrome Trace Event file.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">F1–F3 &mdash; Observability Stack: RunTrace → JSONL → Chrome Trace</div>
+        <svg id="runtrace-svg" width="100%" viewBox="0 0 680 280" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">The RunTrace context manager accumulates telemetry during execution and finalizes into both a JSONL record and a Chrome Trace Event file. The JSONL record feeds analytics; the trace file feeds Perfetto flame graph visualization.</p>
+      </div>
+
+      <h2>F2 &mdash; The JSONL Audit Log</h2>
+
+      <p>
+        Every <code>RunTrace.finalize()</code> call appends one JSON object to <code>data/runs.jsonl</code>. The file is never rewritten — only appended. The record schema captures everything needed for failure diagnosis and training data extraction:
+      </p>
+
+<pre><code>{
+  "run_id": "20260522T143027_a4f2b1c3",
+  "task": "survey speculative decoding techniques in transformer inference",
+  "producer_model": "qwen3:32b",
+  "evaluator_model": "glm4:latest",
+  "run_duration_s": 187.4,
+  "input_tokens": 12840,
+  "output_tokens": 3201,
+  "wiggum_rounds": 2,
+  "wiggum_scores": [6.87, 8.31],
+  "wiggum_dimensions": {
+    "relevance": [7.5, 8.0], "completeness": [7.0, 8.5],
+    "depth": [7.0, 8.5], "specificity": [5.5, 8.0],
+    "structure": [7.5, 8.0], "groundedness": [6.5, 8.5]
+  },
+  "final": "PASS",
+  "tool_calls": [
+    {"name": "search", "query": "speculative decoding methods survey",
+     "urls": ["https://..."], "novelty_score": 8.4},
+    ...
+  ],
+  "output_path": "outputs/20260522T143027_a4f2b1c3.md"
+}</code></pre>
+
+      <p>
+        The plain JSONL format is the pattern's primary advantage. No database schema migrations. No server dependency. Full portability. A 1,000-run log is typically under 20 MB and loads into pandas in under a second:
+      </p>
+
+<pre><code>import pandas as pd, json
+
+runs = pd.DataFrame(json.loads(l) for l in open("data/runs.jsonl"))
+
+# Failure rate by model
+print(runs.groupby("producer_model")["final"].value_counts(normalize=True))
+
+# Mean first-round Specificity score (weakest dimension)
+runs["spec_r1"] = runs.wiggum_dimensions.apply(lambda d: d["specificity"][0])
+print(runs.groupby("producer_model")["spec_r1"].mean().round(2))</code></pre>
+
+      <h2>F3 &mdash; The Chrome Trace Exporter</h2>
+
+      <p>
+        Latency is the hardest problem to diagnose from logs alone. A run that takes 240 seconds could be slow because synthesis is slow, or because the planner is cold-starting, or because the evaluator is running three revision rounds, or because search is returning slowly. All four look the same in a <code>run_duration_s</code> field.
+      </p>
+
+      <p>
+        The Chrome Trace Exporter emits a <code>{"traceEvents": [...]}</code> JSON file alongside every <code>runs.jsonl</code> entry. Each event has a stage name, a phase (<code>B</code> for begin, <code>E</code> for end), and a microsecond timestamp. Loading the file in <code>ui.perfetto.dev</code> (drag-and-drop, no installation) renders a flame graph where each stage is a colored block, and gaps between blocks are visible as white space.
+      </p>
+
+      <div class="callout">
+        <p>A planner block that is wider than the synthesis block means the planner model is not staying warm in VRAM. A flat white gap between "synthesis complete" and "eval start" means the evaluator is loading cold. Both are diagnosable in under 30 seconds using a Perfetto flame graph and fixable with a single environment variable change.</p>
+      </div>
+
+      <h2>G1 &mdash; The Data Flywheel</h2>
+
+      <p>
+        The harness produces quality-labeled outputs as a byproduct of normal operation. Every PASS run has a Wiggum score above 8.0. Every run with multiple rounds has a scored round-1 draft and a scored final revision. This is exactly the structure that Supervised Fine-Tuning (SFT) and Direct Preference Optimization (DPO) training require — without any additional human annotation.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">G1–G2 &mdash; The Data Flywheel: From runs.jsonl to Fine-Tuned Model</div>
+        <svg id="flywheel-svg" width="100%" viewBox="0 0 680 320" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">The flywheel completes when fine-tuned model output re-enters production, generating higher-quality runs that produce better training data for the next fine-tuning cycle.</p>
+      </div>
+
+<pre><code>def extract_sft_dataset(runs_path: str, min_score: float = 8.5) -> list[dict]:
+    """Extract instruction-completion pairs for SFT training."""
+    pairs = []
+    for line in open(runs_path):
+        run = json.loads(line)
+        if run["final"] != "PASS":
+            continue
+        if run["wiggum_scores"][-1] < min_score:
+            continue
+        output = open(run["output_path"]).read()
+        pairs.append({"instruction": run["task"], "output": output,
+                       "quality_score": run["wiggum_scores"][-1]})
+    return pairs
+
+def extract_dpo_dataset(runs_path: str) -> list[dict]:
+    """Extract preference pairs from multi-round runs."""
+    pairs = []
+    for line in open(runs_path):
+        run = json.loads(line)
+        if len(run["wiggum_scores"]) < 2:
+            continue
+        if run["wiggum_scores"][-1] - run["wiggum_scores"][0] < 1.0:
+            continue  # not enough quality gap for a meaningful preference signal
+        # Round 1 draft vs final revision = natural preference pair
+        pairs.append({
+            "prompt":   run["task"],
+            "chosen":   open(run["output_path"]).read(),  # final revision
+            "rejected": run.get("draft_path", ""),        # round-1 draft
+            "score_delta": run["wiggum_scores"][-1] - run["wiggum_scores"][0]
+        })
+    return pairs</code></pre>
+
+      <p>
+        The flywheel's quality depends directly on the calibration of the Wiggum evaluator. Evaluator drift — scores that inflate over time as the evaluator's behavior shifts — degrades label quality silently. The Evaluator Pool (A3) converts systematic drift into visible per-evaluator variance, which triggers recalibration against human-rated holdout sets.
+      </p>
+
+      <h2>G2 &mdash; The RL Rollout</h2>
+
+      <p>
+        The Data Flywheel extracts training data from existing production runs. The RL Rollout generates training data specifically for fine-tuning by running the Wiggum Loop as an online reward signal. For each task in a rollout set, the producer generates N candidates with varied sampling parameters; the evaluator scores each; the dimensional scores become a reward function for RLHF-style training:
+      </p>
+
+<pre><code>def rollout(tasks: list[str], config: ModelConfig,
+            n_candidates: int = 4) -> list[dict]:
+    preference_pairs = []
+    for task in tasks:
+        candidates = []
+        for temp in [0.6, 0.7, 0.8, 0.9][:n_candidates]:
+            output = agent.synthesize(task, config, temperature=temp)
+            scores, _ = wiggum.evaluate_once(output, task, config)
+            candidates.append({"output": output, "score": scores["composite"],
+                                "dimensions": scores})
+
+        candidates.sort(key=lambda c: c["score"], reverse=True)
+        if candidates[0]["score"] - candidates[-1]["score"] > 0.5:
+            preference_pairs.append({
+                "prompt": task,
+                "chosen": candidates[0]["output"],
+                "rejected": candidates[-1]["output"],
+                "reward": candidates[0]["score"] - candidates[-1]["score"]
+            })
+    return preference_pairs</code></pre>
+
+      <p>
+        The evaluator serves as the reward model, eliminating the need to train a separate one. The risk is reward hacking: if the fine-tuned model learns to satisfy the rubric rather than to genuinely improve output quality, scores inflate while true quality stagnates. Periodic holdout evaluation against human raters is the correct diagnostic. A widening gap between Wiggum scores and human ratings is the signal that the flywheel has decoupled from reality.
+      </p>
+
+      <h2>G3 &mdash; The Literature Review Pipeline</h2>
+
+      <p>
+        The final pattern is the most complex skill in the registry: a seven-stage pipeline that produces peer-review-quality literature surveys from a topic string and date range. It is implemented as a <code>/lit-review</code> skill (~880 lines) and is the highest-leverage entry point in the harness for academic use cases.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">G3 &mdash; The /lit-review Skill: Seven-Stage Pipeline</div>
+        <svg id="litreview-svg" width="100%" viewBox="0 0 680 200" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Seven stages from topic string to peer-review-quality survey. The multi-persona curation stage (Stage 3) is the most distinctive: five independent reviewer personas each score papers 1–5; papers with mean &lt; 3.5 or any score &lt; 2 are excluded.</p>
+      </div>
+
+      <p>
+        Stage 3 — multi-persona curation — is the most distinctive feature of the pipeline. Five reviewer personas (Pragmatist, Rigorist, Synthesizer, Contrarian, Newcomer) each independently score every paper from 1 to 5. Papers with a mean score below 3.5 are excluded. Papers where any persona scores below 2 are excluded regardless of mean — a single-weak-link rule that prevents inclusion of clearly off-topic or methodologically unsound papers. Papers passing both criteria are included.
+      </p>
+
+      <p>
+        The multi-persona approach serves two purposes: it simulates the diversity of perspectives that a real committee review would bring, and it makes the curation step tractable — a single model asked to curate 50 papers with a single perspective will tend to be either too permissive or too selective, while five perspectives with a consensus rule produces calibrated inclusion rates across task domains.
+      </p>
+
+      <p>
+        The full review passes through the Wiggum Loop (C1) before final output. Runtime for a 50-paper review is typically 45–90 minutes on standard hardware.
+      </p>
+
+      <h2>Closing the Loop</h2>
+
+      <p>
+        The ten posts in this series cover the complete harness pattern catalog from substrate to flywheel. The dependency structure runs upward: inference patterns (A) enable context patterns (B), which feed verification (C), which operates within orchestration (D) and security (E), all producing telemetry consumed by observability (F) and training data extraction (G). The flywheel in G feeds back to A, completing the circuit.
+      </p>
+
+      <div class="callout">
+        <p>The harness thesis stated at the start of this series: for a fixed task domain, the quality of the scaffolding surrounding a language model matters more than the choice of model. The twenty-seven patterns across these ten posts are the operational substance of that claim — the scaffolding, implemented, documented, and tested across 1,500 production runs.</p>
+      </div>
+
+      <p>
+        The full pattern catalog is expanding into a book — <em>Agentic Harness Engineering: Full-Stack Open Source Scaffolding Using Python and TypeScript</em> — with deeper implementation notes, consequences tables, and cross-references for all twenty-seven patterns. Each pattern documented here is a chapter in that catalog.
+      </p>
+
+    
+
+      <div class="post-pagination">
+        <a href="./security-patterns.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">9 &middot; Security Patterns</span>
+        </a>
+        <a href="./parallel-inference.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">11 &middot; Parallel Inference</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./experimental-methodology.html" class="related-post-card">
+            <div class="related-post-num">Post 12</div>
+            <div class="related-post-title">Experimental Methodology</div>
+            <div class="related-post-desc">Four CRD experiments exposing the evaluator ceiling, producer ceiling, and synthesis bottleneck.</div>
+          </a>
+          <a href="./alignment-fine-tuning.html" class="related-post-card">
+            <div class="related-post-num">Post 21</div>
+            <div class="related-post-title">Alignment Deep Cuts</div>
+            <div class="related-post-desc">FLR matches GPT-4 reward models without annotation. Harmful rate drops 33.25% to 1.74% via weight restoration.</div>
+          </a>
+          <a href="./failure-taxonomy.html" class="related-post-card">
+            <div class="related-post-num">Post 3</div>
+            <div class="related-post-title">Failure Taxonomy</div>
+            <div class="related-post-desc">Six failure classes ranked by frequency and cost, with diagnostic patterns from 1,500 production runs.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script type="module">
+    import anime from 'https://esm.sh/animejs@3.2.2';
+
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    /* ── F1-F3: RunTrace → JSONL → Trace ─────────────────────────────── */
+    (function drawRunTrace() {
+      const svg = d3.select('#runtrace-svg');
+      const W = 680, H = 280;
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const bdr = cssVar('--border-color');
+      const green = '#34d399';
+      const purple = '#a855f7';
+
+      const defs = svg.append('defs');
+      ['c','p','g'].forEach(k => {
+        const col = { c: cyan, p: pink, g: green }[k];
+        const m = defs.append('marker').attr('id', `arr-rt-${k}`)
+          .attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+        m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', col);
+      });
+
+      // RunTrace context manager box
+      const ctxBox = { x: 20, y: 60, w: 200, h: 160 };
+      svg.append('rect').attr('x', ctxBox.x).attr('y', ctxBox.y)
+        .attr('width', ctxBox.w).attr('height', ctxBox.h)
+        .attr('rx', 9).attr('fill', bg3).attr('stroke', cyan).attr('stroke-width', 2).attr('opacity', 0);
+      svg.append('text').attr('x', ctxBox.x + ctxBox.w / 2).attr('y', ctxBox.y + 20)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+        .attr('fill', cyan).attr('letter-spacing', 1).attr('opacity', 0).text('RUNTRACE');
+      svg.append('text').attr('x', ctxBox.x + ctxBox.w / 2).attr('y', ctxBox.y + 36)
+        .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0)
+        .text('context manager');
+
+      const stages = ['plan', 'research', 'synthesize', 'evaluate', 'finalize'];
+      stages.forEach((s, i) => {
+        const sy = ctxBox.y + 55 + i * 22;
+        svg.append('rect').attr('x', ctxBox.x + 10).attr('y', sy).attr('width', ctxBox.w - 20).attr('height', 16)
+          .attr('rx', 3).attr('fill', i === 4 ? cyan : bg3).attr('fill-opacity', i === 4 ? 0.25 : 1)
+          .attr('stroke', i === 4 ? cyan : bdr).attr('stroke-width', 1).attr('opacity', 0);
+        svg.append('text').attr('x', ctxBox.x + 20).attr('y', sy + 11)
+          .attr('font-size', 9.5).attr('fill', i === 4 ? cyan : txt2).attr('opacity', 0).text(s);
+      });
+
+      // Outputs
+      const outputs = [
+        { y: 70, label: 'runs.jsonl', sub: 'JSONL audit log (F2)', col: pink, arrow: 'p' },
+        { y: 170, label: 'task.trace.json', sub: 'Chrome Trace Events (F3)', col: green, arrow: 'g' },
+      ];
+
+      outputs.forEach(o => {
+        svg.append('rect').attr('x', 290).attr('y', o.y).attr('width', 200).attr('height', 65)
+          .attr('rx', 9).attr('fill', bg3).attr('stroke', o.col).attr('stroke-width', 1.5).attr('opacity', 0);
+        svg.append('text').attr('x', 390).attr('y', o.y + 20).attr('text-anchor', 'middle')
+          .attr('font-size', 11).attr('font-weight', 700).attr('fill', o.col).attr('opacity', 0).text(o.label);
+        svg.append('text').attr('x', 390).attr('y', o.y + 38).attr('text-anchor', 'middle')
+          .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0).text(o.sub);
+
+        svg.append('line').attr('x1', 221).attr('y1', ctxBox.y + ctxBox.h / 2)
+          .attr('x2', 289).attr('y2', o.y + 32)
+          .attr('stroke', o.col).attr('stroke-width', 1.2)
+          .attr('stroke-dasharray', '4 3')
+          .attr('marker-end', `url(#arr-rt-${o.arrow})`).attr('opacity', 0);
+      });
+
+      // Downstream usage
+      const usages = [
+        { y: 70, label: 'pandas / DuckDB', sub: 'analytics & diagnosis', col: pink },
+        { y: 130, label: 'SFT / DPO extraction', sub: 'training data (G1)', col: pink },
+        { y: 190, label: 'Perfetto flame graph', sub: 'latency diagnosis', col: green },
+      ];
+
+      usages.forEach(u => {
+        svg.append('rect').attr('x', 555).attr('y', u.y).attr('width', 110).attr('height', 40)
+          .attr('rx', 6).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 1).attr('opacity', 0);
+        svg.append('text').attr('x', 610).attr('y', u.y + 14).attr('text-anchor', 'middle')
+          .attr('font-size', 9.5).attr('font-weight', 600).attr('fill', u.col).attr('opacity', 0).text(u.label);
+        svg.append('text').attr('x', 610).attr('y', u.y + 28).attr('text-anchor', 'middle')
+          .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text(u.sub);
+        svg.append('line').attr('x1', 491).attr('y1', u.y === 130 ? 103 : u.y === 70 ? 103 : 203)
+          .attr('x2', 554).attr('y2', u.y + 20)
+          .attr('stroke', bdr).attr('stroke-width', 1).attr('stroke-dasharray', '3 3').attr('opacity', 0);
+      });
+
+      anime({
+        targets: '#runtrace-svg rect, #runtrace-svg text, #runtrace-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(35),
+        easing: 'easeOutQuad',
+      });
+    })();
+
+    /* ── G1-G2: Flywheel diagram ─────────────────────────────────────── */
+    (function drawFlywheel() {
+      const svg = d3.select('#flywheel-svg');
+      const W = 680, H = 320;
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const bdr = cssVar('--border-color');
+      const green = '#34d399';
+      const purple = '#a855f7';
+
+      const defs = svg.append('defs');
+      ['c','p','g','pu'].forEach(k => {
+        const col = { c: cyan, p: pink, g: green, pu: purple }[k];
+        const m = defs.append('marker').attr('id', `arr-fw-${k}`)
+          .attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+        m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', col);
+      });
+
+      // Circular flywheel nodes
+      const nodes = [
+        { x: 340, y: 45, label: 'Production\nRuns', col: cyan },
+        { x: 580, y: 150, label: 'runs.jsonl\nAudit Log', col: bdr },
+        { x: 500, y: 270, label: 'SFT / DPO\nDatasets', col: pink },
+        { x: 180, y: 270, label: 'Fine-Tuned\nModel', col: purple },
+        { x: 100, y: 150, label: 'Rollout\nSession', col: green },
+      ];
+
+      nodes.forEach(n => {
+        svg.append('ellipse').attr('cx', n.x).attr('cy', n.y).attr('rx', 72).attr('ry', 36)
+          .attr('fill', bg3).attr('stroke', n.col).attr('stroke-width', 2).attr('opacity', 0);
+        n.label.split('\n').forEach((line, i) => {
+          svg.append('text').attr('x', n.x).attr('y', n.y + (i === 0 ? -6 : 12))
+            .attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 600)
+            .attr('fill', n.col).attr('opacity', 0).text(line);
+        });
+      });
+
+      // Arrows connecting nodes in cycle
+      const arrows = [
+        { from: nodes[0], to: nodes[1], col: bdr, key: 'c', label: 'every run' },
+        { from: nodes[1], to: nodes[2], col: pink, key: 'p', label: 'G1 extract' },
+        { from: nodes[2], to: nodes[3], col: purple, key: 'pu', label: 'QLoRA fine-tune' },
+        { from: nodes[3], to: nodes[4], col: green, key: 'g', label: 'G2 rollout' },
+        { from: nodes[4], to: nodes[0], col: cyan, key: 'c', label: 'higher-quality output' },
+      ];
+
+      arrows.forEach(a => {
+        const mx = (a.from.x + a.to.x) / 2;
+        const my = (a.from.y + a.to.y) / 2;
+        svg.append('line')
+          .attr('x1', a.from.x).attr('y1', a.from.y)
+          .attr('x2', a.to.x).attr('y2', a.to.y)
+          .attr('stroke', a.col === bdr ? '#666' : a.col).attr('stroke-width', 1.5)
+          .attr('stroke-dasharray', '6 3')
+          .attr('marker-end', `url(#arr-fw-${a.key})`).attr('opacity', 0);
+        svg.append('text').attr('x', mx).attr('y', my - 8).attr('text-anchor', 'middle')
+          .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text(a.label);
+      });
+
+      anime({
+        targets: '#flywheel-svg ellipse, #flywheel-svg text, #flywheel-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(40),
+        easing: 'easeOutQuad',
+      });
+    })();
+
+    /* ── G3: 7-stage lit-review pipeline ────────────────────────────── */
+    (function drawLitReview() {
+      const svg = d3.select('#litreview-svg');
+      const W = 680, H = 200;
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const bdr = cssVar('--border-color');
+      const purple = '#a855f7';
+      const green = '#34d399';
+
+      const defs = svg.append('defs');
+      const m = defs.append('marker').attr('id', 'arr-lr')
+        .attr('viewBox', '0 -5 10 10').attr('refX', 8).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+      m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', bdr);
+
+      const stages = [
+        { label: 'Fetch', sub: 'arXiv', col: bdr },
+        { label: 'Enrich', sub: 'Sem. Scholar', col: bdr },
+        { label: 'Curate', sub: '5 personas', col: pink },
+        { label: 'Annotate', sub: 'per-paper', col: cyan },
+        { label: 'Cluster', sub: '3–5 themes', col: purple },
+        { label: 'Summarize', sub: 'per-cluster', col: purple },
+        { label: 'Synthesize', sub: '→ Wiggum', col: green },
+      ];
+
+      const boxW = 80, gap = 14, totalW = stages.length * boxW + (stages.length - 1) * gap;
+      const startX = (W - totalW) / 2;
+      const boxH = 65;
+      const boxY = 65;
+
+      stages.forEach((s, i) => {
+        const x = startX + i * (boxW + gap);
+        svg.append('rect').attr('x', x).attr('y', boxY).attr('width', boxW).attr('height', boxH)
+          .attr('rx', 7).attr('fill', bg3).attr('stroke', s.col).attr('stroke-width', 1.5).attr('opacity', 0);
+        svg.append('text').attr('x', x + 6).attr('y', boxY + 14)
+          .attr('font-size', 8.5).attr('fill', txt2).attr('opacity', 0)
+          .text(`Stage ${i + 1}`);
+        svg.append('text').attr('x', x + boxW / 2).attr('y', boxY + 34)
+          .attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 700)
+          .attr('fill', s.col).attr('opacity', 0).text(s.label);
+        svg.append('text').attr('x', x + boxW / 2).attr('y', boxY + 52)
+          .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2).attr('opacity', 0)
+          .text(s.sub);
+
+        if (i < stages.length - 1) {
+          svg.append('line')
+            .attr('x1', x + boxW).attr('y1', boxY + boxH / 2)
+            .attr('x2', x + boxW + gap).attr('y2', boxY + boxH / 2)
+            .attr('stroke', bdr).attr('stroke-width', 1.2)
+            .attr('marker-end', 'url(#arr-lr)').attr('opacity', 0);
+        }
+      });
+
+      // Annotations
+      svg.append('text').attr('x', startX + 2 * (boxW + gap) + boxW / 2).attr('y', boxY - 12)
+        .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', pink).attr('opacity', 0)
+        .text('mean ≥ 3.5 + no score < 2');
+
+      svg.append('text').attr('x', W / 2).attr('y', H - 8).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('fill', txt2).attr('opacity', 0)
+        .text('45–90 min · 50 papers · invoked as: oh /lit-review "topic" --after 2024-01 --max 50');
+
+      anime({
+        targets: '#litreview-svg rect, #litreview-svg text, #litreview-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(40),
+        easing: 'easeOutQuad',
+      });
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

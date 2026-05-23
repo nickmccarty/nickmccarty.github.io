@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't | Nick McCarty</title>
+  <meta name="description" content="JETTS: judges match outcome reward models for reranking but lose to process reward models in beam search. Omni-Judge is wrong in 96.4% of expert disagreements. Benchmark saturation may be an artifact of noisy judges, not model capability limits. M-JudgeBench: 10-dimensional multimodal evaluation with MCTS-trained judges.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/judge-benchmarks-scaling.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't">
+  <meta property="og:description" content="JETTS benchmark: judges competitive for reranking, lose to PRMs in beam search, fail at critique refinement. Omni-MATH-2: Omni-Judge wrong in 96.4% of disagreements. M-JudgeBench + Judge-MCTS. IF-RewardBench. Multimodal judge model for text/audio/image/video. Verbal uncertainty estimation for personalized judgment.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/judge-benchmarks-scaling.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-04-29T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't">
+  <meta name="twitter:description" content="JETTS: judges win at reranking, lose at beam search, fail at critique refinement. Omni-Judge wrong 96.4% of the time. Benchmark saturation as a judge failure mode, not a model capability ceiling.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't","description":"Six papers on judge benchmarks and test-time scaling: JETTS evaluates judges as test-time scaling evaluators, Omni-MATH-2 exposes benchmark saturation as a judge failure mode, M-JudgeBench introduces 10-dimensional multimodal evaluation with MCTS-trained judges, IF-RewardBench benchmarks instruction-following judges, a multimodal judge model covers text/audio/image/video, and verbal uncertainty estimation improves personalized judgment reliability.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-04-29","url":"https://nickmccarty.github.io/blog/judge-benchmarks-scaling.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+      font-style: italic;
+    }
+    .series-nav {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin: 2rem 0;
+    }
+    .series-nav-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .series-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .series-badge {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .series-badge.active {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      background: rgba(87,206,242,0.08);
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      background: rgba(87,206,242,0.06);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .callout.orange {
+      border-left-color: #f97316;
+      background: rgba(249,115,22,0.06);
+    }
+    .callout.purple {
+      border-left-color: #a855f7;
+      background: rgba(168,85,247,0.06);
+    }
+    .callout.pink {
+      border-left-color: #ed46c3;
+      background: rgba(237,70,195,0.06);
+    }
+    .callout.green {
+      border-left-color: #34d399;
+      background: rgba(52,211,153,0.06);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 0.6rem 0.9rem;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    code {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 0.8em;
+      background: var(--bg-tertiary);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article style="max-width: 760px; margin: 0 auto; padding: 2rem 1rem 4rem;">
+
+
+      <header style="margin-bottom: 2.5rem;">
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">May 23, 2026 &bull; 16 min read</div>
+        <h1 style="font-size: clamp(1.6rem, 4vw, 2.2rem); line-height: 1.25; margin-bottom: 1rem;">Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don&rsquo;t</h1>
+        <p style="font-size: 1.05rem; color: var(--text-secondary); line-height: 1.6;">Post 13 established that the best judges lag human agreement by 5 points and show systematic position bias. This post goes further: six papers that benchmark judges across test-time scaling scenarios, multimodal tasks, instruction following, personalization, and mathematical reasoning &mdash; and find failure modes that position bias alone doesn&rsquo;t explain.</p>
+      </header>
+
+      <div class="callout">
+        <strong>Series context.</strong> The harness Wiggum evaluator (Post 6) uses a dimensional rubric scored by a judge model. Posts 13 and 17 covered judge reliability and calibration. This post adds the test-time scaling dimension: when judges are used not just for evaluation but as <em>active signals during generation</em> &mdash; for reranking candidates, guiding beam search, or critiquing drafts &mdash; the failure modes are qualitatively different, and so are the design implications.
+      </div>
+
+      <h2>Test-Time Scaling and the Judge Gap</h2>
+
+      <p>Test-time compute scaling &mdash; spending more inference budget to improve output quality &mdash; has become a major axis of LLM capability improvement. The standard mechanisms are response reranking (generate N candidates, pick the best), step-level beam search (guide generation step by step using a reward signal), and critique-based refinement (generate, critique, revise). Each requires a reliable evaluator signal at inference time.</p>
+
+      <p>Reward models trained for this purpose are well understood. LLM judges &mdash; which generate natural language evaluations &mdash; are more flexible and cheaper to deploy, and their use as test-time scaling evaluators has grown alongside their use in offline evaluation. The question JETTS asks is whether that flexibility comes at a cost.</p>
+
+      <h2>1. JETTS: The Performance Profile Depends on the Scaling Method</h2>
+
+      <p><strong>JETTS</strong> (Judge Evaluation for Test-Time Scaling, arXiv:2504.15253v2) is the most rigorous comparative study of judges versus reward models in test-time scenarios to date. The benchmark evaluates <strong>ten judge models</strong> (7B&ndash;70B parameters) against <strong>eight base generator models</strong> (6.7B&ndash;72B parameters) across three domains: math reasoning, code generation, and instruction following. Three scaling settings are tested independently:</p>
+
+      <ul>
+        <li><strong>Response reranking</strong>: generate N responses, use judge score to select the best one</li>
+        <li><strong>Step-level beam search</strong>: use process-level signal at each generation step to guide a beam search</li>
+        <li><strong>Critique-based refinement</strong>: generate a critique of an initial response, then generate a revision based on the critique</li>
+      </ul>
+
+      <div class="diagram-container">
+        <svg id="jetts-chart" width="100%" height="260"></svg>
+        <div class="diagram-caption">JETTS performance profile: judge effectiveness relative to reward models varies sharply by test-time scaling method. Reranking: competitive. Beam search: dominated by PRMs. Refinement: currently ineffective.</div>
+      </div>
+
+      <p>The results break cleanly by setting:</p>
+
+      <ul>
+        <li><strong>Response reranking</strong>: judges are <em>competitive</em> with outcome reward models. The task is well-suited to judges because it requires holistic comparison across complete responses &mdash; which is what LLM judges were trained to do.</li>
+        <li><strong>Step-level beam search</strong>: judges are <em>consistently outperformed</em> by process reward models (PRMs). Beam search requires granular step-level signals that a PRM can provide but a generative judge cannot reliably produce. The mismatch is architectural, not a matter of scale.</li>
+        <li><strong>Critique-based refinement</strong>: judge-generated critiques are <em>currently ineffective</em> at improving responses. The natural language critiques don&rsquo;t provide actionable enough signal for the generator to revise meaningfully.</li>
+      </ul>
+
+      <div class="callout orange">
+        <strong>Harness implication.</strong> The Wiggum evaluator issues holistic dimensional scores and dimensional revision feedback. This maps closest to the reranking setting &mdash; the one where judges are competitive. The harness is <em>not</em> using step-level beam search (it operates at the document level, not the token level). The JETTS finding validates that design choice: the judge role the harness assigns is the role where judges are strongest.
+      </div>
+
+      <h2>2. Omni-MATH-2: Benchmark Saturation as a Judge Failure Mode</h2>
+
+      <p>The conventional explanation for benchmark saturation is that models have memorized training data or exhausted the benchmark&rsquo;s discriminative range. <strong>Omni-MATH-2</strong> (arXiv:2601.19532v1) offers a different explanation: saturation may be an artifact of judge failure, not model capability.</p>
+
+      <p>The work audits the Omni-MATH dataset for evaluation quality: each problem was checked for LaTeX compilability, solvability, verifiability, and formatting consistency. The result is two subsets &mdash; a <strong>clean exact-answer subset</strong> (n=4,181) and a <strong>tagged non-standard subset</strong> (n=247) containing proofs, images, and answers requiring non-standard formats.</p>
+
+      <p>Comparing Omni-Judge (the original benchmark judge) against expert human annotations on disagreement cases produces the headline finding:</p>
+
+      <div class="callout pink">
+        <strong>Omni-Judge is wrong in 96.4% of cases where it disagrees with expert annotations.</strong> This means that when the judge and expert disagree, the expert is almost always right. The judge isn&rsquo;t unreliable occasionally &mdash; it&rsquo;s systematically wrong on the cases that matter most: the hard problems near the frontier of model capability, which are precisely the cases that determine whether benchmark saturation has occurred.
+      </div>
+
+      <p>The implication is pointed: current judges cannot differentiate between model abilities even <em>before</em> benchmarks saturate. A model appearing to hit a ceiling on Omni-MATH may just be hitting a judge quality ceiling. The paper argues for treating judge correctness as an experimental condition that must be measured and reported alongside benchmark scores.</p>
+
+      <p>For the harness, this finding extends the Post 13 warning about judge reliability into a new domain: when the harness uses Wiggum scores as a proxy for output quality over time, score plateaus may reflect judge saturation rather than pipeline optimization having converged. The Data Flywheel should track the conditions under which Wiggum scores stop improving &mdash; and distinguish judge ceiling from pipeline ceiling.</p>
+
+      <h2>3. M-JudgeBench: Ten Dimensions, MCTS-Generated Training Data</h2>
+
+      <p>Multimodal judge benchmarks lag behind their text-only counterparts. <strong>M-JudgeBench</strong> (arXiv:2603.00546v1) addresses this with a ten-dimensional capability-oriented benchmark for multimodal LLM judges, covering:</p>
+
+      <ol>
+        <li>Visual reasoning accuracy</li>
+        <li>Cross-modal consistency</li>
+        <li>Spatial relationship judgment</li>
+        <li>Temporal sequence evaluation</li>
+        <li>Fine-grained attribute assessment</li>
+        <li>Counterfactual reasoning</li>
+        <li>Instruction adherence</li>
+        <li>Factual grounding</li>
+        <li>Style and format judgment</li>
+        <li>Compositional scene understanding</li>
+      </ol>
+
+      <p>Systematic evaluation across existing MLLM judges reveals consistent weaknesses across multiple dimensions &mdash; particularly in cross-modal consistency and counterfactual reasoning. Existing judges that perform well on unimodal text tasks show significant degradation when visual content is introduced.</p>
+
+      <p>The paper&rsquo;s second contribution is <strong>Judge-MCTS</strong>, a data generation framework that uses Monte Carlo Tree Search to generate pairwise reasoning trajectories for training judge models. MCTS explores the judgment reasoning tree explicitly, generating diverse high-quality preference pairs for training. The resulting <strong>M-Judger</strong> models, trained on these trajectories, outperform existing MLLM-as-a-judge systems on both M-JudgeBench and prior benchmarks.</p>
+
+      <div class="callout purple">
+        <strong>Why MCTS for judge training.</strong> Standard preference data generation relies on human annotators or model outputs that happen to diverge. MCTS generates trajectories by systematically exploring branches of the judgment reasoning tree, producing pairs where the branching point is known. This gives the training signal explicit coverage of the reasoning patterns that distinguish good judges from bad ones &mdash; rather than sampling coverage of the output distribution.
+      </div>
+
+      <h2>4. IF-RewardBench: Instruction-Following Meta-Evaluation</h2>
+
+      <p>Instruction-following evaluation is a common use case for judge models: given a user instruction and a model response, did the model follow the instruction? The standard approach is pairwise comparison against a reference response, but this has a known weakness &mdash; pairwise evaluation conflates response quality with instruction adherence, and the simplification away from multi-constraint instructions means the benchmark doesn&rsquo;t test the hard cases.</p>
+
+      <p><strong>IF-RewardBench</strong> (arXiv:2603.04738v2) fixes both problems. The benchmark covers diverse instruction and constraint types, including:</p>
+
+      <ul>
+        <li>Multi-constraint instructions (follow constraints A and B simultaneously)</li>
+        <li>Negation constraints (do X but not Y)</li>
+        <li>Format specifications (respond in exactly N words)</li>
+        <li>Conditional constraints (if X is true, do Y; otherwise do Z)</li>
+      </ul>
+
+      <p>Evaluation on IF-RewardBench reveals <em>significant deficiencies</em> in current judge models on these dimensions. More importantly, IF-RewardBench achieves a stronger positive correlation with downstream task performance than existing benchmarks &mdash; meaning that performance on IF-RewardBench predicts real-world judge usefulness better than the benchmarks practitioners currently use to select judges.</p>
+
+      <div class="callout">
+        <strong>Selection implication.</strong> The harness Dimensional Rubric (Post 7) specifies multi-constraint evaluation criteria across six dimensions. IF-RewardBench&rsquo;s finding suggests that judge selection should prioritize performance on multi-constraint instruction-following benchmarks over single-score aggregate benchmarks when the judge will be used for rubric-graded evaluation.
+      </div>
+
+      <h2>5. Multimodal Judge Model: Text, Audio, Image, Video</h2>
+
+      <p>Most judge benchmarks are monomodal. The <strong>Multimodal Judge Model</strong> (arXiv:2601.06106v1) proposes a framework for reliable evaluation across all four major modalities simultaneously &mdash; text, audio, image, and video &mdash; with diagnostic feedback rather than simple scores.</p>
+
+      <p>The design choices address a concrete problem in multimodal evaluation: train-test leakage. When public datasets are used for evaluation, models trained on those datasets may have seen the evaluation data. The framework uses <strong>carefully sampled public datasets with fixed seeds</strong> to ensure reproducibility and minimize leakage, making evaluation scores comparable across model versions and labs.</p>
+
+      <p>The framework aggregates judgments across modalities, analyzes output quality and reasoning consistency, and generates diagnostic feedback identifying which modality or reasoning step caused a failure. Results show strong alignment between the Judge Model&rsquo;s assessments and human scores.</p>
+
+      <p>The audio modality coverage is notable: most multimodal evaluation frameworks cover image and video but treat audio as secondary. Including audio in judge evaluation matters for agentic systems that process spoken inputs, transcripts, or audio-grounded documents.</p>
+
+      <h2>6. Personalized Judge: Verbal Uncertainty Estimation</h2>
+
+      <p>Most judge evaluation assumes a single ground-truth preference. <strong>Personalized Judge</strong> (arXiv:2406.11657v1) relaxes this assumption: what if user preferences legitimately vary, and the judge&rsquo;s task is to evaluate whether a response matches a specific user&rsquo;s values and style?</p>
+
+      <p>Direct application of LLMs to personalized evaluation fails: models asked to judge whether a response matches a user persona show low agreement with human ground truth, below what you&rsquo;d want for a deployable system. The paper&rsquo;s intervention is <strong>verbal uncertainty estimation</strong>: rather than forcing the judge to produce a binary verdict on every example, the judge is allowed to express low confidence on uncertain cases.</p>
+
+      <div class="callout green">
+        <strong>Results.</strong> By incorporating verbal uncertainty estimation, the method achieves <strong>agreement above 80%</strong> on high-certainty samples for binary personalization tasks. Human evaluations show the method matches or surpasses third-party human performance on these samples. The catch: the model scales well by filtering uncertain cases to human review, but the rate of uncertain cases determines the fraction that reach human annotators.
+      </div>
+
+      <p>The uncertainty estimation insight connects directly to Post 17&rsquo;s conformal prediction framework: conformal prediction provides <em>statistically guaranteed</em> coverage for score intervals; verbal uncertainty estimation provides <em>model-expressed</em> uncertainty on binary decisions. They&rsquo;re complementary instruments for the same underlying reliability problem.</p>
+
+      <h2>Reading the Benchmark Landscape</h2>
+
+      <div class="diagram-container">
+        <svg id="bench-landscape" width="100%" height="280"></svg>
+        <div class="diagram-caption">Judge benchmark coverage by task type and scaling context. Each benchmark targets a distinct gap in the evaluation landscape.</div>
+      </div>
+
+      <p>The six papers collectively map a benchmark landscape that was mostly unmeasured two years ago:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Benchmark</th>
+            <th>Primary gap addressed</th>
+            <th>Key failure uncovered</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>JETTS</strong></td>
+            <td>Test-time scaling (rerank / beam / refine)</td>
+            <td>Critiques are ineffective; PRMs dominate beam search</td>
+          </tr>
+          <tr>
+            <td><strong>Omni-MATH-2</strong></td>
+            <td>Math reasoning benchmark saturation</td>
+            <td>Judge wrong in 96.4% of expert disagreements</td>
+          </tr>
+          <tr>
+            <td><strong>M-JudgeBench</strong></td>
+            <td>Multimodal judge capabilities (10 dimensions)</td>
+            <td>Cross-modal consistency and counterfactual reasoning weak</td>
+          </tr>
+          <tr>
+            <td><strong>IF-RewardBench</strong></td>
+            <td>Instruction-following meta-evaluation</td>
+            <td>Current judges show significant deficiencies on multi-constraint tasks</td>
+          </tr>
+          <tr>
+            <td><strong>Multimodal Judge</strong></td>
+            <td>Text/audio/image/video evaluation framework</td>
+            <td>Strong human alignment when evaluation is reproducible (fixed seeds)</td>
+          </tr>
+          <tr>
+            <td><strong>Personalized Judge</strong></td>
+            <td>Persona-aligned preference evaluation</td>
+            <td>&gt;80% agreement achievable but only on high-certainty subset</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Synthesis: What These Papers Mean for Harness Evaluation</h2>
+
+      <p>The recurring pattern across all six papers is that judge reliability is task-specific in ways that aggregate metrics obscure. A judge that scores well on standard benchmarks may be wrong 96% of the time on hard math problems (Omni-MATH-2), fail on multi-constraint instructions (IF-RewardBench), degrade on cross-modal consistency (M-JudgeBench), or be unable to guide beam search (JETTS).</p>
+
+      <p>For harness design, this means judge selection should match the evaluation task:</p>
+
+      <ul>
+        <li><strong>For response reranking</strong>: LLM judges are competitive. Select on the benchmark dimension closest to your rubric domain.</li>
+        <li><strong>For step-level guidance</strong>: use a dedicated PRM, not a generative judge.</li>
+        <li><strong>For critique-based revision</strong>: the harness&rsquo;s structured revision prompts (Post 7) are more reliable than open-ended natural language critiques from a judge.</li>
+        <li><strong>For dimensional rubric scoring</strong>: prioritize IF-RewardBench performance when selecting judges for multi-constraint rubrics.</li>
+        <li><strong>For score interpretation</strong>: score plateaus may be judge saturation; use verbal uncertainty or conformal intervals to distinguish true convergence from judge ceiling.</li>
+      </ul>
+
+      <div class="callout">
+        <strong>The benchmark gap problem is closing.</strong> JETTS, M-JudgeBench, IF-RewardBench, and Omni-MATH-2 were all published in 2025&ndash;2026. The field is rapidly building the measurement infrastructure to know which judges are reliable in which contexts. For harness practitioners, the practical takeaway is that this infrastructure now exists and should be used for judge selection &mdash; rather than relying on aggregated leaderboard scores.
+      </div>
+
+
+    
+
+      <div class="post-pagination">
+        <a href="./structured-knowledge-queries.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">22 &middot; Structured Knowledge Queries</span>
+        </a>
+        <div class="pagination-card pagination-next pagination-edge">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">End of series</span>
+        </div>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./judge-reliability.html" class="related-post-card">
+            <div class="related-post-num">Post 13</div>
+            <div class="related-post-title">Judge Reliability</div>
+            <div class="related-post-desc">Best judges lag human agreement by 5 points. Omni-Judge wrong in 96.4% of expert disagreements.</div>
+          </a>
+          <a href="./evaluation-uncertainty.html" class="related-post-card">
+            <div class="related-post-num">Post 17</div>
+            <div class="related-post-title">Evaluation Uncertainty</div>
+            <div class="related-post-desc">Conformal prediction turns point scores into calibrated intervals. Agent-as-a-Judge outperforms LLM-as-a-Judge.</div>
+          </a>
+          <a href="./evaluation-robustness.html" class="related-post-card">
+            <div class="related-post-num">Post 19</div>
+            <div class="related-post-title">Eval Robustness</div>
+            <div class="related-post-desc">LLMORPH: 561K test executions. Three novel scoring biases. Holistic judges outperform atomic decomposition.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // Diagram 1: JETTS performance profile (judges vs reward models by setting)
+    (function() {
+      const svg = d3.select('#jetts-chart');
+      const W = svg.node().parentElement.clientWidth || 700;
+      const H = 260;
+      svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+      const accent = '#57cef2';
+      const purple = '#a855f7';
+      const orange = '#f97316';
+      const green = '#34d399';
+      const textMuted = cssVar('--text-muted') || '#8b949e';
+      const bgTertiary = cssVar('--bg-tertiary') || '#21262d';
+      const borderColor = cssVar('--border-color') || '#30363d';
+
+      const settings = ['Response\nReranking', 'Step-Level\nBeam Search', 'Critique-Based\nRefinement'];
+      const outcomes = [
+        { label: 'LLM Judge', color: accent, values: [0.82, 0.41, 0.18] },
+        { label: 'Outcome RM', color: green, values: [0.80, 0.55, null] },
+        { label: 'Process RM', color: purple, values: [null, 0.91, null] },
+      ];
+
+      const marginLeft = 40;
+      const marginRight = 120;
+      const marginTop = 50;
+      const marginBottom = 30;
+      const chartW = W - marginLeft - marginRight;
+      const chartH = H - marginTop - marginBottom;
+      const groupW = chartW / settings.length;
+      const barW = groupW * 0.22;
+
+      // Y axis label
+      svg.append('text')
+        .attr('transform', `rotate(-90)`)
+        .attr('x', -(marginTop + chartH / 2))
+        .attr('y', 12)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '9px')
+        .attr('fill', textMuted)
+        .text('Relative effectiveness (schematic)');
+
+      // Y gridlines
+      [0.25, 0.5, 0.75, 1.0].forEach(v => {
+        const y = marginTop + chartH * (1 - v);
+        svg.append('line')
+          .attr('x1', marginLeft).attr('x2', marginLeft + chartW)
+          .attr('y1', y).attr('y2', y)
+          .attr('stroke', borderColor).attr('stroke-width', 0.5);
+        svg.append('text')
+          .attr('x', marginLeft - 4).attr('y', y)
+          .attr('text-anchor', 'end').attr('dominant-baseline', 'middle')
+          .attr('font-size', '8px').attr('fill', textMuted)
+          .text(v.toFixed(2));
+      });
+
+      // Bars
+      settings.forEach((s, si) => {
+        const cx = marginLeft + si * groupW + groupW / 2;
+        outcomes.forEach((out, oi) => {
+          const v = out.values[si];
+          if (v === null) return;
+          const bx = cx + (oi - 1) * (barW + 3);
+          const bh = chartH * v;
+          const by = marginTop + chartH - bh;
+          svg.append('rect')
+            .attr('x', bx - barW / 2).attr('y', by)
+            .attr('width', barW).attr('height', bh)
+            .attr('fill', out.color).attr('opacity', 0.75)
+            .attr('rx', 2);
+          svg.append('text')
+            .attr('x', bx).attr('y', by - 3)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '8px')
+            .attr('fill', out.color)
+            .text((v * 100).toFixed(0) + '%');
+        });
+
+        // X label
+        const lines = s.split('\n');
+        lines.forEach((line, li) => {
+          svg.append('text')
+            .attr('x', cx)
+            .attr('y', marginTop + chartH + 12 + li * 11)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '9px')
+            .attr('fill', textMuted)
+            .text(line);
+        });
+      });
+
+      // Legend
+      outcomes.forEach((out, oi) => {
+        const lx = W - marginRight + 8;
+        const ly = marginTop + oi * 22;
+        svg.append('rect')
+          .attr('x', lx).attr('y', ly - 7)
+          .attr('width', 12).attr('height', 12)
+          .attr('fill', out.color).attr('rx', 2).attr('opacity', 0.75);
+        svg.append('text')
+          .attr('x', lx + 16).attr('y', ly + 2)
+          .attr('font-size', '9px').attr('fill', textMuted)
+          .text(out.label);
+      });
+
+      // "N/A" annotation for beam search judge and PRMs for reranking/refinement
+      svg.append('text')
+        .attr('x', marginLeft + 1 * groupW + groupW / 2 + (barW + 3))
+        .attr('y', marginTop + chartH - 2)
+        .attr('text-anchor', 'middle').attr('font-size', '7px').attr('fill', purple)
+        .text('PRM\ndominates');
+    })();
+
+    // Diagram 2: Benchmark landscape matrix
+    (function() {
+      const svg = d3.select('#bench-landscape');
+      const W = svg.node().parentElement.clientWidth || 700;
+      const H = 280;
+      svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+      const accent = '#57cef2';
+      const purple = '#a855f7';
+      const textMuted = cssVar('--text-muted') || '#8b949e';
+      const bgTertiary = cssVar('--bg-tertiary') || '#21262d';
+      const borderColor = cssVar('--border-color') || '#30363d';
+
+      const benches = ['JETTS', 'Omni-MATH-2', 'M-JudgeBench', 'IF-RewardBench', 'Multimodal\nJudge', 'Personalized\nJudge'];
+      const dims = ['Test-Time\nScaling', 'Hard Math', 'Multimodal', 'Instruction\nFollowing', 'Audio/Video', 'Uncertainty'];
+
+      const coverage = [
+        [1, 0, 0, 1, 0, 0],   // JETTS
+        [0, 1, 0, 0, 0, 0],   // Omni-MATH-2
+        [0, 0, 1, 0, 0, 0],   // M-JudgeBench
+        [0, 0, 0, 1, 0, 0],   // IF-RewardBench
+        [0, 0, 1, 0, 1, 0],   // Multimodal Judge
+        [0, 0, 0, 0, 0, 1],   // Personalized Judge
+      ];
+
+      const marginLeft = 110;
+      const marginTop = 50;
+      const cellW = (W - marginLeft - 20) / dims.length;
+      const cellH = (H - marginTop - 20) / benches.length;
+
+      dims.forEach((d, di) => {
+        const lines = d.split('\n');
+        lines.forEach((line, li) => {
+          svg.append('text')
+            .attr('x', marginLeft + di * cellW + cellW / 2)
+            .attr('y', marginTop - 18 + li * 11)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '9px')
+            .attr('fill', textMuted)
+            .text(line);
+        });
+      });
+
+      benches.forEach((b, bi) => {
+        const lines = b.split('\n');
+        lines.forEach((line, li) => {
+          svg.append('text')
+            .attr('x', marginLeft - 8)
+            .attr('y', marginTop + bi * cellH + cellH / 2 + (li - (lines.length - 1) / 2) * 11)
+            .attr('text-anchor', 'end')
+            .attr('dominant-baseline', 'middle')
+            .attr('font-size', '10px')
+            .attr('fill', textMuted)
+            .text(line);
+        });
+      });
+
+      benches.forEach((b, bi) => {
+        dims.forEach((d, di) => {
+          const covered = coverage[bi][di];
+          svg.append('rect')
+            .attr('x', marginLeft + di * cellW + 2)
+            .attr('y', marginTop + bi * cellH + 2)
+            .attr('width', cellW - 4)
+            .attr('height', cellH - 4)
+            .attr('rx', 4)
+            .attr('fill', covered ? 'rgba(87,206,242,0.15)' : bgTertiary)
+            .attr('stroke', covered ? accent : borderColor)
+            .attr('stroke-width', covered ? 1.5 : 0.5);
+
+          if (covered) {
+            svg.append('text')
+              .attr('x', marginLeft + di * cellW + cellW / 2)
+              .attr('y', marginTop + bi * cellH + cellH / 2)
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'middle')
+              .attr('font-size', '13px')
+              .attr('fill', accent)
+              .text('✓');
+          }
+        });
+      });
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

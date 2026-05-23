@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Objective Alignment: Beyond Scalar Rewards | Nick McCarty</title>
+  <meta name="description" content="DPA, MO-ODPO, MGDA-Decoupled, and the safety fine-tuning hazard: high dataset similarity degrades safety by 10.33%. What the alignment literature means for harness-driven self-improvement.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/multi-objective-alignment.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Multi-Objective Alignment: Beyond Scalar Rewards">
+  <meta property="og:description" content="Arithmetic control, multi-objective DPO, geometry-aware optimization, and the safety fine-tuning hazard — what the alignment literature means for harness-driven self-improvement.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/multi-objective-alignment.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-23T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Multi-Objective Alignment: Beyond Scalar Rewards">
+  <meta name="twitter:description" content="DPA, MO-ODPO, MGDA-Decoupled, safety fine-tuning degradation — the alignment landscape and what it means for the Data Flywheel and RL Rollout patterns.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Multi-Objective Alignment: Beyond Scalar Rewards","description":"Survey of DPA, MO-ODPO, MGDA-Decoupled, rDPO, safety fine-tuning hazards, and alignment recovery methods — and their implications for harness-driven self-improvement.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-23","url":"https://nickmccarty.github.io/blog/multi-objective-alignment.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout.purple { border-left-color: #a855f7; }
+    .callout.orange { border-left-color: #f97316; }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .callout p + p { margin-top: 0.6rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.88rem;
+    }
+    th {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    tr:last-child td { border-bottom: none; }
+    #tradeoff-svg text, #pipeline-svg text { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.797l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 23, 2026 &bull; 14 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">Multi-Objective Alignment: Beyond Scalar Rewards</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          Arithmetic preference control, Pareto-dominant multi-objective DPO, geometry-aware optimization, and the safety fine-tuning hazard — what happens when the dataset used for safety alignment is too similar to your fine-tuning data, and what it means for harness-driven self-improvement.
+        </p>
+
+      </header>
+
+      <p>
+        The Data Flywheel (G1) and RL Rollout (G2) patterns described in <a href="./observability-flywheel.html">Post 10</a> close the loop from pipeline output back to model improvement. The standard implementation uses scalar reward signals — a single quality score per run drives the preference ranking. But scalar rewards are a simplification that hides important tradeoffs: a high-depth, low-helpfulness output is not the same as a low-depth, high-helpfulness one, even if both score the same composite value.
+      </p>
+
+      <p>
+        The alignment literature has developed methods that go beyond scalar rewards. This post surveys those methods and their implications for harness-driven self-improvement — with particular attention to the safety fine-tuning hazard that is directly relevant to anyone running RL post-training against harness-generated preference data.
+      </p>
+
+      <h2>The Scalar Reward Problem</h2>
+
+      <p>
+        Standard RLHF uses a single scalar reward to rank outputs as preferred or rejected. The scalar model is tractable and well-understood, but it collapses the multi-dimensional nature of quality into a single number. Consider two outputs for a research-synthesis task:
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Output</th><th>Helpfulness</th><th>Depth</th><th>Specificity</th><th>Safety</th><th>Scalar composite</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>A</td><td>9</td><td>6</td><td>5</td><td>10</td><td>7.5</td></tr>
+          <tr><td>B</td><td>7</td><td>9</td><td>9</td><td>7</td><td>8.0</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        Scalar DPO would prefer B in all contexts. But for a deployment where safety is paramount (e.g., a medical information harness), A is the better choice. For an academic research harness, B is clearly better. The preference relation is context-dependent, and the scalar model cannot express that context.
+      </p>
+
+      <h2>Directional Preference Alignment (DPA)</h2>
+
+      <p>
+        DPA (<a href="https://arxiv.org/abs/2402.18571v3" target="_blank" rel="noopener">arXiv:2402.18571v3</a>) replaces scalar rewards with multi-objective reward modeling. Rather than learning a single reward function, DPA learns a reward vector, and user preferences are expressed as unit vectors in reward space — directions that specify the desired tradeoff between objectives.
+      </p>
+
+      <p>
+        The key capability this enables is <strong>arithmetic preference control</strong>: a user can directly specify the helpfulness-verbosity tradeoff at inference time without retraining. A preference vector of <code>(0.8, 0.2)</code> for <code>(helpfulness, brevity)</code> produces different outputs than <code>(0.3, 0.7)</code> — both from the same fine-tuned model.
+      </p>
+
+      <p>
+        Validated on Mistral-7B, DPA maintains competitive performance against standard DPO baselines while providing this steering capability. The tradeoff is complexity: multi-objective reward modeling requires richer training data (paired outputs labeled across multiple dimensions) and more careful reward engineering than scalar DPO.
+      </p>
+
+      <p>
+        For harness design, this matters because the harness already collects multi-dimensional quality signals — the five-dimension Wiggum rubric logs depth, specificity, completeness, relevance, and structure separately. The preference data in <code>runs.jsonl</code> is naturally multi-dimensional. DPA provides a training framework that can use those dimensions without collapsing them to a scalar.
+      </p>
+
+      <h2>Multi-Objective Online DPO (MO-ODPO)</h2>
+
+      <p>
+        MO-ODPO (<a href="https://arxiv.org/abs/2503.00295v1" target="_blank" rel="noopener">arXiv:2503.00295v1</a>) extends DPA to the online preference learning setting, where preference data is generated during training rather than collected in advance. The algorithm optimizes across multiple conflicting objectives simultaneously, finding solutions that Pareto-dominate existing baselines — meaning MO-ODPO achieves the best possible tradeoff across all objectives, not just a good point on one of them.
+      </p>
+
+      <p>
+        The practical advantage over offline methods is steerability: MO-ODPO produces models where inference-time objective weights actually change behavior. Many multi-objective fine-tuning approaches produce models that nominally accept preference weights but in practice collapse to a fixed behavior regardless of the specified tradeoff. MO-ODPO explicitly optimizes for this steerability as a training criterion.
+      </p>
+
+      <div class="callout">
+        <p>The connection to the harness RL Rollout (G2) pattern: G2 as described in Post 10 generates preference pairs from runs.jsonl and passes them to a DPO trainer. Replacing the trainer with MO-ODPO — using the five Wiggum dimensions as the objective vector — would produce a model that can be steered at inference time toward depth (for research synthesis tasks) or helpfulness (for quick-answer tasks) by adjusting the preference vector injected into the synthesis prompt. This is the mechanism by which the harness could adapt its producer to task type without maintaining multiple fine-tuned checkpoints.</p>
+      </div>
+
+      <h2>Geometry-Aware Multi-Objective Optimization: MGDA-Decoupled</h2>
+
+      <p>
+        Standard multi-objective alignment methods use fixed scalarization — a fixed weight vector over objectives — which introduces what the MGDA-Decoupled paper (<a href="https://arxiv.org/abs/2604.20685v1" target="_blank" rel="noopener">arXiv:2604.20685v1</a>) identifies as "procedural unfairness": objectives that are harder to optimize or that represent minority preferences are systematically under-weighted by fixed scalarization, regardless of their stated importance.
+      </p>
+
+      <p>
+        MGDA-Decoupled uses a gradient descent-based approach that finds a shared descent direction explicitly accounting for each objective's convergence dynamics. The algorithm identifies objectives that are lagging behind their target rate of improvement and upweights their gradients — producing more equitable optimization without requiring manual weight tuning or reinforcement learning.
+      </p>
+
+      <p>
+        Experiments on UltraFeedback demonstrate that MGDA-Decoupled achieves the highest win rates against golden responses both in overall performance and per-objective, validating that geometric fairness in optimization does not sacrifice global quality for local equity.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">Alignment Method Landscape &mdash; Tradeoff vs Fairness vs Steerability</div>
+        <svg id="tradeoff-svg" width="100%" viewBox="0 0 680 280" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Four alignment methods positioned on two axes: whether they capture multi-objective tradeoffs (horizontal) and whether they provide inference-time steerability (vertical). Scalar DPO is the baseline; each method adds a specific capability.</p>
+      </div>
+
+      <h2>Safety Fine-Tuning Hazard: The Dataset Similarity Problem</h2>
+
+      <p>
+        The most practically urgent finding in the alignment literature for harness engineers is the safety degradation mechanism discovered in <a href="https://arxiv.org/abs/2506.05346v1" target="_blank" rel="noopener">arXiv:2506.05346v1</a>:
+      </p>
+
+      <div class="callout pink">
+        <p><strong>When the downstream fine-tuning dataset is highly similar to the upstream safety-alignment dataset, safety guardrails degrade.</strong> Low similarity between alignment and fine-tuning datasets reduces the harmfulness score by up to <strong>10.33%</strong>. This means that fine-tuning on topic-adjacent content — exactly what a harness data flywheel generates — can inadvertently erode the base model's safety properties.</p>
+      </div>
+
+      <p>
+        The mechanism is representational: safety-alignment training creates specific activation patterns in middle model layers that respond to harmful-intent signals. When fine-tuning data creates similar activation patterns for non-harmful purposes (research, synthesis), the gradient updates during fine-tuning partially overwrite the safety-relevant representations — not because the fine-tuning data is unsafe, but because it occupies overlapping representation space.
+      </p>
+
+      <p>
+        The practical implication for harness-driven self-improvement:
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Risk factor</th><th>Mitigation</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Fine-tuning data in the same domain as safety-alignment training</td><td>Use diverse task types in the preference dataset; avoid topic clusters</td></tr>
+          <tr><td>Continuous fine-tuning over many iterations</td><td>Evaluate safety benchmarks as part of the eval suite after each autoresearch iteration</td></tr>
+          <tr><td>Synthetic preference pairs generated from the harness topic distribution</td><td>Introduce out-of-distribution topics to diversify the representation space</td></tr>
+          <tr><td>Unknown base model alignment data</td><td>For open-weight models, safety alignment data is often undocumented; treat all topic overlap as a risk</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Alignment Recovery: From 33% to 2% Harmful Rate</h2>
+
+      <p>
+        When safety degradation does occur during fine-tuning, the recovery method from <a href="https://arxiv.org/abs/2504.09757v1" target="_blank" rel="noopener">arXiv:2504.09757v1</a> provides a surgical fix. The approach:
+      </p>
+
+      <ol>
+        <li>Identify the "harmful direction" in the fine-tuned model's weight space — the set of parameters that have drifted most from the original aligned model</li>
+        <li>Restore a small subset of weight parameters from the original aligned checkpoint</li>
+        <li>Apply a gradient descent-based rollback mechanism to prevent over-restoration that would degrade task performance</li>
+      </ol>
+
+      <p>
+        Evaluation on 125 fine-tuned LLMs: the method reduces the harmful response rate from 33.25% to 1.74% while maintaining downstream task performance. Competing methods either achieve limited harmful rate reduction or significantly degrade normal functionality — the rollback mechanism is critical for avoiding the tradeoff.
+      </p>
+
+      <p>
+        The recovery approach requires access to the original aligned model's weights, which is available for open-weight models but not for API-only models. For local harness deployments using Ollama with open-weight base models, this recovery approach is directly applicable.
+      </p>
+
+      <h2>Synthetic Preference Data: rDPO</h2>
+
+      <p>
+        Refined DPO (<a href="https://arxiv.org/abs/2402.08005v1" target="_blank" rel="noopener">arXiv:2402.08005v1</a>) eliminates human annotation from the preference data generation pipeline. The approach uses a teacher LLM for self-critique prompting — generating both a response and a critique of that response — and then distills the resulting preference pairs to a student model via DPO.
+      </p>
+
+      <p>
+        Key outcomes: improvements in safety (resistance to role-playing attacks), reduced sycophancy, and robustness against adversarial prompting — all without any human-annotated preference labels. The method is validated on diverse behavioral alignment tasks.
+      </p>
+
+      <p>
+        This is exactly the mechanism the harness Data Flywheel uses: every Wiggum revision round generates a (pre-revision output, post-revision output) pair that is a naturally occurring preference pair. The pre-revision output is "rejected" (failed evaluation), the post-revision output is "chosen" (passed). No human annotation is required. The rDPO framework validates this approach at scale and demonstrates that self-critique-derived preference pairs produce genuine behavioral alignment improvements.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">Harness Self-Improvement Pipeline &mdash; Alignment Integration Points</div>
+        <svg id="pipeline-svg" width="100%" viewBox="0 0 680 220" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Where the alignment methods described in this post integrate with the harness self-improvement pipeline. The Wiggum loop generates natural preference pairs; the Data Flywheel exports them; alignment training consumes them.</p>
+      </div>
+
+      <h2>Follow-up Likelihood as Reward (FLR)</h2>
+
+      <p>
+        FLR (<a href="https://arxiv.org/abs/2409.13948v3" target="_blank" rel="noopener">arXiv:2409.13948v3</a>) proposes using the likelihood of follow-up utterances as an implicit reward signal. The intuition: in human conversations, positive follow-up reactions (engagement, elaboration, task continuation) indicate response quality without requiring explicit annotation. High follow-up likelihood = the user found the response useful enough to continue.
+      </p>
+
+      <p>
+        FLR matches the performance of reward models trained on large-scale human or GPT-4 annotated data across eight pairwise-preference and four rating-based benchmarks. The key advantage is scale: annotated preference data is expensive and slow to produce; follow-up likelihood can be computed from any existing conversation corpus.
+      </p>
+
+      <p>
+        For harness deployments, this creates an interesting signal opportunity. If the harness logs whether the user continued working after receiving an output (issued a follow-up task) vs abandoned the session, those continuation signals become implicit preference labels. The logs already capture this in many configurations — the question is whether the signal is extracted and used.
+      </p>
+
+      <h2>Alignment Fine-Tuning and Chain-of-Thought Quality</h2>
+
+      <p>
+        The Alignment Fine-Tuning (AFT) paper (<a href="https://arxiv.org/abs/2309.02144v1" target="_blank" rel="noopener">arXiv:2309.02144v1</a>) addresses a specific failure in CoT reasoning fine-tuning: assessment misalignment, where the fine-tuned model assigns higher scores to poor-quality reasoning paths, compounding over iterations into lower overall quality.
+      </p>
+
+      <p>
+        The fix is a constraint alignment loss that calibrates how the model scores its own reasoning steps — ensuring that the scoring function correctly distinguishes better from worse CoT paths before the DPO training signal is applied. The paper demonstrates this on four reasoning benchmarks and also identifies that the "constraint" aspect (ensuring negative scores are properly suppressed) is critical for other ranking-based methods like DPO, RRHF, and PRO.
+      </p>
+
+      <p>
+        For harness systems that use chain-of-thought prompting in the synthesis stage, this finding suggests a validation step: periodically audit whether the model's self-assessment of its reasoning steps is calibrated against actual output quality (as measured by the Wiggum evaluator). Miscalibration here produces a feedback loop where worse reasoning is rewarded, accelerating quality degradation.
+      </p>
+
+      <div class="callout">
+        <p>The alignment methods surveyed here — DPA, MO-ODPO, MGDA-Decoupled, rDPO, FLR — are not in tension with the harness patterns described in earlier posts. They are the training-time complement to the inference-time patterns: the harness patterns produce high-quality outputs at inference; the alignment methods use those outputs to update the models so the next inference round requires less harness intervention. Together they form the complete self-improvement loop that <a href="./observability-flywheel.html">Post 10</a> called the Data Flywheel.</p>
+      </div>
+
+    
+
+      <div class="post-pagination">
+        <a href="./judge-reliability.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">13 &middot; Judge Reliability</span>
+        </a>
+        <a href="./slm-efficiency.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">15 &middot; SLM Efficiency</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./alignment-fine-tuning.html" class="related-post-card">
+            <div class="related-post-num">Post 21</div>
+            <div class="related-post-title">Alignment Deep Cuts</div>
+            <div class="related-post-desc">FLR matches GPT-4 reward models without annotation. Harmful rate drops 33.25% to 1.74% via weight restoration.</div>
+          </a>
+          <a href="./slm-efficiency.html" class="related-post-card">
+            <div class="related-post-num">Post 15</div>
+            <div class="related-post-title">SLM Efficiency</div>
+            <div class="related-post-desc">SLM-Bench: 15 models, 9 tasks, 4 hardware configs. Accuracy and energy efficiency do not co-optimize.</div>
+          </a>
+          <a href="./observability-flywheel.html" class="related-post-card">
+            <div class="related-post-num">Post 10</div>
+            <div class="related-post-title">Observability &amp; Flywheel</div>
+            <div class="related-post-desc">RunTrace, JSONL Audit Log, Chrome Trace Exporter, Data Flywheel, RL Rollout, and Lit Review Pipeline.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Nick McCarty &bull; <a href="https://github.com/nickmccarty" target="_blank" rel="noopener">GitHub</a></p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // --- Diagram 1: Alignment method landscape ---
+    (function() {
+      const svg = d3.select('#tradeoff-svg');
+      const W = 680, H = 280;
+      const m = {top: 30, right: 30, bottom: 50, left: 70};
+      const w = W - m.left - m.right, h = H - m.top - m.bottom;
+      const g = svg.append('g').attr('transform', `translate(${m.left},${m.top})`);
+
+      const cyan = cssVar('--accent-cyan') || '#57cef2';
+      const pink = cssVar('--accent-pink') || '#ed46c3';
+      const border = cssVar('--border-color') || '#30363d';
+      const textPri = cssVar('--text-primary') || '#e6edf3';
+      const textSec = cssVar('--text-secondary') || '#8b949e';
+      const bgSec = cssVar('--bg-secondary') || '#161b22';
+      const purple = '#a855f7';
+      const orange = '#f97316';
+      const green = '#34d399';
+
+      // grid
+      g.append('line').attr('x1',0).attr('x2',w).attr('y1',h/2).attr('y2',h/2).attr('stroke',border).attr('stroke-dasharray','4,4').attr('opacity',0.6);
+      g.append('line').attr('x1',w/2).attr('x2',w/2).attr('y1',0).attr('y2',h).attr('stroke',border).attr('stroke-dasharray','4,4').attr('opacity',0.6);
+
+      const methods = [
+        {name: 'Scalar DPO', desc: 'Baseline', x: 0.12, y: 0.82, color: textSec, r: 22},
+        {name: 'DPA', desc: 'Arithmetic\ncontrol', x: 0.70, y: 0.22, color: cyan, r: 26},
+        {name: 'MO-ODPO', desc: 'Pareto-\ndominant', x: 0.82, y: 0.12, color: green, r: 28},
+        {name: 'MGDA-\nDecoupled', desc: 'Geometric\nfairness', x: 0.55, y: 0.50, color: purple, r: 26},
+        {name: 'rDPO', desc: 'Synthetic\npairs', x: 0.28, y: 0.60, color: orange, r: 22},
+      ];
+
+      methods.forEach(m2 => {
+        const cx = m2.x * w, cy = m2.y * h;
+        g.append('circle').attr('cx',cx).attr('cy',cy).attr('r',m2.r)
+          .attr('fill',bgSec).attr('stroke',m2.color).attr('stroke-width',2);
+        const lines = m2.name.split('\n');
+        lines.forEach((l,li) => {
+          g.append('text').attr('x',cx).attr('y',cy - 2 + (li - (lines.length-1)/2) * 13)
+            .attr('text-anchor','middle').attr('fill',m2.color).attr('font-size',11).attr('font-weight',600).text(l);
+        });
+        if(m2.desc) {
+          const dlines = m2.desc.split('\n');
+          dlines.forEach((dl,dli) => {
+            g.append('text').attr('x',cx).attr('y',cy+m2.r+12+dli*13)
+              .attr('text-anchor','middle').attr('fill',textSec).attr('font-size',10).text(dl);
+          });
+        }
+      });
+
+      // axis labels
+      g.append('text').attr('x',w/2).attr('y',h+38).attr('text-anchor','middle').attr('fill',textSec).attr('font-size',12)
+        .text('Multi-objective tradeoff capability →');
+      g.append('text').attr('transform','rotate(-90)').attr('x',-h/2).attr('y',-50).attr('text-anchor','middle').attr('fill',textSec).attr('font-size',12)
+        .text('← Inference-time steerability →');
+
+      // quadrant labels
+      g.append('text').attr('x',8).attr('y',16).attr('fill',textSec).attr('font-size',10).text('single-obj + steerable');
+      g.append('text').attr('x',w-8).attr('y',16).attr('text-anchor','end').attr('fill',cyan).attr('font-size',10).text('multi-obj + steerable ✓');
+      g.append('text').attr('x',8).attr('y',h-8).attr('fill',textSec).attr('font-size',10).text('baseline');
+      g.append('text').attr('x',w-8).attr('y',h-8).attr('text-anchor','end').attr('fill',textSec).attr('font-size',10).text('multi-obj, fixed');
+    })();
+
+    // --- Diagram 2: Pipeline integration ---
+    (function() {
+      const svg = d3.select('#pipeline-svg');
+      const W = 680, H = 220;
+      const g = svg.append('g');
+
+      const cyan = cssVar('--accent-cyan') || '#57cef2';
+      const pink = cssVar('--accent-pink') || '#ed46c3';
+      const border = cssVar('--border-color') || '#30363d';
+      const textPri = cssVar('--text-primary') || '#e6edf3';
+      const textSec = cssVar('--text-secondary') || '#8b949e';
+      const bgSec = cssVar('--bg-secondary') || '#161b22';
+      const purple = '#a855f7';
+      const orange = '#f97316';
+      const green = '#34d399';
+
+      const stages = [
+        {x:20, label:'Wiggum\nRevision', color:cyan, method:'rDPO preference\npairs generated'},
+        {x:175, label:'runs.jsonl\nAudit Log', color:purple, method:'Multi-dim scores\nstored per round'},
+        {x:330, label:'Data\nFlywheel', color:orange, method:'DPA / MO-ODPO\ntraining data export'},
+        {x:485, label:'RL Rollout\n(G2)', color:green, method:'Safety check:\ndataset similarity'},
+        {x:580, label:'Updated\nProducer', color:pink, method:'Alignment\nrecovery if needed'},
+      ];
+      const bw = 110, bh = 50;
+
+      stages.forEach((s,i) => {
+        g.append('rect').attr('x',s.x).attr('y',60).attr('width',bw).attr('height',bh)
+          .attr('fill',bgSec).attr('stroke',s.color).attr('stroke-width',1.5).attr('rx',5);
+        s.label.split('\n').forEach((line,li) => {
+          g.append('text').attr('x',s.x+bw/2).attr('y',80+li*15).attr('text-anchor','middle')
+            .attr('fill',s.color).attr('font-size',11).attr('font-weight',600).text(line);
+        });
+        s.method.split('\n').forEach((line,li) => {
+          g.append('text').attr('x',s.x+bw/2).attr('y',124+li*13).attr('text-anchor','middle')
+            .attr('fill',textSec).attr('font-size',10).text(line);
+        });
+        if(i < stages.length-1) {
+          const ax = s.x + bw + 2, ay = 86;
+          g.append('line').attr('x1',ax).attr('x2',ax+10).attr('y1',ay).attr('y2',ay)
+            .attr('stroke',textSec).attr('stroke-width',1.5).attr('marker-end','url(#arr2)');
+        }
+      });
+
+      const defs = svg.append('defs');
+      defs.append('marker').attr('id','arr2').attr('viewBox','0 0 8 8').attr('refX',6).attr('refY',4)
+        .attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
+        .append('path').attr('d','M0,0 L8,4 L0,8 z').attr('fill',textSec);
+
+      g.append('text').attr('x',340).attr('y',30).attr('text-anchor','middle').attr('fill',textPri).attr('font-size',12).attr('font-weight',600)
+        .text('Harness Self-Improvement Loop — Alignment Integration');
+    })();
+  </script>
+</body>
+</html>

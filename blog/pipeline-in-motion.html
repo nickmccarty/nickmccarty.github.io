@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Pipeline in Motion: Tracing a Task Through All Eleven Subsystems | Nick McCarty</title>
+  <meta name="description" content="A complete walkthrough of the agentic harness pipeline — from CLI invocation through planning, research, synthesis, evaluation, and memory persistence — traced as a single running example.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/pipeline-in-motion.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Pipeline in Motion: Tracing a Task Through All Eleven Subsystems">
+  <meta property="og:description" content="A single research query, traced from CLI entry point through decomposition, retrieval, synthesis, evaluation, and JSONL persistence — with D3.js architecture diagrams showing every hop across the eleven subsystems.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/pipeline-in-motion.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-22T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Pipeline in Motion: Tracing a Task Through All Eleven Subsystems">
+  <meta name="twitter:description" content="A single research query, traced from CLI entry point through decomposition, retrieval, synthesis, evaluation, and JSONL persistence — with D3.js architecture diagrams showing every hop across the eleven subsystems.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Pipeline in Motion: Tracing a Task Through All Eleven Subsystems","description":"A single research query, traced from CLI entry point through decomposition, retrieval, synthesis, evaluation, and JSONL persistence.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-22","url":"https://nickmccarty.github.io/blog/pipeline-in-motion.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem 1.25rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+      padding: 0 0.5rem;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+      text-transform: uppercase; padding: 0.25rem 0.6rem; border-radius: 4px;
+      background: var(--bg-tertiary); color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+    .series-badge.active {
+      background: var(--accent-cyan); color: var(--bg-primary); border-color: var(--accent-cyan);
+    }
+    .jsonl-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+    .jsonl-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+    }
+    .jsonl-card h5 {
+      margin: 0 0 0.4rem;
+      font-size: 0.82rem;
+      font-family: 'Courier New', monospace;
+      color: var(--accent-cyan);
+    }
+    .jsonl-card p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    #arch-svg text, #timeline-svg text { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/><path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <a href="../blog.html" class="back-link">&larr; Back to Blog</a>
+    <article>
+      <h1>The Pipeline in Motion: Tracing a Task Through All Eleven Subsystems</h1>
+      <div class="post-meta">May 22, 2026 &bull; 14 min read</div>
+
+
+      <p>
+        The previous post established the central claim: harness quality dominates model selection for a
+        fixed task domain. This post is the evidence base for that claim&mdash;not statistics, but
+        mechanism. We trace a single research task from the moment the user presses Enter to the moment
+        a vetted markdown file lands in the output directory and a structured record lands in
+        <code>runs.jsonl</code>.
+      </p>
+
+      <p>
+        The task: <code>python agent.py "survey speculative decoding techniques in transformer inference"</code>.
+        The run will pass the Wiggum quality gate in two evaluation rounds, taking approximately 210 seconds
+        on a single consumer GPU. Every subsystem it touches is named and explained below.
+      </p>
+
+      <h2>The Eleven Subsystems</h2>
+
+      <!-- ARCHITECTURE DIAGRAM -->
+      <div class="diagram-container">
+        <div class="diagram-title">Harness Architecture — Eleven Subsystems</div>
+        <svg id="arch-svg" width="100%" style="display:block;"></svg>
+        <div class="diagram-caption">Data flows left-to-right and top-to-bottom. Security wraps all external inputs; Observability instruments all stages. The agent loop sits at the center, coordinating Inference, Research Tools, Skills, and Memory.</div>
+      </div>
+
+      <p>
+        The eleven subsystems are organized in three tiers. The <strong>entry tier</strong> (Entry Points,
+        Orchestration, API Routes) handles how work arrives in the pipeline. The <strong>execution tier</strong>
+        (Core Agent Loop, Inference, Research Tools, Skills, Memory) is where the actual work happens.
+        The <strong>infrastructure tier</strong> (Security, Observability, Storage) provides guarantees
+        and instrumentation that cut across all stages.
+      </p>
+
+      <h2>Stage 1: Entry Point (0&ndash;1s)</h2>
+
+      <p>
+        <code>cli.py</code> receives the task string and makes the first routing decision: does the
+        task begin with a <code>/</code> prefix? If so, it looks up the handler in the
+        <code>_SKILLS</code> registry. Our task does not, so it routes to the standard agent loop and
+        opens a <code>RunTrace</code> context manager. The run ID is stamped at entry:
+        <code>20260522-a3f4b2c1</code>&mdash;a UTC timestamp prefix plus UUID4 hex, sortable and
+        collision-resistant.
+      </p>
+
+      <p>
+        The <code>RunTrace</code> is the post&rsquo;s spine. Every subsequent operation appends to it:
+        stage transitions, LLM messages with token counts, tool calls with novelty scores, Wiggum scores
+        per round. When the run exits&mdash;successfully or not&mdash;<code>finalize()</code> writes
+        the complete record to <code>data/runs.jsonl</code> and a Chrome Trace Events file to
+        <code>data/traces/</code>.
+      </p>
+
+      <h2>Stage 2: Planning (1&ndash;16s)</h2>
+
+      <p>
+        The task string is intercepted before any search query is issued. <code>planner.py</code> sends
+        it to a fast 9B model with a structured extraction prompt requesting four fields:
+      </p>
+
+      <ul style="margin: 1rem 0 1rem 1.5rem; line-height: 2;">
+        <li><strong>search_queries</strong> &mdash; targeted queries replacing the raw task string (e.g., &ldquo;speculative decoding autoregressive inference speedup 2024&rdquo;, &ldquo;draft model verification parallel token generation&rdquo;)</li>
+        <li><strong>known_facts</strong> &mdash; facts already in the memory store that don&rsquo;t need re-fetching</li>
+        <li><strong>knowledge_gaps</strong> &mdash; what the pipeline does not yet know and must find</li>
+        <li><strong>subtasks</strong> &mdash; a decomposition hint for the orchestrator, if the task warrants parallel execution</li>
+      </ul>
+
+      <p>
+        The plan is written to <code>data/plans.jsonl</code> before any subtask executes. This matters
+        for crash recovery: if the pipeline fails during research, the plan record is already on disk and
+        the run can be diagnosed without re-running the planning step.
+      </p>
+
+      <p>
+        The planner never receives the raw task string as a search query. This is a hard constraint, not
+        a convention. Submitting &ldquo;survey speculative decoding techniques&rdquo; directly to a web
+        search engine produces overview articles; the planner&rsquo;s targeted queries produce primary
+        sources. The 12&ndash;18 second planning latency is recovered within the first research round.
+      </p>
+
+      <h2>Stage 3: Research (16&ndash;65s)</h2>
+
+      <p>
+        <code>agent.gather_research()</code> issues the planner&rsquo;s queries in rounds, applying
+        a novelty gate after each batch. The gate asks the planner model whether the batch adds
+        information not already represented in the accumulated knowledge state:
+      </p>
+
+      <pre><code>Round 1: 5 queries → 5 result batches
+  novelty scores: [7.2, 2.1, 6.8, 1.9, 5.4]
+  gate (threshold 3.0): batches 2, 4 discarded
+  3 batches pass → knowledge state updated
+
+Round 2: 2 targeted gap queries
+  novelty scores: [6.1, 4.8]
+  both pass → knowledge state updated
+
+Total context assembled: ~18,400 chars
+Redundant content gated: ~6,200 chars</code></pre>
+
+      <p>
+        The 6,200 characters of gated content would otherwise reach the synthesis prompt and dilute it.
+        Without the gate, the producer model encounters the same three papers cited by six different
+        sources and scores &ldquo;comprehensive coverage&rdquo; by repeating them; with it, the prompt
+        contains only non-redundant material. All results are cached in <code>RESEARCH_CACHE</code> keyed
+        by query string, so Wiggum revision rounds do not re-fetch already-retrieved content.
+      </p>
+
+      <h2>Stage 4: Synthesis (65&ndash;145s)</h2>
+
+      <p>
+        The producer model&mdash;the largest model in the pipeline, 32B parameters or larger&mdash;receives
+        a synthesis prompt containing: the task string, the planner&rsquo;s known facts and gap list, the
+        research context (novelty-gated), and the memory context (top four observations from the dual-backend
+        store, retrieved by semantic + keyword search on the task). Generation takes 60&ndash;90 seconds.
+      </p>
+
+      <p>
+        Two synthesis behaviors are worth noting. First, the synthesis instruction is explicitly set to
+        prose depth: the model is directed to produce substantive analytical writing, not stub
+        explanations. (This was a discovered invariant: a &ldquo;list the key points&rdquo; instruction
+        reliably produces shallow enumerations that fail the <em>Depth</em> and <em>Specificity</em>
+        dimensions; a &ldquo;write at the level of a competent technical reviewer&rdquo; instruction
+        does not.) Second, the producer runs with thinking mode disabled&mdash;chain-of-thought reasoning
+        during synthesis consumes token budget without improving output quality and creates context
+        overflow on long documents.
+      </p>
+
+      <h2>Stage 5: Wiggum Loop (145&ndash;215s)</h2>
+
+      <p>
+        The synthesis output enters the Wiggum Loop&mdash;covered in detail in
+        <a href="./the-wiggum-loop.html">the previous post</a>. For this run:
+      </p>
+
+      <pre><code>Round 1 → score 6.4 (Completeness: 5.5, Groundedness: 5.0 fail)
+  Revision prompt: targets Completeness + Groundedness only
+  Producer revises at temperature 0.3
+Round 2 → score 8.3 → PASS</code></pre>
+
+      <p>
+        The evaluator is selected deterministically from the pool by hashing the run ID. The same run,
+        re-executed, always uses the same evaluator&mdash;reproducibility for debugging. Different runs
+        are distributed across pool members&mdash;drift mitigation for analytics.
+      </p>
+
+      <h2>Stage 6: Persist (215&ndash;220s)</h2>
+
+      <p>
+        Passing outputs go to three destinations simultaneously:
+      </p>
+
+      <ol style="margin: 1rem 0 1rem 1.5rem; line-height: 2;">
+        <li><strong>Filesystem</strong> &mdash; <code>outputs/20260522-183042-speculative_decoding.md</code></li>
+        <li><strong>Memory store</strong> &mdash; <code>memory.compress_and_store()</code> writes a compressed observation (narrative summary + fact list) to both ChromaDB (embedded with <code>all-MiniLM-L6-v2</code>) and SQLite FTS5 (indexed on task, title, and narrative). A prompt injection scan gates the write&mdash;web-fetched content that passed through synthesis could carry payload into future runs.</li>
+        <li><strong>Audit log</strong> &mdash; <code>RunTrace.finalize()</code> appends one JSON record to <code>data/runs.jsonl</code> and writes a Chrome Trace Events file.</li>
+      </ol>
+
+      <h2>The Six JSONL Files</h2>
+
+      <p>
+        Every stage of this run has been writing structured data to append-only JSONL files. By the time
+        the run exits, six files carry its complete lifecycle:
+      </p>
+
+      <div class="jsonl-grid">
+        <div class="jsonl-card">
+          <h5>projects.jsonl</h5>
+          <p>Project-level context: name, path, creation timestamp. Groups runs by working directory.</p>
+        </div>
+        <div class="jsonl-card">
+          <h5>sessions.jsonl</h5>
+          <p>Session envelope: start time, model stack, environment snapshot. Multiple runs share one session.</p>
+        </div>
+        <div class="jsonl-card">
+          <h5>plans.jsonl</h5>
+          <p>Pre-execution plan record: queries, known facts, knowledge gaps, subtask decomposition. Written <em>before</em> any subtask executes.</p>
+        </div>
+        <div class="jsonl-card">
+          <h5>runs.jsonl</h5>
+          <p>The primary artifact: full run record with Wiggum scores, token counts, tool calls, novelty scores, output path, PASS/FAIL.</p>
+        </div>
+        <div class="jsonl-card">
+          <h5>artifacts.jsonl</h5>
+          <p>Per-file artifact registry: every temp file, output, and intermediate document produced or consumed by the run.</p>
+        </div>
+        <div class="jsonl-card">
+          <h5>messages.jsonl</h5>
+          <p>Full message log: every LLM exchange with role, stage, content, token count, and optional chain-of-thought text.</p>
+        </div>
+      </div>
+
+      <p>
+        The JSONL format is the critical design decision. No database server, no schema migrations, full
+        portability. A 1,500-run log is typically under 20 MB and loads into pandas in under a second.
+        The files are append-only&mdash;a failed run still writes its partial record, making failure
+        diagnosis possible without re-running.
+      </p>
+
+      <h2>Stage Timeline</h2>
+
+      <!-- TIMELINE / GANTT CHART -->
+      <div class="diagram-container">
+        <div class="diagram-title">Run Stage Timeline — Typical Two-Round Pass (~210s)</div>
+        <svg id="timeline-svg" width="100%" style="display:block;"></svg>
+        <div class="diagram-caption">GPU-bound stages (synthesis, evaluation, revision) dominate wall-clock time. Planning latency is recovered in the first research round. VRAM keep-alive eliminates the cold-start gap between stages.</div>
+      </div>
+
+      <h2>The Keep-Alive Budget</h2>
+
+      <p>
+        One detail invisible in the timeline but critical to its shape: VRAM residency management.
+        Without it, every stage transition that changes the active model would incur a 30&ndash;60 second
+        cold-start load. The pipeline avoids this by pre-allocating model residency before the first
+        inference call and managing it through the run.
+      </p>
+
+      <p>
+        The planner model (9B, fast) loads before the planning stage and releases when planning
+        completes&mdash;its VRAM is needed for the producer&rsquo;s context window during synthesis.
+        The producer (32B) loads before synthesis and stays warm through revision. The evaluator loads
+        before the first Wiggum round. On constrained hardware (8 GB VRAM), the three models load
+        sequentially rather than simultaneously; on standard hardware (24 GB), all three stay warm
+        throughout the run.
+      </p>
+
+      <p>
+        The Chrome Trace file for this run, loaded in <code>ui.perfetto.dev</code>, shows two evaluation
+        blocks of roughly equal width&mdash;the signature of a two-round pass. A three-round run shows
+        a visually wider third block: the producer is generating longer revisions as it works against
+        dimensions that are harder to fix than the evaluator&rsquo;s feedback implies.
+      </p>
+
+      <h2>What the Subsystem Map Reveals</h2>
+
+      <p>
+        Looking at the full architecture diagram, one pattern stands out: <strong>Security and
+        Observability are the only subsystems that touch every other subsystem.</strong> Security checks
+        fire on every external input (web content through the injection scanner, file paths through the
+        path sandbox, agent-generated code through the AST guard, browser URLs through the CDP guard).
+        Observability instruments every stage transition, every LLM call, every tool invocation.
+      </p>
+
+      <p>
+        This is not incidental. Security and observability are the two subsystems whose failure modes
+        are most expensive: a security miss has cascading effects across future runs (an injected memory
+        observation poisons everything that retrieves it), and an observability miss means the failure
+        that does occur is undiagnosable. Both subsystems justify their cross-cutting implementation.
+      </p>
+
+      <p>
+        The next post catalogs what goes wrong when any of the other nine subsystems fails.
+      </p>
+
+      <div class="related-post">
+        <span class="related-label">Up next in series</span>
+        <a href="./failure-taxonomy.html">
+          <h4>A Failure Taxonomy for Agentic Systems</h4>
+          <p>Six failure classes derived from 1,500 logged runs, with frequency data, representative records, and the patterns that reduced each class&rsquo;s rate.</p>
+          <span class="read-more">Read more &rarr;</span>
+        </a>
+      </div>
+    
+
+      <div class="post-pagination">
+        <a href="./harness-thesis.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">1 &middot; The Harness Thesis</span>
+        </a>
+        <a href="./failure-taxonomy.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">3 &middot; Failure Taxonomy</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./harness-thesis.html" class="related-post-card">
+            <div class="related-post-num">Post 1</div>
+            <div class="related-post-title">The Harness Thesis</div>
+            <div class="related-post-desc">Why scaffolding beats model selection&mdash;the five-stage pipeline and the silent overwrite failure that started it all.</div>
+          </a>
+          <a href="./failure-taxonomy.html" class="related-post-card">
+            <div class="related-post-num">Post 3</div>
+            <div class="related-post-title">Failure Taxonomy</div>
+            <div class="related-post-desc">Six failure classes ranked by frequency and cost, with diagnostic patterns from 1,500 production runs.</div>
+          </a>
+          <a href="./inference-patterns.html" class="related-post-card">
+            <div class="related-post-num">Post 4</div>
+            <div class="related-post-title">Inference Patterns</div>
+            <div class="related-post-desc">The Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <div class="modal-overlay glossary-modal" id="glossary-modal">
+    <div class="modal">
+      <div class="modal-header"><h3 id="glossary-term-title"></h3><button class="modal-close" aria-label="Close">&times;</button></div>
+      <div class="modal-body"><p id="glossary-term-definition"></p><p class="context-note" id="glossary-term-context"></p></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script type="module">
+    import anime from 'https://esm.sh/animejs@3.2.2';
+    function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+    // ── ARCHITECTURE DIAGRAM ─────────────────────────────────────────────────
+    (function drawArch() {
+      const el = document.getElementById('arch-svg');
+      const W  = el.parentElement.clientWidth - 32;
+      const H  = 280;
+      el.setAttribute('height', H);
+      el.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+      const accent  = cssVar('--accent-cyan');
+      const pink    = cssVar('--accent-pink');
+      const bg2     = cssVar('--bg-tertiary');
+      const tPri    = cssVar('--text-primary');
+      const tSec    = cssVar('--text-secondary');
+      const bord    = cssVar('--border-color');
+      const svg     = d3.select('#arch-svg');
+
+      svg.append('defs').append('marker').attr('id','arch-arr')
+        .attr('viewBox','0 0 10 10').attr('refX',9).attr('refY',5)
+        .attr('markerWidth',5).attr('markerHeight',5).attr('orient','auto')
+        .append('path').attr('d','M 0 0 L 10 5 L 0 10 z').attr('fill', bord);
+
+      // Node definitions: [id, label, sublabel, col, row, tier]
+      // tier: 0=entry(pink), 1=exec(cyan), 2=infra(grey)
+      const cols = 5, rows = 3;
+      const cw = W / cols, rh = H / rows;
+      const bw = Math.min(cw - 18, 110), bh = 40;
+
+      const nodes = [
+        // Entry tier (row 0)
+        { id:'ep',  label:'Entry Points',    sub:'CLI · API · Slash',   col:1, row:0, tier:0 },
+        { id:'or',  label:'Orchestration',   sub:'DAG · Worktrees',     col:2, row:0, tier:0 },
+        { id:'ap',  label:'API Routes',      sub:'REST · MCP · Dash',   col:3, row:0, tier:0 },
+        // Exec tier (row 1)
+        { id:'al',  label:'Agent Loop',      sub:'Core pipeline',       col:1, row:1, tier:1 },
+        { id:'in',  label:'Inference',       sub:'Shim · Roles · VRAM', col:2, row:1, tier:1 },
+        { id:'rt',  label:'Research Tools',  sub:'Search · Novelty',    col:3, row:1, tier:1 },
+        { id:'me',  label:'Memory',          sub:'ChromaDB · FTS5',     col:4, row:1, tier:1 },
+        { id:'sk',  label:'Skills',          sub:'Registry · Handlers', col:0, row:1, tier:1 },
+        // Infra tier (row 2)
+        { id:'se',  label:'Security',        sub:'AST · Path · CDP',    col:1, row:2, tier:2 },
+        { id:'ob',  label:'Observability',   sub:'RunTrace · Trace',    col:2, row:2, tier:2 },
+        { id:'st',  label:'Storage',         sub:'JSONL · Outputs · DB',col:3, row:2, tier:2 },
+      ];
+
+      const edges = [
+        ['ep','or'],['ep','al'],['or','al'],['ap','or'],
+        ['al','in'],['al','rt'],['al','me'],['al','sk'],
+        ['al','se'],['al','ob'],
+        ['rt','se'],['me','ob'],
+        ['ob','st'],['al','st'],['me','st'],
+        ['sk','al']
+      ];
+
+      const colors = { 0: pink, 1: accent, 2: bord };
+
+      function nodeX(n) { return n.col * cw + cw / 2; }
+      function nodeY(n) { return n.row * rh + rh / 2; }
+      const nodeMap = {};
+      nodes.forEach(n => nodeMap[n.id] = n);
+
+      // Draw edges
+      edges.forEach(([a, b]) => {
+        const na = nodeMap[a], nb = nodeMap[b];
+        svg.append('line').attr('class','arch-edge')
+          .attr('x1', nodeX(na)).attr('y1', nodeY(na))
+          .attr('x2', nodeX(nb)).attr('y2', nodeY(nb))
+          .attr('stroke', bord).attr('stroke-width', 1)
+          .attr('stroke-opacity', 0.45)
+          .attr('marker-end','url(#arch-arr)')
+          .style('opacity', 0);
+      });
+
+      // Draw nodes
+      nodes.forEach(n => {
+        const x = nodeX(n), y = nodeY(n);
+        const g = svg.append('g').attr('class','arch-node').style('opacity',0);
+        g.append('rect')
+          .attr('x', x - bw/2).attr('y', y - bh/2)
+          .attr('width', bw).attr('height', bh).attr('rx', 7)
+          .attr('fill', bg2)
+          .attr('stroke', colors[n.tier]).attr('stroke-width', n.tier < 2 ? 1.5 : 1);
+        g.append('text').attr('x', x).attr('y', y - 6)
+          .attr('text-anchor','middle').attr('fill', n.tier < 2 ? colors[n.tier] : tSec)
+          .attr('font-size', Math.min(11, bw / 9)).attr('font-weight','600')
+          .text(n.label);
+        g.append('text').attr('x', x).attr('y', y + 9)
+          .attr('text-anchor','middle').attr('fill', tSec)
+          .attr('font-size', Math.min(9, bw / 11))
+          .text(n.sub);
+      });
+
+      const tl = anime.timeline({ easing:'easeOutCubic' });
+      tl.add({ targets:'.arch-edge', opacity:[0,1], delay:anime.stagger(30), duration:300 })
+        .add({ targets:'.arch-node', opacity:[0,1], translateY:[8,0], delay:anime.stagger(50), duration:350 }, '-=200');
+    })();
+
+    // ── STAGE TIMELINE (GANTT) ────────────────────────────────────────────────
+    (function drawTimeline() {
+      const el = document.getElementById('timeline-svg');
+      const W  = el.parentElement.clientWidth - 32;
+      const margin = { top:14, right:20, bottom:36, left:116 };
+      const stages = [
+        { label:'Plan',           start:0,   end:15,  gpu:false },
+        { label:'Research R1',    start:15,  end:48,  gpu:false },
+        { label:'Research R2',    start:48,  end:66,  gpu:false },
+        { label:'Synthesize',     start:66,  end:145, gpu:true  },
+        { label:'Wiggum eval R1', start:145, end:167, gpu:true  },
+        { label:'Revise',         start:167, end:212, gpu:true  },
+        { label:'Wiggum eval R2', start:212, end:235, gpu:true  },
+        { label:'Persist',        start:235, end:242, gpu:false },
+      ];
+      const H = margin.top + stages.length * 28 + margin.bottom;
+      const iW = W - margin.left - margin.right;
+      const iH = H - margin.top - margin.bottom;
+
+      el.setAttribute('height', H);
+      el.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+      const accent = cssVar('--accent-cyan');
+      const pink   = cssVar('--accent-pink');
+      const tSec   = cssVar('--text-secondary');
+      const bord   = cssVar('--border-color');
+      const bg2    = cssVar('--bg-tertiary');
+
+      const svg = d3.select('#timeline-svg');
+      const g   = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+      const x = d3.scaleLinear().domain([0, 242]).range([0, iW]);
+      const rowH = iH / stages.length;
+      const barH = rowH * 0.6;
+
+      // Gridlines
+      g.append('g').call(d3.axisTop(x).ticks(8).tickFormat(d => `${d}s`).tickSize(-iH))
+        .call(g => g.selectAll('line').attr('stroke', bord).attr('stroke-opacity', 0.35).attr('stroke-dasharray','3,3'))
+        .call(g => g.select('.domain').remove())
+        .call(g => g.selectAll('text').attr('fill', tSec).attr('font-size', 10));
+
+      stages.forEach((s, i) => {
+        const y = i * rowH + (rowH - barH) / 2;
+
+        // Row label
+        g.append('text')
+          .attr('x', -8).attr('y', y + barH / 2)
+          .attr('text-anchor','end').attr('dominant-baseline','middle')
+          .attr('fill', s.gpu ? accent : tSec)
+          .attr('font-size', 10).attr('font-weight', s.gpu ? '600' : '400')
+          .text(s.label);
+
+        // Bar (start at 0 width, animate to full width)
+        g.append('rect').attr('class','tl-bar')
+          .attr('x', x(s.start))
+          .attr('y', y)
+          .attr('width', 0)   // animated
+          .attr('height', barH)
+          .attr('rx', 4)
+          .attr('fill', s.gpu ? accent : pink)
+          .attr('fill-opacity', s.gpu ? 0.75 : 0.55)
+          .attr('data-target-w', x(s.end) - x(s.start));
+
+        // Duration label
+        const dur = s.end - s.start;
+        g.append('text').attr('class','tl-label')
+          .attr('x', x(s.start) + (x(s.end) - x(s.start)) / 2)
+          .attr('y', y + barH / 2)
+          .attr('text-anchor','middle').attr('dominant-baseline','middle')
+          .attr('fill', 'var(--bg-primary)').attr('font-size', 9).attr('font-weight','700')
+          .text(`${dur}s`)
+          .style('opacity', 0);
+
+        // GPU badge
+        if (s.gpu) {
+          g.append('text')
+            .attr('x', x(s.end) + 4).attr('y', y + barH / 2)
+            .attr('dominant-baseline','middle')
+            .attr('fill', accent).attr('font-size', 8)
+            .text('GPU');
+        }
+      });
+
+      // Legend
+      const legY = iH + 22;
+      [[accent, 'GPU-bound stage'], [pink, 'CPU-bound stage']].forEach(([color, label], i) => {
+        const lx = i * 140;
+        g.append('rect').attr('x', lx).attr('y', legY - 7).attr('width', 12).attr('height', 8)
+          .attr('rx', 2).attr('fill', color).attr('fill-opacity', 0.7);
+        g.append('text').attr('x', lx + 16).attr('y', legY - 1)
+          .attr('fill', tSec).attr('font-size', 10).text(label);
+      });
+
+      // Animate bars
+      document.querySelectorAll('.tl-bar').forEach((bar, i) => {
+        anime({
+          targets: bar,
+          width: parseFloat(bar.getAttribute('data-target-w')),
+          delay: 400 + i * 80,
+          duration: 500,
+          easing: 'easeOutCubic'
+        });
+      });
+      anime({
+        targets: '.tl-label',
+        opacity: [0, 1],
+        delay: anime.stagger(80, { start: 900 }),
+        duration: 300,
+        easing: 'easeOutCubic'
+      });
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

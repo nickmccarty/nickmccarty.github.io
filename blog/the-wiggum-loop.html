@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision | Nick McCarty</title>
+  <meta name="description" content="The producer-evaluator separation pattern: how two loops—Ralph (outer) and Wiggum (inner)—compose to produce reliably high-quality agentic output.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/the-wiggum-loop.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision">
+  <meta property="og:description" content="The producer–evaluator separation pattern: how two loops — Ralph (outer) and Wiggum (inner) — compose to produce reliably high-quality agentic output. With D3.js architecture diagrams and score trajectory data from 1,500 production runs.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/the-wiggum-loop.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-22T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision">
+  <meta name="twitter:description" content="The producer–evaluator separation pattern: how Ralph (outer) and Wiggum (inner) loops compose to produce reliably high-quality agentic output.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision","description":"The producer–evaluator separation pattern: two loops — Ralph (outer) and Wiggum (inner) — composing for high-quality agentic output.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-22","url":"https://nickmccarty.github.io/blog/the-wiggum-loop.html","image":"https://nickmccarty.github.io/assets/images/og-default.png","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem 1.25rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+      padding: 0 0.5rem;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .callout.warning { border-left-color: var(--accent-pink); }
+
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+
+    /* Two-column loop comparison */
+    .loop-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    @media (max-width: 640px) { .loop-compare { grid-template-columns: 1fr; } }
+    .loop-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+    .loop-card.ralph  { border-top: 3px solid var(--accent-pink); }
+    .loop-card.wiggum { border-top: 3px solid var(--accent-cyan); }
+    .loop-card h4 { margin: 0 0 0.5rem; font-size: 0.9rem; letter-spacing: 0.04em; text-transform: uppercase; }
+    .loop-card.ralph  h4 { color: var(--accent-pink); }
+    .loop-card.wiggum h4 { color: var(--accent-cyan); }
+    .loop-card p { margin: 0; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
+    .loop-card ul { margin: 0.5rem 0 0 1.1rem; padding: 0; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.8; }
+
+    /* Tuning table */
+    .tuning-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1rem 0;
+    }
+    .tuning-table th, .tuning-table td {
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--border-color);
+      text-align: left;
+      vertical-align: top;
+    }
+    .tuning-table th {
+      background: var(--bg-secondary);
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .tuning-table td:first-child { font-family: 'Courier New', monospace; color: var(--accent-cyan); }
+    .tuning-table td:nth-child(2) { color: var(--accent-cyan); font-weight: 600; font-family: monospace; }
+
+    pre code { font-size: 0.82rem; }
+    #nested-svg text, #flowchart-svg text, #scores-svg text { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <a href="../blog.html" class="back-link">&larr; Back to Blog</a>
+
+    <article>
+      <h1>The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision</h1>
+      <div class="post-meta">May 22, 2026 &bull; 18 min read</div>
+
+
+      <p>
+        The first time you run a research agent without an evaluator, you will probably be impressed.
+        The output will be long. It will be fluent. It will have headings and bullet points and
+        citations and a confident, authoritative tone that reads like something a competent analyst
+        spent an afternoon on.
+      </p>
+
+      <p>
+        It will also, in a meaningful fraction of cases, be wrong&mdash;not in the way a hallucination
+        is wrong, where a model fabricates a fact that is obviously false on inspection, but in the
+        way that a first draft is wrong: structurally correct but thin in the places that matter,
+        confident about things it should hedge, and silent about the gaps a domain expert would
+        immediately notice. The model does not know that it does not know.
+      </p>
+
+      <p>
+        The problem compounds when you ask it to evaluate itself. In controlled experiments,
+        outputs rated by the same model that produced them average <strong>0.9 points higher</strong>
+        on a six-dimension quality rubric than outputs rated by a separate evaluator model using the
+        same rubric. The gap is largest on the <em>Groundedness</em> dimension&mdash;because a model
+        that invented a claim is also the most likely to believe it is grounded.
+      </p>
+
+      <div class="callout pink">
+        <p><strong>Research backing:</strong> The self-preference bias is well-characterized in the literature. A 2026 study across 20 mainstream LLMs found that advanced model capabilities are &ldquo;often uncorrelated or even negatively correlated with low self-preference bias&rdquo; &mdash; larger models are not more reliable self-judges. A structured multi-dimensional evaluation strategy reduces self-preference bias by an average of 31.5%, directly validating the Dimensional Rubric approach. (<a href="https://arxiv.org/abs/2604.22891" target="_blank" rel="noopener">arXiv:2604.22891</a>) The bias has been traced mechanistically to a preference for familiar, low-perplexity text (<a href="https://arxiv.org/abs/2410.21819" target="_blank" rel="noopener">arXiv:2410.21819</a>) &mdash; a model rates its own fluent output highly regardless of factual accuracy. Critically, <em>stronger models exhibit more pronounced harmful self-preference precisely when they are wrong</em>: they struggle most to recognize their own errors, making cross-model evaluation not just a quality practice but a necessary error-correction mechanism. (<a href="https://arxiv.org/abs/2504.03846" target="_blank" rel="noopener">arXiv:2504.03846</a>)</p>
+      </div>
+
+      <p>
+        There are two loops that address this problem. They operate at different levels and compose
+        naturally. Understanding the distinction between them is prerequisite to understanding
+        either one.
+      </p>
+
+      <h2>Two Loops: Ralph and Wiggum</h2>
+
+      <div class="loop-compare">
+        <div class="loop-card ralph">
+          <h4>Ralph Loop (Outer)</h4>
+          <p>
+            Geoffrey Huntley's <a href="https://ghuntley.com/ralph/" target="_blank" rel="noopener">Ralph pattern</a>
+            is a bash while-loop that feeds <code>PROMPT.md</code> to an LLM CLI, persists the
+            evolving plan on disk as shared state across isolated context windows, and commits
+            progress after each iteration. Each pass starts cold&mdash;no accumulated context,
+            just the plan file.
+          </p>
+          <ul>
+            <li>Governs: <em>should the agent keep going?</em></li>
+            <li>Scope: task-level iteration</li>
+            <li>Cycle driver: completion detection or plan state</li>
+            <li>Commit on each pass</li>
+          </ul>
+        </div>
+        <div class="loop-card wiggum">
+          <h4>Wiggum Loop (Inner)</h4>
+          <p>
+            The Wiggum Loop operates <em>inside</em> one agent iteration, after synthesis and
+            before the Ralph outer loop decides whether to commit. A separate evaluator model
+            scores the synthesis on six named dimensions. Dimensional feedback&mdash;not a
+            composite score&mdash;routes back to the producer for targeted revision.
+          </p>
+          <ul>
+            <li>Governs: <em>is this output good enough to accept?</em></li>
+            <li>Scope: output-quality gating within one iteration</li>
+            <li>Cycle driver: 8.0 composite threshold, max 3 rounds</li>
+            <li>Persist only on pass</li>
+          </ul>
+        </div>
+      </div>
+
+      <p>
+        The two loops compose cleanly: Ralph decides whether the task is complete; Wiggum decides
+        whether the current iteration&rsquo;s output clears the quality bar. A production pipeline
+        typically runs Wiggum inside every non-trivial synthesis step, then returns the pass/fail
+        result to the Ralph outer loop which decides whether to continue, revise the plan, or commit.
+      </p>
+
+      <!-- NESTED LOOP DIAGRAM -->
+      <div class="diagram-container">
+        <div class="diagram-title">Ralph and Wiggum: Nested Loop Architecture</div>
+        <svg id="nested-svg" width="100%" style="display:block;"></svg>
+        <div class="diagram-caption">Ralph (outer) iterates across context windows, committing plan progress. Wiggum (inner) gates quality within each synthesis pass before Ralph can proceed.</div>
+      </div>
+
+      <h2>The Wiggum Loop in Detail</h2>
+
+      <p>
+        Named affectionately for Chief Clancy Wiggum of Springfield&mdash;a figure who catches most
+        problems, misses some, and is constitutionally unable to evaluate his own blind spots&mdash;the
+        loop has four components:
+      </p>
+
+      <ul style="margin: 1rem 0 1rem 1.5rem; line-height: 2;">
+        <li><strong>Producer</strong> &mdash; the model that generated the output under review; never used as evaluator</li>
+        <li><strong>Evaluator</strong> &mdash; a separate model instance, selected deterministically from a rotation pool</li>
+        <li><strong>Rubric</strong> &mdash; a six-dimension scoring framework at 0.5-point resolution, 8.0 composite pass threshold</li>
+        <li><strong>Revision Prompt</strong> &mdash; targets only failing dimensions, not all six; focused revision produces better improvement than broad checklists</li>
+      </ul>
+
+      <!-- WIGGUM FLOWCHART -->
+      <div class="diagram-container">
+        <div class="diagram-title">Wiggum Loop — Evaluate&ndash;Revise Cycle</div>
+        <svg id="flowchart-svg" width="100%" style="display:block;"></svg>
+        <div class="diagram-caption">Maximum three evaluation rounds. 75% of achievable quality improvement occurs in round 1; 18% in round 2. Beyond three rounds, marginal gain falls below measurement noise.</div>
+      </div>
+
+      <h2>Implementation</h2>
+
+      <p>The loop entry point in <code>harness/wiggum.py</code>:</p>
+
+      <pre><code>def loop(
+    task: str,
+    output_path: str,
+    models: ModelConfig,
+    parent_trace: RunTrace,
+) -> WiggumResult:
+    content = Path(output_path).read_text(encoding="utf-8")
+    round_scores: list[float] = []
+    evaluator = select_evaluator(seed=parent_trace.run_id)
+
+    for round_num in range(1, MAX_ROUNDS + 1):
+        parent_trace.enter_stage(f"wiggum_round_{round_num}")
+        result = _evaluate(content, task, evaluator, models)
+        round_scores.append(result["score"])
+
+        if result["score"] >= PASS_THRESHOLD:
+            Path(output_path).write_text(content, encoding="utf-8")
+            return WiggumResult(passed=True, final_score=result["score"],
+                                round_scores=round_scores, rounds_taken=round_num)
+        if round_num < MAX_ROUNDS:
+            content = _revise(content, task, result, models.producer)
+
+    Path(output_path).write_text(content, encoding="utf-8")
+    return WiggumResult(passed=False, final_score=round_scores[-1],
+                        round_scores=round_scores, rounds_taken=MAX_ROUNDS)
+
+PASS_THRESHOLD = 8.0
+MAX_ROUNDS     = 3</code></pre>
+
+      <h2>The Key Insight: Dimensions Beat Scores</h2>
+
+      <p>
+        The loop&rsquo;s most important output is not the composite score. It is the dimensional breakdown.
+        The evaluator scores six named dimensions independently before computing a composite:
+      </p>
+
+      <ul style="margin: 1rem 0 1rem 1.5rem; line-height: 2;">
+        <li><strong>Relevance</strong> &mdash; does the output address the task as stated?</li>
+        <li><strong>Completeness</strong> &mdash; does it cover the required scope?</li>
+        <li><strong>Depth</strong> &mdash; is the analysis substantive rather than surface-level?</li>
+        <li><strong>Specificity</strong> &mdash; are claims supported with concrete detail?</li>
+        <li><strong>Structure</strong> &mdash; is the document organized for the intended reader?</li>
+        <li><strong>Groundedness</strong> &mdash; are claims traceable to retrieved sources?</li>
+      </ul>
+
+      <p>
+        Here is a representative two-round run from <code>runs.jsonl</code>, showing how
+        the dimensional breakdown exposes exactly what revision must fix:
+      </p>
+
+      <pre><code>{
+  "wiggum_rounds": 2,
+  "wiggum_scores": [6.4, 8.3],
+  "wiggum_dimensions": {
+    "round_1": {
+      "relevance": 8.0, "completeness": 5.5, "depth": 6.0,
+      "specificity": 6.5, "structure": 7.5, "groundedness": 5.0
+    },
+    "round_2": {
+      "relevance": 8.5, "completeness": 8.0, "depth": 8.0,
+      "specificity": 8.5, "structure": 8.5, "groundedness": 8.0
+    }
+  }
+}</code></pre>
+
+      <p>
+        The composite scores (6.4 &rarr; 8.3) tell you revision worked. The dimensional breakdown tells
+        you <em>what</em> it fixed. This run had strong structure and relevance in round 1 but failed
+        on coverage and sourcing. The revision prompt highlights only <em>Completeness</em> and
+        <em>Groundedness</em>&mdash;not all six dimensions. Presenting the producer with a
+        six-item checklist reliably causes superficial changes across all dimensions while missing
+        the depth needed to fix the ones that actually failed.
+      </p>
+
+      <h2>Deterministic Evaluator Selection</h2>
+
+      <p>
+        The evaluator is never chosen arbitrarily. <code>select_evaluator()</code> hashes the run ID
+        and maps it to a position in the pool:
+      </p>
+
+      <pre><code>EVALUATOR_POOL = os.getenv("HARNESS_EVALUATOR_POOL", "").split(",")
+
+def select_evaluator(seed: str) -> str:
+    if not EVALUATOR_POOL or EVALUATOR_POOL == [""]:
+        return DEFAULT_EVALUATOR
+    idx = int(hashlib.md5(seed.encode()).hexdigest(), 16) % len(EVALUATOR_POOL)
+    return EVALUATOR_POOL[idx].strip()</code></pre>
+
+      <p>
+        The hash-based selection ensures the same run always uses the same evaluator (reproducibility),
+        while different runs are distributed across the pool (bias dilution). A model that consistently
+        over-scores <em>Groundedness</em> by 0.5 points will inflate the pass rate if used exclusively;
+        distributed across a four-model pool, the bias becomes variance that is visible in the analytics
+        and correctable.
+      </p>
+
+      <h2>The Numbers</h2>
+
+      <p>
+        Across 1,500 logged runs, the loop raises mean output quality from 6.87 (single-pass) to 8.12
+        (post-loop)&mdash;a gain of 1.25 points&mdash;and converts a 61% first-pass rate into an 89%
+        final-pass rate. The round-by-round trajectory is consistent:
+      </p>
+
+      <!-- SCORE TRAJECTORY CHART -->
+      <div class="diagram-container">
+        <div class="diagram-title">Score Trajectory Across Evaluation Rounds (n=1,500 runs)</div>
+        <svg id="scores-svg" width="100%" style="display:block;"></svg>
+        <div class="diagram-caption">Mean and ±1 std dev across all runs that reached each round. Declining std dev in round 3 reflects that surviving runs are increasingly difficult to improve, not that improvement is easier.</div>
+      </div>
+
+      <h2>The Revision Step</h2>
+
+      <p>
+        Temperature during revision is 0.3 by design. Temperature 0.0 causes the producer to find
+        the local minimum it can reach deterministically&mdash;minimal changes. Temperature 0.3
+        introduces enough variation for meaningful structural revision while maintaining coherence.
+      </p>
+
+      <p>
+        The revision compression mode is distinct from evaluation compression. Before evaluation,
+        all second-level headings are preserved verbatim and bodies are condensed (the evaluator
+        must assess structural coverage). Before revision, sections referenced in the evaluator&rsquo;s
+        feedback are preserved verbatim and everything else is condensed (the producer must see
+        exactly what it wrote in the criticized passage).
+      </p>
+
+      <h2>Failure Modes of the Loop Itself</h2>
+
+      <div class="callout warning">
+        <p>The Wiggum Loop catches most quality problems. It is named for a known-imperfect inspector
+        because that is an accurate description of what it is.</p>
+      </div>
+
+      <p>
+        <strong>Revision regression.</strong> The producer improves a failing dimension while
+        degrading a passing one. A document with strong <em>Depth</em> but weak <em>Groundedness</em>
+        may emerge from revision with improved citations but condensed analytical sections. The loop&rsquo;s
+        score trajectory will show this as a non-monotonic pattern: 6.8 &rarr; 7.2 &rarr; 7.6, still
+        below threshold after three rounds, with a document materially different from round 1 in ways
+        that are not all improvements.
+      </p>
+
+      <p>
+        <strong>Evaluator hallucination.</strong> An evaluator that claims &ldquo;the output does not
+        address X&rdquo; when X is clearly present will cause the producer to add redundant coverage of X
+        in its revision. Most common on <em>Completeness</em>, where the evaluator must reason about
+        what is <em>absent</em> rather than what is present.
+      </p>
+
+      <p>
+        <strong>Evaluator drift.</strong> A model&rsquo;s scoring calibration shifts over Ollama version
+        updates or quantization changes. The evaluator pool with rotation converts systematic drift into
+        measurable variance. Periodic recalibration runs against a held-out human-rated set are the
+        correct diagnostic.
+      </p>
+
+      <p>
+        <strong>Context starvation.</strong> When pre-evaluation compression removes too much,
+        the evaluator scores structural completeness on a skeleton that misrepresents the content.
+        The 6,000-character threshold was chosen conservatively on this axis.
+      </p>
+
+      <h2>Tuning the Loop</h2>
+
+      <table class="tuning-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Default</th>
+            <th>Effect of raising</th>
+            <th>Effect of lowering</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>PASS_THRESHOLD</td>
+            <td>8.0</td>
+            <td>Stricter quality gate; more runs exhaust all rounds</td>
+            <td>More outputs pass in round 1; lower average quality</td>
+          </tr>
+          <tr>
+            <td>MAX_ROUNDS</td>
+            <td>3</td>
+            <td>More recovery attempts; higher latency ceiling</td>
+            <td>Faster pipeline; more runs fail without passing</td>
+          </tr>
+          <tr>
+            <td>REVISION_FOCUS_THRESHOLD</td>
+            <td>7.0</td>
+            <td>Fewer dimensions in revision prompt; tighter focus</td>
+            <td>More dimensions highlighted; broader but shallower changes</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        Tune <code>PASS_THRESHOLD</code> last, after establishing a baseline with the default. The
+        right threshold depends on your task domain, quality expectations, and latency budget&mdash;not
+        on a universal standard. The 8.0 default was calibrated for general research synthesis.
+        Do not touch <code>REVISION_FOCUS_THRESHOLD</code> without A/B evidence; it is the parameter
+        most likely to introduce subtle regressions.
+      </p>
+
+      <h2>What the 11% Tells You</h2>
+
+      <p>
+        The 11% of runs that exhaust all three rounds without passing are the most interesting part
+        of the dataset. They are not random. They cluster around specific task types (narrow technical
+        domains where the retrieval corpus is thin), specific failure classes (groundedness failures
+        when claimed sources don&rsquo;t exist), and specific model combinations (producers and evaluators
+        from the same family, which share distributional biases the rubric cannot overcome).
+      </p>
+
+      <p>
+        The Wiggum Loop is not a guarantee. It is a reliable quality lift for the runs it handles,
+        and a structured failure record for the runs it does not. Both are valuable&mdash;but only if
+        you read the records. The run log is the data; the patterns are the explanation.
+      </p>
+
+      <div class="related-post">
+        <span class="related-label">Previous in series</span>
+        <a href="./harness-thesis.html">
+          <h4>The Harness Thesis</h4>
+          <p>Why scaffolding quality matters more than model selection, and the failure that motivated it.</p>
+          <span class="read-more">Read more &rarr;</span>
+        </a>
+      </div>
+    
+
+      <div class="post-pagination">
+        <a href="./context-engineering.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">5 &middot; Context Engineering</span>
+        </a>
+        <a href="./verification-patterns.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">7 &middot; Verification Patterns</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./verification-patterns.html" class="related-post-card">
+            <div class="related-post-num">Post 7</div>
+            <div class="related-post-title">Verification Patterns</div>
+            <div class="related-post-desc">Dimensional Rubric, Surgical Compressor, and ReAct Comparator.</div>
+          </a>
+          <a href="./judge-reliability.html" class="related-post-card">
+            <div class="related-post-num">Post 13</div>
+            <div class="related-post-title">Judge Reliability</div>
+            <div class="related-post-desc">Best judges lag human agreement by 5 points. Omni-Judge wrong in 96.4% of expert disagreements.</div>
+          </a>
+          <a href="./evaluation-uncertainty.html" class="related-post-card">
+            <div class="related-post-num">Post 17</div>
+            <div class="related-post-title">Evaluation Uncertainty</div>
+            <div class="related-post-desc">Conformal prediction turns point scores into calibrated intervals. Agent-as-a-Judge outperforms LLM-as-a-Judge.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <!-- Glossary Modal -->
+  <div class="modal-overlay glossary-modal" id="glossary-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="glossary-term-title"></h3>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="glossary-term-definition"></p>
+        <p class="context-note" id="glossary-term-context"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+
+  <script type="module">
+    import anime from 'https://esm.sh/animejs@3.2.2';
+
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // ── NESTED LOOP DIAGRAM ────────────────────────────────────────────────────
+    (function drawNestedLoop() {
+      const el = document.getElementById('nested-svg');
+      const W = el.parentElement.clientWidth - 32;
+      const H = 200;
+      el.setAttribute('height', H);
+      el.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+      const svg   = d3.select('#nested-svg');
+      const accent  = cssVar('--accent-cyan');
+      const pink    = cssVar('--accent-pink');
+      const bg2     = cssVar('--bg-tertiary');
+      const textPri = cssVar('--text-primary');
+      const textSec = cssVar('--text-secondary');
+      const border  = cssVar('--border-color');
+
+      // defs
+      const defs = svg.append('defs');
+      defs.append('marker').attr('id', 'arr-cyan')
+        .attr('viewBox','0 0 10 10').attr('refX',9).attr('refY',5)
+        .attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
+        .append('path').attr('d','M 0 0 L 10 5 L 0 10 z').attr('fill', accent);
+      defs.append('marker').attr('id', 'arr-pink')
+        .attr('viewBox','0 0 10 10').attr('refX',9).attr('refY',5)
+        .attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
+        .append('path').attr('d','M 0 0 L 10 5 L 0 10 z').attr('fill', pink);
+
+      const pad = 14;
+
+      // ── RALPH outer rectangle ─────────────────────────────────────────
+      const rX = pad, rY = 30, rW = W - pad * 2, rH = H - 50;
+      svg.append('rect').attr('x', rX).attr('y', rY)
+        .attr('width', rW).attr('height', rH)
+        .attr('rx', 12).attr('fill', 'none')
+        .attr('stroke', pink).attr('stroke-width', 1.5)
+        .attr('stroke-dasharray', '6,3')
+        .style('opacity', 0).attr('class', 'n-ralph-rect');
+      svg.append('text').attr('x', rX + 14).attr('y', rY - 6)
+        .attr('fill', pink).attr('font-size', 11).attr('font-weight', '700')
+        .attr('letter-spacing', '0.05em')
+        .text('RALPH LOOP  (outer — Huntley pattern)')
+        .style('opacity', 0).attr('class', 'n-ralph-label');
+
+      // Ralph loop steps along top of inner area
+      const rSteps = [
+        { label: 'Read', sub: 'PROMPT.md' },
+        { label: 'Execute', sub: 'Agent call' },
+        { label: 'Commit', sub: 'Progress' }
+      ];
+      const rBoxW = 80, rBoxH = 44, rBoxY = rY + 16;
+      const rTotalW = rBoxW * rSteps.length + 28 * (rSteps.length - 1);
+      const rStartX = rX + (rW - rTotalW) / 2;
+
+      rSteps.forEach((s, i) => {
+        const bx = rStartX + i * (rBoxW + 28);
+        svg.append('rect')
+          .attr('class', 'n-ralph-box')
+          .attr('x', bx).attr('y', rBoxY)
+          .attr('width', rBoxW).attr('height', rBoxH)
+          .attr('rx', 6).attr('fill', bg2)
+          .attr('stroke', pink).attr('stroke-width', 1)
+          .style('opacity', 0);
+        svg.append('text').attr('class', 'n-ralph-txt')
+          .attr('x', bx + rBoxW / 2).attr('y', rBoxY + 15)
+          .attr('text-anchor', 'middle').attr('fill', textPri)
+          .attr('font-size', 11).attr('font-weight', '600')
+          .text(s.label).style('opacity', 0);
+        svg.append('text').attr('class', 'n-ralph-sub')
+          .attr('x', bx + rBoxW / 2).attr('y', rBoxY + 28)
+          .attr('text-anchor', 'middle').attr('fill', textSec)
+          .attr('font-size', 9)
+          .text(s.sub).style('opacity', 0);
+        if (i < rSteps.length - 1) {
+          const ax = bx + rBoxW, ay = rBoxY + rBoxH / 2;
+          svg.append('line').attr('class', 'n-ralph-arr')
+            .attr('x1', ax).attr('y1', ay)
+            .attr('x2', ax + 26).attr('y2', ay)
+            .attr('stroke', pink).attr('stroke-width', 1.5)
+            .attr('marker-end', 'url(#arr-pink)')
+            .style('opacity', 0);
+        }
+      });
+
+      // Back-loop arrow under Ralph boxes
+      const bly = rBoxY + rBoxH + 14;
+      const blx1 = rStartX + rBoxW * rSteps.length + 28 * (rSteps.length - 1);
+      const blx0 = rStartX;
+      svg.append('path').attr('class', 'n-ralph-back')
+        .attr('d', `M${blx1},${rBoxY + rBoxH / 2} Q${blx1 + 14},${bly} ${(blx0 + blx1) / 2},${bly} Q${blx0 - 14},${bly} ${blx0},${rBoxY + rBoxH / 2}`)
+        .attr('fill', 'none').attr('stroke', pink).attr('stroke-width', 1.2)
+        .attr('stroke-dasharray', '4,3')
+        .attr('marker-end', 'url(#arr-pink)')
+        .style('opacity', 0);
+      svg.append('text').attr('class', 'n-ralph-back-lbl')
+        .attr('x', (blx0 + blx1) / 2).attr('y', bly + 12)
+        .attr('text-anchor', 'middle').attr('fill', pink).attr('font-size', 9)
+        .text('next iteration (fresh context window)')
+        .style('opacity', 0);
+
+      // ── WIGGUM inner box — nested inside "Execute" step ────────────────
+      const execIdx = 1;
+      const execX = rStartX + execIdx * (rBoxW + 28);
+      const wX = execX - 6, wY = rBoxY + rBoxH + 4;
+      const wW = rBoxW + 12, wH = H - 26 - wY;
+
+      svg.append('rect').attr('class', 'n-wiggum-rect')
+        .attr('x', wX).attr('y', wY)
+        .attr('width', wW).attr('height', wH)
+        .attr('rx', 6).attr('fill', 'none')
+        .attr('stroke', accent).attr('stroke-width', 1.5)
+        .style('opacity', 0);
+
+      // Wiggum micro-steps inside the inner box
+      const wSteps = ['Produce', 'Eval', 'Revise'];
+      const wsBoxW = (wW - 8) / 3 - 2;
+      const wsBoxH = 22;
+      const wsY = wY + (wH - wsBoxH) / 2;
+
+      wSteps.forEach((s, i) => {
+        const bx = wX + 4 + i * (wsBoxW + 4);
+        svg.append('rect').attr('class', 'n-wiggum-box')
+          .attr('x', bx).attr('y', wsY)
+          .attr('width', wsBoxW).attr('height', wsBoxH)
+          .attr('rx', 4).attr('fill', bg2)
+          .attr('stroke', accent).attr('stroke-width', 1)
+          .style('opacity', 0);
+        svg.append('text').attr('class', 'n-wiggum-txt')
+          .attr('x', bx + wsBoxW / 2).attr('y', wsY + 12)
+          .attr('text-anchor', 'middle').attr('fill', accent)
+          .attr('font-size', 9).attr('font-weight', '600')
+          .text(s).style('opacity', 0);
+        if (i < wSteps.length - 1) {
+          svg.append('line').attr('class', 'n-wiggum-arr')
+            .attr('x1', bx + wsBoxW).attr('y1', wsY + wsBoxH / 2)
+            .attr('x2', bx + wsBoxW + 2).attr('y2', wsY + wsBoxH / 2)
+            .attr('stroke', accent).attr('stroke-width', 1)
+            .attr('marker-end', 'url(#arr-cyan)')
+            .style('opacity', 0);
+        }
+      });
+
+      svg.append('text').attr('class', 'n-wiggum-label')
+        .attr('x', wX + wW / 2).attr('y', wY + wH - 4)
+        .attr('text-anchor', 'middle').attr('fill', accent)
+        .attr('font-size', 8).attr('font-weight', '700')
+        .attr('letter-spacing', '0.06em')
+        .text('WIGGUM LOOP').style('opacity', 0);
+
+      // animate
+      const tl = anime.timeline({ easing: 'easeOutCubic' });
+      tl
+        .add({ targets: '.n-ralph-rect',   opacity: [0,1], duration: 400 })
+        .add({ targets: '.n-ralph-label',  opacity: [0,1], duration: 300 }, '-=200')
+        .add({ targets: '.n-ralph-box',    opacity: [0,1], delay: anime.stagger(120), duration: 350 }, '-=100')
+        .add({ targets: '.n-ralph-txt',    opacity: [0,1], delay: anime.stagger(120), duration: 250 }, '-=350')
+        .add({ targets: '.n-ralph-sub',    opacity: [0,1], delay: anime.stagger(120), duration: 250 }, '-=350')
+        .add({ targets: '.n-ralph-arr',    opacity: [0,1], delay: anime.stagger(100), duration: 250 }, '-=300')
+        .add({ targets: '.n-ralph-back, .n-ralph-back-lbl', opacity: [0,1], duration: 400 }, '-=100')
+        .add({ targets: '.n-wiggum-rect',  opacity: [0,1], duration: 350 }, '-=200')
+        .add({ targets: '.n-wiggum-box',   opacity: [0,1], delay: anime.stagger(80),  duration: 250 }, '-=200')
+        .add({ targets: '.n-wiggum-txt',   opacity: [0,1], delay: anime.stagger(80),  duration: 200 }, '-=250')
+        .add({ targets: '.n-wiggum-arr',   opacity: [0,1], delay: anime.stagger(80),  duration: 200 }, '-=250')
+        .add({ targets: '.n-wiggum-label', opacity: [0,1], duration: 250 }, '-=100');
+    })();
+
+    // ── WIGGUM FLOWCHART ───────────────────────────────────────────────────────
+    (function drawFlowchart() {
+      const el = document.getElementById('flowchart-svg');
+      const W = Math.min(el.parentElement.clientWidth - 32, 560);
+      const H = 380;
+      el.setAttribute('height', H);
+      el.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+      const svg    = d3.select('#flowchart-svg');
+      const accent = cssVar('--accent-cyan');
+      const pink   = cssVar('--accent-pink');
+      const bg2    = cssVar('--bg-tertiary');
+      const bg3    = cssVar('--bg-primary');
+      const tPri   = cssVar('--text-primary');
+      const tSec   = cssVar('--text-secondary');
+      const bord   = cssVar('--border-color');
+      const cx     = W / 2;
+
+      const defs = svg.append('defs');
+      ['arr-c2', 'arr-p2'].forEach((id, i) => {
+        defs.append('marker').attr('id', id)
+          .attr('viewBox','0 0 10 10').attr('refX',9).attr('refY',5)
+          .attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
+          .append('path').attr('d','M 0 0 L 10 5 L 0 10 z')
+          .attr('fill', i === 0 ? accent : pink);
+      });
+
+      function box(g, x, y, w, h, label, sub, isAccent) {
+        const grp = g.append('g').attr('class', 'fc-node').style('opacity', 0);
+        grp.append('rect').attr('x', x - w/2).attr('y', y - h/2)
+          .attr('width', w).attr('height', h).attr('rx', 7)
+          .attr('fill', bg2).attr('stroke', isAccent ? accent : bord).attr('stroke-width', isAccent ? 1.5 : 1);
+        grp.append('text').attr('x', x).attr('y', sub ? y - 5 : y)
+          .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+          .attr('fill', isAccent ? accent : tPri).attr('font-size', 11).attr('font-weight', '600')
+          .text(label);
+        if (sub) grp.append('text').attr('x', x).attr('y', y + 10)
+          .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+          .attr('fill', tSec).attr('font-size', 9).text(sub);
+        return grp;
+      }
+
+      function diamond(g, x, y, w, h, label) {
+        const hw = w / 2, hh = h / 2;
+        const grp = g.append('g').attr('class', 'fc-node').style('opacity', 0);
+        grp.append('polygon')
+          .attr('points', `${x},${y-hh} ${x+hw},${y} ${x},${y+hh} ${x-hw},${y}`)
+          .attr('fill', bg2).attr('stroke', accent).attr('stroke-width', 1.5);
+        grp.append('text').attr('x', x).attr('y', y)
+          .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+          .attr('fill', accent).attr('font-size', 10).attr('font-weight', '700')
+          .text(label);
+        return grp;
+      }
+
+      function arrow(g, x1, y1, x2, y2, label, color, markId) {
+        const grp = g.append('g').attr('class', 'fc-arr').style('opacity', 0);
+        grp.append('line').attr('x1',x1).attr('y1',y1).attr('x2',x2).attr('y2',y2)
+          .attr('stroke', color || accent).attr('stroke-width', 1.5)
+          .attr('marker-end', `url(#${markId || 'arr-c2'})`);
+        if (label) {
+          const mx = (x1+x2)/2 + (y1===y2 ? 0 : 6);
+          const my = (y1+y2)/2;
+          grp.append('text').attr('x', mx).attr('y', my)
+            .attr('text-anchor', 'start').attr('dominant-baseline', 'middle')
+            .attr('fill', color || accent).attr('font-size', 9).attr('font-weight', '600')
+            .text(label);
+        }
+        return grp;
+      }
+
+      const g = svg.append('g');
+
+      // Layout
+      const y0 = 28,  // producer
+            y1 = 96,  // evaluator
+            y2 = 164, // decision diamond
+            y3 = 232, // persist (pass) / revise (fail)
+            y4 = 300; // rounds exhausted
+
+      const bw = Math.min(180, W * 0.46);
+      const bh = 42, dw = 110, dh = 44;
+
+      // Nodes
+      box(g, cx, y0, bw, bh, 'Producer synthesizes', null, false);
+      box(g, cx, y1, bw, bh, 'Evaluator scores', '6 dims × 0.5-pt resolution', true);
+      diamond(g, cx, y2, dw, dh, 'score ≥ 8.0?');
+      box(g, cx - bw/2 - 10, y3, bw - 20, bh, 'Persist output', 'PASS', true);
+      box(g, cx + bw/2 + 10, y3, bw - 20, bh, 'Producer revises', 'targeted dims only', false);
+      diamond(g, cx + bw/2 + 10, y4, 90, 36, 'rounds < 3?');
+      box(g, cx + bw/2 + 10, y4 + 50, bw - 20, bh, 'Persist best', 'FAIL', false);
+
+      // Arrows
+      arrow(g, cx, y0+bh/2, cx, y1-bh/2, null, accent, 'arr-c2');
+      arrow(g, cx, y1+bh/2, cx, y2-dh/2, null, accent, 'arr-c2');
+      // Pass branch
+      arrow(g, cx - dw/2, y2, cx - bw/2 - 10, y3 - bh/2, 'YES', accent, 'arr-c2');
+      // Fail branch
+      arrow(g, cx + dw/2, y2, cx + bw/2 + 10, y3 - bh/2, 'NO', pink, 'arr-p2');
+      // Revise → rounds check
+      arrow(g, cx + bw/2 + 10, y3 + bh/2, cx + bw/2 + 10, y4 - 18, null, pink, 'arr-p2');
+      // Rounds < 3 YES → back up to evaluator
+      const loopX = cx + bw/2 + 10 + 52;
+      g.append('g').attr('class', 'fc-arr').style('opacity', 0)
+        .append('path')
+        .attr('d', `M${cx+bw/2+10+45},${y4} L${loopX},${y4} L${loopX},${y1} L${cx+bw/2},${y1}`)
+        .attr('fill','none').attr('stroke',accent).attr('stroke-width',1.5)
+        .attr('marker-end','url(#arr-c2)');
+      g.append('g').attr('class', 'fc-arr').style('opacity', 0)
+        .append('text').attr('x', loopX + 4).attr('y', (y1+y4)/2)
+        .attr('fill', accent).attr('font-size', 9).attr('font-weight', '600')
+        .text('YES → re-evaluate');
+      // Rounds exhausted (NO)
+      arrow(g, cx+bw/2+10, y4+18, cx+bw/2+10, y4+27, null, tSec, 'arr-c2');
+
+      anime({
+        targets: '.fc-node, .fc-arr',
+        opacity: [0, 1],
+        delay: anime.stagger(80, {start: 400}),
+        duration: 350,
+        easing: 'easeOutCubic'
+      });
+    })();
+
+    // ── SCORE TRAJECTORY BAR CHART ─────────────────────────────────────────────
+    (function drawScores() {
+      const el = document.getElementById('scores-svg');
+      const W = el.parentElement.clientWidth - 32;
+      const H = 220;
+      const margin = { top: 20, right: 20, bottom: 45, left: 48 };
+      const iW = W - margin.left - margin.right;
+      const iH = H - margin.top - margin.bottom;
+
+      el.setAttribute('height', H);
+      el.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+      const accent  = cssVar('--accent-cyan');
+      const pink    = cssVar('--accent-pink');
+      const bg2     = cssVar('--bg-tertiary');
+      const tSec    = cssVar('--text-secondary');
+      const border  = cssVar('--border-color');
+
+      const svg = d3.select('#scores-svg');
+      const g   = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+      const data = [
+        { round: 'Round 1', mean: 6.87, std: 1.12 },
+        { round: 'Round 2', mean: 8.04, std: 0.73 },
+        { round: 'Round 3', mean: 8.31, std: 0.61 }
+      ];
+
+      const x = d3.scaleBand().domain(data.map(d => d.round)).range([0, iW]).padding(0.35);
+      const y = d3.scaleLinear().domain([0, 10]).range([iH, 0]);
+
+      // Gridlines
+      g.append('g').call(d3.axisLeft(y).ticks(5).tickSize(-iW).tickFormat(''))
+        .call(g => g.selectAll('line').attr('stroke', border).attr('stroke-opacity', 0.4).attr('stroke-dasharray','3,3'))
+        .call(g => g.select('.domain').remove());
+
+      // Axes
+      const xAx = g.append('g').attr('transform', `translate(0,${iH})`)
+        .call(d3.axisBottom(x).tickSize(0));
+      xAx.selectAll('text').attr('fill', tSec).attr('font-size', 12).attr('font-weight', '600').attr('dy', '1.2em');
+      xAx.select('.domain').attr('stroke', border);
+
+      const yAx = g.append('g').call(d3.axisLeft(y).ticks(5));
+      yAx.selectAll('text').attr('fill', tSec).attr('font-size', 11);
+      yAx.selectAll('line, path').attr('stroke', border);
+
+      g.append('text').attr('transform','rotate(-90)')
+        .attr('x', -iH/2).attr('y', -38)
+        .attr('text-anchor','middle').attr('fill', tSec).attr('font-size', 11)
+        .text('Mean Quality Score (0–10)');
+
+      // Std dev bands
+      data.forEach(d => {
+        g.append('rect')
+          .attr('x', x(d.round) + x.bandwidth() * 0.2)
+          .attr('y', y(Math.min(10, d.mean + d.std)))
+          .attr('width', x.bandwidth() * 0.6)
+          .attr('height', y(Math.max(0, d.mean - d.std)) - y(Math.min(10, d.mean + d.std)))
+          .attr('fill', accent).attr('fill-opacity', 0.12)
+          .attr('rx', 3);
+      });
+
+      // Bars (start at 0 height for animation)
+      const bars = g.selectAll('.score-bar')
+        .data(data).enter().append('rect').attr('class', 'score-bar')
+        .attr('x', d => x(d.round))
+        .attr('y', iH)           // start at bottom
+        .attr('width', x.bandwidth())
+        .attr('height', 0)
+        .attr('rx', 5)
+        .attr('fill', (d, i) => i === 0 ? pink : accent)
+        .attr('fill-opacity', 0.85);
+
+      // Mean labels
+      data.forEach(d => {
+        g.append('text').attr('class', 'score-label')
+          .attr('x', x(d.round) + x.bandwidth() / 2)
+          .attr('y', y(d.mean) - 6)
+          .attr('text-anchor', 'middle')
+          .attr('fill', d.mean < 8.0 ? pink : accent)
+          .attr('font-size', 12).attr('font-weight', '700')
+          .text(d.mean.toFixed(2))
+          .style('opacity', 0);
+      });
+
+      // Pass threshold line
+      g.append('line')
+        .attr('x1', 0).attr('y1', y(8.0))
+        .attr('x2', iW).attr('y2', y(8.0))
+        .attr('stroke', accent).attr('stroke-width', 1.5)
+        .attr('stroke-dasharray', '6,3');
+      g.append('text')
+        .attr('x', iW - 4).attr('y', y(8.0) - 5)
+        .attr('text-anchor', 'end').attr('fill', accent).attr('font-size', 10).attr('font-weight', '700')
+        .text('pass threshold (8.0)');
+
+      // Animate bars
+      anime({
+        targets: '.score-bar',
+        y: (el, i) => y(data[i].mean),
+        height: (el, i) => iH - y(data[i].mean),
+        delay: anime.stagger(150, { start: 600 }),
+        duration: 700,
+        easing: 'easeOutCubic'
+      });
+      anime({
+        targets: '.score-label',
+        opacity: [0, 1],
+        translateY: [6, 0],
+        delay: anime.stagger(150, { start: 900 }),
+        duration: 400,
+        easing: 'easeOutCubic'
+      });
+    })();
+
+    // ── Glossary modal ─────────────────────────────────────────────────────────
+    const modal = document.getElementById('glossary-modal');
+    if (modal) {
+      const titleEl = document.getElementById('glossary-term-title');
+      const definitionEl = document.getElementById('glossary-term-definition');
+      const contextEl = document.getElementById('glossary-term-context');
+      const closeBtn = modal.querySelector('.modal-close');
+      const glossaryTerms = {};
+      document.querySelectorAll('.glossary-term').forEach(term => {
+        term.addEventListener('click', () => {
+          const termData = glossaryTerms[term.dataset.term];
+          if (termData) {
+            titleEl.textContent = termData.title;
+            definitionEl.textContent = termData.definition;
+            contextEl.textContent = termData.context;
+            modal.classList.add('active');
+          }
+        });
+      });
+      closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+      modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('active'); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') modal.classList.remove('active'); });
+    }
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>
