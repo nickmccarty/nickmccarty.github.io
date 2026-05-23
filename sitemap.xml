@@ -1,84 +1,234 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
   <!-- Main Pages -->
   <url>
-    <loc>https://nickmccarty.me/</loc>
-    <lastmod>2026-01-18</lastmod>
+    <loc>https://nickmccarty.github.io/</loc>
+    <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://nickmccarty.me/about.html</loc>
-    <lastmod>2026-01-18</lastmod>
+    <loc>https://nickmccarty.github.io/about.html</loc>
+    <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://nickmccarty.me/blog.html</loc>
-    <lastmod>2026-01-18</lastmod>
+    <loc>https://nickmccarty.github.io/blog.html</loc>
+    <lastmod>2026-05-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://nickmccarty.me/contact.html</loc>
+    <loc>https://nickmccarty.github.io/contact.html</loc>
     <lastmod>2026-01-18</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.7</priority>
   </url>
 
-  <!-- Blog Posts -->
+  <!-- Agentic Harness Engineering Series (Posts 1–11, May 22, 2026) -->
   <url>
-    <loc>https://nickmccarty.me/blog/circuit-extraction-pot-detection.html</loc>
+    <loc>https://nickmccarty.github.io/blog/the-wiggum-loop.html</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/harness-thesis.html</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/pipeline-in-motion.html</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/failure-taxonomy.html</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/inference-patterns.html</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/context-engineering.html</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/verification-patterns.html</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/orchestration-patterns.html</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/security-patterns.html</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/observability-flywheel.html</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/parallel-inference.html</loc>
+    <lastmod>2026-05-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Agentic Harness Engineering Series (Posts 12 & 14, May 23, 2026) -->
+  <url>
+    <loc>https://nickmccarty.github.io/blog/experimental-methodology.html</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/multi-objective-alignment.html</loc>
+    <lastmod>2026-05-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Agentic Harness Engineering Series (Post 13 & 17 & 19 & 22 & 23, April 29, 2026) -->
+  <url>
+    <loc>https://nickmccarty.github.io/blog/judge-reliability.html</loc>
+    <lastmod>2026-04-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/evaluation-uncertainty.html</loc>
+    <lastmod>2026-04-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/evaluation-robustness.html</loc>
+    <lastmod>2026-04-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/structured-knowledge-queries.html</loc>
+    <lastmod>2026-04-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/judge-benchmarks-scaling.html</loc>
+    <lastmod>2026-04-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Agentic Harness Engineering Series (Post 15, May 8, 2026) -->
+  <url>
+    <loc>https://nickmccarty.github.io/blog/slm-efficiency.html</loc>
+    <lastmod>2026-05-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Agentic Harness Engineering Series (Posts 16 & 18 & 20 & 21, May 1, 2026) -->
+  <url>
+    <loc>https://nickmccarty.github.io/blog/tool-use-planning.html</loc>
+    <lastmod>2026-05-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/knowledge-graphs-extraction.html</loc>
+    <lastmod>2026-05-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/prompt-injection-security.html</loc>
+    <lastmod>2026-05-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://nickmccarty.github.io/blog/alignment-fine-tuning.html</loc>
+    <lastmod>2026-05-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Earlier Blog Posts -->
+  <url>
+    <loc>https://nickmccarty.github.io/blog/circuit-extraction-pot-detection.html</loc>
     <lastmod>2026-01-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nickmccarty.me/blog/sam-object-detection.html</loc>
+    <loc>https://nickmccarty.github.io/blog/sam-object-detection.html</loc>
     <lastmod>2026-01-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nickmccarty.me/blog/sparse-probing-pot-detection.html</loc>
+    <loc>https://nickmccarty.github.io/blog/sparse-probing-pot-detection.html</loc>
     <lastmod>2026-01-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nickmccarty.me/blog/extracting-vision-features.html</loc>
+    <loc>https://nickmccarty.github.io/blog/extracting-vision-features.html</loc>
     <lastmod>2026-01-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nickmccarty.me/blog/mechanistic-interpretability.html</loc>
+    <loc>https://nickmccarty.github.io/blog/mechanistic-interpretability.html</loc>
     <lastmod>2026-01-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nickmccarty.me/blog/sam-vs-fasterrcnn-comparison.html</loc>
+    <loc>https://nickmccarty.github.io/blog/sam-vs-fasterrcnn-comparison.html</loc>
     <lastmod>2026-01-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nickmccarty.me/blog/fine-tuning-vision-models.html</loc>
+    <loc>https://nickmccarty.github.io/blog/fine-tuning-vision-models.html</loc>
     <lastmod>2025-12-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nickmccarty.me/blog/fastapi-web-app.html</loc>
+    <loc>https://nickmccarty.github.io/blog/fastapi-web-app.html</loc>
     <lastmod>2025-12-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nickmccarty.me/blog/training-faster-rcnn-geospatial.html</loc>
+    <loc>https://nickmccarty.github.io/blog/training-faster-rcnn-geospatial.html</loc>
     <lastmod>2025-12-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
+
 </urlset>

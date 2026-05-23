@@ -1,10 +1,10 @@
-# Nick McCarty - Personal Website
+# Nick McCarty — Personal Website
 
-> Technical blog and portfolio focused on computer vision, machine learning, and geospatial AI for agricultural applications.
+> Technical blog and portfolio covering agentic systems engineering, LLM evaluation, computer vision, and geospatial AI.
 
 ## Author
 
-Nick McCarty is a machine learning engineer specializing in computer vision for geospatial and agricultural applications. He works at Upskilled Consulting on photogrammetry, 3D Gaussian Splatting, and ML/AI projects. His research focuses on applying mechanistic interpretability techniques to vision models.
+Nick McCarty is a machine learning engineer, consultant, and technical instructor. He works at Upskilled Consulting on ML/AI projects spanning computer vision, photogrammetry, and agentic system design. He is the author of the 23-post Agentic Harness Engineering series, a comprehensive treatment of production agentic pipeline architecture grounded in empirical experiment and a structured literature review of over 60 papers.
 
 - Email: nick@upskilled.consulting
 - LinkedIn: https://linkedin.com/in/nicholasmccarty
@@ -12,62 +12,196 @@ Nick McCarty is a machine learning engineer specializing in computer vision for 
 
 ## Recent Publication
 
-"Performing Object Detection on Drone Orthomosaics with Meta's SAM" - SciPy 2025
+"Performing Object Detection on Drone Orthomosaics with Meta's SAM" — SciPy 2025
 
-## Upcoming Speaking
+## Speaking
 
-Geo Week 2026 (February 17, Denver) - "Reimagining Mapping with AI"
+- **Upcoming**: NextUp SoCal — "Machine Learning Using Open Source Tools" (virtual, August 2026, $10 admission; registration details TBD)
+- **Past**: Geo Week 2026 — "Reimagining Mapping with AI and Scalable Technologies" (February 17, 2026, Denver CO)
 
 ## Site Structure
 
-- / - Home page
-- /about.html - About page with background, experience, and publications
-- /blog.html - Blog listing page
-- /contact.html - Contact form
+- / — Home page
+- /about.html — Background, experience, publications, and speaking
+- /blog.html — Blog index (series cards + individual posts)
+- /contact.html — Contact form
 
-## Blog Posts
+---
+
+## Agentic Harness Engineering Series (Posts 1–23)
+
+A 23-post series on the design, empirics, and literature behind production agentic pipelines. The series covers eleven subsystem patterns, four production experiments, and structured reviews of 60+ papers on LLM evaluation, planning, alignment, security, and knowledge retrieval.
+
+### Architecture and Patterns (Posts 1–11, May 22, 2026)
+
+URL: /blog/the-wiggum-loop.html
+Title: The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision
+Topics: LLM evaluation, producer-evaluator separation, self-preference bias, dimensional rubric, cross-model scoring
+Summary: The two-loop architecture — Ralph (outer revision) and Wiggum (inner evaluation) — that produces reliably high-quality agentic output. Includes D3.js diagrams and score trajectory data from 1,500 production runs.
+
+URL: /blog/harness-thesis.html
+Title: The Harness Thesis: Why Scaffolding Beats Model Selection
+Topics: agentic scaffolding, pipeline architecture, model selection, quality engineering
+Summary: The empirical case that scaffolding quality matters more than model choice for a fixed task domain. Covers the five-stage pipeline and the silent overwrite failure that motivated the project.
+
+URL: /blog/pipeline-in-motion.html
+Title: The Pipeline in Motion: Tracing a Task Through All Eleven Subsystems
+Topics: pipeline architecture, task decomposition, retrieval, synthesis, JSONL, agentic systems
+Summary: A single research query traced end-to-end through all eleven subsystems, with D3.js architecture diagrams at each hop.
+
+URL: /blog/failure-taxonomy.html
+Title: A Failure Taxonomy for Agentic Systems
+Topics: failure analysis, agentic systems, retrieval failures, synthesis failures, evaluation failures
+Summary: Six failure classes ranked by frequency and cost, with real data from 1,500 production runs and the diagnostic patterns that catch them early.
+
+URL: /blog/inference-patterns.html
+Title: Inference Patterns: The Substrate Layer
+Topics: inference optimization, model routing, keep-alive, evaluator pool, LLM infrastructure
+Summary: Four patterns governing how LLM calls are issued, routed, and kept warm: the Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget.
+
+URL: /blog/context-engineering.html
+Title: Context Engineering: What Reaches the Model
+Topics: context management, RAG, Planner-First, Novelty Gate, semantic chunking, memory store
+Summary: Five patterns governing the research half of the pipeline: Planner-First, Novelty Gate, Dual-Backend Memory Store, Semantic Chunker, and Dynamic Context Injection.
+
+URL: /blog/verification-patterns.html
+Title: Verification Patterns: Measuring and Improving Output Quality
+Topics: output verification, dimensional rubric, surgical compression, ReAct, evaluation strategy
+Summary: Three patterns completing the verification layer: Dimensional Rubric, Surgical Compressor, and ReAct Comparator.
+
+URL: /blog/orchestration-patterns.html
+Title: Orchestration Patterns: Scaling to Multi-Agent Execution
+Topics: multi-agent systems, DAG orchestration, worktree isolation, MCP, skill registry
+Summary: Four patterns for coordinating multiple agents: DAG Orchestrator, Worktree Context, MCP Dispatch Router, and Skill Registry.
+
+URL: /blog/security-patterns.html
+Title: Security Patterns: Constraining the Agent
+Topics: agentic security, AST analysis, path sandboxing, prompt injection defense, CDP guard
+Summary: Four security patterns implemented with Python stdlib: AST Guard, Path Sandbox, Injection Scanner, and CDP Guard.
+
+URL: /blog/observability-flywheel.html
+Title: Observability and the Data Flywheel
+Topics: observability, tracing, JSONL logging, data flywheel, RL rollout, self-improvement
+Summary: Six patterns closing the feedback loop: RunTrace, JSONL Audit Log, Chrome Trace Exporter, Data Flywheel, RL Rollout, and Literature Review Pipeline.
+
+URL: /blog/parallel-inference.html
+Title: Parallel Inference: Hardware Substrates for LLM Workloads
+Topics: GPU architecture, llama.cpp, vLLM, GGUF, quantization, KV cache, parallel processing
+Summary: GPU memory hierarchy, SM architecture, llama.cpp, vLLM, GGUF quantization, and KV cache pressure — the hardware realities that determine whether an agentic pipeline is fast or broken.
+
+### Experiments and Alignment (Posts 12 & 14, May 23, 2026)
+
+URL: /blog/experimental-methodology.html
+Title: Experimental Methodology: Four Experiments, One Pipeline
+Topics: experimental design, CRD, evaluator ceiling, producer ceiling, synthesis instructions, ablation
+Summary: Four completely randomized designs that exposed the evaluator ceiling, the producer ceiling, and the synthesis instruction bottleneck that neither model upgrade could fix.
+
+URL: /blog/multi-objective-alignment.html
+Title: Multi-Objective Alignment: Beyond Scalar Rewards
+Topics: RLHF, multi-objective optimization, DPA, MO-ODPO, MGDA, safety fine-tuning, reward modeling
+Summary: DPA, MO-ODPO, MGDA-Decoupled, and the safety fine-tuning hazard: high dataset similarity degrades safety by 10.33%.
+
+### Small Language Models (Post 15, May 8, 2026)
+
+URL: /blog/slm-efficiency.html
+Title: Small Language Models and the Efficiency-Accuracy Frontier
+Topics: SLM, small language models, efficiency, benchmarking, energy, model selection, multi-model architecture
+Summary: SLM-Bench across 15 models, 9 tasks, 4 hardware configs. Accuracy and energy efficiency don't co-optimize — model selection is a portfolio problem, not a ranking problem.
+
+### Literature Reviews — Tools, Knowledge Graphs, Security, Fine-Tuning (Posts 16, 18, 20–21, May 1, 2026)
+
+URL: /blog/tool-use-planning.html
+Title: Agentic Tool Use and Planning: What the Literature Says
+Topics: tool use, LLM planning, NL2Plan, PEARL, ToolTree, ToolRet, safety bypass, multi-LLM
+Summary: NL2Plan, PEARL, ToolTree, ToolRet, Memory-as-a-Tool, and a 92% safety bypass rate — fifteen papers on LLM planning and tool use.
+
+URL: /blog/knowledge-graphs-extraction.html
+Title: Knowledge Graphs and Structured Extraction: Beyond the Vector Store
+Topics: knowledge graphs, structured extraction, semantic graphs, MeXtract, RAG, graph retrieval
+Summary: Document semantic graphs outperform flat-list retrieval. MeXtract achieves SOTA metadata extraction with 0.5B parameters.
+
+URL: /blog/prompt-injection-security.html
+Title: Prompt Injection and Agentic Security: What the Attack Literature Says
+Topics: prompt injection, adversarial attacks, HouYi, gradient-based injection, Prompt Infection, multi-agent security
+Summary: HouYi compromises 86% of real LLM applications. Gradient-based injections bypass pattern-matching by design. Prompt Infection replicates virally through multi-agent DAGs.
+
+URL: /blog/alignment-fine-tuning.html
+Title: Fine-Tuning and Alignment Deep Cuts: Synthetic Data, Poisoning, and Safety Recovery
+Topics: fine-tuning, RLHF, synthetic data, data poisoning, safety recovery, FLR, SFT, perplexity
+Summary: FLR matches GPT-4-annotated reward models without human annotation. Label-flipping poisoning as convex optimization. Harmful rate drops 33.25% to 1.74% via weight restoration.
+
+### Literature Reviews — Evaluation, Judges, and Knowledge Queries (Posts 13, 17, 19, 22–23, April 29, 2026)
+
+URL: /blog/judge-reliability.html
+Title: Judging the Judges: Benchmark Contamination and Evaluation Reliability
+Topics: LLM-as-a-judge, evaluation reliability, position bias, benchmark contamination, self-preference
+Summary: Best judges lag human agreement by 5 points. Eight of nine judges show always-A position bias. What the reliability literature means for harness design.
+
+URL: /blog/evaluation-uncertainty.html
+Title: Evaluation Uncertainty, Calibration, and Harness Reliability
+Topics: uncertainty quantification, conformal prediction, calibration, ConFix, Agent-as-a-Judge, hallucination
+Summary: Conformal prediction turns point scores into calibrated intervals. Fact-level ConFix reduces hallucinations without retrieval. Agent-as-a-Judge outperforms LLM-as-a-Judge.
+
+URL: /blog/evaluation-robustness.html
+Title: Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity
+Topics: metamorphic testing, LLMORPH, scoring bias, prompt sensitivity, rubric design, LLM evaluation
+Summary: LLMORPH finds evaluator inconsistencies across 561,000 test executions. Three novel scoring biases — rubric order, score ID, reference answer — originate in prompt design.
+
+URL: /blog/structured-knowledge-queries.html
+Title: Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification
+Topics: SPARQL, ontology, knowledge graphs, ODA, GRASP, ETLCH, chain of verification, Wikidata
+Summary: ODA improves LLM+KG accuracy by 12.87% via recursive observation-action-reflection. GRASP achieves zero-shot SPARQL SOTA on Wikidata without fine-tuning.
+
+URL: /blog/judge-benchmarks-scaling.html
+Title: Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't
+Topics: JETTS, Omni-MATH, M-JudgeBench, IF-RewardBench, test-time scaling, process reward models, reranking
+Summary: JETTS: judges match outcome reward models for reranking but lose to process reward models in beam search. Omni-Judge is wrong in 96.4% of expert disagreements.
+
+---
+
+## Earlier Blog Posts
 
 ### Circuit Extraction: Interpreting Object Detectors
 URL: /blog/circuit-extraction-pot-detection.html
 Date: January 13, 2026
 Topics: mechanistic interpretability, activation patching, co-activation analysis, neural circuits, Faster R-CNN
-Summary: Using activation patching and co-activation analysis to extract the minimal computational circuit for pot detection in Faster R-CNN. Explains how to identify critical channels, map functional relationships, and understand what vision models actually compute.
+Summary: Using activation patching and co-activation analysis to extract the minimal computational circuit for pot detection in Faster R-CNN.
 
 ### Object Detection on Drone Orthomosaics with SAM
 URL: /blog/sam-object-detection.html
 Date: January 10, 2026
 Topics: Segment Anything Model, SAM, drone imagery, orthomosaics, zero-shot learning, foundation models
-Summary: Overview of using Meta's Segment Anything Model for automated object detection in high-resolution aerial imagery. Covers tile-based processing, georeferencing, and applications in precision agriculture.
+Summary: Overview of using Meta's Segment Anything Model for automated object detection in high-resolution aerial imagery, with applications in precision agriculture.
 
 ### Sparse Linear Probing for Efficient Detection
 URL: /blog/sparse-probing-pot-detection.html
 Date: January 9, 2026
 Topics: linear probing, L1 regularization, sparse features, interpretability, feature analysis
-Summary: Using L1-regularized linear probes to identify minimal feature subsets from SAM and Faster R-CNN that are sufficient for pot detection. Demonstrates that ~50 channels capture 95% of detection performance.
+Summary: Using L1-regularized linear probes to identify minimal feature subsets from SAM and Faster R-CNN sufficient for pot detection. ~50 channels capture 95% of detection performance.
 
 ### Extracting Features from Vision Model Backbones
 URL: /blog/extracting-vision-features.html
 Date: January 7, 2026
 Topics: feature extraction, PyTorch hooks, PCA visualization, ResNet, ViT, GeoTIFF
-Summary: Technical guide to extracting and visualizing internal representations from SAM and Faster R-CNN. Covers forward hooks, tiled extraction for large images, channel selectivity, and saving features as GeoTIFFs.
+Summary: Technical guide to extracting and visualizing internal representations from SAM and Faster R-CNN. Covers forward hooks, tiled extraction, channel selectivity, and GeoTIFF output.
 
 ### Mechanistic Interpretability for Agricultural AI
 URL: /blog/mechanistic-interpretability.html
 Date: January 5, 2026
 Topics: mechanistic interpretability, neural network analysis, monosemantic features, polysemantic features, AI safety
-Summary: Exploring how mechanistic interpretability techniques help understand what vision models learn about agricultural environments. Discusses feature visualization, activation patching, and building trustworthy AI systems.
+Summary: How mechanistic interpretability techniques help understand what vision models learn about agricultural environments. Covers feature visualization, activation patching, and trustworthy AI.
 
 ### SAM vs Faster R-CNN: A Practical Comparison
 URL: /blog/sam-vs-fasterrcnn-comparison.html
 Date: January 3, 2026
 Topics: SAM, Faster R-CNN, object detection, architecture comparison, aerial imagery
-Summary: Comparing Segment Anything Model and Faster R-CNN for aerial object detection. Covers architecture differences, fine-tuning approaches, speed benchmarks, and when to use each model.
+Summary: Comparing Segment Anything Model and Faster R-CNN for aerial object detection — architecture, fine-tuning approaches, speed benchmarks, and when to use each.
 
 ### Fine-Tuning Vision Foundation Models
 URL: /blog/fine-tuning-vision-models.html
 Date: December 28, 2025
 Topics: fine-tuning, transfer learning, LoRA, PEFT, active learning, data augmentation
-Summary: Practical guide to fine-tuning strategies for vision models like SAM and Faster R-CNN. Covers full fine-tuning, decoder-only training, parameter-efficient methods, and data efficiency strategies.
+Summary: Practical guide to fine-tuning strategies for vision models like SAM and Faster R-CNN. Covers full fine-tuning, decoder-only training, parameter-efficient methods, and data efficiency.
 
 ### Building a GeoTIFF Object Detection Web App
 URL: /blog/fastapi-web-app.html
@@ -79,26 +213,33 @@ Summary: Walkthrough of building a web application for running Faster R-CNN infe
 URL: /blog/training-faster-rcnn-geospatial.html
 Date: December 20, 2025
 Topics: Faster R-CNN, object detection training, hard negative mining, transfer learning, geospatial
-Summary: Deep dive into training object detection models on aerial imagery. Covers bootstrapping training data from SAM, hard negative mining, tiled training, and georeferenced inference.
+Summary: Training object detection models on aerial imagery — bootstrapping training data from SAM, hard negative mining, tiled training, and georeferenced inference.
 
-## Key Topics Covered
+---
 
-- **Computer Vision**: Object detection, image segmentation, feature extraction
-- **Foundation Models**: SAM (Segment Anything Model), vision transformers, transfer learning
-- **Geospatial AI**: Drone imagery, orthomosaics, GeoTIFF processing, coordinate systems
-- **Mechanistic Interpretability**: Activation patching, circuit extraction, sparse probing, feature visualization
-- **Agricultural AI**: Plant/pot detection, precision agriculture, automated monitoring
-- **Model Training**: Fine-tuning strategies, data augmentation, hard negative mining
-- **Deployment**: FastAPI, WebSockets, GIS integration
+## Key Topics
+
+- **Agentic Systems**: Harness engineering, multi-agent orchestration, producer-evaluator loops, DAG execution, MCP
+- **LLM Evaluation**: Judge reliability, position bias, calibration, conformal prediction, metamorphic testing, benchmark design
+- **Alignment and Fine-Tuning**: RLHF, multi-objective optimization, synthetic data, data poisoning, safety recovery
+- **Security**: Prompt injection attacks, agentic sandboxing, adversarial inputs, multi-agent attack propagation
+- **Knowledge Retrieval**: RAG, knowledge graphs, SPARQL, ontology, structured extraction, grounded verification
+- **Computer Vision**: Object detection, image segmentation, feature extraction, mechanistic interpretability
+- **Foundation Models**: SAM, vision transformers, Faster R-CNN, LoRA, PEFT
+- **Geospatial AI**: Drone imagery, orthomosaics, GeoTIFF processing, coordinate systems, photogrammetry
+- **Hardware and Inference**: GPU architecture, llama.cpp, vLLM, quantization, KV cache optimization
+- **Small Language Models**: Efficiency frontiers, multi-model architectures, energy benchmarking
 
 ## Technical Stack
 
-- PyTorch for deep learning
-- Faster R-CNN and SAM for object detection/segmentation
+- Python, PyTorch for deep learning and pipeline engineering
+- Faster R-CNN, SAM for object detection and segmentation
+- llama.cpp, vLLM for local LLM inference
 - rasterio for geospatial data processing
 - FastAPI for web services
+- D3.js for interactive data visualization
 - Leaflet for web mapping
 
 ## Contact
 
-For questions about the research or collaboration inquiries, contact nick@upskilled.consulting
+nick@upskilled.consulting
