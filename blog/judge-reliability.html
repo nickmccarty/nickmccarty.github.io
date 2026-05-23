@@ -184,6 +184,47 @@
         This post surveys the empirical evidence on what makes LLM judges fail — across benchmark contamination, position bias, self-preference, prompt sensitivity, and calibration gaps — and translates the findings into concrete harness design requirements.
       </p>
 
+      <section class="cluster-toc">
+        <p class="cluster-toc-label">Posts 13, 17, 19, 22 &amp; 23 &mdash; April 29, 2026</p>
+        <p class="cluster-toc-intro">Five literature reviews on evaluation quality, judge reliability, and knowledge retrieval.</p>
+        <ol class="cluster-toc-list">
+          <li class="cluster-toc-item cluster-toc-current">
+            <a href="./judge-reliability.html" class="cluster-toc-link">
+              <span class="cluster-toc-num">Post 13</span>
+              <span class="cluster-toc-title">Judging the Judges: Benchmark Contamination and Evaluation Reliability</span>
+              <span class="cluster-toc-summary">Best judges lag human agreement by 5 points. Eight of nine judges show always-A position bias. What it means for harness design.</span>
+            </a>
+          </li>
+          <li class="cluster-toc-item">
+            <a href="./evaluation-uncertainty.html" class="cluster-toc-link">
+              <span class="cluster-toc-num">Post 17</span>
+              <span class="cluster-toc-title">Evaluation Uncertainty, Calibration, and Harness Reliability</span>
+              <span class="cluster-toc-summary">Conformal prediction turns point scores into calibrated intervals. Agent-as-a-Judge outperforms LLM-as-a-Judge.</span>
+            </a>
+          </li>
+          <li class="cluster-toc-item">
+            <a href="./evaluation-robustness.html" class="cluster-toc-link">
+              <span class="cluster-toc-num">Post 19</span>
+              <span class="cluster-toc-title">Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity</span>
+              <span class="cluster-toc-summary">LLMORPH across 561,000 test executions. Three novel scoring biases&mdash;rubric order, score ID, reference answer&mdash;originate in prompt design.</span>
+            </a>
+          </li>
+          <li class="cluster-toc-item">
+            <a href="./structured-knowledge-queries.html" class="cluster-toc-link">
+              <span class="cluster-toc-num">Post 22</span>
+              <span class="cluster-toc-title">Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification</span>
+              <span class="cluster-toc-summary">ODA improves LLM+KG accuracy by 12.87%. GRASP achieves zero-shot SPARQL SOTA on Wikidata without fine-tuning.</span>
+            </a>
+          </li>
+          <li class="cluster-toc-item">
+            <a href="./judge-benchmarks-scaling.html" class="cluster-toc-link">
+              <span class="cluster-toc-num">Post 23</span>
+              <span class="cluster-toc-title">Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don’t</span>
+              <span class="cluster-toc-summary">JETTS: judges match ORMs for reranking but lose to PRMs in beam search. Omni-Judge wrong in 96.4% of expert disagreements.</span>
+            </a>
+          </li>
+        </ol>
+      </section>
       <h2>The Baseline Problem: Judges Lag Human Agreement by 5 Points</h2>
 
       <p>

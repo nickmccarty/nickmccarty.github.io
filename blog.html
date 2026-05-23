@@ -65,105 +65,17 @@
       <div class="blog-grid">
         <a href="./blog/experimental-methodology.html" style="text-decoration: none; color: inherit;">
           <div class="card">
-            <h3>Experimental Methodology: Four Experiments, One Pipeline</h3>
-            <div class="meta">May 23, 2026 &bull; 18 min read</div>
-            <p>A progression through four completely randomized designs that exposed the evaluator ceiling, the producer ceiling, and the bottleneck that neither model upgrade could fix&mdash;the synthesis instruction.</p>
-          </div>
-        </a>
-
-        <a href="./blog/multi-objective-alignment.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Multi-Objective Alignment: Beyond Scalar Rewards</h3>
-            <div class="meta">May 23, 2026 &bull; 14 min read</div>
-            <p>DPA, MO-ODPO, MGDA-Decoupled, and the safety fine-tuning hazard: high dataset similarity degrades safety by 10.33%. What the alignment literature means for harness-driven self-improvement.</p>
+            <h3>Experiments and Alignment Foundations</h3>
+            <div class="meta">May 23, 2026 &bull; 2 posts</div>
+            <p>Four production experiments that exposed the evaluator ceiling, the producer ceiling, and the synthesis instruction bottleneck&mdash;plus multi-objective alignment methods beyond scalar rewards.</p>
           </div>
         </a>
 
         <a href="./blog/the-wiggum-loop.html" style="text-decoration: none; color: inherit;">
           <div class="card">
-            <h3>The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision</h3>
-            <div class="meta">May 22, 2026 &bull; 18 min read</div>
-            <p>The producer&ndash;evaluator separation pattern: how two loops&mdash;Ralph (outer) and Wiggum (inner)&mdash;compose to produce reliably high-quality agentic output. With D3.js architecture diagrams and score trajectory data from 1,500 production runs.</p>
-          </div>
-        </a>
-
-        <a href="./blog/harness-thesis.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>The Harness Thesis: Why Scaffolding Beats Model Selection</h3>
-            <div class="meta">May 22, 2026 &bull; 12 min read</div>
-            <p>For a fixed task domain, the quality of the scaffolding surrounding a language model matters more than the choice of model. The empirical case, the five-stage pipeline, and the silent overwrite failure that started it all.</p>
-          </div>
-        </a>
-
-        <a href="./blog/pipeline-in-motion.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>The Pipeline in Motion: Tracing a Task Through All Eleven Subsystems</h3>
-            <div class="meta">May 22, 2026 &bull; 14 min read</div>
-            <p>A single research query, traced from CLI entry point through decomposition, retrieval, synthesis, evaluation, and JSONL persistence&mdash;with D3.js architecture diagrams showing every hop across the eleven subsystems.</p>
-          </div>
-        </a>
-
-        <a href="./blog/failure-taxonomy.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>A Failure Taxonomy for Agentic Systems</h3>
-            <div class="meta">May 22, 2026 &bull; 15 min read</div>
-            <p>Six failure classes&mdash;retrieval, synthesis, planning, evaluation, revision, infrastructure&mdash;ranked by frequency and cost, with real data from 1,500 production runs and the diagnostic patterns that catch them early.</p>
-          </div>
-        </a>
-
-        <a href="./blog/inference-patterns.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Inference Patterns: The Substrate Layer</h3>
-            <div class="meta">May 22, 2026 &bull; 16 min read</div>
-            <p>Four patterns governing how LLM calls are issued, routed, and kept warm&mdash;the Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget&mdash;and why getting this substrate right is prerequisite to everything else.</p>
-          </div>
-        </a>
-
-        <a href="./blog/context-engineering.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Context Engineering: What Reaches the Model</h3>
-            <div class="meta">May 22, 2026 &bull; 18 min read</div>
-            <p>Five patterns governing the research half of the pipeline: the Planner-First converts tasks into targeted queries, the Novelty Gate filters redundant content, the Dual-Backend Memory Store injects prior knowledge, and the Semantic Chunker fits documents to context budget.</p>
-          </div>
-        </a>
-
-        <a href="./blog/verification-patterns.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Verification Patterns: Measuring and Improving Output Quality</h3>
-            <div class="meta">May 22, 2026 &bull; 15 min read</div>
-            <p>Three patterns that complete the verification section: the Dimensional Rubric defines quality across six scored dimensions, the Surgical Compressor makes evaluation feasible for long documents, and the ReAct Comparator tells you when to use a different evaluation strategy.</p>
-          </div>
-        </a>
-
-        <a href="./blog/orchestration-patterns.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Orchestration Patterns: Scaling to Multi-Agent Execution</h3>
-            <div class="meta">May 22, 2026 &bull; 16 min read</div>
-            <p>Four patterns for coordinating multiple agents: the DAG Orchestrator decomposes tasks into parallel dependency graphs, Worktree Context gives each agent isolated filesystem state, the MCP Dispatch Router routes subtasks to remote instances, and the Skill Registry extends the agent with slash-command handlers.</p>
-          </div>
-        </a>
-
-        <a href="./blog/security-patterns.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Security Patterns: Constraining the Agent</h3>
-            <div class="meta">May 22, 2026 &bull; 14 min read</div>
-            <p>Four patterns implemented with Python stdlib: the AST Guard analyzes LLM-generated code at the syntax-tree level, the Path Sandbox validates file access against an allowlist, the Injection Scanner gates external content, and the CDP Guard prevents browser-based SSRF attacks.</p>
-          </div>
-        </a>
-
-        <a href="./blog/observability-flywheel.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Observability and the Data Flywheel</h3>
-            <div class="meta">May 22, 2026 &bull; 17 min read</div>
-            <p>Six patterns closing the loop: the RunTrace and JSONL Audit Log make every run auditable, the Chrome Trace Exporter visualizes latency in Perfetto, and the Data Flywheel, RL Rollout, and Literature Review Pipeline extract training data from pipeline output as a byproduct of normal operation.</p>
-          </div>
-        </a>
-
-        <a href="./blog/parallel-inference.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Parallel Inference: Hardware Substrates for LLM Workloads</h3>
-            <div class="meta">May 22, 2026 &bull; 20 min read</div>
-            <p>GPU memory hierarchy, SM architecture, llama.cpp, vLLM, GGUF quantization, and KV cache pressure&mdash;the hardware realities that determine whether your agentic pipeline is fast or broken. Grounded in Kirk &amp; Hwu&rsquo;s <em>Programming Massively Parallel Processors</em>.</p>
+            <h3>Agentic Harness Engineering: The Architecture Series</h3>
+            <div class="meta">May 22, 2026 &bull; 11 posts</div>
+            <p>Eleven posts covering the complete harness design: the thesis, pipeline walkthrough, failure taxonomy, inference substrate, context engineering, verification, orchestration, security, observability flywheel, and hardware substrates for LLM workloads.</p>
           </div>
         </a>
 
@@ -177,73 +89,17 @@
 
         <a href="./blog/tool-use-planning.html" style="text-decoration: none; color: inherit;">
           <div class="card">
-            <h3>Agentic Tool Use and Planning: What the Literature Says</h3>
-            <div class="meta">May 1, 2026 &bull; 19 min read</div>
-            <p>NL2Plan, PEARL, ToolTree, ToolRet, Memory-as-a-Tool, and the 92% safety bypass rate: fifteen papers on LLM planning and tool use, and how each maps to a pattern in the harness architecture.</p>
-          </div>
-        </a>
-
-        <a href="./blog/knowledge-graphs-extraction.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Knowledge Graphs and Structured Extraction: Beyond the Vector Store</h3>
-            <div class="meta">May 1, 2026 &bull; 15 min read</div>
-            <p>Document semantic graphs outperform flat-list retrieval. MeXtract achieves SOTA metadata extraction with 0.5B parameters. What the knowledge graph literature means for upgrading the Dual-Backend Memory Store with a graph layer.</p>
-          </div>
-        </a>
-
-        <a href="./blog/prompt-injection-security.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Prompt Injection and Agentic Security: What the Attack Literature Says</h3>
-            <div class="meta">May 1, 2026 &bull; 16 min read</div>
-            <p>HouYi compromises 86% of real LLM applications. Gradient-based injections bypass pattern-matching by design. Prompt Infection replicates virally through multi-agent DAGs. Known-answer detection bypassed at 0% detection rate. What the injection attack literature means for the harness Injection Scanner.</p>
-          </div>
-        </a>
-
-        <a href="./blog/alignment-fine-tuning.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Fine-Tuning and Alignment Deep Cuts: Synthetic Data, Poisoning, and Safety Recovery</h3>
-            <div class="meta">May 1, 2026 &bull; 16 min read</div>
-            <p>FLR matches GPT-4-annotated reward models without human annotation. Label-flipping poisoning as convex optimization. Harmful rate drops 33.25%&rarr;1.74% via weight restoration. Perplexity predicts SFT effectiveness better than dataset similarity.</p>
+            <h3>Literature Reviews: Tools, Knowledge Graphs, Security, and Fine-Tuning</h3>
+            <div class="meta">May 1, 2026 &bull; 4 posts</div>
+            <p>Four surveys covering agentic tool use and planning, structured knowledge extraction and graph retrieval, prompt injection attack patterns, and fine-tuning and alignment deep cuts&mdash;and what each means for harness design.</p>
           </div>
         </a>
 
         <a href="./blog/judge-reliability.html" style="text-decoration: none; color: inherit;">
           <div class="card">
-            <h3>Judging the Judges: Benchmark Contamination and Evaluation Reliability</h3>
-            <div class="meta">April 29, 2026 &bull; 15 min read</div>
-            <p>Best judges lag human agreement by 5 points. Omni-Judge is wrong in 96.4% of expert disagreements. Eight of nine judges show always-A position bias. What the literature says&mdash;and what it means for harness design.</p>
-          </div>
-        </a>
-
-        <a href="./blog/evaluation-uncertainty.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Evaluation Uncertainty, Calibration, and Harness Reliability</h3>
-            <div class="meta">April 29, 2026 &bull; 17 min read</div>
-            <p>Conformal prediction turns point scores into calibrated intervals. Fact-level ConFix reduces hallucinations without retrieval. Agent-as-a-Judge outperforms LLM-as-a-Judge. And the externalization framework explains why the harness is the architecture.</p>
-          </div>
-        </a>
-
-        <a href="./blog/evaluation-robustness.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity</h3>
-            <div class="meta">April 29, 2026 &bull; 17 min read</div>
-            <p>LLMORPH finds evaluator inconsistencies across 561,000 test executions. Three novel scoring biases&mdash;rubric order, score ID, reference answer&mdash;originate in prompt design. Holistic judges outperform atomic decomposition on partially-supported cases. Hindi localization drops from 42.8% to 23.2% when judge instructions aren't localized.</p>
-          </div>
-        </a>
-
-        <a href="./blog/structured-knowledge-queries.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification</h3>
-            <div class="meta">April 29, 2026 &bull; 15 min read</div>
-            <p>ODA improves LLM+KG accuracy by 12.87% via recursive observation-action-reflection. GRASP achieves zero-shot SPARQL SOTA on Wikidata without fine-tuning. ETLCH extracts structured JSON/KG/NER with a billion-parameter LoRA on 100&ndash;1000 samples. PharmGraph-Auditor: KB-grounded chain of verification for traceable prescription auditing.</p>
-          </div>
-        </a>
-
-        <a href="./blog/judge-benchmarks-scaling.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don&rsquo;t</h3>
-            <div class="meta">April 29, 2026 &bull; 16 min read</div>
-            <p>JETTS: judges match outcome reward models for reranking but lose to process reward models in beam search, and critique-based refinement is currently ineffective. Omni-Judge is wrong in 96.4% of expert disagreements &mdash; benchmark saturation may be a judge failure mode. M-JudgeBench: 10 dimensions, MCTS-trained judges. IF-RewardBench reveals deficiencies on multi-constraint instructions.</p>
+            <h3>Literature Reviews: Evaluation, Judges, and Structured Queries</h3>
+            <div class="meta">April 29, 2026 &bull; 5 posts</div>
+            <p>Five surveys: benchmark contamination and judge reliability, evaluation uncertainty and calibration, automated evaluation robustness, SPARQL-grounded knowledge queries, and judge benchmarks with test-time scaling.</p>
           </div>
         </a>
 

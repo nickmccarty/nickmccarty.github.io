@@ -179,6 +179,40 @@
       </header>
 
       <!-- ============================================================ -->
+      <section class="cluster-toc">
+        <p class="cluster-toc-label">Posts 16, 18, 20 &amp; 21 &mdash; May 1, 2026</p>
+        <p class="cluster-toc-intro">Four literature reviews on the research foundations behind key harness subsystems.</p>
+        <ol class="cluster-toc-list">
+          <li class="cluster-toc-item cluster-toc-current">
+            <a href="./tool-use-planning.html" class="cluster-toc-link">
+              <span class="cluster-toc-num">Post 16</span>
+              <span class="cluster-toc-title">Agentic Tool Use and Planning: What the Literature Says</span>
+              <span class="cluster-toc-summary">NL2Plan, PEARL, ToolTree, ToolRet, Memory-as-a-Tool, and the 92% safety bypass rate across fifteen papers.</span>
+            </a>
+          </li>
+          <li class="cluster-toc-item">
+            <a href="./knowledge-graphs-extraction.html" class="cluster-toc-link">
+              <span class="cluster-toc-num">Post 18</span>
+              <span class="cluster-toc-title">Knowledge Graphs and Structured Extraction: Beyond the Vector Store</span>
+              <span class="cluster-toc-summary">Document semantic graphs outperform flat-list retrieval. MeXtract achieves SOTA metadata extraction with 0.5B parameters.</span>
+            </a>
+          </li>
+          <li class="cluster-toc-item">
+            <a href="./prompt-injection-security.html" class="cluster-toc-link">
+              <span class="cluster-toc-num">Post 20</span>
+              <span class="cluster-toc-title">Prompt Injection and Agentic Security: What the Attack Literature Says</span>
+              <span class="cluster-toc-summary">HouYi compromises 86% of real LLM applications. Prompt Infection replicates virally through multi-agent DAGs.</span>
+            </a>
+          </li>
+          <li class="cluster-toc-item">
+            <a href="./alignment-fine-tuning.html" class="cluster-toc-link">
+              <span class="cluster-toc-num">Post 21</span>
+              <span class="cluster-toc-title">Fine-Tuning and Alignment Deep Cuts: Synthetic Data, Poisoning, and Safety Recovery</span>
+              <span class="cluster-toc-summary">FLR matches GPT-4-annotated reward models without human annotation. Label-flipping poisoning as convex optimization.</span>
+            </a>
+          </li>
+        </ol>
+      </section>
       <h2>Framing: Planning as the Harness's Hidden Contract</h2>
       <p>
         The harness's Planner-First pattern (B1) makes an implicit claim: if you decompose a task into targeted sub-queries before research begins, the retrieval quality and synthesis quality both improve. The literature on LLM-driven planning makes this claim explicit — and reveals where it breaks. Classical planners require formal domain models (PDDL). LLMs generate flexible natural language plans but produce semantically incoherent or invalid action sequences. The research program documented in this post addresses the gap between these two failure modes.
