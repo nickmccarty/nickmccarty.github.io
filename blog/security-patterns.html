@@ -379,6 +379,10 @@ def scan_for_injection(text: str, source: str, target: str) -> tuple[bool, str, 
       </p>
 
       <p>
+        The dashboard exposes this log directly via <code>GET /api/security/events</code>, which returns events filterable by severity, event type, layer, and run ID, and <code>GET /api/security/summary</code>, which returns aggregate counts per severity and event type for KPI cards. These endpoints make the audit trail queryable from the UI without log parsing — you can isolate all <code>"block"</code> severity events from a specific run, or see at a glance whether injection scanner blocks are concentrated on memory writes versus synthesis writes. The combination of structured JSONL on disk and a queryable HTTP layer over it means the same data serves both offline analysis and live dashboard monitoring without duplication.
+      </p>
+
+      <p>
         The final post covers Sections F and G — Observability and Self-Improvement — closing the loop from pipeline telemetry to training data extraction and the data flywheel.
       </p>
 

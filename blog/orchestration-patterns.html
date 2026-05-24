@@ -324,8 +324,29 @@ def dispatch_cli(task: str, config: ModelConfig) -> str:
         The practical rule for when to implement a task as a skill versus handling it through the standard agent loop: if the task requires a fundamentally different information retrieval strategy, or a send/write action with irreversible external effects that requires an explicit confirmation step, it belongs in a skill. Everything else belongs in the standard loop.
       </p>
 
+      <h2>D5 &mdash; The Agent Channel</h2>
+
+      <p>
+        The DAG Orchestrator (D1) launches subtasks as independent subprocesses and waits for them to write output files. For tasks that run for minutes, this is a black box: the parent has no visibility into whether a subtask is making progress, has hit a recoverable blocker, or is about to produce a finding worth surfacing before final synthesis. The Agent Channel closes this gap with a lightweight file-based IPC layer.
+      </p>
+
+      <p>
+        Before spawning subtasks, the orchestrator creates a temporary directory and passes its path as <code>HARNESS_MSG_CHANNEL</code> and a per-subtask index as <code>HARNESS_SUBTASK_IDX</code>. Inside the subprocess, the agent calls <code>send_message()</code> to report state changes:
+      </p>
+
+<pre><code>from harness.agent_channel import send_message
+
+# from inside a running subtask subprocess:
+send_message("parent", "progress", "round 2 of 3 complete — 4 sources retrieved")
+send_message("parent", "finding",  "key result: cache hit rate dropped 40% after model swap")
+send_message("parent", "blocker",  "search API rate-limited — retrying in 15s")</code></pre>
+
+      <p>
+        Each call atomically writes a JSON file to the channel directory via write-then-rename, preventing partial reads by the orchestrator's polling thread. The parent calls <code>poll_messages()</code> on a background thread and emits <code>[EVENT]</code> lines to the dashboard WebSocket for each new message. Four message types cover the lifecycle: <code>"progress"</code> (logged and forwarded), <code>"finding"</code> (surfaced before synthesis), <code>"blocker"</code> (logged; parent continues), <code>"done"</code> (explicit early-completion signal). The channel is a no-op when <code>HARNESS_MSG_CHANNEL</code> is unset — subtasks that don't call <code>send_message()</code> work identically to before, so the pattern is purely additive.
+      </p>
+
       <div class="callout pink">
-        <p><strong>Research context:</strong> The multi-component decomposition underlying D1&ndash;D4 is validated by a growing body of planning research. Decomposing tool use into separate planner, caller, and summarizer roles consistently outperforms monolithic single-agent approaches, particularly at smaller model sizes where a single model cannot manage combined planning, invocation, and synthesis reliably. (<a href="https://arxiv.org/abs/2401.07324" target="_blank" rel="noopener">arXiv:2401.07324</a>) MCTS-inspired planning achieves ~10% improvement over greedy reactive strategies by accounting for inter-tool dependencies &mdash; the same dependency-awareness that Kahn&rsquo;s algorithm enforces in the DAG Orchestrator. (<a href="https://arxiv.org/abs/2603.12740" target="_blank" rel="noopener">arXiv:2603.12740</a>) Separately, a study of 12 commercial planning agents found they bypassed safety constraints in over 92% of cases when no explicit safety prompts were present, with near-deterministic bypass for web-use agents. (<a href="https://arxiv.org/abs/2601.10758" target="_blank" rel="noopener">arXiv:2601.10758</a>) The E-section security patterns in the next post exist specifically because orchestration at scale produces exactly this failure mode.</p>
+        <p><strong>Research context:</strong> The multi-component decomposition underlying D1&ndash;D5 is validated by a growing body of planning research. Decomposing tool use into separate planner, caller, and summarizer roles consistently outperforms monolithic single-agent approaches, particularly at smaller model sizes where a single model cannot manage combined planning, invocation, and synthesis reliably. (<a href="https://arxiv.org/abs/2401.07324" target="_blank" rel="noopener">arXiv:2401.07324</a>) MCTS-inspired planning achieves ~10% improvement over greedy reactive strategies by accounting for inter-tool dependencies &mdash; the same dependency-awareness that Kahn&rsquo;s algorithm enforces in the DAG Orchestrator. (<a href="https://arxiv.org/abs/2603.12740" target="_blank" rel="noopener">arXiv:2603.12740</a>) Separately, a study of 12 commercial planning agents found they bypassed safety constraints in over 92% of cases when no explicit safety prompts were present, with near-deterministic bypass for web-use agents. (<a href="https://arxiv.org/abs/2601.10758" target="_blank" rel="noopener">arXiv:2601.10758</a>) The E-section security patterns in the next post exist specifically because orchestration at scale produces exactly this failure mode.</p>
       </div>
 
       <p>

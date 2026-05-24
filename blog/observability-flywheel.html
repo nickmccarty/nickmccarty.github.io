@@ -251,6 +251,28 @@ print(runs.groupby("producer_model")["spec_r1"].mean().round(2))</code></pre>
         <p>A planner block that is wider than the synthesis block means the planner model is not staying warm in VRAM. A flat white gap between "synthesis complete" and "eval start" means the evaluator is loading cold. Both are diagnosable in under 30 seconds using a Perfetto flame graph and fixable with a single environment variable change.</p>
       </div>
 
+      <h2>F4 &mdash; The Dashboard API Layer</h2>
+
+      <p>
+        The JSONL audit log and Chrome traces provide the raw data. The dashboard API layer makes that data queryable from the UI without log parsing or file management. Three endpoint groups extend beyond the core runs/sessions views:
+      </p>
+
+      <p>
+        <strong>Memory management</strong> (<code>/api/memories</code>): Full CRUD over the memory store, plus a graph endpoint (<code>/api/memories/graph</code>) that returns the memory graph as a node-edge structure for visualization, and a prune-candidates endpoint that surfaces low-quality or redundant memories for manual review. Feedback ratings on individual memories flow back to the store's quality score, creating a lightweight human-in-the-loop quality signal alongside the automated Wiggum scores.
+      </p>
+
+      <p>
+        <strong>Security audit</strong> (<code>/api/security/events</code>, <code>/api/security/summary</code>): The <code>data/security_events.jsonl</code> log from the E-section patterns is exposed as a filterable API. Events can be sliced by severity (<code>"block"</code>, <code>"warn"</code>), event type (injection scanner, AST guard, path sandbox, CDP guard), layer, or run ID. The summary endpoint returns aggregate counts per dimension for KPI cards, making it possible to see at a glance whether injection scanner blocks are concentrated on memory writes or synthesis writes, and whether a particular run produced an unusual number of block-severity events.
+      </p>
+
+      <p>
+        <strong>System configuration</strong> (<code>/api/system/config</code>, <code>/api/system/files</code>, <code>/api/system/skills</code>): The config endpoint returns non-secret environment variables, harness settings, and the three live SYNTH_INSTRUCTION values — the same values autoresearch modifies — without requiring a shell session. The files endpoint serves an explicit allowlist of governance files (AGENTS.md, ROADMAP.md, wiki knowledge files, user profile, user config), some of which are editable in-place from the dashboard. The skills endpoint returns the full skill registry, including which skills expose an auto-hook or a prompt override.
+      </p>
+
+      <div class="callout">
+        <p>The combination of structured JSONL on disk and a queryable HTTP layer over it means the same data serves both offline analysis and live dashboard monitoring without duplication. The dashboard reads from the same files the agent writes to — no secondary database, no ETL step, no synchronization lag.</p>
+      </div>
+
       <h2>G1 &mdash; The Data Flywheel</h2>
 
       <p>
