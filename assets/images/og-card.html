@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 1200px; height: 630px;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    body {
+      background: #0d1117;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 72px 80px;
+      position: relative;
+    }
+    /* gradient border top */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #ed46c3, #a855f7, #57cef2);
+    }
+    /* subtle grid pattern */
+    body::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(87,206,242,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(87,206,242,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+    .tag {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #57cef2;
+      margin-bottom: 28px;
+    }
+    h1 {
+      font-size: 52px;
+      font-weight: 800;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #ed46c3, #a855f7, #57cef2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 28px;
+      max-width: 900px;
+    }
+    .desc {
+      font-size: 22px;
+      color: #8b949e;
+      line-height: 1.5;
+      max-width: 860px;
+    }
+    .footer {
+      position: absolute;
+      bottom: 52px;
+      left: 80px;
+      right: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .author {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: 2px solid #30363d;
+      background: linear-gradient(135deg, #ed46c3, #57cef2);
+    }
+    .author-name {
+      font-size: 17px;
+      font-weight: 600;
+      color: #e6edf3;
+    }
+    .author-url {
+      font-size: 14px;
+      color: #57cef2;
+      margin-top: 2px;
+    }
+    .badge {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #8b949e;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 6px 14px;
+      background: #161b22;
+    }
+  </style>
+</head>
+<body>
+  <div class="tag">Agentic Harness Engineering &bull; nickmccarty.github.io</div>
+  <h1>Nick McCarty</h1>
+  <p class="desc">Machine learning, computer vision, and AI systems engineering &mdash; with a focus on agentic pipeline design and inference infrastructure.</p>
+  <div class="footer">
+    <div class="author">
+      <div class="avatar"></div>
+      <div>
+        <div class="author-name">Nick McCarty</div>
+        <div class="author-url">nickmccarty.github.io</div>
+      </div>
+    </div>
+    <div class="badge">ML &bull; AI &bull; Agentic Systems</div>
+  </div>
+</body>
+</html>
+<!--
+  TO GENERATE og-default.png:
+  1. Open this file in Chrome
+  2. Open DevTools → Cmd/Ctrl+Shift+P → "Capture screenshot" (full size)
+     OR use: chrome --headless --screenshot=og-default.png --window-size=1200,630 og-card.html
+  3. Save result as assets/images/og-default.png
+-->

@@ -587,11 +587,18 @@ def extract_dpo_dataset(runs_path: str) -> list[dict]:
       ];
 
       arrows.forEach(a => {
+        const dx = a.to.x - a.from.x, dy = a.to.y - a.from.y;
+        const angle = Math.atan2(dy, dx);
+        const rx = 72, ry = 36;
+        const sx = a.from.x + rx * Math.cos(angle);
+        const sy = a.from.y + ry * Math.sin(angle);
+        const tx = a.to.x - rx * Math.cos(angle);
+        const ty = a.to.y - ry * Math.sin(angle);
         const mx = (a.from.x + a.to.x) / 2;
         const my = (a.from.y + a.to.y) / 2;
         svg.append('line')
-          .attr('x1', a.from.x).attr('y1', a.from.y)
-          .attr('x2', a.to.x).attr('y2', a.to.y)
+          .attr('x1', sx).attr('y1', sy)
+          .attr('x2', tx).attr('y2', ty)
           .attr('stroke', a.col === bdr ? '#666' : a.col).attr('stroke-width', 1.5)
           .attr('stroke-dasharray', '6 3')
           .attr('marker-end', `url(#arr-fw-${a.key})`).attr('opacity', 0);

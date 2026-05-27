@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SBOM and AIBOM for Agentic Systems | Nick McCarty</title>
+  <meta name="description" content="A traditional SBOM lists Python packages. An AIBOM lists the AI models — local GGUFs, custom Modelfiles with system prompts, and cloud endpoints that appear nowhere in pip freeze. Here's what both look like for a production agentic harness.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/sbom-aibom.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="SBOM and AIBOM for Agentic Systems">
+  <meta property="og:description" content="A traditional SBOM lists Python packages. An AIBOM lists the AI models — and surfaces cloud endpoints that pip freeze will never show you.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/sbom-aibom.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-25T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SBOM and AIBOM for Agentic Systems">
+  <meta name="twitter:description" content="pip freeze doesn't know about kimi-k2.5:cloud. An AIBOM does. Here's what supply chain transparency looks like for a local-first agentic harness.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "SBOM and AIBOM for Agentic Systems", "description": "A traditional SBOM lists Python packages. An AIBOM lists the AI models — local GGUFs, custom Modelfiles with system prompts, and cloud endpoints that appear nowhere in pip freeze. Here's what both look like for a production agentic harness.", "keywords": "SBOM, AIBOM, AI Bill of Materials, software bill of materials, supply chain, CycloneDX, NTIA, model provenance, GGUF, Ollama, cloud models, agentic systems", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-25", "dateModified": "2026-05-25", "url": "https://nickmccarty.github.io/blog/sbom-aibom.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/sbom-aibom.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout.amber { border-left-color: #fbbf24; }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.9rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.6rem 0.8rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    th {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    tr:last-child td { border-bottom: none; }
+    .warn-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.45rem;
+      border-radius: 3px;
+      background: #7c2d1240;
+      color: #fbbf24;
+      border: 1px solid #fbbf2460;
+      margin-left: 0.35rem;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 25, 2026 &bull; 12 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">SBOM and AIBOM for Agentic Systems</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          <code>pip freeze</code> knows about <code>fastapi</code> and <code>ollama</code>. It does not know about <code>kimi-k2.5:cloud</code>. An AI Bill of Materials fills that gap &mdash; enumerating the model artifacts, custom Modelfiles, and cloud endpoints that constitute the other half of an agentic system's supply chain.
+        </p>
+
+        <nav class="series-nav" aria-label="Series navigation">
+          <a href="./harness-thesis.html" class="series-badge">Harness Thesis</a>
+          <a href="./security-patterns.html" class="series-badge">Security</a>
+          <a href="./agentic-threat-hardening.html" class="series-badge">Threat Hardening</a>
+          <a href="./prompt-injection-security.html" class="series-badge">Prompt Injection</a>
+          <a href="./sbom-aibom.html" class="series-badge active">SBOM &amp; AIBOM</a>
+        </nav>
+      </header>
+
+      <p>
+        The NTIA minimum elements for a Software Bill of Materials &mdash; supplier name, component name, version, unique identifier, dependency relationship, author, timestamp &mdash; were designed for a world where software components are versioned packages with cryptographic hashes. AI models are not that. A GGUF file has a hash; a cloud endpoint has a name and a terms-of-service page. A custom Modelfile has a base model, a quantization, and a system prompt baked in. None of these appear in a <code>pyproject.toml</code> or a <code>pip freeze</code> output.
+      </p>
+
+      <p>
+        This post documents what a complete supply chain picture looks like for the harness &mdash; both the software layer (SBOM, covering Python packages and system binaries) and the AI layer (AIBOM, covering model artifacts). The actual <a href="https://github.com/upskilled-consulting/ollama-harness/blob/main/AIBOM.md"><code>AIBOM.md</code></a> document is committed to the repo. This post explains the design decisions behind it and the gaps that remain open.
+      </p>
+
+      <h2>I1 &mdash; The Three Supply Chain Layers</h2>
+
+      <p>
+        An agentic harness has three supply chain layers that a traditional SBOM only covers one of:
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">I1 &mdash; Supply Chain Layers: Coverage by Document Type</div>
+        <svg id="layers-svg" width="100%" viewBox="0 0 720 220" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Traditional SBOM covers only the software layer. The model and cloud layers require an AIBOM. Runtime binaries (Ollama, llama.cpp, ffmpeg) span both documents.</p>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Examples</th>
+            <th>Tracking mechanism</th>
+            <th>Covered by SBOM?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Software</strong></td>
+            <td>fastapi, ollama, chromadb, jinja2</td>
+            <td>pip/uv lock, PyPI hash</td>
+            <td>Yes &mdash; fully</td>
+          </tr>
+          <tr>
+            <td><strong>Runtime binaries</strong></td>
+            <td>Ollama, llama.cpp, whisper.cpp, ffmpeg, Tesseract</td>
+            <td>Git submodule SHA, system package version</td>
+            <td>Partial &mdash; submodules yes; system deps no</td>
+          </tr>
+          <tr>
+            <td><strong>Local models</strong></td>
+            <td>pi-qwen-32b, Qwen3-Coder:30b, atla/selene-mini</td>
+            <td>Ollama manifest ID (SHA256 prefix)</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><strong>Custom Modelfiles</strong></td>
+            <td>pi-qwen-32b (system prompt overlay), nanda-annotator-v2-q4km</td>
+            <td>Ollama ID + system prompt hash</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><strong>Cloud endpoints</strong> <span class="warn-badge">⚠ untracked</span></td>
+            <td>kimi-k2.5:cloud (Moonshot AI), glm-5.1:cloud (Zhipu AI)</td>
+            <td>Name only &mdash; no content hash, no pin</td>
+            <td>No</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The cloud endpoint row is the one that keeps appearing in security conversations and disappearing from tooling. <code>kimi-k2.5:cloud</code> is a first-class runtime dependency of <code>autoresearch.py</code> &mdash; the loop calls it on every stuck episode. It is not in <code>pyproject.toml</code>; it is not in <code>uv.lock</code>; it does not appear in <code>pip freeze</code>. The only artifact that surfaces it is the AIBOM.
+      </p>
+
+      <h2>I2 &mdash; The Software SBOM Layer</h2>
+
+      <p>
+        The harness's Python dependencies are declared in <code>pyproject.toml</code> and resolved to pinned hashes in <code>uv.lock</code>. Generating a machine-readable SBOM from the lock file is one command:
+      </p>
+
+<pre><code>pip install cyclonedx-bom
+cyclonedx-py environment --output-format json > sbom-python.cdx.json</code></pre>
+
+      <p>
+        The CycloneDX 1.5 JSON output satisfies the NTIA minimum elements for the Python layer. Each component entry carries a PURL (Package URL), the declared version, and the PyPI hash. The runtime binaries that are <em>not</em> Python packages require separate entries:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Version pin</th>
+            <th>NTIA identifier</th>
+            <th>License</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Ollama</td>
+            <td>≥ 0.4 (runtime); not pinned</td>
+            <td>GitHub release tag</td>
+            <td>MIT</td>
+          </tr>
+          <tr>
+            <td>llama.cpp</td>
+            <td>Git submodule SHA (pinned)</td>
+            <td>git SHA</td>
+            <td>MIT</td>
+          </tr>
+          <tr>
+            <td>whisper.cpp</td>
+            <td>Git submodule SHA (pinned)</td>
+            <td>git SHA</td>
+            <td>MIT</td>
+          </tr>
+          <tr>
+            <td>ffmpeg</td>
+            <td>System (≥ 6.0); not pinned</td>
+            <td>OS package name + version</td>
+            <td>LGPL 2.1</td>
+          </tr>
+          <tr>
+            <td>Tesseract OCR</td>
+            <td>System (≥ 5.0); not pinned</td>
+            <td>OS package name + version</td>
+            <td>Apache 2.0</td>
+          </tr>
+          <tr>
+            <td>Chromium (Playwright)</td>
+            <td>Playwright-bundled (pinned transitively)</td>
+            <td>Playwright version + browser hash</td>
+            <td>BSD / project-specific</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The gap in the software SBOM is system dependencies: <code>ffmpeg</code> and <code>Tesseract</code> are installed outside Python's package manager. Their versions are not in any lock file. In a containerized deployment, the Dockerfile pins them; in a bare-metal deployment like this one, they are environment assumptions rather than declared dependencies.
+      </p>
+
+      <h2>I3 &mdash; The AIBOM: Local Models</h2>
+
+      <p>
+        The harness currently runs eight distinct model roles across six Ollama tags. Four are standard base models; two are custom Modelfiles. The distinction matters for the AIBOM because a custom Modelfile is not just a base model with a tag &mdash; it bakes in a system prompt that shapes every inference call, making the system prompt part of the effective model identity.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Role</th>
+            <th>Arch / params</th>
+            <th>Quant</th>
+            <th>Custom Modelfile</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>pi-qwen-32b</code></td>
+            <td>Primary producer / agent</td>
+            <td>Qwen2, 32.8B</td>
+            <td>Q4_K_M</td>
+            <td>Yes &mdash; task-completing agent persona</td>
+          </tr>
+          <tr>
+            <td><code>pi-qwen3.6</code></td>
+            <td>Alternate producer</td>
+            <td>Qwen3 MoE, 36.0B / 3.6B active</td>
+            <td>Q4_K_M</td>
+            <td>Yes &mdash; system prompt + sampling overrides</td>
+          </tr>
+          <tr>
+            <td><code>atla/selene-mini</code></td>
+            <td>Wiggum evaluator (judge)</td>
+            <td>Llama, 8.0B</td>
+            <td>Q4_K_M</td>
+            <td>No &mdash; evaluation-specialist fine-tune</td>
+          </tr>
+          <tr>
+            <td><code>Qwen3-Coder:30b</code></td>
+            <td>Autoresearch proposer</td>
+            <td>Qwen3 MoE, 30.5B</td>
+            <td>Q4_K_M</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><code>nanda-annotator-v2-q4km</code></td>
+            <td>Lit-review annotator</td>
+            <td>Qwen2, 7.6B</td>
+            <td>Q4_K_M</td>
+            <td>Yes &mdash; annotation persona, structured output</td>
+          </tr>
+          <tr>
+            <td><code>qwen3:8b</code></td>
+            <td>Eval suite, general tasks</td>
+            <td>Qwen3, 8.0B</td>
+            <td>Standard</td>
+            <td>No</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The NTIA minimum element set maps cleanly to Ollama model metadata. The <strong>unique identifier</strong> is the Ollama manifest ID &mdash; a SHA256 prefix of the manifest blob that Ollama uses internally. It is not a content hash of the weights themselves (which are stored as separate blobs), but it is a stable identifier that changes when the model is updated via <code>ollama pull</code>. For the purposes of an AIBOM, it is the most actionable identifier available without external registry tooling.
+      </p>
+
+      <h3>The Modelfile-as-Artifact Problem</h3>
+
+      <p>
+        A custom Modelfile is a derived artifact: it takes a base model and overlays a system prompt, sampling parameters, and stop tokens. From the AIBOM perspective, the base model and the overlay are both supply chain inputs. The effective behavior of <code>pi-qwen-32b</code> depends on <em>both</em>:
+      </p>
+
+<pre><code># Effective model identity for pi-qwen-32b has two components:
+base_model_id  = "edee0c094406"          # Ollama manifest ID (qwen2.5-32b-instruct-q4_K_M)
+system_prompt  = sha256(SYSTEM_PROMPT)   # hash of the task-completing agent persona text
+
+# A change to either component changes the model's effective behavior.
+# Only the base_model_id appears in `ollama list`.</code></pre>
+
+      <p>
+        Standard SBOM tooling captures neither. The AIBOM tracks both. The current <code>AIBOM.md</code> records the Ollama ID and describes the system prompt's role; a hardened version would include the system prompt SHA256 and re-verify it on each Modelfile rebuild.
+      </p>
+
+      <div class="callout">
+        <p>If a system prompt is part of the model's effective identity, then changing the system prompt without updating the AIBOM creates a silent divergence between the documented model and the running one. This is the same class of problem as updating a dependency without updating the lock file &mdash; the declared state and the runtime state drift apart.</p>
+      </div>
+
+      <h2>I4 &mdash; The Cloud Endpoint Gap</h2>
+
+      <p>
+        Two models in the Ollama registry are cloud endpoints with no local weights:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tag</th>
+            <th>Provider</th>
+            <th>Role</th>
+            <th>Local size</th>
+            <th>Pinnable?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>kimi-k2.5:cloud</code></td>
+            <td>Moonshot AI</td>
+            <td>Autoresearch Kimi unblock</td>
+            <td>&mdash;</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><code>glm-5.1:cloud</code></td>
+            <td>Zhipu AI</td>
+            <td>Registered; not currently wired</td>
+            <td>&mdash;</td>
+            <td>No</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        When <code>autoresearch.py</code> calls <code>ollama.chat(model=KIMI_MODEL, ...)</code>, the Ollama daemon forwards the request to Moonshot AI's API. The model that responds may differ from one call to the next &mdash; providers update cloud models without version-bump guarantees, and the Ollama cloud-model manifest carries only a routing entry, not a content hash. There is no mechanism to verify that the model responding today is the same as the one that responded yesterday.
+      </p>
+
+      <div class="callout amber">
+        <p><strong>Supply chain risk:</strong> A cloud model that is updated by its provider between two autoresearch runs can produce different instruction proposals for the same prompt. If those proposals produce different eval scores, the autoresearch loop may accept or reject based on model behavior that has changed underneath it &mdash; not based on the instruction change being tested. This is the same threat model as a mutable dependency: the environment changes while the code stays constant.</p>
+      </div>
+
+      <p>
+        The AIBOM is the only artifact that surfaces this risk. A standard SBOM audit of the harness repo would find nothing wrong: <code>kimi-k2.5:cloud</code> does not appear in <code>pyproject.toml</code>, <code>uv.lock</code>, or any Python import. It appears only in <code>autoresearch.py</code> as a string default:
+      </p>
+
+<pre><code>KIMI_MODEL = os.environ.get("KIMI_MODEL", "kimi-k2.5:cloud")</code></pre>
+
+      <p>
+        This is the canonical gap between an SBOM and an AIBOM: one audits what the package manager knows; the other audits what the running system actually calls.
+      </p>
+
+      <h3>What Mitigation Looks Like</h3>
+
+      <p>
+        Full mitigation of the cloud model risk would require provider-side versioning &mdash; a <code>kimi-k2.5:cloud@2026-05-25</code> endpoint that Moonshot AI commits not to update. Providers do not generally offer this. The practical mitigations available on the client side are:
+      </p>
+
+      <ul>
+        <li><strong>Log the model name and timestamp of every cloud call</strong> in the run log (<code>runs.jsonl</code>). If behavior changes, the log identifies which run was affected.</li>
+        <li><strong>Treat cloud model calls as externally sourced content</strong>, not as trusted inference. The Kimi unblock suggestion is injected into the proposer prompt as guidance, not as a direct commit decision &mdash; the local proposer still generates the actual candidate.</li>
+        <li><strong>Cap cloud model invocations to advisory roles</strong>. The harness never commits an instruction directly from a cloud model; Kimi's output is one input among several to the local proposer. This limits blast radius if the cloud model is compromised or updated adversarially.</li>
+        <li><strong>Include cloud endpoints in the AIBOM</strong> and treat them as externally verified dependencies &mdash; similar to how a software SBOM marks dependencies with known vulnerabilities rather than removing them.</li>
+      </ul>
+
+      <h2>I5 &mdash; AIBOM Format and Tooling State</h2>
+
+      <p>
+        There is no settled standard for AIBOMs yet. The active tracks as of mid-2026:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Initiative</th>
+            <th>Status</th>
+            <th>Relevance to agentic systems</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>CISA / NTIA AI SBOM working group</td>
+            <td>Framing documents published; minimum elements draft pending</td>
+            <td>Likely to extend NTIA SBOM minimum elements to cover model artifacts</td>
+          </tr>
+          <tr>
+            <td>CycloneDX 1.5 ML-BOM</td>
+            <td>Released; <code>type: machine-learning-model</code> + <code>modelCard</code> fields</td>
+            <td>Best available machine-readable format; covers architecture, quantization, intended use, training data provenance</td>
+          </tr>
+          <tr>
+            <td>OWASP CycloneDX extensions</td>
+            <td>Active; model card schema, pedigree (base model chain)</td>
+            <td>Covers the Modelfile-as-derived-artifact problem via <code>pedigree.ancestors</code></td>
+          </tr>
+          <tr>
+            <td>Hugging Face model cards</td>
+            <td>Widespread; not a BOM format</td>
+            <td>Useful as provenance source for AIBOM entries; not machine-readable for audit tooling</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The harness AIBOM is a Markdown document rather than a CycloneDX JSON, for two reasons. First, CycloneDX 1.5 ML-BOM tooling for Ollama-managed models does not exist &mdash; there is no <code>cyclonedx-py</code> equivalent that introspects <code>ollama list</code> and emits a compliant JSON. Second, the most important entries in the harness AIBOM are the cloud endpoints and custom Modelfiles, both of which require human-in-the-loop curation that automated tooling cannot provide. A Markdown document is maintainable manually; a JSON document generated by a tool that doesn't understand Modelfiles is not.
+      </p>
+
+      <p>
+        The right long-term state is a hybrid: generate the Python layer automatically from <code>uv.lock</code> via CycloneDX, and maintain the model layer manually in Markdown with a validation script that cross-checks Ollama manifest IDs against the document's recorded values. Neither half is complete without the other.
+      </p>
+
+      <div class="callout pink">
+        <p><strong>The regeneration test:</strong> An AIBOM is only useful if it stays current. The <code>AIBOM.md</code> in the repo includes a "How to Regenerate" section that lists the three steps: <code>ollama list</code> for current IDs, <code>ollama show &lt;tag&gt;</code> for architecture verification, and SHA256 of the system prompt text for custom Modelfiles. If a model is updated via <code>ollama pull</code> and the AIBOM isn't regenerated, the manifest ID will be stale. That staleness is detectable &mdash; which is the point.</p>
+      </div>
+
+      <h2>What the Literature Leaves Open</h2>
+
+      <ul>
+        <li>CycloneDX 1.5 defines a <code>pedigree.ancestors</code> field for ML models, intended to capture the base model chain (e.g., Qwen2.5-32B-Instruct &rarr; pi-qwen-32b Modelfile). For a model served through Ollama without a HuggingFace model card, the ancestor chain relies on the Modelfile's <code>FROM</code> directive, which may reference another Ollama tag rather than a canonical HuggingFace repo ID. How should AIBOM tooling handle indirect provenance chains where each link is an Ollama tag rather than a versioned artifact?</li>
+        <li>Cloud endpoint models (kimi-k2.5:cloud, glm-5.1:cloud) are referenced by name but have no content hash available to the client. ISO/IEC 5962:2021 (SPDX) and CycloneDX both require a unique identifier for each component. A cloud model name is not a unique identifier in the cryptographic sense. What is the right AIBOM entry for a component that can only be identified, not verified?</li>
+        <li>Custom Modelfiles bake a system prompt into the model definition. From a supply chain perspective, is the system prompt a <em>configuration artifact</em> (like a config file, tracked separately from the model) or a <em>model artifact</em> (part of the model's effective identity, requiring its own AIBOM entry)? The distinction affects how prompt changes are tracked in audit logs and whether they trigger a new AIBOM version.</li>
+        <li>The harness's autoresearch loop modifies <code>SYNTH_INSTRUCTION</code> &mdash; a runtime prompt that shapes agent behavior &mdash; through an automated optimization process. Each kept experiment is a new effective model configuration. Should the AIBOM track every accepted autoresearch candidate as a new model version? If so, the AIBOM would have 100+ entries for a single training run. If not, only the final committed state is tracked, and intermediate optimization history is invisible to supply chain auditors.</li>
+        <li>The harness uses <code>atla/selene-mini</code> as the Wiggum evaluator. The evaluator's outputs &mdash; per-dimension scores, issue flags &mdash; feed directly into the accept/reject decision for new instruction candidates. If ATLA updates the model, the scoring distribution shifts and autoresearch's optimization target silently changes. This is a supply chain dependency not on a software component but on an evaluative function. How should AIBOMs represent dependencies on evaluator models whose behavioral drift has a direct feedback effect on the system being evaluated?</li>
+      </ul>
+
+      <div class="post-pagination">
+        <a href="./agentic-threat-hardening.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">Agentic Threat Hardening</span>
+        </a>
+        <a href="./security-patterns.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">Security Patterns</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./agentic-threat-hardening.html" class="related-post-card">
+            <div class="related-post-num">Extension</div>
+            <div class="related-post-title">Agentic Threat Hardening</div>
+            <div class="related-post-desc">Systematic threat modeling for agentic pipelines: prompt injection, tool misuse, and the data flywheel as an attack surface.</div>
+          </a>
+          <a href="./security-patterns.html" class="related-post-card">
+            <div class="related-post-num">Post 7</div>
+            <div class="related-post-title">Security Patterns</div>
+            <div class="related-post-desc">The harness's security API layer — input validation, sandboxing, output filtering, and the audit trail that feeds back into observability.</div>
+          </a>
+          <a href="./observability-flywheel.html" class="related-post-card">
+            <div class="related-post-num">Post 10</div>
+            <div class="related-post-title">Observability and the Data Flywheel</div>
+            <div class="related-post-desc">The telemetry that makes supply chain monitoring possible &mdash; every inference call logged to runs.jsonl with model name, latency, and token counts.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555ZM0 4.697v7.104l5.803-3.558L0 4.697ZM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-1.239-.757Zm3.436-.586L16 11.801V4.697l-5.803 3.546Z"/>
+        </svg>
+      </a>
+    </div>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    /* ── I1: Supply Chain Layers ─────────────────────────────────────────── */
+    (function drawLayers() {
+      const svg = d3.select('#layers-svg');
+      const W = 720, H = 220;
+      const cyan  = cssVar('--accent-cyan') || '#22d3ee';
+      const pink  = cssVar('--accent-pink') || '#f472b6';
+      const txt   = cssVar('--text-primary') || '#f1f5f9';
+      const txt2  = cssVar('--text-secondary') || '#94a3b8';
+      const bg3   = cssVar('--bg-tertiary') || '#334155';
+      const bdr   = cssVar('--border-color') || '#334155';
+      const green = '#34d399';
+      const amber = '#fbbf24';
+      const purple = '#a855f7';
+
+      const layers = [
+        { y: 20,  h: 40, label: 'Software (Python + runtime binaries)', sbom: true,  aibom: false, color: cyan },
+        { y: 70,  h: 40, label: 'Local base models (GGUF via Ollama)',   sbom: false, aibom: true,  color: purple },
+        { y: 120, h: 40, label: 'Custom Modelfiles (system prompt baked in)', sbom: false, aibom: true, color: green },
+        { y: 170, h: 40, label: 'Cloud endpoints (kimi-k2.5, glm-5.1)',   sbom: false, aibom: true,  color: amber },
+      ];
+
+      const colX = { label: 30, sbom: 530, aibom: 630 };
+
+      // Column headers
+      svg.append('text').attr('x', colX.sbom).attr('y', 14).attr('text-anchor', 'middle')
+        .attr('font-size', '10px').attr('font-weight', '700').attr('fill', cyan).attr('letter-spacing', '0.06em').text('SBOM');
+      svg.append('text').attr('x', colX.aibom).attr('y', 14).attr('text-anchor', 'middle')
+        .attr('font-size', '10px').attr('font-weight', '700').attr('fill', purple).attr('letter-spacing', '0.06em').text('AIBOM');
+
+      layers.forEach(layer => {
+        // row background
+        svg.append('rect').attr('x', 20).attr('y', layer.y).attr('width', W - 40).attr('height', layer.h)
+          .attr('rx', 6).attr('fill', bg3).attr('stroke', layer.color).attr('stroke-width', 1).attr('opacity', 0.7);
+
+        // label
+        svg.append('text').attr('x', colX.label).attr('y', layer.y + layer.h / 2 + 5)
+          .attr('font-size', '11.5px').attr('fill', txt).text(layer.label);
+
+        // SBOM checkmark / X
+        const sbomMark = layer.sbom ? '✓' : '✗';
+        const sbomColor = layer.sbom ? green : txt2;
+        svg.append('text').attr('x', colX.sbom).attr('y', layer.y + layer.h / 2 + 5)
+          .attr('text-anchor', 'middle').attr('font-size', '14px').attr('fill', sbomColor).text(sbomMark);
+
+        // AIBOM checkmark / X
+        const aibomMark = layer.aibom ? '✓' : '✗';
+        const aibomColor = layer.aibom ? green : txt2;
+        svg.append('text').attr('x', colX.aibom).attr('y', layer.y + layer.h / 2 + 5)
+          .attr('text-anchor', 'middle').attr('font-size', '14px').attr('fill', aibomColor).text(aibomMark);
+      });
+    })();
+  </script>
+</body>
+</html>

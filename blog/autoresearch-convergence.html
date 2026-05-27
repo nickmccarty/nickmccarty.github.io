@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>When the Loop Defeats Itself: Convergence Failures in Autonomous Prompt Optimization | Nick McCarty</title>
+  <meta name="description" content="Three nested failure modes exposed by 90 experiments that never beat their own baseline — corrupted diagnostic, single-eval baseline contamination, and a self-defeating ban list — and four convergence detectors to prevent them.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/autoresearch-convergence.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="When the Loop Defeats Itself: Convergence Failures in Autonomous Prompt Optimization">
+  <meta property="og:description" content="Three nested failure modes exposed by 90 experiments that never beat their own baseline — corrupted diagnostic, baseline contamination, and a self-defeating ban list — and four convergence detectors.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/autoresearch-convergence.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-25T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="When the Loop Defeats Itself: Convergence Failures in Autonomous Prompt Optimization">
+  <meta name="twitter:description" content="90 experiments, zero advances past baseline. Three nested failure modes and four convergence detectors.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "When the Loop Defeats Itself: Convergence Failures in Autonomous Prompt Optimization", "description": "Three nested failure modes exposed by 90 experiments that never beat their own baseline — corrupted diagnostic, single-eval baseline contamination, and a self-defeating ban list — and four convergence detectors to prevent them.", "keywords": "autoresearch, prompt optimization, convergence detection, autonomous systems, attractor lock, baseline contamination, agentic systems, hill-climbing", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-25", "dateModified": "2026-05-25", "url": "https://nickmccarty.github.io/blog/autoresearch-convergence.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/autoresearch-convergence.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout.amber { border-left-color: #f59e0b; }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin: 1rem 0 1.5rem;
+    }
+    .data-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .data-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--bg-secondary); }
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 3px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .tag.discard { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .tag.baseline { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .tag.cyan { background: rgba(0,212,255,0.12); color: var(--accent-cyan); }
+    .finding {
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      padding: 0.9rem 1.1rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+      line-height: 1.65;
+    }
+    .finding strong { color: var(--accent-cyan); }
+    .detector {
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.25rem 0;
+    }
+    .detector-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 0.6rem;
+    }
+    .detector-num {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .detector h3 { margin: 0; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 25, 2026 &bull; 16 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">When the Loop Defeats Itself: Convergence Failures in Autonomous Prompt Optimization</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          Ninety experiments. Zero advances past baseline. Three nested failure modes &mdash; a corrupted diagnostic, a single-eval baseline contaminated by a lucky run, and a ban list that erased its own best approach &mdash; and four convergence detectors that would have caught each one.
+        </p>
+      </header>
+
+      <div class="series-nav">
+        <a href="gepa-autoresearch.html" class="series-badge">From Hill-Climbing to Pareto</a>
+        <a href="experimental-methodology.html" class="series-badge">Experimental Methodology</a>
+        <span class="series-badge active">Convergence Failures</span>
+      </div>
+
+      <p>
+        The autoresearch loop in <code>harness/autoresearch.py</code> is a hill-climber: a proposer LLM suggests a change to the synthesis instruction, the eval suite measures the output quality, and the change is kept only if it beats the current baseline by at least 0.1 composite points. The design is straightforward and, for the first 25 experiments, it worked. The baseline climbed from an unscored initial state to 8.740 &mdash; the best composite score the system had ever produced.
+      </p>
+      <p>
+        Then it ran for 65 more experiments without advancing once.
+      </p>
+      <p>
+        This post is the forensic account of why. The short answer is three nested failures, each compounding the others: the proposer was given a wrong diagnosis of which dimension to target; the baseline score it was trying to beat was established from a single lucky evaluation run rather than the expected value of the instruction; and the growing hard-ban list eventually prohibited the only instruction family that worked. The longer answer requires looking at what the runs actually showed.
+      </p>
+
+      <h2>The Loop in Brief</h2>
+
+      <p>
+        Each iteration of the autoresearch loop consists of four steps. First, the proposer reads the current synthesis instruction, the experiment history, the hard-ban list, and the most recent evaluator feedback, then outputs a proposed replacement. Second, the proposed instruction is written to <code>agent.py</code> and the eval suite runs a full research task from scratch. Third, a composite score is computed:
+      </p>
+
+      <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.1rem 1.5rem; margin: 1.5rem 0; font-family: 'SF Mono', 'Consolas', monospace; font-size: 0.85rem;">
+        composite = 0.7 &times; mean_wiggum_r1 + 0.3 &times; criteria_rate &times; 10
+      </div>
+
+      <p>
+        <code>mean_wiggum_r1</code> is the WIGGUM evaluator score for the first synthesis pass, a weighted sum across six dimensions: relevance (0.20), completeness (0.20), depth (0.25), grounded (0.15), specificity (0.10), and structure (0.10). <code>criteria_rate</code> is the fraction of task-specific criteria the output satisfies &mdash; for T_B these are structural checks: minimum length, minimum sections, no placeholder text, no file path references, and the presence of implementation notes. Fourth, if the composite exceeds <code>baseline + 0.1</code>, the instruction is kept and the baseline is updated. Otherwise, the instruction is reverted and the experiment is logged as a discard.
+      </p>
+      <p>
+        The loop ran task T_B: "Search for best practices for cost envelope management in production AI agents." Every experiment targeted <code>SYNTH_INSTRUCTION_PROSE</code>, the instruction used for non-technical best-practices tasks.
+      </p>
+
+      <h2>Failure Mode 1: The Corrupted Diagnostic</h2>
+
+      <p>
+        The proposer doesn't navigate blind. <code>PROPOSE_PROMPT</code> includes a diagnostic section that tells it which dimension is the bottleneck and why, so it can design targeted changes rather than exploring at random. At experiment 55, the diagnostic said:
+      </p>
+
+      <div class="callout pink">
+        <p><em>"depth=7 is the ONLY bottleneck. Every other dimension is at 8 or 9. Moving depth from 7&rarr;8 adds +0.25 to the composite. Why depth stays at 7: outputs describe WHAT each practice is and WHY it works, but do NOT explain HOW to apply it."</em></p>
+      </div>
+
+      <p>
+        The proposer read this and did exactly what it was told. For the next 14 experiments (exps 55&ndash;68), every proposal was a variation of the same HOW-FIRST instruction: lead with implementation steps, require ordered sequences a practitioner can follow, frame each practice as a mini-tutorial. All 14 discarded.
+      </p>
+      <p>
+        The diagnostic was factually wrong. Querying <code>runs.jsonl</code> across the 20 most recent T_B evaluations told a different story:
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Observed values</th>
+            <th>Interpretation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>relevance</td>
+            <td>9 (constant)</td>
+            <td>Not a lever</td>
+          </tr>
+          <tr>
+            <td>completeness</td>
+            <td>8 (constant)</td>
+            <td>Not a lever</td>
+          </tr>
+          <tr>
+            <td>depth</td>
+            <td>7 (<strong>permanent</strong>)</td>
+            <td>Not a lever — immovable</td>
+          </tr>
+          <tr>
+            <td>grounded</td>
+            <td>6 or 8 (bimodal)</td>
+            <td><strong>Primary variance driver</strong></td>
+          </tr>
+          <tr>
+            <td>specificity</td>
+            <td>8 or 9 (correlated with grounded)</td>
+            <td>Secondary variance driver</td>
+          </tr>
+          <tr>
+            <td>structure</td>
+            <td>9 (constant)</td>
+            <td>Not a lever</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        Depth was not fluctuating. It had been 7 in every single run. The real variance was in <code>grounded</code>, which alternated between 6 and 8 with no apparent pattern. The two resulting dimension profiles map precisely to the two score clusters the system kept producing:
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Profile</th>
+            <th>grounded</th>
+            <th>specificity</th>
+            <th>wiggum r1</th>
+            <th>composite</th>
+            <th>vs baseline</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Low</td>
+            <td>6</td>
+            <td>8</td>
+            <td>7.8</td>
+            <td>8.460</td>
+            <td><span class="tag discard">&minus;0.280</span></td>
+          </tr>
+          <tr>
+            <td>High</td>
+            <td>8</td>
+            <td>9</td>
+            <td>8.2</td>
+            <td>8.740</td>
+            <td><span class="tag baseline">baseline</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The arithmetic is exact. For the low profile: <code>9&times;0.20 + 8&times;0.20 + 7&times;0.25 + 6&times;0.15 + 8&times;0.10 + 9&times;0.10 = 7.75</code>, which rounds to 7.8. For the high profile: <code>9&times;0.20 + 8&times;0.20 + 7&times;0.25 + 8&times;0.15 + 9&times;0.10 + 9&times;0.10 = 8.15</code>, which rounds to 8.2. The bimodal distribution is entirely explained by <code>grounded</code> and <code>specificity</code> toggling together between their two states.
+      </p>
+      <p>
+        The diagnostic had been written early in the experiment run, before sufficient data had accumulated to distinguish between a permanently flat dimension and one that happened to be low in the available samples. It was never updated. The proposer spent 14 experiments in a confident, self-reinforcing attractor that could not possibly work, because the dimension it was trying to move was already frozen.
+      </p>
+
+      <div class="finding">
+        <strong>Finding 1:</strong> An optimizer's steering document is a first-class experimental artifact. A diagnostic encoding stale or inferred beliefs will produce attractor lock that the optimizer cannot self-escape, because the proposer has no access to the underlying data — only to what the diagnostic tells it.
+      </div>
+
+      <p>
+        After the diagnostic was corrected to target <code>grounded</code> and <code>completeness</code> instead of <code>depth</code>, the proposer escaped the HOW-FIRST attractor. It entered a new one. Five new target angles &mdash; NAMED-SYSTEMS, FAILURE-MODES, LIFECYCLE-COVERAGE, EVIDENCE-ANCHOR, SCOPE-BOUNDARIES &mdash; produced 24 more consecutive discards (exps 70&ndash;93), all at the same 8.460 composite. The grounded dimension remained stubbornly at 6 regardless of what the instruction demanded.
+      </p>
+      <p>
+        This pointed to a second problem underneath the first.
+      </p>
+
+      <h2>Failure Mode 2: Baseline Contamination</h2>
+
+      <p>
+        Every experiment was trying to beat 8.740. That score was established at experiment 25 from a single evaluation run. With <code>--eval-n 1</code> (the default), the baseline is whatever the eval suite returns on one execution of the task.
+      </p>
+      <p>
+        The dimension data shows that any given T_B run lands on one of exactly two profiles: grounded=6 (composite &asymp; 8.46) or grounded=8 (composite &asymp; 8.74). In the 20 most recent T_B runs logged in <code>runs.jsonl</code>, grounded=8 appeared approximately 25&ndash;30% of the time. Experiment 25 happened to produce a grounded=8 run. The baseline was set from that run and never re-examined.
+      </p>
+      <p>
+        The implication is structural: every subsequent experiment was trying to beat a 75th-percentile sample of its own score distribution. The true expected composite for the baseline instruction &mdash; the score you would get on average, not in the best case &mdash; was approximately 8.53, not 8.740. An optimizer designed to advance by 0.1 points was asked to consistently clear a bar set at the one-in-four outcome.
+      </p>
+
+      <div class="callout amber">
+        <p><strong>The math:</strong> Expected composite &asymp; 0.70&times;E[wiggum_r1] + 3.0, where E[wiggum_r1] &asymp; 0.25&times;8.2 + 0.75&times;7.8 = 7.9 &rarr; composite &asymp; 8.53. The baseline was 8.74. To beat it, any instruction needed to produce grounded=8 <em>more reliably</em> than baseline did, not just sometimes.</p>
+      </div>
+
+      <p>
+        This is the deeper reason why every grounded-targeting instruction failed: not because they were bad approaches, but because the bar they needed to clear was set from an outlier. A new instruction that reliably produced grounded=8 on 50% of runs would have an expected composite of &asymp; 8.59 &mdash; still below 8.74, still discarded every time the eval landed on grounded=6.
+      </p>
+      <p>
+        There is a separate effect compounding this. When a new instruction adds a specific requirement &mdash; "cite a named tool," "include a failure mode," "state a scope boundary" &mdash; the producer model follows it, which changes the character of the output. The evaluator scores organic, naturally-grounded content differently from formulaic additions. Fourteen out of 24 experiments that required naming a tool or benchmark scored 8.240 rather than 8.460: the additional requirement caused <code>criteria_rate</code> to drop from 1.0 to 0.83 (5 of 6 criteria satisfied instead of 6), because the structural requirement apparently replaced content the <code>has_impl_notes()</code> criterion depended on. Explicit demands for grounded content do not produce the same evaluator reward as grounded content that emerges naturally.
+      </p>
+
+      <div class="finding">
+        <strong>Finding 2:</strong> A single-eval baseline is a point sample from a noisy distribution. If that sample is at the high end of the distribution, the optimizer is racing against an unlucky draw for every subsequent experiment. Baseline re-estimation with <code>eval-n &ge; 3</code> should be a periodic obligation, not a one-time initialization.
+      </div>
+
+      <h2>Failure Mode 3: The Self-Defeating Ban List</h2>
+
+      <p>
+        The hard-ban list in <code>PROPOSE_PROMPT</code> grew experiment by experiment as approaches failed. By experiment 68, it included over a dozen families, among them:
+      </p>
+      <ul>
+        <li>Requiring a word count constraint ("200&ndash;300 words," "under 400 words")</li>
+        <li>NARRATIVE / prose paragraph format</li>
+        <li>The entire HOW-FIRST family and its five named variants</li>
+      </ul>
+      <p>
+        The ban was justified: every attempt to use these approaches after experiment 25 had failed to advance the baseline. The ban encoded that failure correctly.
+      </p>
+      <p>
+        The problem is what the ban concealed. Experiment 25 &mdash; the one that established the 8.740 baseline &mdash; had used exactly these techniques. Its description: <em>"Changed SYNTH_INSTRUCTION_PROSE to require a narrative format with word count constraint."</em> The actual instruction it wrote:
+      </p>
+
+      <div class="callout">
+        <p><em>"output ONLY the markdown starting with # &nbsp; Write a concise narrative (200&ndash;300 words) explaining how prompt specificity impacts LLM reasoning performance. Use clear, accessible language and describe one practical example where increasing prompt detail led to better output quality."</em></p>
+      </div>
+
+      <p>
+        Notice the instruction is topic-specific to prompt specificity &mdash; not cost management, which is the T_B task. The model almost certainly ignored the topic direction and wrote about cost management as instructed by the task prompt. What it kept was the structural signature: narrative format, tight word count, no enumerated list. That instruction got a grounded=8 run. The baseline was set.
+      </p>
+      <p>
+        Every subsequent experiment that tried narrative format or word count constraints was trying to <em>advance beyond</em> 8.740, not merely reach it. They failed because beating 8.740 requires getting a run better than the best profile (grounded=8, composite=8.740), which means completeness or grounded would need to reach 9 &mdash; mathematically possible but not achieved. The ban was then added: "NARRATIVE always discards, WORD COUNT always discards."
+      </p>
+      <p>
+        Both statements were technically accurate. Both were dangerously misleading. The ban captured the failure to advance and translated it into the instruction that these approaches "don't work" &mdash; erasing the information that they were responsible for the best score the system had ever produced.
+      </p>
+
+      <div class="finding">
+        <strong>Finding 3:</strong> A ban list that encodes "this approach cannot beat baseline" and a ban list that encodes "this approach does not work" are not the same thing. The former is a local navigation constraint; the latter is a global assessment of approach quality. Conflating them erases information about what baseline the approach established, which is exactly the information needed to diagnose baseline contamination.
+      </div>
+
+      <h2>The Compound Effect</h2>
+
+      <p>
+        The three failure modes did not operate independently. They amplified each other through the loop's feedback structure.
+      </p>
+      <p>
+        The corrupted diagnostic sent the proposer into the HOW-FIRST attractor. After 14 failed experiments, the correct diagnostic was installed and the ban list was updated with the entire HOW-FIRST family. The proposer moved to grounded-targeting approaches. These also failed, for reasons the diagnostic could not explain: every grounded-targeting addition was hitting a baseline established by a lucky run with a completely different instruction structure. The proposer, seeing that its new approaches failed for the same reasons the old ones did, exhausted five new target angles in another 24 experiments.
+      </p>
+      <p>
+        Meanwhile, the approaches that could theoretically have produced a more reliable expected score &mdash; narrative format, tight word count, the properties of the exp-25 instruction &mdash; were banned. The proposer could not propose them even if the research context pointed toward them, because the ban list said they always discard.
+      </p>
+      <p>
+        The loop had constructed a trap: the correct target (more reliable grounded=8) was prohibited; the prohibited approach (narrative+word count) was the only instruction family that had ever produced the baseline; the baseline itself was an outlier that the true expected value of any instruction was unlikely to reach. The loop could run indefinitely without advancing.
+      </p>
+
+      <h2>Four Convergence Detectors</h2>
+
+      <p>
+        Each failure mode has a natural detector. The detectors operate at different points in the loop and target different signals.
+      </p>
+
+      <div class="detector">
+        <div class="detector-header">
+          <span class="detector-num">Detector 1</span>
+          <h3>Semantic Attractor Guard (pre-eval)</h3>
+        </div>
+        <p>Before running an evaluation, compare the proposed description against the last <em>N</em> discards using bigram overlap or TF-IDF cosine similarity. If the similarity to any recent discard exceeds a threshold, reject the proposal without spending an eval run and re-prompt with an explicit note identifying the closest match.</p>
+        <p>The threshold wants to be loose enough to permit genuine novelty while tight enough to catch "HOW-FIRST, variant 7." A cosine similarity &ge; 0.65 or bigram overlap &ge; 50% is a reasonable starting point. This detector catches attractor lock before it consumes compute.</p>
+<pre><code>def _proposal_is_attractor(description: str, recent_discards: list[str], threshold: float = 0.65) -> tuple[bool, str | None]:
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
+    import numpy as np
+
+    if not recent_discards:
+        return False, None
+    corpus = recent_discards + [description]
+    vecs = TfidfVectorizer(ngram_range=(1, 2)).fit_transform(corpus)
+    sims = cosine_similarity(vecs[-1], vecs[:-1])[0]
+    best = int(np.argmax(sims))
+    if sims[best] >= threshold:
+        return True, recent_discards[best]
+    return False, None</code></pre>
+      </div>
+
+      <div class="detector">
+        <div class="detector-header">
+          <span class="detector-num">Detector 2</span>
+          <h3>Family Entropy Monitor</h3>
+        </div>
+        <p>Tag each proposal with a coarse family label derived from its description (e.g., "HOW-FIRST," "NAMED-SYSTEMS," "FAILURE-MODES"). Track a sliding window of family labels across the last 10 experiments. Compute Shannon entropy over the label distribution. If entropy falls below a threshold &mdash; meaning one family dominates &mdash; auto-inject a hard ban for the dominant family into <code>PROPOSE_PROMPT</code> rather than waiting for a human to notice the pattern.</p>
+        <p>This is the semantic upgrade to the existing <code>PLATEAU_DISCARDS</code> logic. The current plateau detector fires on score stagnation; this one fires on <em>semantic</em> stagnation. A loop can cycle through five variations of the same approach, all producing slightly different scores, without triggering the score-based plateau &mdash; but the entropy would collapse.</p>
+<pre><code>import math
+from collections import Counter
+
+def _family_entropy(family_labels: list[str]) -> float:
+    counts = Counter(family_labels)
+    total = sum(counts.values())
+    return -sum((c / total) * math.log2(c / total) for c in counts.values())
+
+def _dominant_family(family_labels: list[str], entropy_threshold: float = 1.0) -> str | None:
+    if _family_entropy(family_labels[-10:]) < entropy_threshold:
+        return Counter(family_labels[-10:]).most_common(1)[0][0]
+    return None</code></pre>
+      </div>
+
+      <div class="detector">
+        <div class="detector-header">
+          <span class="detector-num">Detector 3</span>
+          <h3>Baseline Validity Re-estimation</h3>
+        </div>
+        <p>After <em>K</em> consecutive discards (a reasonable default is 15), automatically re-run the baseline instruction with <code>eval-n=3</code> and compare the new estimate to the stored single-eval baseline. If the re-estimated expected value falls more than <code>delta_threshold</code> below the stored baseline, update it. A stored baseline of 8.74 that re-estimates to 8.53 is not a ceiling that experiments are failing to reach &mdash; it is a false ceiling constructed from a sampling artifact.</p>
+        <p>This detector would have resolved the contamination problem at experiment 40 instead of experiment 90. The cost is one extra eval run every <em>K</em> experiments &mdash; negligible compared to the compute wasted chasing an outlier.</p>
+<pre><code>def _maybe_reestimate_baseline(
+    consecutive_discards: int,
+    reestimate_interval: int,
+    task_ids: list[str],
+    current_baseline: float,
+    delta_threshold: float,
+    eval_n: int = 3,
+) -> float:
+    if consecutive_discards % reestimate_interval != 0:
+        return current_baseline
+    print(f"[convergence] re-estimating baseline with eval-n={eval_n}...")
+    new_estimate = run_eval(task_ids, n=eval_n)
+    if new_estimate < current_baseline - delta_threshold:
+        print(f"[convergence] baseline updated: {current_baseline:.3f} → {new_estimate:.3f} (single-eval outlier)")
+        return new_estimate
+    return current_baseline</code></pre>
+      </div>
+
+      <div class="detector">
+        <div class="detector-header">
+          <span class="detector-num">Detector 4</span>
+          <h3>Global Convergence Exit</h3>
+        </div>
+        <p>A hard stop: if the total number of experiments exceeds <em>N_max</em> and there have been zero advances since experiment <em>M_last_advance</em>, declare convergence, log the diagnosis, and exit. The current loop has no exit condition other than an interrupt signal. It will run indefinitely in a converged state, burning compute without any mechanism to surface the fact that it has stopped making progress.</p>
+        <p>The exit condition should be accompanied by a structured convergence report: the last advance, the current baseline, the distribution of recent scores, and the dominant family from the entropy monitor. This report is the input to the next iteration of the loop design &mdash; the information needed to decide whether to change the producer model, the evaluator, the task, or the eval-n.</p>
+<pre><code>def _is_globally_converged(
+    history: list[dict],
+    max_experiments: int = 100,
+    min_advance_lookback: int = 40,
+) -> bool:
+    if len(history) < max_experiments:
+        return False
+    recent = history[-min_advance_lookback:]
+    return all(h["status"] == "discard" for h in recent)</code></pre>
+      </div>
+
+      <h2>What the Loop Actually Needs</h2>
+
+      <p>
+        The four detectors address the symptoms. The underlying requirement is that an autonomous optimizer treat its own steering document &mdash; the diagnostic, the ban list, the target angles &mdash; as experimental artifacts subject to the same scrutiny as any other hypothesis.
+      </p>
+      <p>
+        The autoresearch loop was designed to update the synthesis instruction based on evidence. It was not designed to update its beliefs about which dimensions to target, which approaches are viable, or whether the baseline itself was measured correctly. Those beliefs were encoded in a prompt that the proposer read but could not question. The loop updated the artifact it was told to optimize while the beliefs that governed its optimization remained fixed and wrong.
+      </p>
+      <p>
+        A more robust design separates the two update loops: an outer loop that periodically audits the diagnostic against the accumulated runs data and updates the ban list with context preserved (banning an approach because it cannot <em>advance</em> a given baseline is different from banning it because it cannot <em>reach</em> that baseline), and an inner loop that proposes instruction changes within the constraints the outer loop defines.
+      </p>
+      <p>
+        The GEPA framework, <a href="gepa-autoresearch.html" style="color: var(--accent-cyan);">discussed in the companion post</a>, formalizes this separation through Pareto frontier selection and minibatch screening. The convergence detectors described here are the practical entry point: simpler to instrument, visible in the existing loop structure, and sufficient to prevent the most costly failure modes from running undetected for 65 experiments.
+      </p>
+      <p>
+        The 8.740 baseline, for what it is worth, re-estimated to 8.530 with <code>eval-n=3</code> and <code>--reset-baseline</code>. The loop, recalibrated, has a realistic target to aim for again.
+      </p>
+
+      <h2>What the Literature Leaves Open</h2>
+
+      <p>
+        Three papers from the harness&rsquo;s own lit-review corpus land directly on the failure modes documented here.
+      </p>
+
+      <p>
+        <strong>JudgeSense</strong> <a href="https://arxiv.org/abs/2604.23478" target="_blank" rel="noopener" style="color:var(--accent-cyan)">(2604.23478)</a> introduces the <em>Judge Sensitivity Score</em> (JSS) &mdash; the fraction of semantically equivalent prompt paraphrases yielding identical verdicts. On factuality tasks, judges cluster near a JSS of 0.63 due to what the authors call a &ldquo;polarity-inverted prompt artifact,&rdquo; recovering to ~0.9 after correction. This is the mechanism behind the grounded=6&harr;8 oscillation: the WIGGUM evaluator&rsquo;s sensitivity to synthesis output phrasing is what makes the baseline stochastic, not any property of the synthesis instruction. The autoresearch loop spent 90 experiments trying to solve an evaluator noise problem by changing producer instructions.
+      </p>
+
+      <p>
+        <strong>FormatSpread</strong> <a href="https://arxiv.org/abs/2310.11324" target="_blank" rel="noopener" style="color:var(--accent-cyan)">(2310.11324)</a> shows that LLM sensitivity to prompt formatting &ldquo;remains even when increasing the number of examples or performing instruction tuning.&rdquo; This confirms why neither the 14 HOW-FIRST experiments nor the 24 NAMED-SYSTEMS experiments stabilized the grounded dimension: the variance source is structural to the evaluator and not responsive to synthesis instruction changes.
+      </p>
+
+      <p>
+        <strong>Conformal Prediction for LLM-as-a-Judge</strong> <a href="https://arxiv.org/abs/2509.18658" target="_blank" rel="noopener" style="color:var(--accent-cyan)">(2509.18658)</a> proposes constructing continuous prediction intervals from a single run, with the interval midpoint as a low-bias alternative to raw scores. The contaminated 8.740 baseline was a point-estimate trap: one lucky sample (grounded=8, specificity=9) set a scalar threshold the loop could never reliably beat. Interval-valued baselines would have surfaced the bimodal score distribution before the loop ran at all.
+      </p>
+
+      <div class="callout amber">
+        <p><strong>Open question:</strong> Could the autoresearch loop use conformal prediction intervals on the baseline &mdash; reporting it as 8.46&ndash;8.74 rather than 8.740 &mdash; so that advance/discard decisions are robust to evaluator noise rather than chasing a single lucky sample?</p>
+      </div>
+
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

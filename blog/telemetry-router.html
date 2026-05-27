@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Telemetry Router: Mining runs.jsonl for Self-Directed Improvement | Nick McCarty</title>
+  <meta name="description" content="Every harness run writes search queries, knowledge gaps, planner CoT, and evaluator feedback to runs.jsonl. One skill that reads those signals simultaneously feeds the autoresearch loop, the lit-review pipeline, and the data flywheel — with no additional compute.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/telemetry-router.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Telemetry Router: Mining runs.jsonl for Self-Directed Improvement">
+  <meta property="og:description" content="Every harness run writes search queries, knowledge gaps, planner CoT, and evaluator feedback to runs.jsonl. One skill that reads those signals simultaneously feeds the autoresearch loop, the lit-review pipeline, and the data flywheel.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/telemetry-router.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-23T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Telemetry Router: Mining runs.jsonl for Self-Directed Improvement">
+  <meta name="twitter:description" content="Search queries, knowledge gaps, planner CoT, and eval feedback accumulate in runs.jsonl as a byproduct of every harness run. One skill routes those signals to autoresearch, lit-review, and the data flywheel simultaneously.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "The Telemetry Router: Mining runs.jsonl for Self-Directed Improvement", "description": "Every harness run writes search queries, knowledge gaps, planner CoT, and evaluator feedback to runs.jsonl. One skill that reads those signals simultaneously feeds the autoresearch loop, the lit-review pipeline, and the data flywheel — with no additional compute.", "keywords": "agentic systems, self-improvement, telemetry, runs.jsonl, data flywheel, autoresearch, lit-review, knowledge gaps, DPO, GRPO, prompt optimization", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-23", "dateModified": "2026-05-23", "url": "https://nickmccarty.github.io/blog/telemetry-router.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/telemetry-router.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 23, 2026 &bull; 15 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">The Telemetry Router</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          Every harness run appends one JSON record to <code>data/runs.jsonl</code> containing search queries the agent invented, knowledge gaps the planner declared, dimension-level evaluator feedback, and planner chain-of-thought. A single skill that reads those signals can simultaneously feed the autoresearch optimizer, the lit-review pipeline, and the data flywheel &mdash; with no additional inference cost.
+        </p>
+
+        <nav class="series-nav" aria-label="Series navigation">
+          <a href="./harness-thesis.html" class="series-badge">Harness Thesis</a>
+          <a href="./observability-flywheel.html" class="series-badge">Observability</a>
+          <a href="./gepa-autoresearch.html" class="series-badge">GEPA &amp; Autoresearch</a>
+          <a href="./audio-data-flywheel.html" class="series-badge">Audio Flywheel</a>
+          <a href="./telemetry-router.html" class="series-badge active">Telemetry Router</a>
+        </nav>
+      </header>
+
+      <p>
+        Section G of this series described three self-improvement patterns — the Data Flywheel, the RL Rollout, and the Literature Review Pipeline — as if they were independent loops. In practice they share one input: the run record. Every harness execution writes the same append-only JSONL record regardless of which improvement loop might eventually consume it. The problem is that nothing currently reads <code>runs.jsonl</code> with the purpose of routing its signals to the right downstream system. That gap is exactly what the telemetry router skill fills.
+      </p>
+
+      <p>
+        This post describes what <code>runs.jsonl</code> actually contains, which signals within it are most useful for which downstream system, and what the routing skill looks like in practice.
+      </p>
+
+      <h2>J1 &mdash; What runs.jsonl Actually Contains</h2>
+
+      <p>
+        The harness logger writes a structured record for every run. The fields relevant to the routing skill fall into four categories:
+      </p>
+
+      <p>
+        <strong>Search behavior.</strong> The <code>tool_calls</code> array records every tool invocation with its <code>name</code> and <code>query</code>. Web search calls carry the query string the agent invented — not a user-supplied query, but one the agent generated to fill a gap it identified during synthesis. The <code>plan</code> object carries a parallel <code>search_queries</code> list: the queries the planner declared it would need before the research stage began.
+      </p>
+
+<pre><code># Simplified runs.jsonl record (selected fields)
+{
+  "run_id":    "a3f8c1d2",
+  "task":      "top 3 context window management strategies for long-document RAG",
+  "task_type": "technical_count",
+  "timestamp": "2026-05-22T14:31:07Z",
+
+  "plan": {
+    "search_queries": [
+      "LLM context window management strategies production 2025",
+      "sliding window attention vs retrieval augmented generation tradeoffs",
+      "token budget enforcement agentic pipeline"
+    ],
+    "knowledge_gaps": [
+      "exact token limits for Qwen3-Coder vs Llama 3.3 in practice",
+      "whether sliding window causes coherence degradation in long chains"
+    ]
+  },
+
+  "tool_calls": [
+    {"name": "web_search", "query": "sliding window attention LLM coherence degradation 2025"},
+    {"name": "web_search", "query": "token budget enforcement harness agentic pipeline benchmark"}
+  ],
+
+  "planner_cot": "The task asks for a count-constrained list of strategies. ...",
+
+  "wiggum_eval_log": [{
+    "round": 1, "score": 7.8,
+    "dims": {"relevance": 9, "completeness": 8, "depth": 6,
+             "grounded": 8, "specificity": 7, "structure": 9},
+    "issues": ["depth penalized: strategies listed without parameter-level detail"],
+    "feedback": "the response identifies sliding window, retrieval chunking, and..."
+  }],
+
+  "final": "FAIL"
+}</code></pre>
+
+      <p>
+        <strong>Knowledge gaps.</strong> The <code>knowledge_gaps</code> field in the plan is the most direct signal in the entire record. It represents what the planner explicitly declared it didn't know before researching — the questions the agent went looking for answers to. These are not user-supplied topics; they are the harness's own assessment of where its knowledge is insufficient.
+      </p>
+
+      <p>
+        <strong>Evaluation feedback.</strong> The <code>wiggum_eval_log</code> carries per-dimension scores, a list of identified issues, and a natural-language feedback string for each evaluation round. The dimension that scores lowest most consistently across task types tells you where the synthesis instruction fails structurally, which is precisely what autoresearch should target next.
+      </p>
+
+      <p>
+        <strong>Chain-of-thought traces.</strong> <code>planner_cot</code> and <code>synth_cot</code> are the raw reasoning strings from the planner and synthesizer respectively. The planner CoT contains tacit assumptions about task decomposition — which sub-questions it thought were load-bearing, which it treated as derivable, which it skipped. These are not visible in the final output and are rarely examined. They are the richest source of content for posts that document harness reasoning rather than harness architecture.
+      </p>
+
+      <h2>J2 &mdash; Signal 1: Query Clusters as Lit-Review Seeds</h2>
+
+      <p>
+        Over hundreds of runs, the <code>search_queries</code> and <code>tool_calls[*].query</code> fields accumulate a corpus of questions the agent invented but may never have found satisfactory answers to. Runs that ended with <code>final: "FAIL"</code> or low depth scores are the most informative: they represent queries where the web search returned insufficient material and the agent synthesized from inadequate grounding.
+      </p>
+
+      <p>
+        Clustering these queries by semantic similarity surfaces topic areas where the agent repeatedly goes looking but comes back weak. Each cluster is a candidate lit-review topic — the agent's behavior is revealing a gap in the knowledge base that would improve future runs if filled.
+      </p>
+
+<pre><code>def extract_query_clusters(runs: list[dict],
+                           min_score_threshold: float = 8.5,
+                           top_n: int = 10) -> list[dict]:
+    """Return the N most-recurrent query topics from failing or weak runs."""
+    weak_queries: list[str] = []
+    for run in runs:
+        score = run.get("wiggum_scores", [0])[-1] if run.get("wiggum_scores") else 0
+        if score >= min_score_threshold:
+            continue  # only mine runs that didn't fully satisfy the evaluator
+
+        plan = run.get("plan") or {}
+        weak_queries.extend(plan.get("search_queries", []))
+        for tc in run.get("tool_calls", []):
+            if tc.get("name") == "web_search":
+                weak_queries.append(tc["query"])
+
+    # Simple n-gram frequency as a proxy for clustering
+    from collections import Counter
+    import re
+    tokens = []
+    for q in weak_queries:
+        tokens.extend(re.findall(r'\b[a-z]{4,}\b', q.lower()))
+    top_terms = Counter(tokens).most_common(top_n * 3)
+
+    # Group queries by most frequent terms
+    clusters = []
+    seen: set[str] = set()
+    for term, count in top_terms:
+        if term in ("with", "from", "that", "this", "using", "have", "been"):
+            continue
+        matching = [q for q in weak_queries if term in q.lower() and q not in seen]
+        if len(matching) >= 2:
+            seen.update(matching)
+            clusters.append({
+                "term": term,
+                "count": count,
+                "example_queries": matching[:3],
+                "suggested_lit_review": f'oh /lit-review "{term} agentic systems" --after 2024-06',
+            })
+        if len(clusters) >= top_n:
+            break
+    return clusters</code></pre>
+
+      <p>
+        The <code>knowledge_gaps</code> field requires even less processing. The planner already did the semantic work — it declared specific propositions it lacked evidence for. A simple aggregation of <code>knowledge_gaps</code> across low-scoring runs produces a ranked list of propositions the harness doesn't know how to address, each of which is a direct `/lit-review` prompt.
+      </p>
+
+      <h2>J3 &mdash; Signal 2: Per-Task-Type Score Distributions as Autoresearch Targets</h2>
+
+      <p>
+        The autoresearch loop's <code>--tasks</code> flag is currently set manually. The operator decides which eval tasks to optimize against. But <code>runs.jsonl</code> records <code>task_type</code> and per-dimension scores for every production run — not just eval suite runs. This means the harness has a continuously-updated picture of which task types it underperforms on in the wild, not just in the eval suite.
+      </p>
+
+<pre><code>def weakness_map(runs: list[dict],
+                 min_runs: int = 5) -> list[dict]:
+    """Return task types ranked by mean depth score, ascending (worst first)."""
+    from collections import defaultdict
+    scores_by_type: dict[str, list[float]] = defaultdict(list)
+
+    for run in runs:
+        task_type = run.get("task_type", "unknown")
+        if not task_type:
+            continue
+        for entry in run.get("wiggum_eval_log", []):
+            depth = entry.get("dims", {}).get("depth")
+            if depth is not None:
+                scores_by_type[task_type].append(float(depth))
+
+    ranked = []
+    for ttype, depths in scores_by_type.items():
+        if len(depths) < min_runs:
+            continue
+        ranked.append({
+            "task_type": ttype,
+            "mean_depth": round(sum(depths) / len(depths), 2),
+            "n_runs": len(depths),
+            "worst_score": min(depths),
+        })
+
+    return sorted(ranked, key=lambda r: r["mean_depth"])</code></pre>
+
+      <p>
+        The output maps directly to autoresearch task selection. If <code>task_type: "prose_best_practices"</code> has the lowest mean depth score across 40 production runs, that's the task type autoresearch should target next — and the corresponding eval task (T_B or T_D, depending on task fingerprint) is the right <code>--tasks</code> argument. The skill closes the feedback loop between production behavior and optimization target selection that currently doesn't exist.
+      </p>
+
+      <p>
+        The dimension to sort by matters. Depth has the highest weight (0.25) in the composite score and is the dimension most sensitive to instruction quality — it's the one autoresearch has the most leverage on. Sorting the weakness map by mean depth, not composite score, gives autoresearch the most actionable target.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">J2–J4 &mdash; Telemetry Router: One Read, Three Downstream Loops</div>
+        <svg id="router-svg" width="100%" viewBox="0 0 720 280" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">A single pass over <code>runs.jsonl</code> extracts three signal types and routes each to the downstream system best positioned to act on it.</p>
+      </div>
+
+      <h2>J4 &mdash; Signal 3: Curated Pairs for the Data Flywheel</h2>
+
+      <p>
+        The data flywheel described in Section G requires preference pairs: a "chosen" output (high-scoring run on a given task) and a "rejected" output (low-scoring run on the same or comparable task). Currently there is no principled selection of which runs belong in training data — all runs could theoretically be included, but training on noisy low-quality pairs degrades rather than improves the model.
+      </p>
+
+      <p>
+        The telemetry router provides the curation step. For each task type, it identifies the top-scoring runs (chosen candidates) and the lowest-scoring runs that attempted the same task type (rejected candidates), filters for pairs where the score gap exceeds a threshold, and writes them in NeMo RL's DPO manifest format:
+      </p>
+
+<pre><code>def build_flywheel_pairs(runs: list[dict],
+                         min_gap: float = 1.5,
+                         chosen_threshold: float = 9.0,
+                         rejected_ceiling: float = 7.5) -> list[dict]:
+    """Curate (chosen, rejected) pairs from runs.jsonl for DPO training."""
+    from collections import defaultdict
+    by_type: dict[str, list[dict]] = defaultdict(list)
+
+    for run in runs:
+        task_type = run.get("task_type")
+        score = run.get("wiggum_scores", [0])[-1] if run.get("wiggum_scores") else 0
+        content = run.get("final_content", "")  # synthesized output, first 16k chars
+        task = run.get("task", "")
+        if not task_type or not content:
+            continue
+        by_type[task_type].append({"score": score, "task": task,
+                                   "content": content, "run_id": run["run_id"]})
+
+    pairs = []
+    for task_type, candidates in by_type.items():
+        chosen = [c for c in candidates if c["score"] >= chosen_threshold]
+        rejected = [c for c in candidates if c["score"] <= rejected_ceiling]
+        for ch in chosen:
+            for rej in rejected:
+                if ch["score"] - rej["score"] >= min_gap:
+                    pairs.append({
+                        "task_type": task_type,
+                        "prompt": ch["task"],
+                        "chosen": ch["content"],
+                        "rejected": rej["content"],
+                        "score_gap": round(ch["score"] - rej["score"], 2),
+                        "chosen_run_id": ch["run_id"],
+                        "rejected_run_id": rej["run_id"],
+                    })
+    return pairs</code></pre>
+
+      <p>
+        The <code>min_gap</code> threshold matters. DPO training on pairs with a score gap below ~1.5 provides weak signal — the model has no clear "chosen" direction to move toward. Pairs with gaps above 2.0 are the most useful; pairs where the gap is below 0.5 should be excluded entirely. The router's filtering step is what makes the flywheel trainable rather than just large.
+      </p>
+
+      <div class="callout pink">
+        <p><strong>Academic grounding:</strong> Rafailov et al. (2023, DPO) and subsequent scaling analyses (Tunstall et al., 2023; Xu et al., 2024) show that DPO preference pair quality consistently dominates quantity. A curated set of 500 high-gap pairs outperforms 5,000 random pairs from the same distribution. The harness generates on the order of 10–50 runs per day in active use; after 30–60 days of accumulation, the gap-filtered pair set from <code>runs.jsonl</code> should be large enough to produce a measurable improvement on held-out tasks.</p>
+      </div>
+
+      <h2>J5 &mdash; The CoT Trace as a Content Source</h2>
+
+      <p>
+        The <code>planner_cot</code> field is the least-mined signal in <code>runs.jsonl</code>. It contains the planner's raw reasoning about how to decompose a task: which sub-questions it treated as load-bearing, which it considered derivable from other answers, which it skipped as out-of-scope. These decisions are not visible in the final output and are almost never examined.
+      </p>
+
+      <p>
+        They are, however, exactly the kind of content that makes useful blog posts: not "here is the architecture," but "here is why the planner made this particular choice in this particular situation." A planner that consistently skips certain sub-questions on prose tasks is revealing a structural assumption about what "completeness" means — one that might be worth making explicit and questioning.
+      </p>
+
+      <p>
+        The routing skill handles this by flagging runs where the planner CoT contains unusual patterns: tasks where more than N sub-questions were declared but fewer than N/2 were pursued, runs where the planner explicitly noted a knowledge gap but did not schedule a search query to fill it, or runs where the planner CoT is substantially longer than average (indicating the task triggered unusual deliberation). These flagged runs are candidates for manual review as blog post source material, not for automated downstream processing.
+      </p>
+
+<pre><code>def flag_unusual_cot(runs: list[dict],
+                     cot_length_percentile: float = 0.9) -> list[dict]:
+    """Flag runs with anomalous planner CoT for manual review."""
+    cot_lengths = [len(r.get("planner_cot", "")) for r in runs
+                   if r.get("planner_cot")]
+    if not cot_lengths:
+        return []
+
+    cot_lengths.sort()
+    threshold = cot_lengths[int(len(cot_lengths) * cot_length_percentile)]
+
+    flagged = []
+    for run in runs:
+        cot = run.get("planner_cot", "")
+        gaps = (run.get("plan") or {}).get("knowledge_gaps", [])
+        queries = [(run.get("plan") or {}).get("search_queries", [])]
+
+        reasons = []
+        if len(cot) > threshold:
+            reasons.append("unusually long CoT — complex task deliberation")
+        if len(gaps) > 2 and len(queries[0]) < len(gaps):
+            reasons.append(f"{len(gaps)} knowledge gaps declared but only "
+                           f"{len(queries[0])} searches scheduled")
+
+        if reasons:
+            flagged.append({
+                "run_id": run["run_id"],
+                "task":   run.get("task", ""),
+                "score":  run.get("wiggum_scores", [0])[-1],
+                "reasons": reasons,
+                "cot_excerpt": cot[:400],
+            })
+    return flagged</code></pre>
+
+      <h2>J6 &mdash; The Skill as a Harness Slash Command</h2>
+
+      <p>
+        The routing skill is a natural fit for the harness skill system: it reads a local file, produces structured output, and has no side effects. Invoked as <code>oh /telemetry-router --last 500</code>, it reads the most recent 500 runs from <code>data/runs.jsonl</code> and writes three output files:
+      </p>
+
+      <ul>
+        <li><strong><code>data/lit_review_seeds.md</code></strong> — ranked query clusters with a ready-to-run <code>/lit-review</code> command for each, plus aggregated knowledge gaps from low-scoring runs.</li>
+        <li><strong><code>data/autoresearch_targets.md</code></strong> — weakness map sorted by mean depth score, with recommended <code>--tasks</code> arguments for the next autoresearch run and the specific evaluator issues driving each weakness.</li>
+        <li><strong><code>data/flywheel_pairs.jsonl</code></strong> — curated DPO preference pairs, gap-filtered, in NeMo RL manifest format, ready to pass to <code>uv run python examples/run_dpo.py</code>.</li>
+      </ul>
+
+      <p>
+        Each output is self-contained: the lit review seeds file is readable as a planning document, the autoresearch targets file is paste-able into a terminal, and the flywheel pairs file is directly consumable by NeMo RL without transformation.
+      </p>
+
+      <div class="callout">
+        <p>The routing skill has no inference cost — it reads a local JSONL file and applies Python logic. A full analysis of 500 runs completes in under two seconds. This makes it cheap to run frequently: after every autoresearch session, after a new batch of production runs, or on a cron schedule. The downstream systems it feeds (autoresearch, lit-review, NeMo RL) all have high compute costs — the router's value is precisely that it minimizes how often those systems need to run by giving them better-targeted inputs.</p>
+      </div>
+
+      <h2>J7 &mdash; The Meta-Pattern: Operational Telemetry as a Compound Signal</h2>
+
+      <p>
+        The deeper principle is that any pipeline that records its own behavior generates training signal as a byproduct of operation. The harness doesn't need a separate data collection step; every production run is simultaneously a performance record (for autoresearch), a knowledge gap declaration (for lit-review), and a preference example (for the data flywheel). The bottleneck is not data collection — it's signal routing.
+      </p>
+
+      <p>
+        This is structurally similar to what RLHF practitioners call "online" vs. "offline" learning: offline methods collect data first and train later, while online methods learn from the data generated during deployment. The telemetry router makes the harness online in a weak sense — not in the sense of gradient updates during inference, but in the sense that every production run immediately generates actionable signals for all three improvement loops, and those signals are ready to consume as soon as the routing skill is invoked.
+      </p>
+
+      <p>
+        The compounding effect is what makes this valuable over time. An autoresearch run seeded by the weakness map improves the synthesis instruction. Better instructions produce higher-scoring runs. Higher-scoring runs produce better chosen/rejected pairs in the flywheel. Better flywheel pairs fine-tune the producer model. A fine-tuned producer produces outputs that search for different things — generating new query clusters for the lit-review pipeline. Each loop tightens the others.
+      </p>
+
+      <h2>What the Literature Leaves Open</h2>
+
+      <ul>
+        <li>When query clusters are used as lit-review seeds, the resulting literature may address the surface topic without addressing the specific sub-question that generated the cluster. How should the routing skill distinguish queries that signal a vocabulary gap (the agent doesn't know the right search terms) from queries that signal a knowledge gap (the right terms exist but the relevant literature hasn't been retrieved)?</li>
+        <li>DPO training on harness-curated pairs uses the Wiggum evaluator score as the ground truth for "chosen" vs. "rejected." When the Wiggum evaluator itself has blind spots (dimensions it consistently over- or under-weights), does the flywheel amplify those blind spots into the producer model, and how many flywheel cycles does it take before this becomes detectable?</li>
+        <li>The weakness map sorts task types by mean depth score across production runs. Production runs have a different distribution than eval suite runs: they cover the tasks users actually request, which may differ systematically from the eval tasks autoresearch optimizes against. Does optimizing against production weakness clusters improve eval suite scores, or does it improve production performance while leaving eval scores flat?</li>
+        <li>Planner CoT flagging identifies unusual deliberation patterns, but the unusual patterns are not labeled as good or bad — a long CoT might indicate good reasoning about a hard task or confused reasoning about an easy one. What annotation interface (human review, LLM-as-judge, or automated rubric) would most efficiently convert flagged runs into usable blog post raw material?</li>
+        <li>The telemetry router is a read-only skill with no inference cost, making it safe to run frequently. But its outputs are only useful if they are acted on: lit-review seeds that aren't run, autoresearch targets that aren't scheduled, and flywheel pairs that aren't trained on provide no value. What scheduling or alerting mechanism would ensure the router's outputs are consumed rather than accumulating as unused reports?</li>
+      </ul>
+
+      <div class="post-pagination">
+        <a href="./gepa-autoresearch.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">From Hill-Climbing to Pareto</span>
+        </a>
+        <a href="./observability-flywheel.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">10 &middot; Observability and the Data Flywheel</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./observability-flywheel.html" class="related-post-card">
+            <div class="related-post-num">Post 10</div>
+            <div class="related-post-title">Observability and the Data Flywheel</div>
+            <div class="related-post-desc">The six self-improvement patterns that generate the raw material the telemetry router curates and routes.</div>
+          </a>
+          <a href="./gepa-autoresearch.html" class="related-post-card">
+            <div class="related-post-num">Extension</div>
+            <div class="related-post-title">From Hill-Climbing to Pareto</div>
+            <div class="related-post-desc">GEPA's Pareto frontier and minibatch screening — the autoresearch upgrade the weakness map targets.</div>
+          </a>
+          <a href="./audio-data-flywheel.html" class="related-post-card">
+            <div class="related-post-num">Extension</div>
+            <div class="related-post-title">The Audio Data Flywheel</div>
+            <div class="related-post-desc">A parallel flywheel for ASR fine-tuning — the same curation logic applied to voice interaction telemetry.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555ZM0 4.697v7.104l5.803-3.558L0 4.697ZM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-1.239-.757Zm3.436-.586L16 11.801V4.697l-5.803 3.546Z"/>
+        </svg>
+      </a>
+    </div>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script type="module">
+    import anime from 'https://esm.sh/animejs@3.2.2';
+
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    /* ── J2–J4: Telemetry Router diagram ────────────────────────────────── */
+    (function drawRouter() {
+      const svg = d3.select('#router-svg');
+      const W = 720, H = 280;
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt2 = cssVar('--text-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const bdr = cssVar('--border-color');
+      const green = '#34d399';
+      const purple = '#a855f7';
+      const orange = '#f59e0b';
+
+      const defs = svg.append('defs');
+      [['c', cyan], ['p', pink], ['g', green], ['v', purple], ['o', orange]].forEach(([k, col]) => {
+        const m = defs.append('marker').attr('id', `arr-jr-${k}`)
+          .attr('viewBox', '0 -5 10 10').attr('refX', 8)
+          .attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+        m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', col);
+      });
+
+      // Source: runs.jsonl
+      const srcX = 60, srcY = 100;
+      svg.append('rect').attr('x', srcX).attr('y', srcY).attr('width', 130).attr('height', 80)
+        .attr('rx', 8).attr('fill', bg3).attr('stroke', bdr).attr('stroke-width', 2).attr('opacity', 0);
+      svg.append('text').attr('x', srcX + 65).attr('y', srcY + 26)
+        .attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 700)
+        .attr('fill', txt2).attr('opacity', 0).text('runs.jsonl');
+      const signals = ['search_queries', 'knowledge_gaps', 'wiggum_dims', 'planner_cot'];
+      signals.forEach((s, i) => {
+        svg.append('text').attr('x', srcX + 8).attr('y', srcY + 44 + i * 11)
+          .attr('font-size', 7.5).attr('fill', txt2).attr('opacity', 0).text(`· ${s}`);
+      });
+
+      // Router box
+      const rtX = 260, rtY = 110;
+      svg.append('rect').attr('x', rtX).attr('y', rtY).attr('width', 120).attr('height', 60)
+        .attr('rx', 8).attr('fill', bg3).attr('stroke', cyan).attr('stroke-width', 2).attr('opacity', 0);
+      svg.append('text').attr('x', rtX + 60).attr('y', rtY + 24)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+        .attr('fill', cyan).attr('letter-spacing', 0.5).attr('opacity', 0).text('TELEMETRY');
+      svg.append('text').attr('x', rtX + 60).attr('y', rtY + 40)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+        .attr('fill', cyan).attr('letter-spacing', 0.5).attr('opacity', 0).text('ROUTER');
+      svg.append('text').attr('x', rtX + 60).attr('y', rtY + 55)
+        .attr('text-anchor', 'middle').attr('font-size', 8).attr('fill', txt2).attr('opacity', 0)
+        .text('oh /telemetry-router');
+
+      // Arrow: runs.jsonl → router
+      svg.append('line').attr('x1', srcX + 130).attr('y1', srcY + 40)
+        .attr('x2', rtX - 2).attr('y2', rtY + 30)
+        .attr('stroke', bdr).attr('stroke-width', 1.2)
+        .attr('marker-end', 'url(#arr-jr-c)').attr('opacity', 0);
+
+      // Downstream boxes
+      const targets = [
+        { label: 'Autoresearch',  sub: '--tasks (weakness map)',  col: pink,   y: 30  },
+        { label: 'Lit-Review',    sub: 'query cluster seeds',      col: green,  y: 120 },
+        { label: 'Data Flywheel', sub: 'DPO pair manifest',        col: purple, y: 210 },
+      ];
+
+      targets.forEach(t => {
+        const tx = 490;
+        svg.append('rect').attr('x', tx).attr('y', t.y).attr('width', 150).attr('height', 50)
+          .attr('rx', 7).attr('fill', bg3).attr('stroke', t.col).attr('stroke-width', 1.5).attr('opacity', 0);
+        svg.append('text').attr('x', tx + 75).attr('y', t.y + 20)
+          .attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 700)
+          .attr('fill', t.col).attr('opacity', 0).text(t.label);
+        svg.append('text').attr('x', tx + 75).attr('y', t.y + 36)
+          .attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', txt2).attr('opacity', 0)
+          .text(t.sub);
+
+        // Arrow from router to target
+        const arrId = t.col === pink ? 'p' : t.col === green ? 'g' : 'v';
+        svg.append('line')
+          .attr('x1', rtX + 120).attr('y1', rtY + 30)
+          .attr('x2', tx - 2).attr('y2', t.y + 25)
+          .attr('stroke', t.col).attr('stroke-width', 1.2).attr('stroke-dasharray', '5 3')
+          .attr('marker-end', `url(#arr-jr-${arrId})`).attr('opacity', 0);
+      });
+
+      // CoT → Manual Review
+      const cX = 490, cY = H - 45;
+      svg.append('rect').attr('x', cX).attr('y', cY).attr('width', 150).attr('height', 36)
+        .attr('rx', 7).attr('fill', bg3).attr('stroke', orange).attr('stroke-width', 1.2)
+        .attr('stroke-dasharray', '4 2').attr('opacity', 0);
+      svg.append('text').attr('x', cX + 75).attr('y', cY + 14)
+        .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('font-weight', 600)
+        .attr('fill', orange).attr('opacity', 0).text('CoT Flagging');
+      svg.append('text').attr('x', cX + 75).attr('y', cY + 28)
+        .attr('text-anchor', 'middle').attr('font-size', 8.5).attr('fill', txt2).attr('opacity', 0)
+        .text('manual review → blog posts');
+      svg.append('line')
+        .attr('x1', rtX + 120).attr('y1', rtY + 50)
+        .attr('x2', cX - 2).attr('y2', cY + 18)
+        .attr('stroke', orange).attr('stroke-width', 1.2).attr('stroke-dasharray', '4 3')
+        .attr('marker-end', 'url(#arr-jr-o)').attr('opacity', 0);
+
+      anime({
+        targets: '#router-svg rect, #router-svg text, #router-svg line',
+        opacity: [0, 1], duration: 500, delay: anime.stagger(30), easing: 'easeOutQuad',
+      });
+    })();
+  </script>
+</body>
+</html>

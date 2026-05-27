@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Regression Harness: Eval Suite, Criterion Functions, and Experimental Infrastructure | Nick McCarty</title>
+  <meta name="description" content="How the harness's three-layer measurement stack works: the task registry and criterion function library in eval_suite.py, the CRD experiment runner, and the three-persona experiment panel.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/eval-suite.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Regression Harness: Eval Suite, Criterion Functions, and Experimental Infrastructure">
+  <meta property="og:description" content="Nine tasks, eleven criterion functions, one composite score, and three epistemically distinct personas — the measurement infrastructure that turns informal intuition about output quality into machine-checkable gates.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/eval-suite.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-25T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Regression Harness: Eval Suite, Criterion Functions, and Experimental Infrastructure">
+  <meta name="twitter:description" content="Nine tasks, eleven criterion functions, one composite score, and three epistemically distinct personas — the measurement infrastructure behind the harness.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "The Regression Harness: Eval Suite, Criterion Functions, and Experimental Infrastructure", "description": "Nine tasks, eleven criterion functions, one composite score, and three epistemically distinct personas — the measurement infrastructure that turns informal intuition about output quality into machine-checkable gates.", "keywords": "eval suite, regression testing, criterion functions, CRD experiment runner, experiment panel, agentic harness, quality measurement", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-25", "dateModified": "2026-05-25", "url": "https://nickmccarty.github.io/blog/eval-suite.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/eval-suite.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.amber { border-left-color: #f59e0b; }
+    .callout.pink  { border-left-color: var(--accent-pink); }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.55rem 0.85rem;
+      background: var(--bg-tertiary);
+      border-bottom: 2px solid var(--border-color);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    td {
+      padding: 0.55rem 0.85rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    tr:last-child td { border-bottom: none; }
+    .pass  { color: #22c55e; font-weight: 600; }
+    .fail  { color: #ef4444; font-weight: 600; }
+    .neutral { color: var(--text-secondary); }
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+    }
+    .tag.enumerated  { border-color: var(--accent-cyan);  color: var(--accent-cyan); }
+    .tag.practices   { border-color: var(--accent-pink);  color: var(--accent-pink); }
+    .tag.annotation  { border-color: #f59e0b; color: #f59e0b; }
+    .tag.introspect  { border-color: #a855f7; color: #a855f7; }
+    .tag.synthesis   { border-color: #22c55e; color: #22c55e; }
+    .tag.ood         { border-color: #64748b; color: #64748b; }
+    .tag.memory      { border-color: #06b6d4; color: #06b6d4; }
+    .layer-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 1.5rem 0;
+    }
+    .layer-box {
+      border: 1px solid var(--border-color);
+      padding: 0.9rem 1.25rem;
+      background: var(--bg-secondary);
+    }
+    .layer-box:first-child { border-radius: 8px 8px 0 0; }
+    .layer-box:last-child  { border-radius: 0 0 8px 8px; border-top: none; }
+    .layer-box:not(:first-child):not(:last-child) { border-top: none; }
+    .layer-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-cyan);
+      margin-bottom: 0.25rem;
+    }
+    .layer-desc {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+    .persona-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    @media (max-width: 700px) {
+      .persona-grid { grid-template-columns: 1fr; }
+    }
+    .persona-card {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      background: var(--bg-secondary);
+    }
+    .persona-name {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent-cyan);
+      margin-bottom: 0.4rem;
+    }
+    .persona-verdicts {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      margin-top: 0.6rem;
+    }
+    .verdict-pill {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.1rem 0.45rem;
+      border-radius: 3px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 25, 2026 &bull; 14 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">The Regression Harness: Eval Suite, Criterion Functions, and Experimental Infrastructure</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          Nine benchmark tasks. Eleven criterion functions. One composite score. And above it all, a three-persona panel that evaluates whether the <em>experiment itself</em> produced genuine knowledge. This post documents the full measurement stack that underlies every controlled experiment and autoresearch iteration in the harness.
+        </p>
+      </header>
+
+      <div class="series-nav" aria-label="Series navigation">
+        <a href="./the-wiggum-loop.html"         class="series-badge">C1 &mdash; Wiggum Loop</a>
+        <a href="./verification-patterns.html"    class="series-badge">C2&ndash;C4 &mdash; Verification Patterns</a>
+        <span                                     class="series-badge active">C5 &mdash; Regression Harness</span>
+        <a href="./experimental-methodology.html" class="series-badge">Experiments &mdash; Four Experiments</a>
+        <a href="./agentic-design-patterns.html"  class="series-badge">Pattern Catalog</a>
+      </div>
+
+      <h2>Why a Regression Harness?</h2>
+
+      <p>
+        The Wiggum Loop (C1) and the Dimensional Rubric (C2) give you a score for any given synthesis run. That score is useful for gating output quality at inference time. It is not sufficient for detecting regressions across harness changes.
+      </p>
+
+      <p>
+        The distinction matters. When you swap a model, modify a Modelfile, change the synthesis instruction, or refactor a pipeline stage, you want to know: did this change break something that was working? A single ad-hoc run tells you nothing — it collapses all variation (task choice, model randomness, instruction sensitivity) into one uninterpretable data point. A regression harness runs a fixed, diverse set of tasks with deterministic content criteria and produces a comparable score before and after every change.
+      </p>
+
+      <div class="callout">
+        <p><strong>Design rule:</strong> Run the eval suite after any model swap, Modelfile change, or harness modification to detect regressions before they accumulate. The suite is not a quality certificate — it is a change detector.</p>
+      </div>
+
+      <p>
+        The harness measurement infrastructure has three layers:
+      </p>
+
+      <div class="layer-stack">
+        <div class="layer-box">
+          <div class="layer-label">Layer 1 &mdash; eval_suite.py</div>
+          <p class="layer-desc">Task registry (9 tasks + T_MEM), criterion function library (11 functions), composite score formula, and CLI. The baseline regression gate.</p>
+        </div>
+        <div class="layer-box">
+          <div class="layer-label">Layer 2 &mdash; experiment_runner.py</div>
+          <p class="layer-desc">Completely randomized design (CRD) runner. Reads an <code>ExperimentSpec</code> JSON, generates a randomized run order, applies treatment env vars, checkpoints after every run. Used by the four documented experiments.</p>
+        </div>
+        <div class="layer-box">
+          <div class="layer-label">Layer 3 &mdash; experiment_panel.py</div>
+          <p class="layer-desc">Three-persona meta-evaluator. After a CRD run completes, three models evaluate the experiment itself — one for design rigor, one for epistemic validity, one for actionability — and emit a joint KEEP / REVISE / REDESIGN decision.</p>
+        </div>
+      </div>
+
+      <h2>The Task Registry</h2>
+
+      <p>
+        The suite defines ten named tasks. Nine run the agent on representative inputs and check file-based output criteria. One (<code>T_MEM</code>) is a memory retrieval smoke test that directly queries the <code>MemoryStore</code> without running the full agent pipeline.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Key criteria</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>T_A</strong></td>
+            <td><span class="tag enumerated">enumerated</span></td>
+            <td>Top 5 context engineering techniques</td>
+            <td><code>exact_sections(5)</code>, <code>has_impl_notes</code></td>
+          </tr>
+          <tr>
+            <td><strong>T_B</strong></td>
+            <td><span class="tag practices">best practices</span></td>
+            <td>Cost envelope management in production agents</td>
+            <td><code>min_sections(3)</code>, <code>has_impl_notes</code></td>
+          </tr>
+          <tr>
+            <td><strong>T_C</strong></td>
+            <td><span class="tag enumerated">enumerated</span></td>
+            <td>Top 3 failure modes in multi-agent systems</td>
+            <td><code>exact_sections(3)</code>, <code>has_impl_notes</code></td>
+          </tr>
+          <tr>
+            <td><strong>T_D</strong></td>
+            <td><span class="tag enumerated">enumerated</span></td>
+            <td>Top 3 context window management strategies</td>
+            <td><code>exact_sections(3)</code>, <code>has_impl_notes</code></td>
+          </tr>
+          <tr>
+            <td><strong>T_E</strong></td>
+            <td><span class="tag practices">best practices</span></td>
+            <td>Prompt injection defense in production systems</td>
+            <td><code>min_sections(3)</code>, <code>has_impl_notes</code></td>
+          </tr>
+          <tr>
+            <td><strong>T_ANN</strong></td>
+            <td><span class="tag annotation">annotation</span></td>
+            <td><code>/annotate</code> fixture: NANDA-format paper annotation</td>
+            <td><code>has_nanda_sections</code>, <code>no_annotate_artifacts</code></td>
+          </tr>
+          <tr>
+            <td><strong>T_F</strong></td>
+            <td><span class="tag introspect">introspection</span></td>
+            <td><code>/introspect</code> skill registry and pipeline stages</td>
+            <td><code>mentions_skill_names</code>, <code>no_hallucinated_skills</code></td>
+          </tr>
+          <tr>
+            <td><strong>T_G</strong></td>
+            <td><span class="tag synthesis">file synthesis</span></td>
+            <td>Read autoresearch program file and summarize design</td>
+            <td><code>min_sections(2)</code>, <code>no_file_path_refs</code></td>
+          </tr>
+          <tr>
+            <td><strong>T_H</strong></td>
+            <td><span class="tag ood">OOD</span></td>
+            <td>Top 5 nutrient synergies for cognitive performance</td>
+            <td><code>exact_sections(5)</code>, <code>has_impl_notes</code></td>
+          </tr>
+          <tr>
+            <td><strong>T_MEM</strong></td>
+            <td><span class="tag memory">memory smoke</span></td>
+            <td>Direct <code>MemoryStore</code> query — no agent invocation</td>
+            <td><code>paper_count &gt; 0</code>, <code>retrieval_returns_results</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The task taxonomy is intentional. T_A through T_E are the domain tasks used in the four controlled experiments and serve as the autoresearch optimization target (T_B specifically). T_ANN tests a skill path (annotation) that bypasses the main synthesis pipeline entirely. T_F tests introspection — whether the agent accurately reports its own capabilities without hallucinating skill names. T_G tests file-based synthesis, a structurally different input mode. T_H is deliberately out-of-domain: a regression in the pipeline's general capability should appear here before it appears in the in-domain tasks, since the model has less cached intuition to lean on.
+      </p>
+
+      <div class="callout amber">
+        <p><strong>T_MEM runs separately</strong> from the agent tasks. It connects directly to the <code>MemoryStore</code> SQLite backend, verifies paper count, and issues a raw retrieval query. It is the only test that bypasses the agent runtime entirely — which means it will catch storage regressions that the agent tasks would mask (the agent simply retrieves less context silently rather than failing).</p>
+      </div>
+
+      <h2>The Criterion Function Library</h2>
+
+      <p>
+        Each task carries a list of criterion functions. A criterion is a pure function from output string to <code>(passed: bool, detail: str)</code>. The library has eleven functions covering four categories of check.
+      </p>
+
+      <h3>Size and Structure Checks</h3>
+
+      <p>
+        These check that the output is substantively long enough and organized correctly — the minimum bar before content quality becomes meaningful.
+      </p>
+
+<pre><code>def min_bytes(n: int):
+    def check(content: str):
+        b = len(content.encode("utf-8"))
+        return b >= n, f"{b} bytes (need >= {n})"
+    return check
+
+def min_lines(n: int):
+    def check(content: str):
+        lines = content.count("\n") + 1
+        return lines >= n, f"{lines} lines (need >= {n})"
+    return check
+
+def exact_sections(n: int):
+    """Exactly n H2-level content sections, excluding structural headers."""
+    structural = {"introduction", "conclusion", "summary", "overview",
+                  "background", "references"}
+    def check(content: str):
+        headers = re.findall(r'^##\s+(.+)', content, re.MULTILINE)
+        items   = [h for h in headers
+                   if re.sub(r'^[\d.\s]+', '', h).strip().lower()
+                   not in structural]
+        return len(items) == n, f"{len(items)} content sections (need exactly {n})"
+    return check
+
+def min_sections(n: int):
+    def check(content: str):
+        headers = re.findall(r'^##\s+\S', content, re.MULTILINE)
+        return len(headers) >= n, f"{len(headers)} H2 sections (need >= {n})"
+    return check</code></pre>
+
+      <p>
+        The distinction between <code>exact_sections</code> and <code>min_sections</code> maps directly onto the task taxonomy. Enumerated tasks (T_A: "top 5") get <code>exact_sections</code> — the agent is wrong if it returns four or six items. Best-practices tasks (T_B, T_E) get <code>min_sections</code> — there is no canonical count, and imposing one would be an arbitrary constraint.
+      </p>
+
+      <p>
+        <code>exact_sections</code> strips structural headers from the count. A document with five content sections plus an introduction does not score as six sections. This required two passes of iteration before stabilizing: early versions were fooled by numbered headers (<code>## 1. Introduction</code>) and by variations like <code>## Overview</code> that were clearly preamble rather than content.
+      </p>
+
+      <h3>Content Quality Checks</h3>
+
+<pre><code>def no_placeholders():
+    BAD = ["[placeholder]", "TODO", "brief implementation note",
+           "add example here", "implementation note here"]
+    def check(content: str):
+        found = [b for b in BAD if b.lower() in content.lower()]
+        return len(found) == 0, ("clean" if not found
+                                 else f"placeholder text found: {found}")
+    return check
+
+def has_impl_notes():
+    MARKERS = ["implementation note", "example:", "```",
+               "**example", "**implementation"]
+    def check(content: str):
+        found = any(m.lower() in content.lower() for m in MARKERS)
+        return found, ("has implementation notes/examples" if found
+                       else "no implementation notes or examples found")
+    return check
+
+def no_file_path_refs():
+    def check(content: str):
+        patterns = [r'saved to ~/\S+\.md', r'save.*~/\S+\.md',
+                    r'written to ~/\S+\.md']
+        found = any(re.search(p, content, re.IGNORECASE) for p in patterns)
+        return not found, ("clean" if not found
+                           else "output contains file path reference")
+    return check</code></pre>
+
+      <p>
+        <code>has_impl_notes</code> is the criterion most directly connected to score variance. Its presence in a task's criterion list is what drives the <code>criteria_rate</code> term of the composite score. In the autoresearch experiments, the NAMED-SYSTEMS instruction variants caused <code>has_impl_notes</code> to fail because outputs containing "cite a named tool" tended to produce structured lists without code blocks or implementation examples — they satisfied the literal request but not the evaluable form. This interaction between instruction phrasing and criterion satisfaction is one of the design tensions the autoresearch loop is trying to navigate.
+      </p>
+
+      <p>
+        <code>no_file_path_refs</code> catches a specific class of producer artifact: the model reporting that it "saved the document to <code>~/Desktop/...</code>" inside the document body. This is a leakage of the task framing into the content — the agent is supposed to save the file silently, not narrate the save operation in the output.
+      </p>
+
+      <h3>Skill-Specific Checks</h3>
+
+<pre><code>def has_nanda_sections():
+    REQUIRED  = ["**Topic**", "**Motivation**", "**Contribution**"]
+    EVIDENCE  = ["**Evidence", "**Broad impact**", "**Narrow impact**"]
+    def check(content: str):
+        missing      = [s for s in REQUIRED if s not in content]
+        has_evidence = any(s in content for s in EVIDENCE)
+        if missing:
+            return False, f"missing sections: {missing}"
+        if not has_evidence:
+            return False, "missing evidence/impact section"
+        return True, "all core sections present"
+    return check
+
+def mentions_skill_names(required: list[str]):
+    def check(content: str):
+        found = [s for s in required if s in content]
+        ok    = len(found) >= max(1, len(required) // 2)
+        return ok, f"found {len(found)}/{len(required)} required skills: {found}"
+    return check
+
+def no_hallucinated_skills():
+    FAKE = ["/research", "/visualize", "/translate", "/validate",
+            "/compress", "/enumerate", "/summarize", "/writetofile",
+            "/writetodisk", "/writetolog"]
+    def check(content: str):
+        found = [f for f in FAKE if f in content.lower()]
+        return len(found) == 0, ("clean" if not found
+                                 else f"hallucinated skills: {found}")
+    return check</code></pre>
+
+      <p>
+        <code>has_nanda_sections</code> is task-specific to T_ANN and validates the structured annotation format (Topic, Motivation, Contribution, Evidence/Impact). It accepts two forms of the evidence section to accommodate slight variation in the model's capitalization and phrasing across runs.
+      </p>
+
+      <p>
+        <code>no_hallucinated_skills</code> maintains a blocklist of skill names that appear plausible but do not exist in the registry. Models have a consistent tendency to invent <code>/summarize</code>, <code>/validate</code>, and <code>/visualize</code> — all obvious names for things a capable assistant should be able to do. The blocklist must be maintained: as the real skill registry grows, some previously-hallucinated names may become real, which would cause false positives.
+      </p>
+
+      <h3>Heading Structure Checks</h3>
+
+<pre><code>def has_h1_heading():
+    def check(content: str):
+        ok = bool(re.search(r'^#\s+\S', content.strip(), re.MULTILINE))
+        return ok, ("has H1 heading" if ok else "missing H1 heading")
+    return check</code></pre>
+
+      <p>
+        Used only by T_F (introspection). The introspect skill is expected to produce a structured document with a top-level heading. The criterion catches the case where the model produces a reasonable-looking document but omits the H1, making it structurally incomplete.
+      </p>
+
+      <h2>Knowledge Base Injection</h2>
+
+      <p>
+        Enumerated tasks carry a <code>kb_file</code> path pointing to a knowledge base document in <code>harness/eval/knowledge_base/</code>. The runner injects this file into the task string when two conditions are both true: the file exists, and the task uses <code>exact_sections</code>.
+      </p>
+
+<pre><code>kb = task_def.get("kb_file", "")
+is_enumerated = any(c.__name__.startswith("exact_sections")
+                    for c in task_def.get("criteria", []))
+if kb and os.path.exists(kb) and is_enumerated:
+    task_str += f" read {kb}"</code></pre>
+
+      <p>
+        The design choice here is conservative: injection only for tasks where a wrong count is a clear failure. Best-practices tasks get no injection because the knowledge base structure might inadvertently constrain what the agent includes — a KB with three subsections on cost management might cause T_B to produce exactly three sections when five would score better. For enumerated tasks the constraint is explicit and correct by definition.
+      </p>
+
+      <p>
+        The KB files are curated markdown documents, not raw retrieval results. Each contains the canonical framing of the task topic with enough structure to anchor the agent's section count without dictating content. They are reviewed and updated when the underlying domain literature meaningfully changes.
+      </p>
+
+      <h2>The Composite Score</h2>
+
+      <p>
+        The suite computes one scalar metric that combines evaluation quality (WIGGUM r1 scores from <code>runs.jsonl</code>) with content structure validity (criterion pass rate):
+      </p>
+
+<pre><code>composite = 0.7 × mean_wiggum_r1 + 0.3 × criteria_rate × 10</code></pre>
+
+      <p>
+        The 70/30 split encodes a priority: WIGGUM measures substantive quality (relevance, depth, specificity, groundedness), while criteria_rate measures structural validity (correct section count, no placeholders, has implementation examples). A document can have impeccable structure and be shallow. A document can be substantively excellent and have wrong section count. The composite requires both to score well.
+      </p>
+
+      <p>
+        The <code>score_suite()</code> function is the entry point for autoresearch. When the autoresearch loop proposes a modification to the synthesis instruction, it calls <code>score_suite(task_ids=["T_B"])</code> to get a single float representing the effect of that change. The loop keeps the change if <code>new_score − baseline &gt; 0.1</code>, otherwise reverts via <code>git reset HEAD~1 --soft</code>.
+      </p>
+
+      <div class="callout">
+        <p><strong>Why <code>criteria_rate × 10</code>?</strong> The WIGGUM r1 score is on a 0&ndash;10 scale. <code>criteria_rate</code> is on a 0&ndash;1 scale. Multiplying by 10 puts them on the same scale before the weighted sum. Without this, a criteria_rate of 1.0 would contribute 0.3 × 1.0 = 0.3 to the composite regardless of how many criteria were checked.</p>
+      </div>
+
+      <p>
+        WIGGUM scores are matched back to tasks by fingerprint strings &mdash; a fragment of the task description unique enough to identify it in <code>runs.jsonl</code>:
+      </p>
+
+<pre><code>FIXED_FINGERPRINTS = {
+    "T_A": "top 5 context engineering",
+    "T_B": "cost envelope management",
+    "T_C": "3 most common failure modes",
+    "T_D": "context window management strategies",
+    "T_E": "prompt injection defense",
+}</code></pre>
+
+      <p>
+        For tasks without fixed fingerprints (T_F, T_G, T_H, T_ANN), the fingerprint is derived from the output filename stem. This means task descriptions must be stable — a reworded T_B task string will fail to match its runs in <code>runs.jsonl</code> and silently return a mean_wiggum of zero.
+      </p>
+
+      <h2>CLI Modes</h2>
+
+      <p>
+        The suite exposes five CLI flags covering different use patterns:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Flag</th>
+            <th>What it does</th>
+            <th>When to use it</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>python -m harness.eval.eval_suite</code></td>
+            <td>Full run: execute all tasks then check all criteria</td>
+            <td>After any harness change; the primary regression gate</td>
+          </tr>
+          <tr>
+            <td><code>--fast</code></td>
+            <td>Criteria check only against existing output files; no agent calls</td>
+            <td>When you want to re-check criteria after editing them without re-running all tasks</td>
+          </tr>
+          <tr>
+            <td><code>--no-wiggum</code></td>
+            <td>Run tasks but skip the Wiggum evaluation loop</td>
+            <td>Testing the producer in isolation; faster turnaround when WIGGUM scores aren't needed</td>
+          </tr>
+          <tr>
+            <td><code>--score [--tasks T_B,T_D]</code></td>
+            <td>Print composite float and exit; optional task subset filter</td>
+            <td>Called by autoresearch to evaluate proposed instruction changes</td>
+          </tr>
+          <tr>
+            <td><code>--generated [path]</code></td>
+            <td>Load additional tasks from a <code>generated_tasks.json</code> file</td>
+            <td>Testing with dynamically generated task variants; TinyTroupe integration</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The <code>--score</code> mode is the one that matters most for the autoresearch loop. It runs tasks fresh, reads the new WIGGUM scores from <code>runs.jsonl</code>, evaluates all criteria, and emits a single float to stdout. The autoresearch script captures this float and makes the keep/discard decision against the current baseline.
+      </p>
+
+      <h2>The Experiment Runner</h2>
+
+      <p>
+        Layer 2 formalizes the four-experiment methodology documented in the experimental methodology post. Instead of running the agent manually with different settings and noting results, the CRD runner reads a JSON spec, generates a randomized run order, applies treatment variables via environment overrides, and checkpoints after every run.
+      </p>
+
+      <p>
+        An <code>ExperimentSpec</code> has six required fields:
+      </p>
+
+<pre><code>{
+  "title":      "Prior Knowledge Pass — Context Engineering",
+  "hypothesis": "Injecting a KB doc into T_A raises mean wiggum_r1 by >= 0.5",
+  "falsified_if": "mean(on) - mean(off) < 0.5 across all replications",
+  "factor": {
+    "name":   "prior_knowledge_pass",
+    "levels": ["off", "on"]
+  },
+  "tasks":        ["T_A"],
+  "replications": 3,
+  "response_variables":   ["wiggum_r1", "pass_rate"],
+  "controlled_variables": {"producer": "qwen2.5:32b", "evaluator": "..."},
+  "mutable_scope": {
+    "type": "env",
+    "var":  "HARNESS_PRIOR_KNOWLEDGE_PASS",
+    "levels": {"off": "", "on": "1"}
+  }
+}</code></pre>
+
+      <p>
+        The <code>mutable_scope</code> field specifies exactly one thing the treatment changes. This enforces single-variable isolation: if you need to test two changes simultaneously, you need two specs. The runner applies the treatment as an environment variable override before spawning each agent subprocess, so the harness code reads it normally — there is no special treatment injection path.
+      </p>
+
+      <p>
+        Randomization is seeded (<code>seed=42</code>) so the run order is deterministic and reproducible, but the order still prevents systematic confounding from time-of-day effects or model warm-up state. The <code>--resume</code> flag lets you pick up a partially completed experiment by skipping <code>(task_id, treatment, rep)</code> tuples already in the checkpoint file.
+      </p>
+
+      <h2>The Experiment Panel</h2>
+
+      <p>
+        After a CRD run completes, the experiment panel evaluates the experiment itself as a knowledge-producing artifact. This is meta-evaluation: not "did the agent produce good output?" but "did this experiment design produce reliable, actionable knowledge?"
+      </p>
+
+      <p>
+        Three models run in parallel, each with an epistemically distinct persona:
+      </p>
+
+      <div class="persona-grid">
+        <div class="persona-card">
+          <div class="persona-name">Methodologist</div>
+          <p style="font-size:0.9rem; color:var(--text-secondary); margin:0 0 0.5rem;">Evaluates design rigor: falsifiability, confound control, replication adequacy, run order randomization. Flags design flaws that make results uninterpretable.</p>
+          <div class="persona-verdicts">
+            <span class="verdict-pill">SOUND</span>
+            <span class="verdict-pill">MARGINAL</span>
+            <span class="verdict-pill">UNSOUND</span>
+          </div>
+        </div>
+        <div class="persona-card">
+          <div class="persona-name">Knowledge Auditor</div>
+          <p style="font-size:0.9rem; color:var(--text-secondary); margin:0 0 0.5rem;">Evaluates epistemic validity: did outputs change in response to feedback? Do conclusions follow from observed scores? Are alternative explanations addressed?</p>
+          <div class="persona-verdicts">
+            <span class="verdict-pill">VALID</span>
+            <span class="verdict-pill">INCONCLUSIVE</span>
+            <span class="verdict-pill">INVALID</span>
+          </div>
+        </div>
+        <div class="persona-card">
+          <div class="persona-name">Loop Optimizer</div>
+          <p style="font-size:0.9rem; color:var(--text-secondary); margin:0 0 0.5rem;">Evaluates actionability: is there a specific next variable to change? Are effect sizes large enough to distinguish signal from noise? Produces a concrete next-experiment proposal.</p>
+          <div class="persona-verdicts">
+            <span class="verdict-pill">ADVANCE</span>
+            <span class="verdict-pill">REVISE</span>
+            <span class="verdict-pill">REDESIGN</span>
+          </div>
+        </div>
+      </div>
+
+      <p>
+        The panel's decision logic is a precedence cascade:
+      </p>
+
+<pre><code>if methodologist == "UNSOUND":
+    return "REDESIGN"    # design invalid — no point reading the data
+
+if methodologist in ("SOUND","MARGINAL") and auditor == "VALID" and optimizer == "ADVANCE":
+    return "KEEP"        # all three agree — update baseline, design next experiment
+
+if optimizer == "REDESIGN":
+    return "REDESIGN"    # findings insufficient to advance
+
+return "REVISE"          # mixed verdicts — more replications or cleaner isolation needed</code></pre>
+
+      <p>
+        The Methodologist has veto power: if the design is unsound, the data is uninterpretable regardless of what the scores show. This prevents the common failure mode of building on findings from a confounded experiment.
+      </p>
+
+      <p>
+        The Loop Optimizer is the only persona required to produce a <code>next_experiment_suggestion</code>. It must name the factor, comparison levels, tasks, and the specific file or function to change if code is involved. This keeps the experimental loop closed: each panel review ends with a concrete proposal for what to test next, not just a verdict on what was tested.
+      </p>
+
+      <h2>How the Suite Evolves</h2>
+
+      <p>
+        The task registry and criterion library are not frozen. Tasks are added when a new pipeline capability needs coverage (T_ANN was added when the <code>/annotate</code> skill was introduced; T_G was added when file-based synthesis became a distinct input mode). Criteria are updated when the harness's standards change &mdash; <code>no_file_path_refs</code> was added after noticing that models were narrating their save operations inside document bodies.
+      </p>
+
+      <p>
+        The hardest part of evolving the suite is the fingerprint matching problem. Adding a task is straightforward. Changing a task's description breaks its fingerprint and silently disconnects it from historical WIGGUM scores in <code>runs.jsonl</code>. When descriptions must change, the fingerprint map must be updated explicitly.
+      </p>
+
+      <p>
+        The generated task system (<code>--generated</code>) is the forward path for scaling task coverage without manually curating each task. It reads a <code>generated_tasks.json</code> file produced by an external generator (TinyTroupe in the current integration) and materializes criterion functions from a <code>criteria_specs</code> declarative format. This lets the task count grow proportionally to the harness's capability surface without requiring manual criterion engineering for every new scenario.
+      </p>
+
+      <div class="callout">
+        <p>The regression harness is the instrument that makes all other measurement meaningful. Without it, &ldquo;did this change help?&rdquo; is answered by intuition. With it, the question has a number &mdash; and the number is comparable across every change ever made to the harness.</p>
+      </div>
+
+      <h2>What the Literature Leaves Open</h2>
+
+      <p>
+        Three papers from the harness&rsquo;s lit-review corpus speak directly to the eval suite&rsquo;s design.
+      </p>
+
+      <p>
+        <strong>The Judge Reliability Harness</strong> <a href="https://arxiv.org/abs/2603.05399" target="_blank" rel="noopener" style="color:var(--accent-cyan)">(2603.05399)</a> is an open-source library that constructs validation suites to stress-test LLM judges across binary judgment accuracy and ordinal grading. Its central finding: &ldquo;no judge was found to be uniformly reliable across all benchmarks,&rdquo; with meaningful sensitivity to text formatting, paraphrasing, verbosity, and label flipping. The <code>eval_suite.py</code> task registry is implementing this exact pattern for WIGGUM rather than for arbitrary judges &mdash; the T_A&ndash;T_H task battery is a judge reliability harness applied to the harness&rsquo;s own evaluator.
+      </p>
+
+      <p>
+        <strong>JuStRank</strong> <a href="https://arxiv.org/abs/2412.09569" target="_blank" rel="noopener" style="color:var(--accent-cyan)">(2412.09569)</a> conducts the first large-scale study of LLM judges as <em>system rankers</em> rather than instance evaluators. It validates that aggregating judgment scores over multiple outputs produces a meaningful system-level quality signal distinct from per-instance scoring. This is exactly what <code>score_suite()</code> does: aggregate WIGGUM scores across T_A, T_B, T_C (and optionally T_D, T_E) to produce a single scalar representing harness-wide quality. The paper&rsquo;s methodology also identifies judge bias toward specific systems as a separate concern from per-instance accuracy &mdash; an unaddressed risk if the same evaluator model is used in both production runs and eval suite runs.
+      </p>
+
+      <p>
+        <strong>Conformal Prediction for LLM-as-a-Judge</strong> <a href="https://arxiv.org/abs/2509.18658" target="_blank" rel="noopener" style="color:var(--accent-cyan)">(2509.18658)</a> proposes constructing prediction intervals from a single evaluation run rather than reporting scalar scores. As documented in the autoresearch convergence post, the composite score&rsquo;s baseline is a point estimate that can be set by a single lucky run (grounded=8, specificity=9), creating a threshold that subsequent experiments can rarely beat. Interval-valued composite scores would make the keep/discard threshold stochastically aware.
+      </p>
+
+      <div class="callout amber">
+        <p><strong>Open question:</strong> Should <code>score_suite()</code> return <code>(mean, lower, upper)</code> using conformal intervals over <code>eval-n</code> runs rather than a scalar, and should the autoresearch keep rule be &ldquo;new interval strictly above old interval&rdquo; rather than &ldquo;new scalar &gt; baseline + 0.1&rdquo;?</p>
+      </div>
+
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

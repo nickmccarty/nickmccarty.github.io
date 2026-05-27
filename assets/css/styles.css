@@ -62,7 +62,7 @@ a:hover {
 }
 
 /* Navigation */
-nav {
+body > nav {
   position: fixed;
   top: 0;
   left: 0;
@@ -997,7 +997,7 @@ footer .social-links a:hover {
 
 /* Responsive */
 @media (max-width: 768px) {
-  nav {
+  body > nav {
     padding: 1rem;
   }
 
@@ -1027,7 +1027,7 @@ footer .social-links a:hover {
 }
 
 @media (max-width: 480px) {
-  nav {
+  body > nav {
     flex-direction: column;
     gap: 1rem;
   }

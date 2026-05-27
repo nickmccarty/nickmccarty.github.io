@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seven Principles and a Moving Frontier: The Harness Roadmap | Nick McCarty</title>
+  <meta name="description" content="The goals that stayed constant, the milestones that multiplied, and what three rounds of roadmap revision reveal about building self-improving systems.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/harness-roadmap.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Seven Principles and a Moving Frontier: The Harness Roadmap">
+  <meta property="og:description" content="The goals that stayed constant, the milestones that multiplied, and what three rounds of roadmap revision reveal about building self-improving systems.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/harness-roadmap.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-24T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Seven Principles and a Moving Frontier: The Harness Roadmap">
+  <meta name="twitter:description" content="The goals that stayed constant, the milestones that multiplied, and what three rounds of roadmap revision reveal about building self-improving systems.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Seven Principles and a Moving Frontier: The Harness Roadmap","description":"The goals that stayed constant, the milestones that multiplied, and what three rounds of roadmap revision reveal about building self-improving systems.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-24","url":"https://nickmccarty.github.io/blog/harness-roadmap.html"}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    h2 { font-size: 1.35rem; font-weight: 700; margin: 2.5rem 0 0.75rem; color: var(--text-primary); }
+    h3 { font-size: 1.05rem; font-weight: 700; margin: 1.75rem 0 0.5rem; color: var(--text-primary); }
+    p  { margin-bottom: 1rem; line-height: 1.7; color: var(--text-secondary); }
+    pre {
+      background: var(--bg-tertiary); border: 1px solid var(--border-color);
+      border-radius: 8px; padding: 1.1rem 1.25rem; overflow-x: auto;
+      font-size: 0.82rem; line-height: 1.6; margin: 1rem 0 1.5rem;
+    }
+    code { font-family: 'Fira Code', 'Cascadia Code', monospace; }
+    p code, li code, td code {
+      background: var(--bg-tertiary); border: 1px solid var(--border-color);
+      border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.85em;
+    }
+    ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; color: var(--text-secondary); }
+    li { margin-bottom: 0.35rem; line-height: 1.65; }
+    .callout {
+      background: rgba(87,206,242,0.08); border-left: 3px solid var(--accent-cyan);
+      border-radius: 0 8px 8px 0; padding: 1rem 1.25rem; margin: 1.5rem 0;
+      font-size: 0.9rem; color: var(--text-secondary);
+    }
+    .callout.pink {
+      background: rgba(237,70,195,0.08); border-left-color: var(--accent-pink);
+    }
+    .callout strong { color: var(--text-primary); }
+    .principles-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+    @media (max-width: 640px) { .principles-grid { grid-template-columns: 1fr; } }
+    .principle-card {
+      background: var(--bg-secondary); border: 1px solid var(--border-color);
+      border-radius: 8px; padding: 0.85rem 1rem;
+    }
+    .principle-num {
+      font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--accent-cyan); margin-bottom: 0.3rem;
+    }
+    .principle-card p { margin: 0; font-size: 0.88rem; line-height: 1.55; color: var(--text-secondary); }
+    .principle-card strong { color: var(--text-primary); }
+    .compare-table {
+      width: 100%; border-collapse: collapse; font-size: 0.84rem; margin: 1.5rem 0;
+    }
+    .compare-table th {
+      text-align: left; padding: 0.6rem 0.9rem; font-size: 0.72rem;
+      font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      background: var(--bg-tertiary); color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .compare-table td {
+      padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--border-color);
+      vertical-align: top; line-height: 1.55; color: var(--text-secondary);
+    }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .compare-table td:first-child { color: var(--text-primary); font-weight: 600; width: 22%; }
+    .badge {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      padding: 0.15rem 0.45rem; border-radius: 3px; margin-right: 0.3rem;
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .badge-shared { background: rgba(87,206,242,0.15); color: var(--accent-cyan); }
+    .badge-new    { background: rgba(168,85,247,0.15); color: #a855f7; }
+    .badge-done   { background: rgba(52,211,153,0.15); color: #34d399; }
+    .milestone-row {
+      display: flex; align-items: baseline; gap: 0.75rem;
+      padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);
+    }
+    .milestone-row:last-child { border-bottom: none; }
+    .milestone-ver {
+      font-size: 0.78rem; font-weight: 700; font-family: monospace;
+      min-width: 3.5rem; color: var(--text-primary);
+    }
+    .milestone-desc { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5; }
+    .diagram-container {
+      background: var(--bg-secondary); border: 1px solid var(--border-color);
+      border-radius: 12px; padding: 1.5rem 1rem; margin: 2rem 0; overflow-x: auto;
+    }
+    .diagram-title {
+      text-align: center; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-secondary); margin-bottom: 1rem;
+    }
+    .diagram-caption {
+      text-align: center; font-size: 0.8rem; color: var(--text-secondary);
+      margin-top: 0.75rem; font-style: italic;
+    }
+    .tl-phase {
+      border-left: 2px solid var(--border-color);
+      padding: 0 0 0.5rem 1.5rem;
+      margin: 0 0 2rem 0.5rem;
+      position: relative;
+    }
+    .tl-phase::before {
+      content: '';
+      position: absolute;
+      left: -5px;
+      top: 5px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      border: 2px solid var(--bg-primary, #0a0a0f);
+    }
+    .tl-phase-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 0.65rem;
+    }
+    .tl-date {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--accent-cyan);
+      font-family: 'Fira Code', monospace; white-space: nowrap;
+    }
+    .tl-title {
+      font-size: 1.0rem; font-weight: 700; color: var(--text-primary);
+    }
+    .data-table {
+      width: 100%; border-collapse: collapse; font-size: 0.81rem; margin: 0.65rem 0 1rem;
+    }
+    .data-table th {
+      text-align: left; padding: 0.4rem 0.7rem;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      background: var(--bg-tertiary); color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .data-table td {
+      padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border-color);
+      vertical-align: top; line-height: 1.5; color: var(--text-secondary);
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table .num { font-family: 'Fira Code', monospace; color: var(--accent-cyan); font-weight: 600; }
+    .finding {
+      background: var(--bg-tertiary); border-radius: 6px;
+      padding: 0.7rem 0.9rem; margin: 0.6rem 0;
+      font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;
+    }
+    .finding strong { color: var(--text-primary); }
+    .finding code { font-family: 'Fira Code', monospace; font-size: 0.83em; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/><path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 24, 2026 &bull; 14 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">Seven Principles and a Moving Frontier</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          The harness roadmap has been rewritten twice. The North Star and the seven guiding principles have not changed once. Here is what that tells you about how to build self-improving systems.
+        </p>
+      </header>
+
+      <p>
+        Two snapshots of the same project, separated by roughly eight months of development. The first roadmap was a plan. The second is a plan plus a record — milestones checked off, new milestones discovered, and an ever-more-detailed picture of what Stage 4 actually requires. The text of the North Star goal is identical in both. The seven guiding principles are identical word-for-word. What changed is everything below them.
+      </p>
+
+      <p>
+        This post traces the evolution: what was there from the beginning, what each completed milestone revealed, what new milestones that forced, and what remains. It is a companion to the architecture series — less about how each component works and more about why the roadmap looks the way it does.
+      </p>
+
+      <h2>The Constants</h2>
+
+      <p>
+        The North Star has not changed:
+      </p>
+
+      <div class="callout">
+        <p><em>"A locally-running swarm of specialized agents that iteratively improves its own harness, models, and capabilities — without human intervention beyond goal-setting and checkpoint approval. The loop closes continuously: run &rarr; preference data &rarr; fine-tune &rarr; hot-swap &rarr; benchmark &rarr; promote or revert. Human checkpoints at goal-setting and promotion; everything between is autonomous."</em></p>
+      </div>
+
+      <p>
+        What follows from it — that the target hardware is a single RTX 5000 Ada (63.8GB VRAM), that the scaffolding is largely buildable before the models are capable enough to use it, that human checkpoints exist at goal-setting and promotion only — has also not changed. These are statements about what the system is for, not how to build it. They do not become obsolete when the implementation details shift.
+      </p>
+
+      <p>
+        The seven guiding principles are the same in both roadmaps. They are worth reading as a set, because they form a coherent system rather than a list of maxims:
+      </p>
+
+      <div class="principles-grid">
+        <div class="principle-card">
+          <div class="principle-num">Principle 1</div>
+          <p><strong>Build for deletion.</strong> Every workaround exists because models can't yet handle it natively. Design so the workaround is trivially removable when the model improves.</p>
+        </div>
+        <div class="principle-card">
+          <div class="principle-num">Principle 2</div>
+          <p><strong>Verify externally at every stage boundary.</strong> The model's self-report is not verification.</p>
+        </div>
+        <div class="principle-card">
+          <div class="principle-num">Principle 3</div>
+          <p><strong>Add observability before adding features.</strong> Structured traces before new tools. Logging is not optional.</p>
+        </div>
+        <div class="principle-card">
+          <div class="principle-num">Principle 4</div>
+          <p><strong>Evaluator and producer must be different models.</strong> Same-model evaluation is circular.</p>
+        </div>
+        <div class="principle-card">
+          <div class="principle-num">Principle 5</div>
+          <p><strong>The harness is the product.</strong> The model is a commodity input. Reliability lives in the harness.</p>
+        </div>
+        <div class="principle-card">
+          <div class="principle-num">Principle 6</div>
+          <p><strong>Every manual hand-off is a loop that hasn't closed yet.</strong> Each one is a target for automation.</p>
+        </div>
+        <div class="principle-card" style="grid-column: 1 / -1;">
+          <div class="principle-num">Principle 7</div>
+          <p><strong>Telemetry is what separates a critic from a scorer.</strong> Typed event traces tell you <em>why</em> — the self-improvement loop stalls without this signal.</p>
+        </div>
+      </div>
+
+      <p>
+        Principles 1, 3, and 7 form a cluster about observability and impermanence: instrument everything, build to delete, distinguish scoring from understanding. Principles 2 and 4 form a cluster about verification: external checks, model separation. Principles 5 and 6 are the strategic posture: the harness accumulates value; manual hand-offs are technical debt.
+      </p>
+
+      <p>
+        Taken together, they answer every "why did you build it this way?" question in the architecture series. They also explain every new milestone that appeared in the second roadmap.
+      </p>
+
+      <h2>The Original Roadmap: Three Milestones and a Horizon</h2>
+
+      <p>
+        The first roadmap had a simple three-milestone structure leading to Stage 4:
+      </p>
+
+      <div style="margin: 1.5rem 0;">
+        <div class="milestone-row">
+          <span class="milestone-ver">0.1.0</span>
+          <span class="milestone-desc"><strong>PyPI release.</strong> Deck skill implementation, package_data for templates, bundled dashboard. Gate: <code>oh --help</code> and <code>/introspect</code> work from a pip install.</span>
+        </div>
+        <div class="milestone-row">
+          <span class="milestone-ver">0.2.0</span>
+          <span class="milestone-desc"><strong>Dashboard completeness.</strong> Sessions, Artifacts, Analytics, Submit live streaming, MCP inspector. Gate: all views wired and showing real data.</span>
+        </div>
+        <div class="milestone-row">
+          <span class="milestone-ver">0.3.0</span>
+          <span class="milestone-desc"><strong>Self-improvement loop.</strong> Plan approval, search result cache, chunked URL retrieval, autoresearch stall replan. Gate: eval-driven improvement runs without human intervention per iteration.</span>
+        </div>
+        <div class="milestone-row">
+          <span class="milestone-ver">Stage 4</span>
+          <span class="milestone-desc"><strong>Autonomous swarm.</strong> Proposer/Executor/Critic loop, Git worktrees as isolation substrate, vLLM hot-swap, A2A protocol, Docker sandbox. Gate: the harness improves itself without human involvement between checkpoints.</span>
+        </div>
+      </div>
+
+      <p>
+        This structure was right. The progression — get the package installable, make the dashboard complete, close the improvement loop, then build the swarm — is the correct order. What the original roadmap underspecified was the gap between 0.3.0 and Stage 4. That gap turned out to contain several entire milestones' worth of work.
+      </p>
+
+      <p>
+        The original skill inventory was also essentially correct: <code>research</code>, <code>/lit-review</code>, <code>/annotate</code>, <code>/browser</code>, <code>/design</code>, <code>/build-page</code>, <code>/site</code>, <code>/deck</code>, <code>/transcribe</code>, <code>/recall</code>, <code>/introspect</code>, <code>/email</code>, <code>/orientation</code>, <code>/debug</code>, <code>/sync-wiki</code>, <code>/panel</code>. These sixteen skills covered the breadth of what a research and production-support agent needs. The evolved roadmap added three more: <code>/curate</code>, <code>/grill-me</code>, and <code>/onboarding</code> — each discovered by hitting a real gap, not by speculative feature planning.
+      </p>
+
+      <h2>What Each Milestone Revealed</h2>
+
+      <p>
+        Each completed milestone exposed a constraint that was invisible before the milestone was done. This is not a failure of planning — it is how iterative systems work. The constraint could only be seen after the instrumentation to see it was in place.
+      </p>
+
+      <h3>0.1.0 → 0.2.0: The dashboard gap was real</h3>
+
+      <p>
+        Getting the harness installable as a proper package revealed that the original Flask/Jinja dashboard was not fit for production operation. The React/TypeScript rewrite was already planned, but the full dashboard completeness milestone — all views wired, paginated, with real data — was underspecified. Sessions and Artifacts were placeholders; Analytics was a placeholder; Submit had no live streaming. These were not gaps discovered by reading the code; they were gaps discovered by using the installed package.
+      </p>
+
+      <p>
+        Principle 3 applied: observability before features. The dashboard is the observability layer for the harness operator. Without it complete, the operator is flying blind during the self-improvement loop.
+      </p>
+
+      <h3>0.2.0 → 0.3.0: The search pipeline had hidden bottlenecks</h3>
+
+      <p>
+        With the dashboard complete and runs.jsonl being populated, two patterns became visible that were invisible before:
+      </p>
+
+      <ul>
+        <li><strong>Sequential search latency.</strong> The agent was executing planned queries one by one, blocking each round on the previous. This was not a bug — it was the original design. But runs.jsonl showed it as a 30-40% wall-time overhead on research tasks. The fix — fan-out parallel prefetch via <code>ThreadPoolExecutor</code> — was not in the original roadmap because the problem wasn't visible until the data was there.</li>
+        <li><strong>Oversearch.</strong> Research tasks were running past the point of diminishing returns, spending tokens on rounds that added zero net-new domain coverage. The oversearch detector (domain diversity tracking, 2-consecutive-zero-net-new-domain termination) was discovered from run traces showing the pattern, not anticipated in advance.</li>
+      </ul>
+
+      <p>
+        Both were added to 0.3.0 mid-milestone, because Principle 3 had done its job: the traces told the story.
+      </p>
+
+      <h3>0.3.0 → 0.3.5: Orchestration needed a policy, not a fixed fan-out</h3>
+
+      <p>
+        The original orchestration design was always-parallel: if the planner returned subtasks, they all ran concurrently. Running 0.3.0 at scale revealed that this was wrong for sequential-dependency tasks and wasteful for single-focus tasks. The planner — which already has full task and memory context — is the right place to make the orchestration decision. The 0.3.5 milestone added policy-driven orchestration: <code>orchestration_style</code> and <code>allow_parallelism</code> to the Plan dataclass, planner-produced rather than hardcoded.
+      </p>
+
+      <p>
+        This milestone also added <code>/grill-me</code> and <code>/onboarding</code> — both discovered as real operational gaps. <code>/grill-me</code> emerged from noticing that the agent was making assumptions about ambiguous task strings rather than asking. <code>/onboarding</code> emerged from <code>/grill-me</code>: if the agent can interview a user to understand a task, it can also interview them once at setup to understand who they are.
+      </p>
+
+      <h3>0.3.5 → 0.3.6: The critic infrastructure was missing</h3>
+
+      <p>
+        The autoresearch loop was running and producing improvement signals. But it was producing scalar improvement signals — a composite score — not structured explanations of <em>why</em> a mutation worked or failed. Principle 7 names this exactly: telemetry is what separates a critic from a scorer.
+      </p>
+
+      <p>
+        Milestone 0.3.6 added the infrastructure for a real critic: logger policy fields (which orchestration style was chosen, what subtask results were, what tool failures occurred), a unified structured event protocol (<code>[EVENT]&lt;json&gt;</code> lines from every pipeline stage), and evaluator rotation to break evaluator monoculture. These are prerequisites for Stage 4 — without them, the Proposer/Executor/Critic loop has no signal richer than a scalar.
+      </p>
+
+      <p>
+        This milestone also specified two new items that were not in the original roadmap at all:
+      </p>
+
+      <ul>
+        <li><strong>COCOMO II analog.</strong> A pre-task cost estimator — LLM calls, tokens, wall time, Wiggum rounds — calibrated from <code>runs.jsonl</code> actuals. The same telemetry that feeds the Critic can be used to predict run cost before committing.</li>
+        <li><strong>Harness ontology layer.</strong> Tree-sitter AST parsing &rarr; function call graph &rarr; community detection &rarr; SQLite graph. Incremental, under 2s per save. The Proposer needs to know what it can mutate and what the downstream impact is; blast-radius context replaces full-file reads at 8&times; token efficiency.</li>
+      </ul>
+
+      <h3>0.3.6 → 0.3.7: The memory system was degrading silently</h3>
+
+      <p>
+        The ChromaDB semantic memory was working. Memories were accumulating. But with no quality signal and no user-facing window, low-quality memories were competing at equal weight with high-quality ones in retrieval. This was invisible until 0.3.6's observability additions made it visible.
+      </p>
+
+      <p>
+        Milestone 0.3.7 added the full memory observability stack: run_id provenance (every memory traceable to the run that produced it), RLHF quality signals (thumbs up/down adjusting a quality score), quality-weighted retrieval reranking (<code>adjusted = cosine_similarity × max(0.2, 1 + quality × 0.15)</code>), a Memory panel in the dashboard, and a UMAP+D3 ontology visualization on top of the existing ChromaDB embeddings.
+      </p>
+
+      <p>
+        All of this was shipped and checked complete. The schema migration, 7 API endpoints, Memory panel, ontology graph, RLHF pruning, security panel, system panel, and test suite expansion to 419 tests — all in one milestone. This is what "add observability before features" enables: once the observability infrastructure exists, the quality improvements it reveals can be addressed quickly.
+      </p>
+
+      <h2>The Milestone Map: Original vs. Evolved</h2>
+
+      <div class="diagram-container">
+        <div class="diagram-title">Roadmap Milestone Comparison</div>
+        <svg id="roadmap-svg" width="100%" viewBox="0 0 680 420" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption"><span class="badge badge-shared">Shared</span> present in both roadmaps &nbsp; <span class="badge badge-new">New</span> added in the evolved roadmap &nbsp; <span class="badge badge-done">Done</span> completed</p>
+      </div>
+
+      <h2>What Changed in Stage 4</h2>
+
+      <p>
+        Stage 4 — the Autonomous Swarm — was always the destination. Both roadmaps describe it with the same four components: Proposer/Executor/Critic loop, Git worktrees as isolation substrate, vLLM hot-swap, and Docker sandbox. What the evolved roadmap added was the implementation detail that comes from actually building toward those components.
+      </p>
+
+      <h3>Governance before autonomy</h3>
+
+      <p>
+        The original roadmap had no governance layer. The evolved roadmap added three files: <code>constitution.md</code> (hard constraints), <code>ethos.md</code> (evaluation standards), and <code>cadence.md</code> (operational loop). These are not agent system prompts — they are shared documents injected into every agent's bootstrap context, above the prompt cache boundary so vLLM prefix caching can reuse them across turns. The "democratic constitution" pattern closes the loop: Wiggum's failure patterns distill into proposed constitution diffs; human approves before merge.
+      </p>
+
+      <p>
+        Why does this belong in Stage 4 and not earlier? Because with a single agent, behavioral constraints live in the system prompt and only need to be consistent with themselves. With multiple autonomous agents, behavioral constraints need to be consistent <em>across agents</em> — which requires an external, shared document, not per-agent prompts.
+      </p>
+
+      <h3>Worktree coordination as a VFS substitute</h3>
+
+      <p>
+        The original roadmap described Git worktrees as isolation substrate for Proposer mutations. The evolved roadmap specified the directory convention that makes this work as a lightweight coordination protocol — no VFS, no distributed filesystem, no kernel driver:
+      </p>
+
+<pre><code>worktrees/&lt;branch&gt;/
+  tasks/      ← agent claims work by writing a file here (task_id.json)
+  leases/     ← task_id.lock with {agent_id, claimed_at} — coordinator expires stale locks
+  artifacts/  ← outputs staged here; never written directly to shared data/
+  events/     ← append-only per-run event log for this agent</code></pre>
+
+      <p>
+        Workers only write inside their branch tree. Coordinator reads <code>leases/</code> to detect abandonment and re-queue. Promotion is <code>git merge --ff-only</code>; cleanup is <code>git worktree remove --force</code>. This gives VFS-style coordination semantics without infrastructure overhead. The multi-machine scaling path — NFS mount → FUSE coordinator → distributed filesystem — is sequenced by complexity, not pre-specified.
+      </p>
+
+      <h3>A2A protocol: from sketch to specification</h3>
+
+      <p>
+        The original roadmap mentioned A2A as a "foundation" — the observation that the producer&rarr;evaluator&rarr;Wiggum loop is already an A2A pattern, just in-process rather than networked. The evolved roadmap turned this into a full specification: Agent Cards at <code>/.well-known/agent.json</code>, <code>POST /</code> task endpoints, <code>agents.toml</code> registry, planner-level <code>delegate_to</code> routing, <code>parent_run_id</code> for log correlation, and a comparison table of in-process vs. networked tradeoffs.
+      </p>
+
+      <p>
+        The key design constraint that emerged during specification: <strong>agents must not import from each other.</strong> All coordination happens over the wire. A researcher agent that deep-imports from a coder agent defeats isolation and reintroduces the in-process coupling A2A is meant to eliminate. This constraint is obvious in retrospect but was not stated in the original roadmap because it only becomes a real concern when you start writing the implementation.
+      </p>
+
+      <h3>Sub-agent minimal context mode</h3>
+
+      <p>
+        Not in the original roadmap at all. The insight: worker agents (orchestrator subtasks, Executor instances) don't need the full coordinator context — no memory recall, no self-update guidance, no evaluation rubric, no session history. A <code>--minimal-context</code> flag strips the system prompt to task + tools + <code>constitution.md</code> only. This reduces per-subtask token cost by 30–50% on research tasks. The pattern mirrors OpenClaw's <code>promptMode=minimal</code>: sub-agents get the equivalent of <code>AGENTS.md</code> + <code>TOOLS.md</code> only.
+      </p>
+
+      <h2>What the Added Milestones Have in Common</h2>
+
+      <p>
+        Every milestone that was added to the evolved roadmap can be traced to one of the seven principles:
+      </p>
+
+      <table class="compare-table">
+        <thead>
+          <tr><th>Milestone addition</th><th>Principle it instantiates</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>0.3.5: Policy-driven orchestration</td><td>P6 — the always-parallel fan-out was a manual heuristic, a loop that hadn't closed yet</td></tr>
+          <tr><td>0.3.5: /grill-me + /onboarding</td><td>P6 — agent guessing at ambiguous tasks was a manual hand-off</td></tr>
+          <tr><td>0.3.6: Logger policy fields</td><td>P7 — telemetry separates critic from scorer; without policy fields, runs.jsonl can't answer "did parallel execution outperform sequential?"</td></tr>
+          <tr><td>0.3.6: Structured event protocol</td><td>P3 — unified <code>[EVENT]&lt;json&gt;</code> makes every pipeline stage observable in real time</td></tr>
+          <tr><td>0.3.6: COCOMO II analog</td><td>P3 — observability of predicted cost before committing, not just actual cost after</td></tr>
+          <tr><td>0.3.6: Evaluator rotation</td><td>P4 — monoculture evaluator is circular; rotation breaks it and guards producer==evaluator collision</td></tr>
+          <tr><td>0.3.7: Memory RLHF + ontology</td><td>P3 + P6 — memory quality degrading silently was an observability failure; RLHF closes the quality feedback loop</td></tr>
+          <tr><td>Stage 4: Governance layer</td><td>P1 + P5 — behavioral constraints belong in the harness, not per-agent prompts; designed to be updated as the system improves</td></tr>
+          <tr><td>Stage 4: Sub-agent minimal context</td><td>P1 — context overhead that models don't need is a workaround for future models that can route with less</td></tr>
+          <tr><td>Stage 4: Harness ontology layer</td><td>P7 — the Proposer can't be a critic without blast-radius context; code structure is a prerequisite for structured mutation</td></tr>
+          <tr><td>0.4.0: Personal TTS model</td><td>P6 — voice output going to an external API was a manual hand-off; fine-tuning on local recordings closes it</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        None of the new milestones are scope creep. Each one closes a gap that became visible only after the preceding milestone instrumented it. This is what Principle 3 is for: observability before features means that the features you add are the ones that the data shows you need, not the ones you imagine you need.
+      </p>
+
+      <h2>Experimental Timeline</h2>
+
+      <p>
+        The narrative above describes <em>what</em> each milestone revealed. This section documents <em>the numbers</em> — the experimental results, failure modes, and quantitative findings that drove each implementation decision. All figures are drawn directly from <code>harness-engineering/journal.md</code> and the associated <code>runs.jsonl</code> corpus.
+      </p>
+
+      <!-- Phase 1 -->
+      <div class="tl-phase">
+        <div class="tl-phase-header">
+          <span class="tl-date">Sessions 1–2 &bull; Early 2026</span>
+          <span class="tl-title">Evaluator Selection &amp; CRD Baseline</span>
+        </div>
+        <p>The first challenge was finding an evaluator that could discriminate between good and bad outputs. Three evaluators were tried before settling on one that produced meaningful signal.</p>
+
+        <table class="data-table">
+          <thead><tr><th>Evaluator</th><th>Outcome</th><th>Disqualifying finding</th></tr></thead>
+          <tbody>
+            <tr><td>qwen2.5:72b</td><td>Rejected</td><td>Too slow — per-eval latency made iteration impractical</td></tr>
+            <tr><td>glm4:9b (loose)</td><td>Rejected</td><td>Rubber stamp — ceiling at 9/10 regardless of PASS_THRESHOLD</td></tr>
+            <tr><td>glm4:9b (tight)</td><td>Partial</td><td>Discriminates more but still not reliable on edge cases</td></tr>
+            <tr><td>Qwen3-Coder:30b</td><td><strong>Adopted</strong></td><td>—</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>Experiment 01</strong> — a 9-run Completely Randomized Design (CRD) to establish baseline variance. All 9 runs passed. Task stability varied substantially:</p>
+
+        <table class="data-table">
+          <thead><tr><th>Task</th><th>Pass rate</th><th>CV</th><th>Interpretation</th></tr></thead>
+          <tbody>
+            <tr><td>T_B</td><td class="num">9/9 (100%)</td><td class="num">13.2%</td><td>Most stable — reliable eval target</td></tr>
+            <tr><td>T_C</td><td class="num">—</td><td class="num">44.2%</td><td>Most variable — evaluator noise or task ambiguity</td></tr>
+          </tbody>
+        </table>
+
+        <div class="finding"><strong>Experiment 02 finding:</strong> H1 falsified. The glm4:9b evaluator produced a score ceiling at 9/10 regardless of which PASS_THRESHOLD was set. The threshold had no discriminating power — the same outputs received the same scores across threshold settings. This disqualified glm4:9b as a reliable evaluator and forced the switch to Qwen3-Coder:30b.</div>
+
+        <p><strong>Experiment 03</strong> — first run with Qwen3-Coder:30b as evaluator. The new evaluator was genuinely discriminating:</p>
+        <ul>
+          <li>Overall pass rate dropped from 100% (Exp 01 with rubber-stamp evaluator) to <strong>4/9 (44%)</strong></li>
+          <li>T_A: <strong>0/3 PASS</strong> — complete ceiling failure on the hardest task type</li>
+          <li>Revision loop was active in <strong>8/9 runs</strong> — nearly all outputs required wiggum revision to reach passing score</li>
+          <li>Two distinct wiggum failure modes identified: <em>regression</em> (revision worsens score) and <em>stagnation</em> (revision makes no progress)</li>
+        </ul>
+
+        <p><strong>Experiment 04</strong> — switched to 32B producer to test whether the T_A ceiling was an evaluator artifact or a producer capability limit:</p>
+        <ul>
+          <li>Overall: <strong>12/16 PASS (75%)</strong> vs. 4/9 (44%) with 7B producer</li>
+          <li>T_A ceiling broken: <strong>4/4 PASS</strong></li>
+          <li>T_B: <strong>flat depth dimension</strong> across all runs — the synthesis instruction, not the producer, was the bottleneck</li>
+        </ul>
+        <div class="finding"><strong>Implementation decision:</strong> T_B's flat depth score (first appearance of this pattern) pointed to the synthesis instruction as the binding constraint — a finding that would drive the entire autoresearch program.</div>
+      </div>
+
+      <!-- Phase 2 -->
+      <div class="tl-phase">
+        <div class="tl-phase-header">
+          <span class="tl-date">Sessions 2–3 &bull; Early 2026</span>
+          <span class="tl-title">Search Pipeline Development</span>
+        </div>
+        <p>The agent's web search pipeline was the first component subjected to systematic ablation. Two architectural changes had measurable impact; a third revealed a latent bug.</p>
+
+        <p><strong>Dual search implementation:</strong> moving from single-query to dual-search (initial broad query + targeted follow-up) produced the first large quality improvement:</p>
+
+        <table class="data-table">
+          <thead><tr><th>Metric</th><th>Before</th><th>After</th><th>Delta</th></tr></thead>
+          <tbody>
+            <tr><td>Avg output bytes</td><td>—</td><td>—</td><td class="num">+58%</td></tr>
+            <tr><td>Output lines</td><td>—</td><td>—</td><td class="num">3×</td></tr>
+            <tr><td>First wiggum score (T_D)</td><td class="num">7.7</td><td class="num">9.0</td><td class="num">+1.3</td></tr>
+            <tr><td>Wiggum rounds required</td><td class="num">1.3</td><td class="num">1.0</td><td class="num">−0.3</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>Count-check retry analysis</strong> — across 123 runs, the enumeration retry path had a measurable quality penalty:</p>
+        <table class="data-table">
+          <thead><tr><th>Condition</th><th>n</th><th>mean r1</th></tr></thead>
+          <tbody>
+            <tr><td>Triggered count retry</td><td class="num">31 (25%)</td><td class="num">7.53</td></tr>
+            <tr><td>No retry</td><td class="num">92 (75%)</td><td class="num">7.92</td></tr>
+          </tbody>
+        </table>
+        <div class="finding"><strong>Root cause:</strong> the retry path was using <code>SYNTH_INSTRUCTION_COUNT</code>, a session-1-era instruction that had never gone through autoresearch optimization. It produced ~1,300-byte outputs vs. 5,000–7,000-byte outputs from the optimized <code>SYNTH_INSTRUCTION</code>. Fix: <code>synthesize_with_count()</code> now uses <code>SYNTH_INSTRUCTION</code> with the count constraint injected as a prefix. <code>SYNTH_INSTRUCTION_COUNT</code> is dead code, left in place inside its autoresearch sentinels. The −0.39 score penalty immediately disappeared.</div>
+
+        <p><strong>Novelty scale compression</strong> — 55 runs with novelty scores revealed the search saturation signal was effectively binary:</p>
+        <table class="data-table">
+          <thead><tr><th>Novelty score</th><th>Frequency</th></tr></thead>
+          <tbody>
+            <tr><td class="num">2</td><td class="num">24 runs (44%)</td></tr>
+            <tr><td class="num">3</td><td class="num">30 runs (55%)</td></tr>
+            <tr><td class="num">4</td><td class="num">1 run (2%)</td></tr>
+          </tbody>
+        </table>
+        <p>Round 4 mean novelty score: 2.83 — borderline and still potentially useful. <code>NOVELTY_THRESHOLD=3</code> stops on score=2, meaning some useful content in later rounds was being discarded. This finding informed the search rounds experiment (see Phase 3).</p>
+
+        <p><strong>Search rounds vs. r1</strong> — preliminary data from 138 scored runs:</p>
+        <table class="data-table">
+          <thead><tr><th>Search rounds</th><th>n</th><th>mean r1</th></tr></thead>
+          <tbody>
+            <tr><td>0 (cache hit)</td><td class="num">114</td><td class="num">7.72</td></tr>
+            <tr><td>2</td><td class="num">12</td><td class="num">7.77</td></tr>
+            <tr><td>3</td><td class="num">4</td><td class="num">7.20</td></tr>
+            <tr><td>4</td><td class="num">2</td><td class="num">7.55</td></tr>
+            <tr><td>5</td><td class="num">6</td><td class="num">8.07</td></tr>
+          </tbody>
+        </table>
+        <div class="finding"><strong>Confound note:</strong> the 5-round advantage (8.07) was observed on n=6, too small for confidence. A clean saturation-loop ablation (1 vs. 5 rounds) was confounded by the SYNTH_INSTRUCTION_COUNT bug — both 1-round and 5-round runs used the broken instruction and scored 6.9 identically. A clean rerun was scheduled after the bug fix.</div>
+      </div>
+
+      <!-- Phase 3 -->
+      <div class="tl-phase">
+        <div class="tl-phase-header">
+          <span class="tl-date">2026-04-12</span>
+          <span class="tl-title">Full-Corpus Analysis: 211 Runs, 38 Traces</span>
+        </div>
+        <p>A deep analysis of <code>runs.jsonl</code> (211 total runs, 138 scored) and 38 Perfetto traces captured in the first month of operation. This analysis drove the entire roadmap revision for 0.3.5–0.3.7.</p>
+
+        <p><strong>Time allocation</strong> — from 38 Perfetto traces (T_D/T_E runs and /annotate sessions):</p>
+        <table class="data-table">
+          <thead><tr><th>Stage</th><th>Mean % wall time</th><th>Implication</th></tr></thead>
+          <tbody>
+            <tr><td>synthesize</td><td class="num">53%</td><td>Dominant cost center; synthesis latency is the highest-leverage optimization target</td></tr>
+            <tr><td>wiggum (total)</td><td class="num">32%</td><td>—</td></tr>
+            <tr><td>&nbsp;&nbsp;&nbsp;wiggum_revise</td><td class="num">~94% of wiggum time</td><td>Eval is nearly free; all cost is the revision LLM call</td></tr>
+            <tr><td>&nbsp;&nbsp;&nbsp;wiggum_eval</td><td class="num">~6% of wiggum time</td><td>—</td></tr>
+            <tr><td>gather_research</td><td class="num">15%</td><td>Cheap enough that search cache ROI is bounded; synthesis is the priority</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>Wiggum lift/regression distribution</strong> — across 138 scored runs:</p>
+        <table class="data-table">
+          <thead><tr><th>Outcome</th><th>Count</th><th>%</th><th>Mean magnitude</th></tr></thead>
+          <tbody>
+            <tr><td>Lifted (r_final &gt; r1)</td><td class="num">35</td><td class="num">25%</td><td class="num">+1.02</td></tr>
+            <tr><td>Unchanged</td><td class="num">89</td><td class="num">64%</td><td>—</td></tr>
+            <tr><td>Regressed (r_final &lt; r1)</td><td class="num">14</td><td class="num">10%</td><td class="num">−0.38</td></tr>
+          </tbody>
+        </table>
+        <p>Within enumerated tasks specifically: 17 lifts, 10 regressions, 13 unchanged out of 40 multi-round runs. The 10% regression case motivated the best-round restoration fix: before returning FAIL at max rounds, restore the best-scoring round's content to disk if a later round scored lower. Also fixed a latent bug: wiggum's termination gate was using the <code>MAX_ROUNDS</code> global constant instead of the <code>max_rounds</code> local variable, meaning the env override was scoping the loop but not the early-exit check.</p>
+
+        <p><strong>Dimension weakness profile</strong> — 104 scored runs, five dimensions:</p>
+        <table class="data-table">
+          <thead><tr><th>Dimension</th><th>Mean score</th><th>Weight</th><th>Priority</th></tr></thead>
+          <tbody>
+            <tr><td>relevance</td><td class="num">8.88</td><td class="num">0.20</td><td>—</td></tr>
+            <tr><td>structure</td><td class="num">8.54</td><td class="num">0.10</td><td>—</td></tr>
+            <tr><td>completeness</td><td class="num">7.19</td><td class="num">0.25</td><td>Secondary</td></tr>
+            <tr><td>depth</td><td class="num">6.87</td><td class="num">0.30</td><td><strong>Primary</strong> — highest weight × lowest (non-specificity) score</td></tr>
+            <tr><td>specificity</td><td class="num">6.61</td><td class="num">0.15</td><td>Weakest but low weight; lower leverage than depth</td></tr>
+          </tbody>
+        </table>
+        <div class="finding"><strong>Implementation decision:</strong> depth (weight 0.30) was identified as the highest-leverage autoresearch target. Specificity is weakest by score but lower-weight. A +1 on depth is worth +0.30 composite; a +1 on specificity is worth +0.15. This finding primed autoresearch session 4's PROPOSE_PROMPT explicitly for depth.</div>
+
+        <p><strong>Task type performance &amp; pass rates:</strong></p>
+        <table class="data-table">
+          <thead><tr><th>Task type</th><th>n</th><th>mean r1</th><th>Pass rate</th></tr></thead>
+          <tbody>
+            <tr><td>unknown (Apr 7, glm4:9b evaluator)</td><td class="num">17</td><td class="num">8.76</td><td class="num">100%</td></tr>
+            <tr><td>best_practices</td><td class="num">42</td><td class="num">7.81</td><td class="num">64%</td></tr>
+            <tr><td>enumerated</td><td class="num">66</td><td class="num">7.56</td><td class="num">52%</td></tr>
+            <tr><td>research (/annotate)</td><td class="num">13</td><td class="num">6.91</td><td class="num">0%</td></tr>
+          </tbody>
+        </table>
+        <div class="finding"><strong>Evaluator calibration note:</strong> The 100% pass rate on Apr 7 "unknown" runs is not a model quality signal — those runs used glm4:9b (lenient evaluator) and a 7B producer. The apparent drop to 64% best_practices pass rate reflects switching to Qwen3-Coder:30b evaluator, not performance degradation. Cross-evaluator score comparisons require a calibration run to establish conversion factors; this was identified here and scheduled as EXP-A.</div>
+
+        <p><strong>MagenticOne architecture review</strong> (2026-04-12) — mapped against harness equivalents:</p>
+        <table class="data-table">
+          <thead><tr><th>MagenticOne</th><th>Harness equivalent</th><th>Gap</th></tr></thead>
+          <tbody>
+            <tr><td>Task Ledger</td><td><code>planner.py</code> Plan + knowledge_state</td><td>Flat string vs. verified-facts / open-gaps structure</td></tr>
+            <tr><td>Stall → replan</td><td>NOVELTY_THRESHOLD + WIGGUM_MAX_ROUNDS</td><td>Per-stage detection, not pipeline-level</td></tr>
+            <tr><td>CLOSED_BOOK init prompt</td><td><em>Missing</em></td><td>Go straight to search without auditing prior knowledge</td></tr>
+          </tbody>
+        </table>
+        <div class="finding"><strong>Highest-value borrow identified:</strong> closed-book prior knowledge pass — before <code>gather_research()</code>, ask the producer what it already knows and what gaps exist. Gap list seeds <code>plan_query()</code> so searches target actual unknowns rather than re-surfacing what the model already knows. Roadmapped as EXP-E.</div>
+      </div>
+
+      <!-- Phase 4 -->
+      <div class="tl-phase">
+        <div class="tl-phase-header">
+          <span class="tl-date">Sessions 3–4 &bull; Early–Mid 2026</span>
+          <span class="tl-title">Autoresearch Sessions: Proposer Attractors &amp; Hang Modes</span>
+        </div>
+        <p>The autoresearch loop ran across multiple sessions targeting <code>SYNTH_INSTRUCTION</code> improvement. Each session revealed a distinct failure mode in the proposer's behavior.</p>
+
+        <p><strong>Session 3 results:</strong></p>
+        <ul>
+          <li>Best result: exp 7 — <code>baseline 8.915</code> using "when NOT to use" framing + input boundary specification</li>
+          <li>Exp 9: confidence ratings approach — result: <strong>−0.950 regression</strong>. The proposer had found a new attractor (confidence ratings) that moved in the wrong direction.</li>
+        </ul>
+
+        <div class="finding"><strong>Proposer attractor pattern (first observation):</strong> the proposer repeatedly returned to the same class of instruction change (confidence ratings, format constraints, exact N practices) across experiments. Once an approach appeared in "Unexplored Angles," it would dominate successive proposals regardless of whether it had been tried and failed. Fix: move failed approaches from "Unexplored Angles" to a HARD-BANNED list. This pattern recurred in subsequent sessions and required increasingly aggressive hard-banning.</div>
+
+        <p><strong>Session 4 failure modes:</strong> two hang modes discovered running autoresearch concurrently with fine-tuning:</p>
+        <ul>
+          <li><strong>Keep_alive hang:</strong> <code>run_eval()</code> was passing <code>OLLAMA_KEEP_ALIVE=-1</code> to the eval subprocess. Producer and evaluator models stayed loaded indefinitely, blocking the proposer from loading on the next iteration. Fix: set <code>OLLAMA_KEEP_ALIVE=120</code> in <code>autoresearch.py</code>'s eval env — models release ~2 minutes after eval completes.</li>
+          <li><strong>GPU contention:</strong> fine-tuning v2 (Qwen2.5-7B QLoRA on 63.8GB) consumed all available VRAM. Ollama couldn't load the 32B producer for eval at all. Not a code bug — a resource scheduling issue. Resolution: pause autoresearch until training completes.</li>
+        </ul>
+
+        <p><strong>Current session (T_B, delta 0.1, eval-n 3→5):</strong></p>
+        <ul>
+          <li>Baseline: <strong>8.740</strong> on T_B task</li>
+          <li>Exps 40–44: all discarded — proposer in format-churn attractor (word counts, narrative, exact N practices)</li>
+          <li>Infinite failure loop at exp 46: <code>propose_instructions</code> returned <code>None</code> (proposer hallucinating multi-line instructions caught by newline guard); <code>continue</code> returned to loop top without incrementing experiment counter. Fix: circuit breaker — <code>consecutive_proposal_failures</code> counter with <code>MAX_PROPOSAL_FAILURES=5</code>; logs as "failure" and advances experiment counter after threshold.</li>
+          <li>Exps 48–54: quantification attractor — proposer tried numerical metrics/thresholds 6 consecutive times, never moving depth dimension. Hard-banned. Proposer prompt rewritten with live dimension diagnostic data and depth-targeting HOW/implementation-steps directive.</li>
+          <li>Bimodal score distribution: scores cluster at 7.96 and 8.46 due to <em>grounded</em> dimension fluctuating between 6 and 8; <em>depth=7</em> is the ceiling regardless.</li>
+        </ul>
+      </div>
+
+      <!-- Phase 5 -->
+      <div class="tl-phase">
+        <div class="tl-phase-header">
+          <span class="tl-date">2026-04-13 &bull; Session 5</span>
+          <span class="tl-title">Annotation Pipeline Overhaul &amp; Fine-Tuning Initiation</span>
+        </div>
+
+        <div class="finding"><strong>Root cause of all annotation hangs:</strong> a single bug in <code>skills.py</code> — the <code>else</code> branch of <code>_clean_pdf_text</code> extended <code>cleaned</code> with short-run lines but never advanced <code>i</code> past the current non-short line. Any line with &gt;2 characters caused an infinite loop. Every model tried (Qwen3-Coder, kimi-k2.5, pi-qwen-32b) appeared to hang — they were all waiting on stuck preprocessing. This bug predated all model testing in this session and masked every subsequent experiment. Lesson: before suspecting model behavior, audit preprocessing.</div>
+
+        <p><strong>Format change: sentence-labeling → generative.</strong> The prior implementation labeled existing abstract sentences with topic/motivation brackets. This broke on abstracts that don't contain explicit topic sentences (e.g., Mistral 7B's abstract). Switched to fully generative format: model synthesizes 1-2 prose sentences per section from full paper content, matching the Nanda Annotated Abstract framework (8 bold section headers).</p>
+
+        <p><strong>Wiggum annotation rubric:</strong> PASS_THRESHOLD raised from 8.0 to 9.0 for annotation path. Key finding from pre-fix evaluation: evaluator scored a known-bad annotation 9.3/10 and passed it. Root cause: annotation had correct structure but section content was direct quote from abstract, not synthesis. New rubric explicitly distinguishes "recitation" (scores 1–4) from "synthesis" (scores 7–10).</p>
+
+        <p><strong>Fine-tuning v1 — Qwen2.5-7B-Instruct, QLoRA:</strong></p>
+        <table class="data-table">
+          <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Model</td><td>Qwen/Qwen2.5-7B-Instruct</td></tr>
+            <tr><td>LoRA rank / alpha</td><td>r=16 / alpha=32</td></tr>
+            <tr><td>Target layers</td><td>q/k/v/o/gate/up/down projectors</td></tr>
+            <tr><td>Quantization</td><td>None — full bf16 (63.8GB VRAM)</td></tr>
+            <tr><td>Training examples</td><td>121 gold (arxiv-fetched abstracts), 90/10 split</td></tr>
+            <tr><td>Hardware</td><td>NVIDIA RTX 5000 Ada Generation, 63.8GB VRAM</td></tr>
+            <tr><td>Infrastructure fixes required</td><td>bitsandbytes silent CPU offload on Windows; device_map="cuda:0" failure; max_seq_length API change (trl ≥ 0.13); warmup_ratio deprecated in trl v5.2; CP1252 encoding (-X utf8 required)</td></tr>
+          </tbody>
+        </table>
+
+        <p>Two arxiv paper corpora identified and annotated in parallel: <code>arxiv_agentic_papers.md</code> (300 papers) and <code>arxiv_agentic_harness_engineering_papers.md</code> (300 papers), producing expanded training data for fine-tuning round 2.</p>
+      </div>
+
+      <!-- Phase 6 -->
+      <div class="tl-phase">
+        <div class="tl-phase-header">
+          <span class="tl-date">2026-04-13/14 &bull; Sessions 6–11</span>
+          <span class="tl-title">Skill Expansion, Fine-tuning v2, &amp; Corpus Infrastructure</span>
+        </div>
+
+        <p><strong>Fine-tuning v2</strong> — expanded dataset from corpus annotation:</p>
+        <table class="data-table">
+          <thead><tr><th>Source</th><th>Examples</th></tr></thead>
+          <tbody>
+            <tr><td>Gold (human-curated)</td><td class="num">121</td></tr>
+            <tr><td>arxiv_agentic_papers.md (agent-annotated)</td><td class="num">251</td></tr>
+            <tr><td>arxiv_agentic_harness_engineering_papers.md (agent-annotated)</td><td class="num">299</td></tr>
+            <tr><td>Skipped / failed</td><td class="num">50</td></tr>
+            <tr><td><strong>Total in finetune_dataset_v2.jsonl</strong></td><td class="num"><strong>718</strong></td></tr>
+          </tbody>
+        </table>
+        <p>Training: 1,938 steps, 3 epochs, 646 train / 72 eval examples. Killed at <strong>step 1,237</strong> (63.8% complete, epoch 1.91) by a Windows OS update reboot. Loss at interruption: ~0.56; mean token accuracy: ~0.84. Root cause of total loss: <code>save_strategy="epoch"</code> only writes checkpoints at epoch boundaries — the run was 55 steps short of completing epoch 2. Fix: <code>save_strategy="steps"</code> with <code>save_steps=100</code> (~15 min interval), <code>save_total_limit=3</code>. Added <code>--resume</code> flag for auto-detection of latest checkpoint.</p>
+
+        <p><strong>Corpus infrastructure:</strong></p>
+        <ul>
+          <li><strong>index_papers.py</strong> — bulk-loaded annotated corpus into ChromaDB: <strong>739 papers indexed</strong>, 861 total observations in memory store. Each paper stored with task_type="paper" and fixed timestamp so papers sort before run observations in retrieval.</li>
+          <li><strong>failure_patterns.py</strong> — aggregated wiggum issues across runs.jsonl: 645 issues extracted, 107 recurring clusters. Top findings: missing implementation notes (56×), unclosed code fences (31×), shallow cross-paper synthesis (24×), missing quantitative evidence (19×), overly broad conclusions (14×). These directly drove the next two SYNTH_INSTRUCTION updates.</li>
+          <li><strong>semantic_scholar.py</strong> — Semantic Scholar Graph API integration for citation-graph enrichment: hub scores (in-corpus citation count), gap candidates (uncovered papers cited by corpus), within-corpus adjacency. SQLite cache with 30-day TTL.</li>
+        </ul>
+
+        <p><strong>Skills built (Session 6–11):</strong></p>
+        <table class="data-table">
+          <thead><tr><th>Skill</th><th>Session</th><th>Key design finding</th></tr></thead>
+          <tbody>
+            <tr><td>/github</td><td>6</td><td>Commit message with llama3.2:3b: ~8s, accurate. With pi-qwen-32b: 620s, generic. Model matters for time-constrained subtasks.</td></tr>
+            <tr><td>/review</td><td>7</td><td>4 anti-pattern rubric. llama3.2:3b + phi4:14b both hallucinated warnings on clean diffs. Qwen3-Coder:30b returned 0 warnings correctly. Wider rubrics amplify hallucination.</td></tr>
+            <tr><td>curator.py</td><td>8</td><td>5-persona filter (Pragmatic Engineer, Academic Rigorist, Synthesis Thinker, Contrarian, Newcomer). Passes if mean ≥ 3.5 AND no score &lt; 2. Contrarian persona is the critical differentiator for catching overclaiming.</td></tr>
+            <tr><td>DPO dataset</td><td>9</td><td>3 cross-run pairs initially. Revision path requires content-per-round in wiggum_eval_log (added 2026-04-14, zero-cost observability change). Growth path: 10–20 autoresearch sessions on same task set.</td></tr>
+            <tr><td>/lit-review</td><td>10</td><td>7-step pipeline: fetch → S2 enrich → curate → annotate+wiggum → cluster → synthesize → render. Checkpointed per paper. Each run generates DPO pairs, curated CSV, memory observations.</td></tr>
+            <tr><td>/recall</td><td>11</td><td>Semantic memory search over 862 accumulated observations (papers + run data). MSYS2 path mangling fix required: Git Bash converts /skill tokens to Windows absolute paths — parse_skills() detects and strips.</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>Dynamic keep_alive</strong> — <code>keep_alive=60</code> was arbitrary and blocked Ollama concurrency when models ran longer. Replaced with two-stage system: Stage 1 heuristic from explicit_skills (90s for short calls, 300s+ base for research), Stage 2 refined from historical p90 of runs.jsonl durations (+20% buffer). Root cause of all prior concurrency blocking: <code>OLLAMA_NUM_PARALLEL</code> unset (default 1). Set to 4 via <code>setx OLLAMA_NUM_PARALLEL 4</code> + Ollama restart.</p>
+      </div>
+
+      <!-- Phase 7 -->
+      <div class="tl-phase">
+        <div class="tl-phase-header">
+          <span class="tl-date">2026-04-15 &bull; Session 14</span>
+          <span class="tl-title">Token Accounting Fixes &amp; vLLM Integration</span>
+        </div>
+
+        <p><strong>Token accounting bugs corrected:</strong></p>
+        <ul>
+          <li><strong>Planner tokens not counted</strong> — <code>planner.py</code> called <code>ollama.chat()</code> but never returned the response for logging. 5–10 LLM calls per run were absent from <code>tokens_by_stage</code>. Fix: <code>make_plan()</code> return type changed to <code>tuple[Plan, object]</code>.</li>
+          <li><strong>tok/s wrong denominator</strong> — dashboard was dividing total tokens by <code>total_ms</code>, which includes model cold-start load time. Fix: <code>logger.py</code> now accumulates <code>eval_ms</code> (generation only) and <code>prompt_ms</code> (prompt-eval only). Cold-start inflation no longer deflates displayed tok/s.</li>
+        </ul>
+
+        <p><strong>vLLM integration — rationale:</strong> Ollama serializes all <code>ollama.chat()</code> calls per model. <code>ThreadPoolExecutor(max_workers=4)</code> gives process concurrency but Ollama collapses it to a serial LLM queue — 3 of 4 parallel subtasks block waiting. Solution: <code>inference.py</code> unified backend shim routing to Ollama or vLLM based on <code>INFERENCE_BACKEND</code> env var.</p>
+
+        <p><strong>WSL2 setup required</strong> — vLLM does not support native Windows pip installs. Key version pinning required:</p>
+        <ul>
+          <li><code>transformers==4.49.0</code> — trl 0.7.3 installs 5.5.4 which removed <code>all_special_tokens_extended</code> from Qwen2Tokenizer, crashing tokenizer init</li>
+          <li><code>--enable-prefix-caching</code> for vLLM — shared context (constitution, ethos) cached across turns</li>
+        </ul>
+
+        <p><strong>End-to-end validation:</strong> <code>test_harness_vllm.bat</code> passed — 376.6s, in=7,013 out=1,063 tokens. Planner, search, novelty, markitdown, security, synthesis, write, and memory stages all confirmed working via vLLM backend. <code>runs.jsonl</code> entry logged correctly.</p>
+      </div>
+
+      <!-- Phase 8 -->
+      <div class="tl-phase">
+        <div class="tl-phase-header">
+          <span class="tl-date">2026-04-24 &bull; Session 28</span>
+          <span class="tl-title">Multi-Model Benchmarking: Qwen3.6-35B</span>
+        </div>
+
+        <p><strong>Model:</strong> Qwen3.6-35B-A3B-UD-IQ3_S.gguf — 13.7GB, fits 16GB VRAM with ~2.3GB headroom. Served via llama-server (native Windows, no WSL2 required).</p>
+
+        <p><strong>Quant selection rationale for 16GB (RTX 5000 Ada, 16,375 MiB):</strong></p>
+        <table class="data-table">
+          <thead><tr><th>Quant</th><th>Size</th><th>Verdict</th></tr></thead>
+          <tbody>
+            <tr><td>UD-IQ3_XXS</td><td class="num">13.2 GB</td><td>Max headroom, lowest quality — rejected</td></tr>
+            <tr><td>UD-IQ3_S</td><td class="num">13.7 GB</td><td><strong>Selected</strong> — best quality that fits safely</td></tr>
+            <tr><td>UD-Q3_K_S</td><td class="num">15.4 GB</td><td>~600 MB headroom — too tight</td></tr>
+            <tr><td>UD-Q3_K_M</td><td class="num">16.6 GB</td><td>Exceeds VRAM — rejected</td></tr>
+          </tbody>
+        </table>
+
+        <div class="finding"><strong>llama.cpp version gotcha:</strong> build b8914 crashes with <code>key qwen35moe.rope.dimension_sections has wrong array length; expected 4, got 3</code>. The GGUF stores 3 mrope sections [11, 11, 10] but b8914 expects 4. Fix: rebuild from latest main. This class of issue (model format expectations out of sync with checkpoint) will recur as new quantization schemes ship.</div>
+
+        <p><strong>bench_model_compare.py bug:</strong> <code>run_task_live()</code> was looking up run records by <code>task_type == "T_A"</code> (bench IDs), but <code>agent.py</code> writes semantic types ("research", "best_practices", "enumerated") to <code>runs.jsonl</code>. Lookup always returned <code>{}</code> → 0% pass / NaN scores across all tasks. Fix: snapshot pre-count before subprocess call, find first new record for that model after run.</p>
+
+        <p><strong>Initial benchmark results</strong> (n=1 per task, thinking mode off):</p>
+        <table class="data-table">
+          <thead><tr><th>Task</th><th>Score</th><th>Pass</th><th>KB output</th><th>Duration</th></tr></thead>
+          <tbody>
+            <tr><td>T_A — context engineering (top 5)</td><td class="num">7.8</td><td>FAIL</td><td class="num">12.8</td><td class="num">263s</td></tr>
+            <tr><td>T_B — cost management</td><td class="num">7.8</td><td>FAIL</td><td class="num">6.4</td><td class="num">209s</td></tr>
+            <tr><td>T_C — agent failure modes</td><td class="num">7.8</td><td>FAIL</td><td class="num">5.8</td><td class="num">230s</td></tr>
+            <tr><td>T_D — context window management</td><td class="num">7.8</td><td>FAIL</td><td class="num">10.3</td><td class="num">243s</td></tr>
+            <tr><td>T_E — prompt injection defense</td><td class="num">7.8</td><td>FAIL</td><td class="num">6.2</td><td class="num">193s</td></tr>
+            <tr><td>T_F — introspect (no web search)</td><td>n/a</td><td>PASS</td><td class="num">5.2</td><td class="num">25s</td></tr>
+            <tr><td>T_G — file-based synthesis</td><td class="num">7.5</td><td>FAIL</td><td class="num">4.7</td><td class="num">240s</td></tr>
+          </tbody>
+        </table>
+
+        <div class="finding"><strong>Uniform 7.8 scores are an evaluator calibration artifact, not a model quality signal.</strong> All research tasks returning identical scores independent of content length (6.2–12.8 KB) and task type (best_practices, enumerated) is statistically implausible. A calibration run (same outputs, both evaluators) is required before interpreting cross-model comparisons. This is the same evaluator-calibration problem identified in the April 12 analysis — it compounds every time a new evaluator or producer is introduced. Full head-to-head (qwen3.6-35b vs. qwen3-14b, thinking on) pending.</div>
+      </div>
+
+      <h2>What Remains</h2>
+
+      <p>
+        The evolved roadmap has three remaining open items that are structurally different from everything checked off. One item — Nanda annotator integration — closed since this post was drafted. Fine-tune v2 training completed, the checkpoint was converted to GGUF (Q4_K_M quant, 4.7 GB vs. v1's 8.1 GB full-precision), registered with Ollama as <code>nanda-annotator-v2-q4km:latest</code>, and compared against v1 head-to-head across 10 out-of-sample research synthesis tasks (Exp D). v1 mean Wiggum score: <strong>9.870</strong> (n=46 papers); v2-q4km: <strong>9.800</strong> (n=43). The 0.07-point gap was not large enough to declare a winner on quality, but the v2-q4km checkpoint is 42% smaller — a meaningful operational improvement for a system where VRAM is the binding constraint. Both models are in Ollama; v2-q4km is the default annotator going forward.
+      </p>
+
+      <ul>
+        <li><strong>DPO training loop closure.</strong> <code>build_dpo_dataset.py</code> exports preference pairs; the loop closes when N ≥ 50 pairs and the training run produces a checkpoint that benchmarks above base. Blocked on accumulated pairs.</li>
+        <li><strong>Stage 4 multi-agent items.</strong> Proposer/Executor/Critic loop, A2A server, agents.toml registry, planner routing, Docker sandbox with GPU passthrough. These are gated on 0.3.6 critic infrastructure being fully operational.</li>
+        <li><strong>Policy selector with telemetry calibration.</strong> Currently the planner makes orchestration decisions; the fitted model (logistic regression or GBT on <code>runs.jsonl</code> features) replaces guesswork after 50+ orchestrated runs with policy fields logged. Blocked on Stage 4 Proposer prototype.</li>
+      </ul>
+
+      <p>
+        Everything blocked on data accumulation or a preceding milestone is intentional. The roadmap was designed so that each stage gates the next on real signal, not on confidence. This is the principle in action: verify externally at every stage boundary.
+      </p>
+
+      <h2>The Pattern</h2>
+
+      <p>
+        The harness roadmap evolved in a predictable way: the North Star stayed fixed, the principles stayed fixed, and the tactical milestones multiplied as each completed one made the next constraint visible. The milestones that were added were not invented — they were revealed by the telemetry from the milestones that were done.
+      </p>
+
+      <p>
+        This is also a description of the system the roadmap is building. The autoresearch loop works the same way: the baseline stays fixed as the reference, the evaluator stays fixed as the arbiter, and the synthesis instruction evolves as each experiment makes the next constraint visible. The roadmap is a slower-running version of the same loop.
+      </p>
+
+      <div class="callout pink">
+        <p><strong>The invariant in both cases:</strong> the signal that tells you what to do next comes from the system you've already built, not from speculation about what the system will need. Build the instrumentation first. The features follow from the data.</p>
+      </div>
+
+      <div class="post-pagination">
+        <a href="./harness-data-model.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">The Harness Data Model</span>
+        </a>
+        <a href="./the-wiggum-loop.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Series&nbsp;&rarr;</span>
+          <span class="pagination-title">Architecture Series</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./gepa-autoresearch.html" class="related-post-card">
+            <div class="related-post-num">Extension</div>
+            <div class="related-post-title">From Hill-Climbing to Pareto</div>
+            <div class="related-post-desc">Why the autoresearch oscillation is a Pareto frontier problem, not a proposer failure.</div>
+          </a>
+          <a href="./telemetry-router.html" class="related-post-card">
+            <div class="related-post-num">Extension</div>
+            <div class="related-post-title">The Telemetry Router</div>
+            <div class="related-post-desc">How runs.jsonl simultaneously seeds autoresearch, lit-review, and DPO curation.</div>
+          </a>
+          <a href="./harness-data-model.html" class="related-post-card">
+            <div class="related-post-num">Reference</div>
+            <div class="related-post-title">The Harness Data Model</div>
+            <div class="related-post-desc">Five JSONL files, one entity hierarchy, and everything tokens_by_stage is actually measuring.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    (function drawRoadmap() {
+      const svg = d3.select('#roadmap-svg');
+      const W = 680, H = 420;
+      const cyan   = getComputedStyle(document.documentElement).getPropertyValue('--accent-cyan').trim();
+      const pink   = getComputedStyle(document.documentElement).getPropertyValue('--accent-pink').trim();
+      const txt    = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim();
+      const txt2   = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim();
+      const bg3    = getComputedStyle(document.documentElement).getPropertyValue('--bg-tertiary').trim();
+      const bdr    = getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim();
+      const purple = '#a855f7';
+      const green  = '#34d399';
+
+      // Column headers
+      const col1x = 20, col2x = 340;
+      const colW  = 300;
+
+      svg.append('text').attr('x', col1x + colW/2).attr('y', 22)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+        .attr('fill', txt2).attr('letter-spacing', 1).text('ORIGINAL ROADMAP');
+      svg.append('text').attr('x', col2x + colW/2).attr('y', 22)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+        .attr('fill', txt2).attr('letter-spacing', 1).text('EVOLVED ROADMAP');
+
+      // Divider
+      svg.append('line').attr('x1', 335).attr('y1', 30).attr('x2', 335).attr('y2', H - 10)
+        .attr('stroke', bdr).attr('stroke-width', 1);
+
+      const rows = [
+        // [label, desc, col, y, color, tag]
+        ['0.1.0', 'PyPI release\nPackage installable, oh CLI, bundled dashboard', 0, 40, cyan, 'done'],
+        ['0.2.0', 'Dashboard completeness\nSessions, Artifacts, Analytics, Submit streaming', 0, 115, cyan, 'done'],
+        ['0.3.0', 'Self-improvement loop\nPlan approval, search cache, chunked retrieval, oversearch detector', 0, 190, cyan, 'done'],
+        ['Stage 4', 'Autonomous swarm\nProposer/Executor/Critic, worktrees, vLLM hot-swap, A2A sketch', 0, 295, purple, 'shared'],
+
+        ['0.1.0 ✓', 'PyPI release — COMPLETE\n+Leverage metric, fan-out, oversearch, test suite, git state', 1, 40, green, 'done'],
+        ['0.2.0 ✓', 'Dashboard completeness — COMPLETE\nAll views wired; 419 tests', 1, 115, green, 'done'],
+        ['0.3.0–0.3.7', '6 sub-milestones: self-improvement loop + policy orchestration\n+ critic infra + memory observability + RLHF pruning', 1, 190, cyan, 'done'],
+        ['0.4.0', 'Personal TTS model\nSpeechT5 fine-tune on local recordings, voice FAB integration', 1, 295, pink, 'new'],
+        ['Stage 4', 'Autonomous swarm — fully specified\nGovernance layer, sub-agent minimal context, A2A protocol, policy selector', 1, 355, purple, 'new'],
+      ];
+
+      const tagColor = { done: green, shared: cyan, new: purple };
+      const tagLabel = { done: '✓ DONE', shared: 'SHARED', new: 'NEW' };
+
+      rows.forEach(([label, desc, col, y, color, tag]) => {
+        const x = col === 0 ? col1x : col2x;
+        const lines = desc.split('\n');
+        const boxH = lines.length > 1 ? 64 : 46;
+
+        svg.append('rect').attr('x', x).attr('y', y).attr('width', colW - 10).attr('height', boxH)
+          .attr('rx', 7).attr('fill', bg3).attr('stroke', color).attr('stroke-width', 1.5);
+
+        svg.append('text').attr('x', x + 10).attr('y', y + 17)
+          .attr('font-size', 10).attr('font-weight', 700).attr('fill', color).text(label);
+
+        // tag badge
+        const tc = tagColor[tag];
+        svg.append('rect')
+          .attr('x', x + colW - 10 - 52).attr('y', y + 6)
+          .attr('width', 50).attr('height', 14).attr('rx', 3)
+          .attr('fill', tc).attr('opacity', 0.2);
+        svg.append('text')
+          .attr('x', x + colW - 10 - 27).attr('y', y + 16)
+          .attr('text-anchor', 'middle').attr('font-size', 8).attr('font-weight', 700)
+          .attr('fill', tc).attr('letter-spacing', 0.5).text(tagLabel[tag]);
+
+        lines.forEach((line, i) => {
+          svg.append('text').attr('x', x + 10).attr('y', y + 32 + i * 16)
+            .attr('font-size', 9).attr('fill', txt2).text(line);
+        });
+      });
+
+      // Connecting arrows for shared items (0.1.0, 0.2.0, 0.3.0, Stage 4)
+      const sharedYs = [[40 + 32, 40 + 32], [115 + 32, 115 + 32], [190 + 32, 190 + 32], [295 + 32, 355 + 32]];
+      const sharedColors = [green, green, cyan, purple];
+      sharedYs.forEach(([y1, y2], i) => {
+        const x1 = col1x + colW - 10, x2 = col2x;
+        svg.append('line').attr('x1', x1).attr('y1', y1).attr('x2', x2).attr('y2', y2)
+          .attr('stroke', sharedColors[i]).attr('stroke-width', 1)
+          .attr('stroke-dasharray', '4 3').attr('opacity', 0.5);
+      });
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

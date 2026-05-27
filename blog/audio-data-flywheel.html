@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Audio Data Flywheel | Nick McCarty</title>
+  <meta name="description" content="Every voice request the harness handles produces a (audio, raw_transcript, corrected_transcript) triple. Accumulate enough of them and you have supervised training data for ASR fine-tuning — closing the loop with NeMo Speech and NeMo RL.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/audio-data-flywheel.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Audio Data Flywheel">
+  <meta property="og:description" content="Every voice request produces a (audio, raw_transcript, corrected_transcript) triple. Accumulate enough of them and you have supervised training data for ASR fine-tuning — closing the loop with NeMo Speech and NeMo RL.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/audio-data-flywheel.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-23T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Audio Data Flywheel">
+  <meta name="twitter:description" content="Every voice request produces (audio, whisper_transcript, corrected_transcript) triples — ASR training data as a byproduct of normal operation.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "The Audio Data Flywheel", "description": "Every voice request the harness handles produces a (audio, raw_transcript, corrected_transcript) triple. Accumulate enough of them and you have supervised training data for ASR fine-tuning — closing the loop with NeMo Speech and NeMo RL.", "keywords": "ASR fine-tuning, NeMo Speech, Parakeet, whisper.cpp, audio data flywheel, NeMo RL, GRPO, agentic systems, voice pipeline", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-23", "dateModified": "2026-05-23", "url": "https://nickmccarty.github.io/blog/audio-data-flywheel.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/audio-data-flywheel.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 23, 2026 &bull; 14 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">The Audio Data Flywheel</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          Every voice request the harness handles produces a <code>(audio, raw_transcript, corrected_transcript)</code> triple as a side effect of normal operation. Accumulate enough of them and you have supervised training data for ASR fine-tuning &mdash; closing a second flywheel alongside the text-based one described in <a href="./observability-flywheel.html">Section G</a>.
+        </p>
+
+        <nav class="series-nav" aria-label="Series navigation">
+          <a href="./harness-thesis.html" class="series-badge">Harness Thesis</a>
+          <a href="./pipeline-in-motion.html" class="series-badge">Pipeline</a>
+          <a href="./orchestration-patterns.html" class="series-badge">Orchestration</a>
+          <a href="./security-patterns.html" class="series-badge">Security</a>
+          <a href="./observability-flywheel.html" class="series-badge">Observability</a>
+          <a href="./audio-data-flywheel.html" class="series-badge active">Audio Flywheel</a>
+        </nav>
+      </header>
+
+      <p>
+        The text-based data flywheel described in Section G of this series collects <code>(task, output, score)</code> triples from research runs and feeds them into DPO preference training. This post describes a parallel flywheel that operates on audio: the harness voice pipeline already produces LLM-corrected transcripts on every request, and those corrections are, structurally, ground-truth labels for the raw whisper.cpp output.
+      </p>
+
+      <p>
+        This is a design proposal, not a fully closed loop. The pipeline produces the data; the fine-tuning target (NVIDIA's NeMo Parakeet) and the training infrastructure (NeMo RL) exist; what's missing is the volume threshold and the fine-tuning pipeline that connects them. The post explains the mechanism, traces the data path, and identifies what's needed to close it.
+      </p>
+
+      <h2>H1 &mdash; The Voice Pipeline</h2>
+
+      <p>
+        The harness voice interface lives in <code>harness/api/routes/voice.py</code> and handles <code>POST /api/voice</code>. The request carries a browser audio blob; the response carries a structured JSON object with task routing instructions. The pipeline has three stages.
+      </p>
+
+      <p>
+        <strong>Stage 1 &mdash; Conversion.</strong> The audio blob (typically WebM from <code>MediaRecorder</code>) is written to a temp file. ffmpeg converts it to 16kHz mono WAV — the format whisper.cpp requires. If ffmpeg isn't on <code>$PATH</code>, the harness falls back to <code>imageio-ffmpeg</code> so no system-level install is required on Windows.
+      </p>
+
+      <p>
+        <strong>Stage 2 &mdash; Transcription.</strong> whisper.cpp runs as a subprocess against the WAV file. It returns timestamped segments, one per sentence:
+      </p>
+
+<pre><code>[00:00:00.000 --> 00:00:02.180]  run a lit review on open a eye safety
+[00:00:02.180 --> 00:00:04.740]  after january twenty twenty five save to safety review dot md</code></pre>
+
+      <p>
+        The harness parses these segments via a regex against the <code>[HH:MM:SS.mmm --> HH:MM:SS.mmm]</code> line format. Segments are joined into a plain-text transcript and also kept as a structured list for downstream use (note-mode writes the timestamped version to markdown).
+      </p>
+
+      <p>
+        <strong>Stage 3 &mdash; LLM Classification.</strong> The plain transcript is passed to a local LLM (default: <code>qwen3.6-35b</code>) with a structured system prompt that does two things simultaneously: classify the request as <code>"task"</code> or <code>"answer"</code>, and correct ASR errors in the transcript. The correction happens as part of the <code>corrected_transcript</code> field in the JSON response.
+      </p>
+
+<pre><code>## ASR correction
+
+Correct common speech-to-text errors:
+- "lang chain" → LangChain  |  "open a eye" → OpenAI  |  "hug in face" → Hugging Face
+- "git hub" → GitHub  |  "pie torch" → PyTorch  |  "fast api" → FastAPI
+- "lama" / "llama" → Llama  |  "geo week" → GeoWeek  |  "esri" → Esri</code></pre>
+
+      <p>
+        The LLM returns a JSON object. The field that matters for the flywheel is <code>corrected_transcript</code>, which contains the same utterance as <code>transcript</code> but with ASR errors resolved. For the example above:
+      </p>
+
+<pre><code>{
+  "type": "task",
+  "corrected_transcript": "run a lit review on OpenAI safety after January 2025, save to safety_review.md",
+  "task_string": "/lit-review \"OpenAI safety\" --after 2025-01 save to safety_review.md",
+  "suggested_path": "safety_review.md",
+  "uses_browser": false
+}</code></pre>
+
+      <div class="diagram-container">
+        <div class="diagram-title">H1 &mdash; Voice Pipeline: Audio &rarr; Whisper &rarr; LLM &rarr; Task</div>
+        <svg id="voice-pipeline-svg" width="100%" viewBox="0 0 720 200" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">The LLM classifier produces <code>corrected_transcript</code> as a side effect of every request &mdash; the raw whisper output and its corrected version accumulate in <code>data/transcripts/</code> on every note-mode call.</p>
+      </div>
+
+      <h2>H2 &mdash; The Flywheel Mechanism</h2>
+
+      <p>
+        The key observation is structural: the <code>corrected_transcript</code> field is a ground-truth label for what whisper.cpp heard. Every voice request where the LLM made a correction is, implicitly, a labeled training example for ASR:
+      </p>
+
+      <ul>
+        <li><strong>Input</strong>: the 16kHz WAV file (already saved to <code>notes/op-note-&lt;ts&gt;.wav</code> in note mode)</li>
+        <li><strong>Noisy label</strong>: <code>transcript</code> from whisper.cpp</li>
+        <li><strong>Clean label</strong>: <code>corrected_transcript</code> from the LLM classifier</li>
+      </ul>
+
+      <p>
+        The supervision signal is the LLM's domain knowledge. The ASR correction rules embedded in <code>_CLASSIFICATION_SYSTEM</code> are not heuristics applied post-hoc — they are the LLM's understanding of what was actually said, grounded in the semantic context of the full utterance. When whisper transcribes "lang chain" and the LLM outputs "LangChain", that correction is reliable precisely because the LLM has seen enough context to know that the user is discussing software, not chain management.
+      </p>
+
+      <p>
+        This makes the correction signal stronger than a pure edit-distance correction would be, and weaker than a human-verified transcript would be. It's a noisy but systematically biased-toward-correct label — the LLM makes domain errors (it might hallucinate a product name), but it does not make the phonetic errors that whisper.cpp makes on technical vocabulary.
+      </p>
+
+      <p>
+        The triples accumulate passively. In note mode, the WAV is already saved. In task mode, the WAV is deleted after classification — but it could be retained with a one-line change to the cleanup path. Either way, the <code>corrected_transcript</code> is returned in the API response and could be logged to a JSONL file with the same append-only pattern used by <code>data/runs.jsonl</code>:
+      </p>
+
+<pre><code># data/asr_triples.jsonl — one record per corrected voice request
+{
+  "timestamp": "2026-05-23T14:32:11Z",
+  "wav_path":  "data/audio/2026-05-23-143211.wav",
+  "whisper":   "run a lit review on open a eye safety after january twenty twenty five",
+  "corrected": "run a lit review on OpenAI safety after January 2025",
+  "delta":     "open a eye → OpenAI"
+}</code></pre>
+
+      <p>
+        Each record where <code>whisper != corrected</code> is a training example. Records where they match are still useful — they confirm the model was already accurate on that utterance, providing negative supervision.
+      </p>
+
+      <div class="callout">
+        <p>The flywheel is already half-built: the corrections are happening, the WAVs are being saved in note mode, and the system prompt is acting as a supervision oracle. What's absent is the JSONL append, the WAV retention in task mode, and the fine-tuning pipeline that consumes the accumulated triples.</p>
+      </div>
+
+      <h2>H3 &mdash; NeMo Parakeet as the Fine-Tuning Target</h2>
+
+      <p>
+        The natural fine-tuning target for the accumulated triples is NVIDIA's <a href="https://github.com/NVIDIA-NeMo/NeMo" target="_blank" rel="noopener">NeMo Speech</a> framework, specifically the Parakeet family. <strong>Parakeet-unified-en-0.6b</strong> is the current recommended entry point: 0.6B parameters, supports both offline batch transcription and streaming, achieves 160ms minimum latency in streaming mode, and runs on a single GPU (RTX 4090 / RTX 5000 Ada feasible).
+      </p>
+
+      <p>
+        The fine-tuning path for Parakeet uses CTC (Connectionist Temporal Classification) loss, which means the training data format is straightforward: <code>(wav_file, text_label)</code> pairs. The clean label from the LLM classifier maps directly to the <code>text_label</code> field. No forced alignment is required; CTC handles the audio-to-text alignment internally.
+      </p>
+
+<pre><code># NeMo manifest format — one JSON per line
+{"audio_filepath": "data/audio/2026-05-23-143211.wav", "duration": 4.74,
+ "text": "run a lit review on OpenAI safety after January 2025"}
+{"audio_filepath": "data/audio/2026-05-23-144502.wav", "duration": 3.10,
+ "text": "fetch the arXiv abstract for attention is all you need"}</code></pre>
+
+      <p>
+        LoRA fine-tuning is supported in NeMo Speech for adapter-based updates, which keeps the base Parakeet weights frozen and trains only a small adapter layer. This is important for a harness deployment: the base model continues to handle general English, and the adapter specializes for the harness vocabulary (model names, framework names, research terminology) without catastrophic forgetting.
+      </p>
+
+      <p>
+        The hardware constraint is real. whisper.cpp runs on CPU — no VRAM required. NeMo with PyTorch requires a CUDA-capable GPU and at least 4–6GB VRAM for Parakeet-0.6b LoRA fine-tuning. The flywheel design handles this asymmetry by separating concerns: whisper.cpp handles online inference (zero-dependency, always available), and NeMo handles offline fine-tuning (scheduled, GPU-gated). Once a fine-tuned adapter is ready, it can be exported back to ONNX or a format compatible with lighter-weight runtimes — or Parakeet can replace whisper.cpp entirely for online use if VRAM is available.
+      </p>
+
+      <div class="callout pink">
+        <p><strong>Academic grounding:</strong> Radford et al. (2023) showed that Whisper large-v2 achieves near-human WER on general English but degrades on technical vocabulary — particularly proper nouns, product names, and code identifiers. Domain-adaptive fine-tuning on as few as 1–2 hours of in-domain audio has been shown to close this gap substantially (Gris et al., 2023; Peng et al., 2023). The harness accumulates exactly this kind of in-domain audio: one speaker, consistent recording conditions, and a narrow vocabulary of ML/engineering terminology.</p>
+      </div>
+
+      <h2>H4 &mdash; NeMo RL: A Second Loop</h2>
+
+      <p>
+        NeMo RL extends the flywheel beyond ASR into instruction-following. Where the ASR loop takes <code>(audio, corrected_transcript)</code> pairs and trains a speech model, the RL loop takes <code>(transcript, task_string, harness_score)</code> triples and trains the LLM classifier itself.
+      </p>
+
+      <p>
+        The harness already scores its own outputs via the Wiggum evaluator. Every autoresearch run that completes produces a score. If the task originated from a voice request, the score can be attributed back to the <code>task_string</code> that the LLM classifier produced from the user's utterance — which can be traced back to the <code>corrected_transcript</code> and the original audio.
+      </p>
+
+      <p>
+        This creates a preference pair naturally:
+      </p>
+
+      <ul>
+        <li><strong>Chosen</strong>: the <code>task_string</code> from a voice request that produced a high-scoring run</li>
+        <li><strong>Rejected</strong>: the <code>task_string</code> from a comparable voice request that produced a low-scoring run</li>
+      </ul>
+
+      <p>
+        NeMo RL supports DPO and GRPO on arbitrary models, including Qwen and Llama variants. The LLM classifier (currently <code>qwen3.6-35b</code>) could be fine-tuned via DPO on these pairs to produce task strings that are more likely to route to high-scoring runs — improving the voice interface's ability to correctly interpret user intent, not just transcribe it.
+      </p>
+
+<pre><code># NeMo RL DPO training — voice-to-task preference pairs
+uv run python examples/run_dpo.py \
+  policy.model_name="Qwen/Qwen3-6B-Instruct" \
+  dpo.train_data_path="data/voice_preference_pairs.jsonl" \
+  checkpointing.checkpoint_dir="results/voice-classifier-dpo" \
+  logger.wandb_enabled=True</code></pre>
+
+      <p>
+        NeMo RL also supports GRPO, where the reward function can be plugged in directly. Rather than using preference pairs, GRPO generates multiple candidate <code>task_string</code> responses per transcript, executes them through the harness, and uses the resulting scores as rewards. This closes the loop without requiring human annotation or even post-hoc pair construction — the harness's own evaluator is the reward model.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">H2–H4 &mdash; The Full Audio Flywheel</div>
+        <svg id="audio-flywheel-svg" width="100%" viewBox="0 0 720 300" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Two nested loops: the inner ASR loop (whisper → LLM corrections → NeMo Parakeet fine-tuning) and the outer instruction loop (task_string → harness score → NeMo RL preference training on the classifier itself).</p>
+      </div>
+
+      <h2>H5 &mdash; Design Tensions</h2>
+
+      <p>
+        <strong>Dependency footprint.</strong> whisper.cpp is a single compiled binary with no Python dependencies. It runs on CPU and works on any OS. NeMo requires PyTorch, CUDA, and roughly 4–6GB of VRAM for Parakeet-0.6b. Adding NeMo to <code>requirements.txt</code> would break the harness's current zero-GPU install path. The cleanest resolution is to keep NeMo in an optional extras group (<code>pip install ollama-harness[audio]</code>) and gate the fine-tuning pipeline behind a config flag, while whisper.cpp remains the default online transcription path.
+      </p>
+
+      <p>
+        <strong>The cold-start problem.</strong> Fine-tuning Parakeet on fewer than 30–60 minutes of in-domain audio (roughly 500–1,000 utterances) is unlikely to produce measurable WER improvements. The harness accumulates audio in note mode, but task-mode requests — which make up the majority of voice interactions — currently delete the WAV after classification. Enabling WAV retention in task mode adds persistent disk I/O; a configurable <code>HARNESS_AUDIO_RETAIN=true</code> flag lets operators opt in once they're ready to accumulate.
+      </p>
+
+      <p>
+        <strong>Label noise.</strong> The LLM corrects transcripts, but it can introduce its own errors. If the user says "Vespa" (the vector database) and whisper.cpp transcribes "Vespa" correctly, the LLM might still expand or rewrite it. Corrections where the edit distance is zero should be excluded from training; corrections where the LLM changed more than two tokens should be flagged for review before inclusion. A simple pre-filtering step on the accumulated JSONL would handle both cases.
+      </p>
+
+      <p>
+        <strong>Model swap logistics.</strong> The harness uses <code>WHISPER_CPP_CLI</code> and <code>WHISPER_CPP_MODEL</code> env vars to locate whisper. A post-fine-tuning model swap would mean pointing these vars at a NeMo Parakeet runtime instead of whisper.cpp. NeMo Speech can export Parakeet to ONNX, which opens a path back to a lightweight runtime — but the export pipeline adds complexity. The simpler transition is to run both in parallel during evaluation: whisper.cpp for online use, NeMo Parakeet for offline batch re-transcription of accumulated audio, comparing WER on held-out utterances before committing to the swap.
+      </p>
+
+      <h2>H6 &mdash; What's Needed to Close the Loop</h2>
+
+      <p>
+        Four additions would convert this design into a working flywheel:
+      </p>
+
+      <ol>
+        <li>
+          <strong>WAV retention in task mode.</strong> One-line change in <code>voice.py</code>: copy the WAV to <code>data/audio/</code> before unlinking <code>tmp_path</code>, gated on a <code>HARNESS_AUDIO_RETAIN</code> env var.
+        </li>
+        <li>
+          <strong>JSONL append on every classified request.</strong> Append a <code>(wav_path, whisper, corrected, delta)</code> record to <code>data/asr_triples.jsonl</code> after the LLM classifier returns. This accumulates passively with zero user friction.
+        </li>
+        <li>
+          <strong>NeMo manifest builder.</strong> A script that reads <code>asr_triples.jsonl</code>, filters records where <code>whisper != corrected</code> and edit distance is within bounds, and writes a NeMo-format manifest. This is a 30-line Python script.
+        </li>
+        <li>
+          <strong>Fine-tuning trigger.</strong> A harness skill or cron job that runs when the manifest exceeds a configurable record threshold (e.g., 500 utterances), launches a NeMo Parakeet LoRA fine-tuning run, and saves the adapter to <code>models/parakeet-lora/</code>. On completion, a config flag switches the online transcription backend.
+        </li>
+      </ol>
+
+      <p>
+        The NeMo RL layer for the instruction classifier is an optional addition to this core loop — it requires harness scores attributed to voice-originated tasks, which adds an audit-log join step, but the data is already present in <code>data/runs.jsonl</code>.
+      </p>
+
+      <div class="callout">
+        <p>The pattern generalizes: any pipeline stage that applies a correction or label to its input — ASR, entity normalization, citation formatting — is implicitly generating supervised training data for the model that would otherwise do that stage. The harness voice pipeline makes this especially clean because the correction happens in-band, in structured JSON, with the raw and corrected versions in adjacent fields.</p>
+      </div>
+
+      <h2>What the Literature Leaves Open</h2>
+
+      <ul>
+        <li>At what volume of in-domain utterances does LoRA fine-tuning on LLM-corrected ASR transcripts yield statistically significant WER improvements on held-out technical vocabulary, and does the threshold differ between CTC-based models (Parakeet) and attention-based models (Whisper large-v3)?</li>
+        <li>When the LLM classifier is itself fine-tuned via GRPO using harness evaluation scores as rewards, does it develop a bias toward task strings that exploit evaluator blind spots rather than producing objectively better task formulations — and how should the reward function be structured to penalize this?</li>
+        <li>How much does label noise from LLM-generated ASR corrections degrade fine-tuning outcomes compared to human-verified transcripts, and is a simple edit-distance filter sufficient to remove corrections that introduce errors rather than fix them?</li>
+        <li>For a single-speaker, single-domain deployment (one operator, ML/engineering vocabulary), what is the minimum practical fine-tuning cadence — how frequently should a new LoRA adapter be trained and swapped in before the marginal improvement per additional utterance falls below a useful threshold?</li>
+        <li>Does running whisper.cpp online and NeMo Parakeet offline for parallel batch re-transcription provide a reliable WER comparison signal, or do differences in decoding strategy (beam search parameters, language model integration) confound the comparison independent of model quality?</li>
+      </ul>
+
+      <div class="post-pagination">
+        <a href="./observability-flywheel.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">10 &middot; Observability and the Data Flywheel</span>
+        </a>
+        <a href="./parallel-inference.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">11 &middot; Parallel Inference</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./observability-flywheel.html" class="related-post-card">
+            <div class="related-post-num">Post 10</div>
+            <div class="related-post-title">Observability and the Data Flywheel</div>
+            <div class="related-post-desc">RunTrace, JSONL Audit Log, Chrome Trace Exporter, and three self-improvement patterns that close the text-based flywheel.</div>
+          </a>
+          <a href="./orchestration-patterns.html" class="related-post-card">
+            <div class="related-post-num">Post 8</div>
+            <div class="related-post-title">Orchestration Patterns</div>
+            <div class="related-post-desc">D1–D5: planning patterns, the Wiggum Loop, multi-agent task decomposition, and the Agent Channel for file-based IPC.</div>
+          </a>
+          <a href="./failure-taxonomy.html" class="related-post-card">
+            <div class="related-post-num">Post 3</div>
+            <div class="related-post-title">Failure Taxonomy</div>
+            <div class="related-post-desc">Six failure classes ranked by frequency and cost, with diagnostic patterns from 1,500 production runs.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555ZM0 4.697v7.104l5.803-3.558L0 4.697ZM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-1.239-.757Zm3.436-.586L16 11.801V4.697l-5.803 3.546Z"/>
+        </svg>
+      </a>
+    </div>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script type="module">
+    import anime from 'https://esm.sh/animejs@3.2.2';
+
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    /* ── H1: Voice Pipeline ─────────────────────────────────────────────── */
+    (function drawVoicePipeline() {
+      const svg = d3.select('#voice-pipeline-svg');
+      const W = 720, H = 200;
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const bdr = cssVar('--border-color');
+      const green = '#34d399';
+      const purple = '#a855f7';
+
+      const defs = svg.append('defs');
+      const mkArr = (id, col) => {
+        const m = defs.append('marker').attr('id', id)
+          .attr('viewBox', '0 -5 10 10').attr('refX', 8)
+          .attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+        m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', col);
+      };
+      mkArr('arr-vp-c', cyan); mkArr('arr-vp-p', pink); mkArr('arr-vp-g', green);
+
+      const stages = [
+        { label: 'Audio Blob', sub: 'WebM', col: bdr },
+        { label: 'ffmpeg', sub: '16kHz WAV', col: bdr },
+        { label: 'whisper.cpp', sub: 'raw_transcript', col: pink },
+        { label: 'LLM Classify', sub: 'corrected_transcript', col: cyan },
+        { label: 'Task Router', sub: 'task_string', col: green },
+      ];
+
+      const boxW = 110, gap = 16;
+      const totalW = stages.length * boxW + (stages.length - 1) * gap;
+      const startX = (W - totalW) / 2;
+      const boxH = 70;
+      const boxY = 65;
+
+      stages.forEach((s, i) => {
+        const x = startX + i * (boxW + gap);
+        svg.append('rect').attr('x', x).attr('y', boxY).attr('width', boxW).attr('height', boxH)
+          .attr('rx', 7).attr('fill', bg3).attr('stroke', s.col).attr('stroke-width', 1.5).attr('opacity', 0);
+        svg.append('text').attr('x', x + boxW / 2).attr('y', boxY + 26)
+          .attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 700)
+          .attr('fill', s.col).attr('opacity', 0).text(s.label);
+        svg.append('text').attr('x', x + boxW / 2).attr('y', boxY + 46)
+          .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2).attr('opacity', 0)
+          .text(s.sub);
+
+        if (i < stages.length - 1) {
+          const arrowId = i === 1 ? 'arr-vp-p' : i === 2 ? 'arr-vp-c' : i === 3 ? 'arr-vp-g' : 'arr-vp-c';
+          svg.append('line')
+            .attr('x1', x + boxW).attr('y1', boxY + boxH / 2)
+            .attr('x2', x + boxW + gap).attr('y2', boxY + boxH / 2)
+            .attr('stroke', bdr).attr('stroke-width', 1.2)
+            .attr('marker-end', `url(#${arrowId})`).attr('opacity', 0);
+        }
+      });
+
+      // Flywheel annotation: corrected_transcript → data/asr_triples.jsonl
+      const tripleX = startX + 3 * (boxW + gap) + boxW / 2;
+      svg.append('line')
+        .attr('x1', tripleX).attr('y1', boxY + boxH)
+        .attr('x2', tripleX).attr('y2', H - 20)
+        .attr('stroke', cyan).attr('stroke-width', 1.2).attr('stroke-dasharray', '4 3')
+        .attr('marker-end', 'url(#arr-vp-c)').attr('opacity', 0);
+      svg.append('text').attr('x', tripleX).attr('y', H - 6)
+        .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', cyan).attr('opacity', 0)
+        .text('→ data/asr_triples.jsonl');
+
+      anime({
+        targets: '#voice-pipeline-svg rect, #voice-pipeline-svg text, #voice-pipeline-svg line',
+        opacity: [0, 1], duration: 500, delay: anime.stagger(40), easing: 'easeOutQuad',
+      });
+    })();
+
+    /* ── H2–H4: Full Audio Flywheel ─────────────────────────────────────── */
+    (function drawAudioFlywheel() {
+      const svg = d3.select('#audio-flywheel-svg');
+      const W = 720, H = 300;
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const bdr = cssVar('--border-color');
+      const green = '#34d399';
+      const purple = '#a855f7';
+      const orange = '#f59e0b';
+
+      const defs = svg.append('defs');
+      [['c', cyan], ['p', pink], ['g', green], ['v', purple], ['o', orange]].forEach(([k, col]) => {
+        const m = defs.append('marker').attr('id', `arr-af-${k}`)
+          .attr('viewBox', '0 -5 10 10').attr('refX', 8)
+          .attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+        m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', col);
+      });
+
+      // Inner loop nodes (ASR)
+      const inner = [
+        { x: 80,  y: 80,  label: 'whisper.cpp',      sub: 'online ASR',      col: pink },
+        { x: 280, y: 80,  label: 'LLM Classifier',   sub: 'ASR correction',  col: cyan },
+        { x: 500, y: 80,  label: 'NeMo Parakeet',     sub: 'LoRA fine-tune',  col: green },
+      ];
+
+      // Outer loop nodes (instruction RL)
+      const outer = [
+        { x: 280, y: 190, label: 'asr_triples.jsonl', sub: 'WAV + corrected', col: cyan },
+        { x: 500, y: 190, label: 'NeMo RL',           sub: 'DPO / GRPO',     col: purple },
+        { x: 640, y: 135, label: 'Harness Score',     sub: 'Wiggum eval',    col: orange },
+      ];
+
+      const bW = 120, bH = 55;
+
+      [...inner, ...outer].forEach(n => {
+        svg.append('rect').attr('x', n.x - bW / 2).attr('y', n.y - bH / 2)
+          .attr('width', bW).attr('height', bH).attr('rx', 8)
+          .attr('fill', bg3).attr('stroke', n.col).attr('stroke-width', 1.5).attr('opacity', 0);
+        svg.append('text').attr('x', n.x).attr('y', n.y - 5)
+          .attr('text-anchor', 'middle').attr('font-size', 10.5).attr('font-weight', 700)
+          .attr('fill', n.col).attr('opacity', 0).text(n.label);
+        svg.append('text').attr('x', n.x).attr('y', n.y + 13)
+          .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2).attr('opacity', 0)
+          .text(n.sub);
+      });
+
+      // Inner loop arrows: whisper → LLM → Parakeet → back to whisper
+      const innerArrows = [
+        { x1: 141, y1: 80, x2: 219, y2: 80, col: pink, id: 'p' },
+        { x1: 341, y1: 80, x2: 439, y2: 80, col: cyan, id: 'c' },
+        { x1: 500, y1: 107, x2: 500, y2: 163, col: green, id: 'g' },   // Parakeet → triples
+        { x1: 219, y1: 190, x2: 141, y2: 190, col: cyan, id: 'c' },    // triples ← LLM (shared)
+        { x1: 80, y1: 163, x2: 80, y2: 107, col: pink, id: 'p' },      // back up to whisper
+      ];
+
+      innerArrows.forEach(a => {
+        svg.append('line')
+          .attr('x1', a.x1).attr('y1', a.y1).attr('x2', a.x2).attr('y2', a.y2)
+          .attr('stroke', a.col).attr('stroke-width', 1.2).attr('stroke-dasharray', '4 3')
+          .attr('marker-end', `url(#arr-af-${a.id})`).attr('opacity', 0);
+      });
+
+      // Outer loop: triples → NeMo RL → Harness Score → NeMo RL (reward)
+      svg.append('line').attr('x1', 341).attr('y1', 190).attr('x2', 439).attr('y2', 190)
+        .attr('stroke', purple).attr('stroke-width', 1.2).attr('stroke-dasharray', '4 3')
+        .attr('marker-end', 'url(#arr-af-v)').attr('opacity', 0);
+      svg.append('line').attr('x1', 561).attr('y1', 172).attr('x2', 609).attr('y2', 155)
+        .attr('stroke', purple).attr('stroke-width', 1.2).attr('stroke-dasharray', '4 3')
+        .attr('marker-end', 'url(#arr-af-o)').attr('opacity', 0);
+      svg.append('line').attr('x1', 640).attr('y1', 108).attr('x2', 562).attr('y2', 172)
+        .attr('stroke', orange).attr('stroke-width', 1.2).attr('stroke-dasharray', '4 3')
+        .attr('marker-end', 'url(#arr-af-v)').attr('opacity', 0);
+
+      // Labels
+      svg.append('text').attr('x', W / 2).attr('y', 18)
+        .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', pink).attr('opacity', 0)
+        .text('Inner loop: ASR fine-tuning');
+      svg.append('text').attr('x', W / 2).attr('y', H - 8)
+        .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', purple).attr('opacity', 0)
+        .text('Outer loop: instruction classifier fine-tuning via NeMo RL');
+
+      anime({
+        targets: '#audio-flywheel-svg rect, #audio-flywheel-svg text, #audio-flywheel-svg line',
+        opacity: [0, 1], duration: 500, delay: anime.stagger(35), easing: 'easeOutQuad',
+      });
+    })();
+  </script>
+</body>
+</html>

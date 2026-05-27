@@ -650,8 +650,8 @@
       g.append('text').attr('transform','rotate(-90)').attr('y',-45).attr('x',-h/2).attr('text-anchor','middle').attr('fill',textSec).attr('font-size',11).text('Output bytes');
       g.append('text').attr('transform','rotate(90)').attr('y',-w-55).attr('x',h/2).attr('text-anchor','middle').attr('fill','#f97316').attr('font-size',11).text('Wiggum score');
 
-      // legend
-      const lg = g.append('g').attr('transform',`translate(${w-160},${h-70})`);
+      // legend — top-left, clear of bars
+      const lg = g.append('g').attr('transform','translate(8,4)');
       lg.append('rect').attr('width',10).attr('height',10).attr('fill',pink).attr('opacity',0.75).attr('rx',2);
       lg.append('text').attr('x',15).attr('y',9).attr('fill',textSec).attr('font-size',11).text('Single search');
       lg.append('rect').attr('y',18).attr('width',10).attr('height',10).attr('fill',cyan).attr('opacity',0.75).attr('rx',2);

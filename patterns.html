@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architecture Patterns | Nick McCarty</title>
+  <meta name="description" content="31 design patterns for agentic harness engineering across 10 sections — filterable by problem domain with an interactive dependency graph.">
+  <link rel="canonical" href="https://nickmccarty.github.io/patterns.html">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Architecture Patterns | Nick McCarty">
+  <meta property="og:description" content="31 design patterns for agentic harness engineering — filterable by problem, with an interactive dependency graph.">
+  <meta property="og:url" content="https://nickmccarty.github.io/patterns.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="./assets/css/styles.css">
+  <script src="./assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="./assets/js/analytics.js" defer></script>
+  <style>
+    /* ── Situation selector ─────────────────────────────────────── */
+    .sit-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1.5rem 0 0.75rem;
+    }
+    .sit-btn {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+      border: 1.5px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .sit-btn:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+    .sit-btn.active {
+      background: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+      color: var(--bg-primary);
+    }
+
+    /* ── Section filter row ─────────────────────────────────────── */
+    .section-filter {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .sec-chip {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      opacity: 0.55;
+      transition: opacity 0.15s, border-color 0.15s;
+    }
+    .sec-chip.on  { opacity: 1; }
+    .sec-chip:hover { opacity: 0.85; }
+
+    /* ── Pattern grid ───────────────────────────────────────────── */
+    .pattern-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+    .pat-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1rem 1.1rem 0.85rem;
+      transition: border-color 0.15s, transform 0.15s, opacity 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .pat-card:hover { border-color: var(--accent-cyan); transform: translateY(-2px); }
+    .pat-card.hidden { display: none; }
+    .pat-card.dim    { opacity: 0.25; pointer-events: none; }
+
+    .pat-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .pat-id {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      padding: 0.15rem 0.45rem;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .pat-name {
+      font-size: 0.97rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+    .pat-problem {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .pat-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.2rem;
+    }
+    .cost-chip {
+      font-size: 0.67rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+    }
+    .cost-low    { background: rgba(52,211,153,0.15); color: #34d399; }
+    .cost-medium { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .cost-high   { background: rgba(244,114,182,0.15); color: #f472b6; }
+    .pat-link {
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .pat-link:hover { text-decoration: underline; }
+
+    /* ── Dep graph ──────────────────────────────────────────────── */
+    .graph-section {
+      margin-top: 1rem;
+    }
+    .graph-section h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .graph-hint {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+    #dep-graph-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    #dep-graph { width: 100%; display: block; }
+
+    /* ── Count badge ────────────────────────────────────────────── */
+    #pat-count {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+    }
+    #pat-count strong { color: var(--text-primary); }
+
+    /* ── Graph view toggle ──────────────────────────────────────── */
+    .graph-toggle {
+      display: flex;
+      gap: 0.45rem;
+      margin-bottom: 0.75rem;
+    }
+    .gtog-btn {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.28rem 0.85rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .gtog-btn.active {
+      background: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+      color: var(--bg-primary);
+    }
+    .gtog-btn:not(.active):hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+
+    /* ── System map container ───────────────────────────────────── */
+    #sys-map-container {
+      display: none;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    #sys-map { width: 100%; display: block; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="./" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="./about.html">About</a>
+        <a href="./blog.html">Blog</a>
+        <a href="./patterns.html" class="active">Patterns</a>
+        <a href="./contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/><path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <div class="hero" style="padding-bottom: 0.5rem;">
+      <h1><span class="gradient-text">Architecture Patterns</span></h1>
+      <p class="subtitle">31 design patterns for agentic harness engineering. Filter by the problem you're solving, browse by section, or explore the dependency graph to see how patterns compose.</p>
+    </div>
+
+    <!-- Situation selector -->
+    <div class="sit-nav" role="group" aria-label="Filter by problem">
+      <button class="sit-btn active" data-sit="all">Browse All</button>
+      <button class="sit-btn" data-sit="quality">Output Quality</button>
+      <button class="sit-btn" data-sit="reliability">Reliability</button>
+      <button class="sit-btn" data-sit="speed">Speed / Cost</button>
+      <button class="sit-btn" data-sit="improve">Self-Improvement</button>
+      <button class="sit-btn" data-sit="security">Security</button>
+    </div>
+
+    <!-- Section filter chips -->
+    <div class="section-filter" id="sec-filter" role="group" aria-label="Filter by section"></div>
+
+    <!-- Count -->
+    <p id="pat-count"></p>
+
+    <!-- Pattern grid -->
+    <div class="pattern-grid" id="pattern-grid"></div>
+
+    <!-- Dependency graph / System map -->
+    <div class="graph-section">
+      <h2>Explore</h2>
+      <div class="graph-toggle" role="group" aria-label="Graph view">
+        <button class="gtog-btn active" data-view="deps">Pattern Dependencies</button>
+        <button class="gtog-btn" data-view="sysmap">System Map</button>
+      </div>
+      <p class="graph-hint" id="graph-hint-deps">Arrows show dependency — pattern A → B means A depends on B being in place. Click any node to highlight it and its immediate neighbors.</p>
+      <p class="graph-hint" id="graph-hint-sysmap" style="display:none">11 harness subsystems mapped to their design patterns. Click any module to highlight the patterns it implements. Double-click to reset.</p>
+      <div id="dep-graph-container">
+        <svg id="dep-graph" height="480"></svg>
+      </div>
+      <div id="sys-map-container">
+        <svg id="sys-map"></svg>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555ZM0 4.697v7.104l5.803-3.558L0 4.697ZM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-1.239-.757Zm3.436-.586L16 11.801V4.697l-5.803 3.546Z"/></svg></a>
+    </div>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+  /* ═══════════════════════════════════════════════════════════════
+     Pattern data
+  ═══════════════════════════════════════════════════════════════ */
+  const SECTION_META = {
+    Pipeline:         { color: '#57cef2', letter: 'B' },
+    Failure:          { color: '#f472b6', letter: 'C' },
+    Orchestration:    { color: '#a855f7', letter: 'D' },
+    Inference:        { color: '#f59e0b', letter: 'E' },
+    Observability:    { color: '#34d399', letter: 'F' },
+    'Self-Improvement':{ color: '#2dd4bf', letter: 'G' },
+    Audio:            { color: '#60a5fa', letter: 'H' },
+    Optimization:     { color: '#fbbf24', letter: 'I' },
+    Telemetry:        { color: '#818cf8', letter: 'J' },
+    Security:         { color: '#f87171', letter: 'S' },
+  };
+
+  const PATTERNS = [
+    // Pipeline
+    { id:'B1', section:'Pipeline', name:'Entry Point Router', cost:'low',
+      situations:['quality','reliability'],
+      problem:'One-size-fits-all routing — technical and prose tasks receive identical pipeline treatment.',
+      post:'blog/pipeline-in-motion.html', deps:[] },
+    { id:'B2', section:'Pipeline', name:'Novelty Gate', cost:'low',
+      situations:['quality','speed'],
+      problem:'Agent re-researches topics already in the knowledge base, wasting compute and diluting output.',
+      post:'blog/pipeline-in-motion.html', deps:['E3'] },
+
+    // Failure taxonomy
+    { id:'C1', section:'Failure', name:'Planner Failure', cost:'low',
+      situations:['reliability'],
+      problem:'Tasks fail before research begins — planner misclassifies or produces malformed plans.',
+      post:'blog/failure-taxonomy.html', deps:[] },
+    { id:'C2', section:'Failure', name:'Retrieval Failure', cost:'low',
+      situations:['reliability','quality'],
+      problem:'Research returns irrelevant or stale results; agent synthesizes from weak grounding.',
+      post:'blog/failure-taxonomy.html', deps:[] },
+    { id:'C3', section:'Failure', name:'Synthesis Failure', cost:'low',
+      situations:['reliability','quality'],
+      problem:'Research is solid but output is shallow — synthesis instruction is the bottleneck.',
+      post:'blog/failure-taxonomy.html', deps:['D2'] },
+    { id:'C4', section:'Failure', name:'Evaluation Failure', cost:'medium',
+      situations:['reliability'],
+      problem:'Wiggum scores don\'t reflect actual output quality; evaluator has systematic blind spots.',
+      post:'blog/failure-taxonomy.html', deps:[] },
+    { id:'C5', section:'Failure', name:'Infrastructure Failure', cost:'low',
+      situations:['reliability'],
+      problem:'Ollama crashes, subprocess timeouts, disk full — hard failures with no diagnostic record.',
+      post:'blog/failure-taxonomy.html', deps:['F1'] },
+    { id:'C6', section:'Failure', name:'Context Corruption', cost:'medium',
+      situations:['reliability','security'],
+      problem:'Injected content or silent truncation distorts what the model acts on.',
+      post:'blog/failure-taxonomy.html', deps:['S1'] },
+
+    // Orchestration
+    { id:'D1', section:'Orchestration', name:'Multi-step Planner', cost:'medium',
+      situations:['quality'],
+      problem:'Agent attempts complex tasks in one shot, missing load-bearing sub-questions.',
+      post:'blog/orchestration-patterns.html', deps:[] },
+    { id:'D2', section:'Orchestration', name:'The Wiggum Loop', cost:'medium',
+      situations:['quality'],
+      problem:'Outputs are accepted without quality verification or revision — no self-correction.',
+      post:'blog/orchestration-patterns.html', deps:[] },
+    { id:'D3', section:'Orchestration', name:'Knowledge Graph Memory', cost:'high',
+      situations:['quality'],
+      problem:'Flat vector retrieval misses entity relationships and multi-hop reasoning paths.',
+      post:'blog/knowledge-graphs-extraction.html', deps:['E3'] },
+    { id:'D4', section:'Orchestration', name:'Multi-agent Decomposition', cost:'high',
+      situations:['speed','quality'],
+      problem:'Single agent can\'t parallelize independent subtasks; complex tasks time out.',
+      post:'blog/orchestration-patterns.html', deps:['D5'] },
+    { id:'D5', section:'Orchestration', name:'Agent Channel', cost:'low',
+      situations:['reliability'],
+      problem:'Orchestrator has no visibility into subtask progress, findings, or blockers.',
+      post:'blog/orchestration-patterns.html', deps:[] },
+
+    // Inference / Context
+    { id:'E1', section:'Inference', name:'Three-Model Architecture', cost:'medium',
+      situations:['speed','quality'],
+      problem:'One large model handles all tasks — fast tasks wait behind slow ones; no cost specialization.',
+      post:'blog/inference-patterns.html', deps:[] },
+    { id:'E2', section:'Inference', name:'Context Compression', cost:'medium',
+      situations:['speed'],
+      problem:'Long contexts exceed the window or degrade synthesis quality past ~32k tokens.',
+      post:'blog/context-engineering.html', deps:[] },
+    { id:'E3', section:'Inference', name:'SQLite Memory System', cost:'medium',
+      situations:['quality','speed'],
+      problem:'Agent re-discovers facts on every run with no persistent cross-run knowledge.',
+      post:'blog/context-engineering.html', deps:[] },
+
+    // Observability
+    { id:'F1', section:'Observability', name:'RunTrace', cost:'low',
+      situations:['reliability'],
+      problem:'Runs fail silently — no telemetry, no stage attribution, no diagnostic path.',
+      post:'blog/observability-flywheel.html', deps:[] },
+    { id:'F2', section:'Observability', name:'JSONL Audit Log', cost:'low',
+      situations:['reliability','improve'],
+      problem:'No persistent record for cross-run analytics, failure diagnosis, or training data extraction.',
+      post:'blog/observability-flywheel.html', deps:['F1'] },
+    { id:'F3', section:'Observability', name:'Chrome Trace Exporter', cost:'low',
+      situations:['speed','reliability'],
+      problem:'Latency bottlenecks have no stage-level attribution — profiling is guesswork.',
+      post:'blog/observability-flywheel.html', deps:['F1'] },
+    { id:'F4', section:'Observability', name:'Dashboard API Layer', cost:'medium',
+      situations:['reliability'],
+      problem:'Harness internals are only visible via terminal; no queryable API for monitoring.',
+      post:'blog/observability-flywheel.html', deps:['F2'] },
+
+    // Self-improvement
+    { id:'G1', section:'Self-Improvement', name:'Data Flywheel', cost:'high',
+      situations:['improve'],
+      problem:'High-scoring runs generate no training signal — quality accumulates but doesn\'t compound.',
+      post:'blog/observability-flywheel.html', deps:['F2'] },
+    { id:'G2', section:'Self-Improvement', name:'Autoresearch Loop', cost:'high',
+      situations:['improve'],
+      problem:'Synthesis instruction is tuned by intuition; no systematic optimization against the eval suite.',
+      post:'blog/gepa-autoresearch.html', deps:['F2'] },
+    { id:'G3', section:'Self-Improvement', name:'Literature Review Pipeline', cost:'medium',
+      situations:['improve','quality'],
+      problem:'Agent knowledge is frozen at training cutoff — no mechanism to ingest recent research.',
+      post:'blog/observability-flywheel.html', deps:['E3'] },
+
+    // Audio
+    { id:'H1', section:'Audio', name:'Voice Pipeline', cost:'medium',
+      situations:['improve'],
+      problem:'Voice input has no structured task routing — audio transcription returns untyped text.',
+      post:'blog/audio-data-flywheel.html', deps:[] },
+    { id:'H2', section:'Audio', name:'ASR Correction Flywheel', cost:'high',
+      situations:['improve'],
+      problem:'Whisper.cpp degrades on technical vocabulary; LLM corrections are never reused as training signal.',
+      post:'blog/audio-data-flywheel.html', deps:['H1'] },
+
+    // Optimization
+    { id:'I1', section:'Optimization', name:'GEPA Pareto Pool', cost:'medium',
+      situations:['improve'],
+      problem:'Autoresearch oscillates between instruction variants — scalar-best collapses lineage diversity.',
+      post:'blog/gepa-autoresearch.html', deps:['G2'] },
+    { id:'I2', section:'Optimization', name:'Minibatch Screening', cost:'low',
+      situations:['improve','speed'],
+      problem:'Full eval burns compute on clearly broken candidates; ~80% of cycles are confirmed discards.',
+      post:'blog/gepa-autoresearch.html', deps:['G2'] },
+
+    // Telemetry
+    { id:'J1', section:'Telemetry', name:'Query Cluster Extraction', cost:'low',
+      situations:['improve'],
+      problem:'Novel agent search queries accumulate in runs.jsonl but are never reviewed or acted on.',
+      post:'blog/telemetry-router.html', deps:['F2'] },
+    { id:'J2', section:'Telemetry', name:'Weakness Map', cost:'low',
+      situations:['improve','quality'],
+      problem:'Autoresearch task targets are chosen manually rather than from production score distributions.',
+      post:'blog/telemetry-router.html', deps:['F2','G2'] },
+    { id:'J3', section:'Telemetry', name:'Flywheel Pair Curation', cost:'medium',
+      situations:['improve'],
+      problem:'DPO training data has no principled curation — noisy low-gap pairs degrade rather than improve.',
+      post:'blog/telemetry-router.html', deps:['F2','G1'] },
+
+    // Security
+    { id:'S1', section:'Security', name:'Prompt Injection Defense', cost:'medium',
+      situations:['security'],
+      problem:'External content in search results or tool outputs manipulates agent behavior.',
+      post:'blog/security-patterns.html', deps:[] },
+    { id:'S2', section:'Security', name:'Trust Boundary Enforcement', cost:'medium',
+      situations:['security'],
+      problem:'Agent executes commands or accesses resources without validating provenance.',
+      post:'blog/security-patterns.html', deps:['S1'] },
+    { id:'S3', section:'Security', name:'Security Audit Log', cost:'low',
+      situations:['security','reliability'],
+      problem:'Security events are not logged — no forensic trail for incident investigation.',
+      post:'blog/security-patterns.html', deps:['F2'] },
+  ];
+
+  /* ═══════════════════════════════════════════════════════════════
+     State
+  ═══════════════════════════════════════════════════════════════ */
+  let activeSit = 'all';
+  let activeSecs = new Set(Object.keys(SECTION_META));
+
+  /* ═══════════════════════════════════════════════════════════════
+     Build section filter chips
+  ═══════════════════════════════════════════════════════════════ */
+  const secFilter = document.getElementById('sec-filter');
+  Object.entries(SECTION_META).forEach(([sec, meta]) => {
+    const btn = document.createElement('button');
+    btn.className = 'sec-chip on';
+    btn.dataset.sec = sec;
+    btn.textContent = sec;
+    btn.style.background = meta.color + '22';
+    btn.style.color = meta.color;
+    btn.style.borderColor = meta.color + '55';
+    btn.addEventListener('click', () => {
+      if (activeSecs.has(sec)) {
+        activeSecs.delete(sec);
+        btn.classList.remove('on');
+      } else {
+        activeSecs.add(sec);
+        btn.classList.add('on');
+      }
+      renderGrid();
+    });
+    secFilter.appendChild(btn);
+  });
+
+  /* ═══════════════════════════════════════════════════════════════
+     Build pattern cards
+  ═══════════════════════════════════════════════════════════════ */
+  const grid = document.getElementById('pattern-grid');
+
+  PATTERNS.forEach(p => {
+    const meta = SECTION_META[p.section];
+    const card = document.createElement('div');
+    card.className = 'pat-card';
+    card.dataset.id = p.id;
+    card.dataset.section = p.section;
+    card.dataset.situations = p.situations.join(' ');
+    card.innerHTML = `
+      <div class="pat-header">
+        <span class="pat-id" style="background:${meta.color}22;color:${meta.color}">${p.id}</span>
+        <span class="pat-name">${p.name}</span>
+      </div>
+      <p class="pat-problem">${p.problem}</p>
+      <div class="pat-footer">
+        <span class="cost-chip cost-${p.cost}">${p.cost} effort</span>
+        <a class="pat-link" href="${p.post}" target="_blank">Read &rarr;</a>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  /* ═══════════════════════════════════════════════════════════════
+     Render / filter grid
+  ═══════════════════════════════════════════════════════════════ */
+  function renderGrid() {
+    let visible = 0;
+    document.querySelectorAll('.pat-card').forEach(card => {
+      const sits = card.dataset.situations.split(' ');
+      const sec  = card.dataset.section;
+      const sitMatch = activeSit === 'all' || sits.includes(activeSit);
+      const secMatch = activeSecs.has(sec);
+      if (sitMatch && secMatch) {
+        card.classList.remove('hidden');
+        visible++;
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+    const countEl = document.getElementById('pat-count');
+    const label = activeSit === 'all' ? 'all sections' :
+      ({ quality:'Output Quality', reliability:'Reliability', speed:'Speed / Cost',
+         improve:'Self-Improvement', security:'Security' }[activeSit] || activeSit);
+    countEl.innerHTML = `Showing <strong>${visible}</strong> of ${PATTERNS.length} patterns &mdash; ${label}`;
+  }
+
+  /* ── Situation buttons ──────────────────────────────────────── */
+  document.querySelectorAll('.sit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.sit-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeSit = btn.dataset.sit;
+      renderGrid();
+    });
+  });
+
+  renderGrid();
+
+  /* ═══════════════════════════════════════════════════════════════
+     D3 dependency graph
+  ═══════════════════════════════════════════════════════════════ */
+  (function buildGraph() {
+    const container = document.getElementById('dep-graph-container');
+    const svg = d3.select('#dep-graph');
+    const W = container.clientWidth || 800;
+    const H = 480;
+    svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+    const style = getComputedStyle(document.documentElement);
+    const bgSec = style.getPropertyValue('--bg-secondary').trim();
+    const bdr   = style.getPropertyValue('--border-color').trim();
+    const txt2  = style.getPropertyValue('--text-secondary').trim();
+    const cyan  = style.getPropertyValue('--accent-cyan').trim();
+
+    // Build nodes + links from pattern data
+    const nodes = PATTERNS.map(p => ({
+      id: p.id, section: p.section, name: p.name,
+      color: SECTION_META[p.section].color,
+    }));
+
+    const links = [];
+    PATTERNS.forEach(p => {
+      p.deps.forEach(dep => {
+        if (PATTERNS.find(x => x.id === dep)) {
+          links.push({ source: p.id, target: dep });
+        }
+      });
+    });
+
+    // Arrowhead
+    const defs = svg.append('defs');
+    defs.append('marker').attr('id', 'dep-arr')
+      .attr('viewBox', '0 -4 8 8').attr('refX', 14).attr('refY', 0)
+      .attr('markerWidth', 5).attr('markerHeight', 5).attr('orient', 'auto')
+      .append('path').attr('d', 'M0,-4L8,0L0,4').attr('fill', bdr);
+
+    defs.append('marker').attr('id', 'dep-arr-hi')
+      .attr('viewBox', '0 -4 8 8').attr('refX', 14).attr('refY', 0)
+      .attr('markerWidth', 5).attr('markerHeight', 5).attr('orient', 'auto')
+      .append('path').attr('d', 'M0,-4L8,0L0,4').attr('fill', cyan);
+
+    const sim = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(d => d.id).distance(90).strength(0.6))
+      .force('charge', d3.forceManyBody().strength(-220))
+      .force('center', d3.forceCenter(W / 2, H / 2))
+      .force('collision', d3.forceCollide(22));
+
+    const linkSel = svg.append('g').selectAll('line')
+      .data(links).join('line')
+      .attr('stroke', bdr).attr('stroke-width', 1)
+      .attr('marker-end', 'url(#dep-arr)');
+
+    const nodeSel = svg.append('g').selectAll('g')
+      .data(nodes).join('g')
+      .attr('cursor', 'pointer')
+      .call(d3.drag()
+        .on('start', (event, d) => { if (!event.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+        .on('drag',  (event, d) => { d.fx = event.x; d.fy = event.y; })
+        .on('end',   (event, d) => { if (!event.active) sim.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+    nodeSel.append('circle').attr('r', 13)
+      .attr('fill', d => d.color + '22')
+      .attr('stroke', d => d.color)
+      .attr('stroke-width', 1.5);
+
+    nodeSel.append('text')
+      .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+      .attr('font-size', 8).attr('font-weight', 700)
+      .attr('fill', d => d.color)
+      .text(d => d.id);
+
+    // Tooltip
+    const tip = svg.append('g').attr('pointer-events', 'none').attr('opacity', 0);
+    const tipRect = tip.append('rect').attr('rx', 5).attr('fill', bgSec)
+      .attr('stroke', bdr).attr('stroke-width', 1);
+    const tipText = tip.append('text').attr('font-size', 10).attr('fill', txt2);
+
+    nodeSel.on('mouseover', (event, d) => {
+        const label = d.id + ' · ' + d.name;
+        tipText.text(label);
+        const bbox = tipText.node().getBBox();
+        tipRect.attr('x', bbox.x - 6).attr('y', bbox.y - 4)
+               .attr('width', bbox.width + 12).attr('height', bbox.height + 8);
+        tip.attr('opacity', 1);
+      })
+      .on('mousemove', (event) => {
+        const [mx, my] = d3.pointer(event, svg.node());
+        tip.attr('transform', `translate(${mx + 14},${my - 10})`);
+      })
+      .on('mouseout', () => tip.attr('opacity', 0))
+      .on('click', (event, d) => {
+        // Highlight clicked node + neighbors
+        const neighborIds = new Set([d.id]);
+        links.forEach(l => {
+          if ((l.source.id || l.source) === d.id) neighborIds.add(l.target.id || l.target);
+          if ((l.target.id || l.target) === d.id) neighborIds.add(l.source.id || l.source);
+        });
+
+        nodeSel.selectAll('circle')
+          .attr('stroke-width', n => neighborIds.has(n.id) ? 2.5 : 1)
+          .attr('opacity', n => neighborIds.has(n.id) ? 1 : 0.25);
+        nodeSel.selectAll('text')
+          .attr('opacity', n => neighborIds.has(n.id) ? 1 : 0.25);
+        linkSel
+          .attr('stroke', l => {
+            const sid = l.source.id || l.source;
+            const tid = l.target.id || l.target;
+            return (neighborIds.has(sid) && neighborIds.has(tid)) ? cyan : bdr;
+          })
+          .attr('marker-end', l => {
+            const sid = l.source.id || l.source;
+            const tid = l.target.id || l.target;
+            return (neighborIds.has(sid) && neighborIds.has(tid)) ? 'url(#dep-arr-hi)' : 'url(#dep-arr)';
+          })
+          .attr('opacity', l => {
+            const sid = l.source.id || l.source;
+            const tid = l.target.id || l.target;
+            return (neighborIds.has(sid) && neighborIds.has(tid)) ? 1 : 0.15;
+          });
+
+        // Scroll to + flash the card
+        const card = document.querySelector(`.pat-card[data-id="${d.id}"]`);
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.style.borderColor = d.color;
+          setTimeout(() => { card.style.borderColor = ''; }, 1800);
+        }
+      });
+
+    // Double-click SVG background to reset highlight
+    svg.on('dblclick', () => {
+      nodeSel.selectAll('circle').attr('stroke-width', 1.5).attr('opacity', 1);
+      nodeSel.selectAll('text').attr('opacity', 1);
+      linkSel.attr('stroke', bdr).attr('marker-end', 'url(#dep-arr)').attr('opacity', 1);
+    });
+
+    sim.on('tick', () => {
+      linkSel
+        .attr('x1', d => Math.max(14, Math.min(W - 14, d.source.x)))
+        .attr('y1', d => Math.max(14, Math.min(H - 14, d.source.y)))
+        .attr('x2', d => Math.max(14, Math.min(W - 14, d.target.x)))
+        .attr('y2', d => Math.max(14, Math.min(H - 14, d.target.y)));
+      nodeSel.attr('transform', d =>
+        `translate(${Math.max(14, Math.min(W - 14, d.x))},${Math.max(14, Math.min(H - 14, d.y))})`);
+    });
+  })();
+
+  /* ═══════════════════════════════════════════════════════════════
+     System map — 11 harness layers → modules → pattern links
+  ═══════════════════════════════════════════════════════════════ */
+  const LAYERS = [
+    { id:'entry', label:'Entry Points', color:'rgba(200,240,230,0.75)',
+      modules:[
+        { name:'CLI', desc:'oh REPL', patterns:['B1'] },
+        { name:'Dashboard', desc:'React UI', patterns:['F4'] },
+        { name:'API /tasks', desc:'HTTP + SSE', patterns:['F4','D5','C5'] },
+        { name:'MCP Server', desc:'stdio / http', patterns:['D4','D5'] },
+      ]},
+    { id:'orch', label:'Orchestration', color:'rgba(170,215,200,0.8)',
+      modules:[
+        { name:'orchestrator.py', desc:'DAG + parallel', patterns:['D1','D4'] },
+        { name:'mcp_dispatch.py', desc:'remote routing', patterns:['D4','D5'] },
+      ]},
+    { id:'core', label:'Core Agent Loop', color:'rgba(87,206,242,0.7)',
+      modules:[
+        { name:'agent.py', desc:'plan→search→synth', patterns:['B1','B2','C2','C3'] },
+        { name:'planner.py', desc:'query + gaps', patterns:['D1','C1'] },
+        { name:'wiggum.py', desc:'eval + revise', patterns:['D2','C4'] },
+      ]},
+    { id:'inf', label:'Inference', color:'rgba(245,158,11,0.75)',
+      modules:[
+        { name:'inference.py', desc:'backend shim', patterns:['E1'] },
+        { name:'Ollama', desc:'local models', patterns:['E1','C5'] },
+        { name:'vLLM', desc:'high-throughput', patterns:['E1'] },
+        { name:'llama.cpp', desc:'GGUF models', patterns:['E1'] },
+      ]},
+    { id:'res', label:'Research Tools', color:'rgba(200,180,240,0.75)',
+      modules:[
+        { name:'DuckDuckGo', desc:'web search', patterns:['B2','C2'] },
+        { name:'arXiv + S2', desc:'academic', patterns:['G3','J1'] },
+        { name:'chunker.py', desc:'context extract', patterns:['E2'] },
+        { name:'vision.py', desc:'image→text', patterns:['B1','H1'] },
+      ]},
+    { id:'skills', label:'Skills', color:'rgba(240,200,140,0.75)',
+      modules:[
+        { name:'/lit-review', desc:'7-stage survey', patterns:['G3','D1','J1'] },
+        { name:'/browser', desc:'playwright nav', patterns:['S2'] },
+        { name:'/email', desc:'gmail draft', patterns:['S2'] },
+        { name:'/github', desc:'git + gh', patterns:['D5'] },
+        { name:'/voice', desc:'whisper→task', patterns:['H1','H2'] },
+      ]},
+    { id:'mem', label:'Memory', color:'rgba(170,140,220,0.75)',
+      modules:[
+        { name:'memory.py', desc:'store + retrieve', patterns:['E3','B2','D3'] },
+        { name:'ChromaDB', desc:'vector search', patterns:['E3','D3'] },
+        { name:'SQLite FTS5', desc:'text search', patterns:['E3'] },
+        { name:'summarizer.py', desc:'compress obs', patterns:['E2'] },
+      ]},
+    { id:'sec', label:'Security', color:'rgba(248,113,113,0.75)',
+      modules:[
+        { name:'AST Scanner', desc:'python check', patterns:['S1','S2'] },
+        { name:'Path Guard', desc:'file access', patterns:['S2','C6'] },
+        { name:'Injection Scan', desc:'prompt safety', patterns:['S1','C6'] },
+        { name:'CDP Guard', desc:'browser URLs', patterns:['S2'] },
+      ]},
+    { id:'api', label:'API Routes', color:'rgba(150,210,150,0.75)',
+      modules:[
+        { name:'/api/runs', desc:'list + KPIs', patterns:['F4','F2'] },
+        { name:'/api/tasks', desc:'submit + stream', patterns:['F4','D5'] },
+        { name:'/api/memories', desc:'memory CRUD', patterns:['E3','F4'] },
+        { name:'/api/security', desc:'audit log', patterns:['S3'] },
+        { name:'/ws', desc:'live events', patterns:['F4','D5'] },
+      ]},
+    { id:'log', label:'Observability', color:'rgba(52,211,153,0.75)',
+      modules:[
+        { name:'logger.py', desc:'RunTrace ctx', patterns:['F1','F3'] },
+        { name:'runs.jsonl', desc:'structured log', patterns:['F2','G1','G2','J1','J2','J3'] },
+        { name:'Chrome Trace', desc:'perfetto', patterns:['F3'] },
+      ]},
+    { id:'store', label:'Storage', color:'rgba(200,240,230,0.65)',
+      modules:[
+        { name:'data/eval/', desc:'md outputs', patterns:['G1'] },
+        { name:'data/memory.db', desc:'SQLite obs', patterns:['E3'] },
+        { name:'data/chroma/', desc:'vector store', patterns:['E3','D3'] },
+        { name:'data/runs.jsonl', desc:'run log', patterns:['F2','J1','J2','J3'] },
+      ]},
+  ];
+
+  /* ── Build the system map SVG ───────────────────────────────── */
+  let sysMapBuilt = false;
+
+  function buildSystemMap() {
+    const container = document.getElementById('sys-map-container');
+    const svgEl = document.getElementById('sys-map');
+    const svg = d3.select(svgEl);
+    const W = container.clientWidth || 820;
+    const rowH = 50, rowGap = 6;
+    const totalH = LAYERS.length * (rowH + rowGap) + 30;
+    svg.attr('viewBox', `0 0 ${W} ${totalH}`).attr('height', totalH);
+
+    const cs = getComputedStyle(document.documentElement);
+    const txt   = cs.getPropertyValue('--text-primary').trim()   || '#e6edf3';
+    const txt2  = cs.getPropertyValue('--text-secondary').trim() || '#8b949e';
+    const bdr   = cs.getPropertyValue('--border-color').trim()   || '#30363d';
+
+    const labelW = 112;
+    const contentW = W - labelW - 16;
+
+    LAYERS.forEach((layer, i) => {
+      const y = 15 + i * (rowH + rowGap);
+      const layerG = svg.append('g');
+
+      // Row background
+      layerG.append('rect')
+        .attr('x', 0).attr('y', y).attr('width', W).attr('height', rowH).attr('rx', 4)
+        .attr('fill', layer.color.replace(/[\d.]+\)$/, '0.04)'))
+        .attr('stroke', layer.color.replace(/[\d.]+\)$/, '0.14)')).attr('stroke-width', 1);
+
+      // Left accent bar
+      layerG.append('rect')
+        .attr('x', 0).attr('y', y).attr('width', 4).attr('height', rowH)
+        .attr('fill', layer.color);
+
+      // Label background
+      layerG.append('rect')
+        .attr('x', 0).attr('y', y).attr('width', labelW).attr('height', rowH)
+        .attr('fill', layer.color.replace(/[\d.]+\)$/, '0.07)'));
+
+      // Layer label (two lines: letter + label)
+      layerG.append('text')
+        .attr('x', labelW / 2 + 2).attr('y', y + rowH / 2 + 4)
+        .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+        .attr('font-size', 9).attr('font-weight', 700).attr('letter-spacing', 1.2)
+        .attr('fill', layer.color)
+        .text(layer.label.toUpperCase());
+
+      // Module boxes
+      const mods = layer.modules;
+      const modW = (contentW - (mods.length - 1) * 5) / mods.length;
+
+      mods.forEach((mod, j) => {
+        const mx = labelW + 8 + j * (modW + 5);
+        const modG = layerG.append('g')
+          .attr('cursor', 'pointer')
+          .attr('transform', `translate(${mx},${y + 5})`);
+
+        const modRect = modG.append('rect')
+          .attr('width', modW).attr('height', rowH - 10).attr('rx', 3)
+          .attr('fill', 'rgba(255,255,255,0.025)')
+          .attr('stroke', layer.color.replace(/[\d.]+\)$/, '0.22)'))
+          .attr('stroke-width', 0.8);
+
+        const nameFontSize = Math.min(10, (modW * 0.9) / (mod.name.length * 0.6) + 2);
+
+        modG.append('text')
+          .attr('x', modW / 2).attr('y', 16)
+          .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+          .attr('font-size', Math.max(7.5, Math.min(10, nameFontSize)))
+          .attr('font-weight', 600).attr('fill', txt)
+          .text(mod.name);
+
+        modG.append('text')
+          .attr('x', modW / 2).attr('y', 30)
+          .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+          .attr('font-size', 7.5).attr('fill', layer.color)
+          .attr('letter-spacing', 0.5)
+          .text(mod.patterns.join(' · '));
+
+        modG
+          .on('mouseenter', function() {
+            modRect.attr('fill', layer.color.replace(/[\d.]+\)$/, '0.10)'))
+                   .attr('stroke', layer.color.replace(/[\d.]+\)$/, '0.5)'));
+          })
+          .on('mouseleave', function() {
+            if (_activeModule !== mod) {
+              modRect.attr('fill', 'rgba(255,255,255,0.025)')
+                     .attr('stroke', layer.color.replace(/[\d.]+\)$/, '0.22)'));
+            }
+          })
+          .on('click', function(event) {
+            event.stopPropagation();
+            _activeModule = mod;
+            highlightPatternsFromModule(mod.patterns, mod.name);
+          });
+      });
+    });
+
+    // Reset on double-click
+    svg.on('dblclick', () => {
+      _activeModule = null;
+      resetSysMapHighlight();
+    });
+  }
+
+  let _activeModule = null;
+
+  function highlightPatternsFromModule(patIds, moduleName) {
+    const patSet = new Set(patIds);
+    document.querySelectorAll('.pat-card').forEach(card => {
+      if (card.classList.contains('hidden')) return;
+      if (patSet.has(card.dataset.id)) {
+        card.classList.remove('dim');
+        card.style.borderColor = SECTION_META[card.dataset.section].color;
+      } else {
+        card.classList.add('dim');
+        card.style.borderColor = '';
+      }
+    });
+    const countEl = document.getElementById('pat-count');
+    const n = patIds.length;
+    countEl.innerHTML = `<strong>${n}</strong> pattern${n !== 1 ? 's' : ''} for <strong>${moduleName}</strong> &mdash; <a href="#" id="reset-smap" style="color:var(--accent-cyan);font-weight:600">clear</a>`;
+    document.getElementById('reset-smap')?.addEventListener('click', e => {
+      e.preventDefault();
+      _activeModule = null;
+      resetSysMapHighlight();
+      renderGrid();
+    });
+    const firstCard = document.querySelector(`.pat-card[data-id="${patIds[0]}"]:not(.hidden)`);
+    if (firstCard) firstCard.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  function resetSysMapHighlight() {
+    document.querySelectorAll('.pat-card').forEach(card => {
+      card.classList.remove('dim');
+      card.style.borderColor = '';
+    });
+  }
+
+  /* ── Graph view toggle ─────────────────────────────────────── */
+  document.querySelectorAll('.gtog-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.gtog-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const view = btn.dataset.view;
+      const isDeps = view === 'deps';
+      document.getElementById('dep-graph-container').style.display = isDeps ? '' : 'none';
+      document.getElementById('sys-map-container').style.display = isDeps ? 'none' : '';
+      document.getElementById('graph-hint-deps').style.display = isDeps ? '' : 'none';
+      document.getElementById('graph-hint-sysmap').style.display = isDeps ? 'none' : '';
+      if (!isDeps) {
+        resetSysMapHighlight();
+        renderGrid();
+        if (!sysMapBuilt) { buildSystemMap(); sysMapBuilt = true; }
+      } else {
+        resetSysMapHighlight();
+        renderGrid();
+      }
+    });
+  });
+  </script>
+</body>
+</html>

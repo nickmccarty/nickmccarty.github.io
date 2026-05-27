@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop | Nick McCarty</title>
+  <meta name="description" content="DSPy's GEPA optimizer formalizes exactly what autoresearch.py does by hand — but adds Pareto frontier selection, minibatch screening, and rich textual feedback that explain why the hand-rolled loop oscillates and plateaus.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/gepa-autoresearch.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop">
+  <meta property="og:description" content="DSPy's GEPA optimizer formalizes exactly what autoresearch.py does by hand — but adds Pareto frontier selection, minibatch screening, and rich textual feedback that explain why the hand-rolled loop oscillates and plateaus.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/gepa-autoresearch.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-23T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop">
+  <meta name="twitter:description" content="GEPA's Pareto frontier, minibatch rollout, and textual feedback directly explain the oscillation and plateau problems in the autoresearch hill-climbing loop.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop", "description": "DSPy's GEPA optimizer formalizes exactly what autoresearch.py does by hand — but adds Pareto frontier selection, minibatch screening, and rich textual feedback that explain why the hand-rolled loop oscillates and plateaus.", "keywords": "GEPA, DSPy, prompt optimization, Pareto frontier, autoresearch, hill-climbing, agentic systems, reflective prompt evolution, NeMo RL", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-23", "dateModified": "2026-05-23", "url": "https://nickmccarty.github.io/blog/gepa-autoresearch.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/gepa-autoresearch.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.9rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.6rem 0.8rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    th {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    tr:last-child td { border-bottom: none; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 23, 2026 &bull; 16 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">From Hill-Climbing to Pareto</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          DSPy's GEPA optimizer (Agrawal et al., 2025) formalizes exactly what <code>autoresearch.py</code> does by hand &mdash; but adds Pareto frontier selection, minibatch screening, and rich textual feedback. Those three ideas explain, precisely, why the hand-rolled loop oscillates and plateaus.
+        </p>
+
+        <nav class="series-nav" aria-label="Series navigation">
+          <a href="./harness-thesis.html" class="series-badge">Harness Thesis</a>
+          <a href="./experimental-methodology.html" class="series-badge">Methodology</a>
+          <a href="./observability-flywheel.html" class="series-badge">Observability</a>
+          <a href="./audio-data-flywheel.html" class="series-badge">Audio Flywheel</a>
+          <a href="./gepa-autoresearch.html" class="series-badge active">GEPA &amp; Autoresearch</a>
+        </nav>
+      </header>
+
+      <p>
+        The autoresearch loop in the harness is a hand-rolled prompt optimizer: propose a change to <code>SYNTH_INSTRUCTION</code>, run the eval suite, keep the change if it improves the composite score, discard it otherwise, and repeat. After 100+ experiments this loop plateaued at 8.74 — stuck below the 9.0 PASS threshold — with a distinctive oscillation pattern: experiments 20–38 kept proposing two alternative strategies in rotation, keeping neither long enough to escape the attractor.
+      </p>
+
+      <p>
+        GEPA (Genetic-Pareto, Agrawal et al., 2025) is a prompt optimizer built on the same principle, but with three structural differences that would have prevented both problems. This post maps each GEPA concept to a concrete failure mode in the harness loop and describes what the upgrade path looks like.
+      </p>
+
+      <h2>I1 &mdash; The Autoresearch Loop as Primitive GEPA</h2>
+
+      <p>
+        The two systems share the same skeleton. In GEPA terms, the autoresearch loop is:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>GEPA concept</th>
+            <th>autoresearch.py implementation</th>
+            <th>Gap</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Candidate pool (Pareto frontier)</td>
+            <td>Single scalar-best: <code>baseline_score</code></td>
+            <td>No diversity preservation</td>
+          </tr>
+          <tr>
+            <td>Sample a candidate to mutate</td>
+            <td>Always mutates the current committed instructions</td>
+            <td>Single lineage — no crossover</td>
+          </tr>
+          <tr>
+            <td>Collect execution traces + textual feedback</td>
+            <td><code>get_recent_eval_feedback()</code> + <code>_extract_discarded()</code></td>
+            <td>Feedback was broken (off-by-one bug) until exp 38</td>
+          </tr>
+          <tr>
+            <td>LLM reflection → propose new instruction</td>
+            <td><code>propose_instructions()</code> via Qwen3-Coder:30b</td>
+            <td>Matches</td>
+          </tr>
+          <tr>
+            <td>Minibatch rollout → quick filter</td>
+            <td>Full <code>run_eval(task_ids, eval_n)</code> every experiment</td>
+            <td>No cheap screening; bad candidates cost as much as good ones</td>
+          </tr>
+          <tr>
+            <td>Update Pareto frontier</td>
+            <td><code>if delta > threshold: baseline_score = score</code></td>
+            <td>Winner-take-all; complementary candidates evicted immediately</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        Three gaps matter. The rest of the post addresses each in turn.
+      </p>
+
+      <h2>I2 &mdash; Gap 1: Pareto Frontier vs. Scalar Best</h2>
+
+      <p>
+        The oscillation in experiments 20–38 had a specific shape: the proposer alternated between two instruction variants, A and B, each beating the other's score by a small margin on alternate runs. Neither was consistently better; each was better on a different subset of eval tasks. Scalar-best selection collapsed to whichever happened to win on the last run and immediately evicted the other.
+      </p>
+
+      <p>
+        GEPA's Pareto frontier keeps <em>both</em>. A candidate survives on the frontier if it achieves the best score on at least one evaluation instance — not if it's the global maximum. In the oscillation case, A would survive because it wins on task T_E; B would survive because it wins on T_D. The next mutation samples from both, with probability proportional to coverage (how many instances each candidate "wins"). This guarantees that complementary strategies are retained and explored simultaneously rather than taking turns.
+      </p>
+
+      <p>
+        A minimal implementation doesn't require DSPy as a dependency. A <code>ParetoPool</code> class with four operations covers it:
+      </p>
+
+<pre><code>@dataclasses.dataclass
+class PoolCandidate:
+    synth: str
+    synth_count: str
+    synth_prose: str
+    score: float
+    description: str
+    experiment: int
+
+
+class ParetoPool:
+    """Keeps up to `size` candidates; retains any that ever scored
+    best on at least one eval run. Evicts the worst on overflow."""
+
+    def __init__(self, size: int = 4):
+        self.size = size
+        self._pool: list[PoolCandidate] = []
+
+    def add(self, candidate: PoolCandidate) -> None:
+        if len(self._pool) < self.size:
+            self._pool.append(candidate)
+        else:
+            worst_idx = min(range(len(self._pool)),
+                            key=lambda i: self._pool[i].score)
+            if candidate.score > self._pool[worst_idx].score:
+                self._pool[worst_idx] = candidate
+
+    def sample(self) -> PoolCandidate | None:
+        """Proportional-to-score sampling; returns None if pool empty."""
+        if not self._pool:
+            return None
+        scores = [c.score for c in self._pool]
+        lo = min(scores)
+        weights = [s - lo + 0.01 for s in scores]
+        total = sum(weights)
+        r = random.random()
+        cum = 0.0
+        for c, w in zip(self._pool, weights):
+            cum += w / total
+            if r <= cum:
+                return c
+        return self._pool[-1]
+
+    def best_score(self) -> float | None:
+        return max((c.score for c in self._pool), default=None)
+
+    def summary(self) -> str:
+        return "\n".join(
+            f"  [{c.score:.3f}] exp {c.experiment}: {c.description[:60]}"
+            for c in sorted(self._pool, key=lambda c: -c.score)
+        ) or "(empty)"</code></pre>
+
+      <p>
+        Integration into the main loop requires two changes: when an experiment is kept, add it to the pool; at the start of each iteration, sample a parent from the pool and pass its instructions as <code>current</code> to the proposer. The git state continues to reflect only the scalar-best committed candidate — the pool is in-memory, not in git. When a pool-sampled parent's mutation is discarded, <code>git checkout -- agent.py</code> restores the committed scalar-best automatically.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">I2 &mdash; Scalar Best vs. Pareto Pool: Candidate Lifecycle</div>
+        <svg id="pareto-svg" width="100%" viewBox="0 0 720 240" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Scalar-best collapses to one lineage immediately on keep; the Pareto pool retains up to N complementary candidates and samples from all of them, weighted by score.</p>
+      </div>
+
+      <h2>I3 &mdash; Gap 2: Textual Feedback as Optimization Signal</h2>
+
+      <p>
+        GEPA's second key insight is that scalar scores are a lossy compression of what went wrong. A score of 8.2 on depth doesn't tell the proposer whether the agent wrote shallow summaries, failed to cite sources, or misunderstood the task domain. Textual feedback — evaluator comments, failure traces, parse errors — tells the proposer <em>why</em> the score was what it was, enabling targeted repairs rather than random mutations.
+      </p>
+
+      <p>
+        The harness evaluator already produces rich textual feedback. The Wiggum evaluator returns <code>issues</code>, <code>feedback</code>, and per-dimension scores for each run. <code>get_recent_eval_feedback()</code> surfaces this in the proposer prompt:
+      </p>
+
+<pre><code>[T_B round 1 score=8.1 rel=9 cmp=8 dep=7 grounded=8 spc=8 str=9]
+  issue: depth dimension penalized — implementation steps listed without
+         concrete parameter values or configuration examples
+  feedback: the response identifies the right practices but treats each
+            as a general recommendation; a practitioner cannot apply
+            them without further research</code></pre>
+
+      <p>
+        This is rich enough for a capable proposer to make a targeted change: "add parameter values and configuration examples to depth-heavy items." The oscillation in experiments 20–38 persisted despite this feedback being available because <code>_extract_discarded()</code> had an off-by-one bug — it was reading the <em>tasks</em> column as the description, giving the proposer "- T_B" for every discard instead of the actual experiment description. The proposer had no memory of what it had tried and why it failed.
+      </p>
+
+      <p>
+        That bug was fixed (parts[5] → parts[6] in the TSV column order after the tasks column was added), but it illustrates a principle GEPA makes explicit: <strong>the feedback channel is as important as the scoring function</strong>. An optimizer with a rich scorer and a broken feedback channel degrades to random search.
+      </p>
+
+      <div class="callout pink">
+        <p><strong>Academic grounding:</strong> Agrawal et al. (2025) show that GEPA outperforms scalar-reward GRPO and other prompt optimizers on 7 of 8 benchmarks with dramatically fewer rollouts. The advantage concentrates on tasks where the scoring function is noisy or coarse — exactly the regime where harness eval operates (single composite float from a single-judge LLM). The paper frames this as "GEPA preserves natural-language traces from LLM-based workflows rather than reducing them to numerical rewards, mirroring human diagnostic processes."</p>
+      </div>
+
+      <h2>I4 &mdash; Gap 3: Minibatch Screening Before Full Eval</h2>
+
+      <p>
+        Every experiment in the autoresearch loop, whether the candidate is clearly broken or genuinely promising, incurs the same eval cost: <code>eval_n</code> full runs across all task IDs. With <code>--eval-n 3</code> and three tasks, a single experiment costs ~45–60 minutes of wall-clock time. Roughly 80% of experiments are discards. The majority of that compute is spent confirming that bad candidates are bad.
+      </p>
+
+      <p>
+        GEPA's minibatch rollout addresses this asymmetry. Before committing to a full evaluation, GEPA runs the candidate on a small minibatch of training instances — typically 2–4 examples. Candidates that fail the minibatch are discarded immediately without a full eval run. Only candidates that clear the minibatch threshold proceed to full evaluation.
+      </p>
+
+      <p>
+        The harness equivalent: run <code>_run_eval_once([task_ids[0]])</code> before the full <code>run_eval(task_ids, eval_n)</code>. The screen uses a single task, single sample — the fastest possible eval. If the quick score falls below an absolute floor (not a relative-to-baseline comparison, which would require per-task baselines), the candidate is discarded immediately:
+      </p>
+
+<pre><code>MINIBATCH_FLOOR = 6.5  # absolute floor — clearly broken instruction
+
+def run_eval_screened(task_ids: list[str], n: int, baseline: float
+                      ) -> tuple[float, bool]:
+    """Quick 1-task screen; full eval only if instruction isn't broken.
+
+    Returns (score, did_full_eval).
+    """
+    screen_task = [task_ids[0]]
+    print(f"  [screen] quick eval on {screen_task[0]}...")
+    quick = _run_eval_once(screen_task)
+
+    if quick < MINIBATCH_FLOOR:
+        print(f"  [screen] {quick:.3f} < floor {MINIBATCH_FLOOR} "
+              f"— skipping full eval (clearly broken instruction)")
+        return quick, False
+
+    print(f"  [screen] {quick:.3f} >= floor — proceeding to full eval")
+    return run_eval(task_ids, n), True</code></pre>
+
+      <p>
+        The floor is set at 6.5 rather than relative to baseline because the proposer occasionally produces outputs that aren't instructions at all — GEPA calls these "hallucinated documents." The existing check rejects instructions over 1,200 characters or with more than 3 newlines; the floor check catches the ones that pass the length check but produce nonsense scores. A score below 6.5 on any single task is a reliable signal of a broken instruction: good instructions on this harness cluster in the 8.0–9.5 range.
+      </p>
+
+      <p>
+        The expected saving: with an 80% discard rate and ~15 minutes per single-task quick eval, minibatch screening saves roughly 30–40 minutes per discarded experiment that clears the length check but fails the floor. On long runs, this is significant.
+      </p>
+
+      <h2>I5 &mdash; A Note on Zeta 2 as a Specialized Proposer</h2>
+
+      <p>
+        GEPA proposes instruction changes using a general-purpose LLM. The harness uses Qwen3-Coder:30b — a 30B reasoning model — because the proposer needs to understand the evaluation context, the history of failed experiments, and the structure of the instruction text well enough to make a targeted single change. That reasoning demand justifies a large model.
+      </p>
+
+      <p>
+        Zed Industries' <strong>Zeta 2</strong> (May 2026) is a different kind of model: an 8B code-edit prediction model fine-tuned from Seed-Coder-8B-Base on next-edit suggestion tasks. Its prompt format — suffix-prefix-middle with a git-merge-style editable region and an explicit edit history — is optimized for proposing targeted code changes given a context of prior edits:
+      </p>
+
+<pre><code>&lt;[fim-suffix]&gt;
+instruction text that comes after the editable region
+&lt;[fim-prefix]&gt;&lt;filename&gt;edit_history
+--- a/agent.py
++++ b/agent.py
+-old instruction line
++new instruction line (attempt 1 — discarded)
+--- a/agent.py
++++ b/agent.py
+-instruction line (attempt 2)
++new instruction line (attempt 2 — kept)
+
+&lt;filename&gt;agent.py
+current instruction before editable region
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; CURRENT
+the instruction text|cursor|to mutate
+=======
+&lt;[fim-middle]&gt;</code></pre>
+
+      <p>
+        This format is structurally a good fit for the proposer task: the edit history is exactly <code>autoresearch.tsv</code> rendered as diffs, and the editable region is the instruction block between the sentinel markers. The key limitation is that Zeta 2 was trained on <em>code</em> edits, not instruction rewrites. The instruction text is natural language, not code — Zeta 2's training distribution doesn't include "rewrite this prompt to emphasize implementation depth over source citations." A general reasoning model handles the semantic component that Zeta 2 would miss.
+      </p>
+
+      <p>
+        The better fit for Zeta 2 in the harness is as a specialized model for code-generation subtasks <em>within</em> the agent — tasks where the agent is asked to write or modify code, not instruction text. There, Zeta 2's next-edit format and 8B footprint are advantages over a 35B general model: faster, cheaper, and specifically trained for the code-edit task distribution.
+      </p>
+
+      <div class="callout">
+        <p>The practical split: use a large general model (Qwen3-Coder:30b or equivalent) for the proposer, which reasons about evaluation history and instruction semantics; use a specialized small model (Zeta 2 or similar) for code-generation subtasks within the agent's output pipeline. The proposer's job is understanding; the agent's code task is pattern completion — these call for different models.</p>
+      </div>
+
+      <h2>I6 &mdash; What a GEPA-Upgraded Autoresearch Loop Looks Like</h2>
+
+      <p>
+        Putting the three changes together, the loop becomes:
+      </p>
+
+<pre><code>pareto_pool = ParetoPool(size=4)
+pareto_pool.add(PoolCandidate(..., score=baseline_score, experiment=0))
+
+while True:
+    # 1. Sample parent from Pareto pool (not always current best)
+    parent = pareto_pool.sample()
+    current = {
+        "synth": parent.synth,
+        "synth_count": parent.synth_count,
+        "synth_prose": parent.synth_prose,
+    }
+
+    # 2. Propose mutation of parent with pool context visible to proposer
+    pool_summary = pareto_pool.summary()
+    proposal = propose_instructions(current, history, eval_feedback,
+                                    research_context, pool_summary,
+                                    parent_experiment=parent.experiment)
+
+    # 3. Apply and commit mutation
+    write_instructions(proposal["synth"], proposal["synth_count"],
+                       proposal["synth_prose"])
+    git_commit(f"autoresearch exp {experiment}: {proposal['description']}")
+
+    # 4. Screen before full eval
+    score, did_full_eval = run_eval_screened(task_ids, eval_n, baseline_score)
+
+    # 5. Update pool and baseline
+    if score > baseline_score + delta_threshold:
+        status = "keep"
+        baseline_score = score
+        pareto_pool.add(PoolCandidate(
+            synth=proposal["synth"],
+            synth_count=proposal["synth_count"],
+            synth_prose=proposal["synth_prose"],
+            score=score,
+            description=proposal["description"],
+            experiment=experiment,
+        ))
+    else:
+        status = "discard"
+        git_reset_discard()  # restores committed scalar-best
+
+    log_experiment(experiment, score, baseline_score, status,
+                   proposal["description"], task_ids)</code></pre>
+
+      <p>
+        The key behavioral change is in step 1. Rather than always proposing against the globally-best committed instructions, the proposer sees a sampled parent — which might be the second-best or third-best candidate in the pool. This breaks the single-lineage attractor that caused the oscillation. After enough iterations, one lineage will pull ahead cleanly and dominate the pool, at which point the sampling converges back to near-scalar-best behavior naturally.
+      </p>
+
+      <p>
+        The proposer prompt also gains a <code>{pool_summary}</code> field that tells it which candidates exist and their scores. This context lets the proposer avoid re-proposing a variant it knows is already in the pool at a lower score — a more principled version of the <code>PREVIOUSLY TRIED AND FAILED</code> section that currently drives the hard-banned list.
+      </p>
+
+      <h2>What the Literature Leaves Open</h2>
+
+      <ul>
+        <li>GEPA's Pareto frontier is defined over per-instance scores from a minibatch, not over per-task composite scores from a fixed eval suite. In the harness context, where the eval suite is a small fixed set of tasks (T_A through T_E), does Pareto selection over tasks provide meaningful diversity, or does the small task count collapse it back to scalar-best in practice?</li>
+        <li>GEPA's textual feedback mechanism assumes the feedback is interpretable by the proposer. When feedback is generated by the same LLM family as the proposer (e.g., Qwen3 evaluating and Qwen3 proposing), does the proposer systematically overfit to the evaluator's blind spots rather than improving actual output quality?</li>
+        <li>Minibatch screening rejects candidates below an absolute floor. In a regime where all candidates cluster in the 8.0–9.0 range — as in the harness plateau — the floor check rarely fires. What is the right design for a relative screen that correctly identifies candidates unlikely to beat the current best without requiring per-task baselines?</li>
+        <li>GEPA's crossover step — combining best-performing modules from distinct lineages — is optional in the harness context, since there is only one mutable module (the synthesis instruction). Does the single-module constraint limit the benefit of Pareto selection to cases where distinct instruction strategies genuinely differ, or does it remain useful even for single-instruction optimization?</li>
+        <li>For the proposer specialization question: at what eval task complexity does a 30B general reasoning model outperform an 8B code-edit model (such as Zeta 2) for instruction rewriting, and is that crossover point stable across different instruction domains (technical vs. prose vs. structured)?</li>
+      </ul>
+
+      <div class="post-pagination">
+        <a href="./observability-flywheel.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">10 &middot; Observability and the Data Flywheel</span>
+        </a>
+        <a href="./experimental-methodology.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">Experiments and Alignment Foundations</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./experimental-methodology.html" class="related-post-card">
+            <div class="related-post-num">Post 12</div>
+            <div class="related-post-title">Experimental Methodology</div>
+            <div class="related-post-desc">Four CRD experiments exposing the evaluator ceiling, producer ceiling, and synthesis bottleneck — the runs autoresearch.py was built to optimize.</div>
+          </a>
+          <a href="./observability-flywheel.html" class="related-post-card">
+            <div class="related-post-num">Post 10</div>
+            <div class="related-post-title">Observability and the Data Flywheel</div>
+            <div class="related-post-desc">The self-improvement patterns that turn pipeline output into training data — including the RL rollout that autoresearch operationalizes.</div>
+          </a>
+          <a href="./audio-data-flywheel.html" class="related-post-card">
+            <div class="related-post-num">Extension</div>
+            <div class="related-post-title">The Audio Data Flywheel</div>
+            <div class="related-post-desc">A parallel flywheel for ASR fine-tuning with NeMo Parakeet and instruction tuning with NeMo RL — the voice-domain counterpart to autoresearch.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555ZM0 4.697v7.104l5.803-3.558L0 4.697ZM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-1.239-.757Zm3.436-.586L16 11.801V4.697l-5.803 3.546Z"/>
+        </svg>
+      </a>
+    </div>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script type="module">
+    import anime from 'https://esm.sh/animejs@3.2.2';
+
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    /* ── I2: Scalar Best vs Pareto Pool ─────────────────────────────────── */
+    (function drawPareto() {
+      const svg = d3.select('#pareto-svg');
+      const W = 720, H = 240;
+      const cyan = cssVar('--accent-cyan');
+      const pink = cssVar('--accent-pink');
+      const txt = cssVar('--text-primary');
+      const txt2 = cssVar('--text-secondary');
+      const bg3 = cssVar('--bg-tertiary');
+      const bdr = cssVar('--border-color');
+      const green = '#34d399';
+      const purple = '#a855f7';
+      const orange = '#f59e0b';
+
+      const defs = svg.append('defs');
+      [['c', cyan], ['p', pink], ['g', green], ['b', bdr]].forEach(([k, col]) => {
+        const m = defs.append('marker').attr('id', `arr-pt-${k}`)
+          .attr('viewBox', '0 -5 10 10').attr('refX', 8)
+          .attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto');
+        m.append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', col);
+      });
+
+      // Left side: Scalar Best
+      const lx = 60;
+      svg.append('text').attr('x', lx + 70).attr('y', 22)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+        .attr('fill', txt2).attr('letter-spacing', 1).attr('opacity', 0).text('SCALAR BEST');
+
+      const scalarCandidates = [
+        { label: 'Candidate A', score: '8.9', col: cyan, y: 45, alive: true },
+        { label: 'Candidate B', score: '8.7', col: pink, y: 95, alive: false },
+        { label: 'Candidate C', score: '8.5', col: bdr, y: 145, alive: false },
+      ];
+
+      scalarCandidates.forEach(c => {
+        svg.append('rect').attr('x', lx).attr('y', c.y).attr('width', 140).attr('height', 40)
+          .attr('rx', 6).attr('fill', c.alive ? bg3 : bg3).attr('stroke', c.alive ? c.col : bdr)
+          .attr('stroke-width', c.alive ? 2 : 1).attr('opacity', 0);
+        svg.append('text').attr('x', lx + 70).attr('y', c.y + 16)
+          .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', c.alive ? 700 : 400)
+          .attr('fill', c.alive ? c.col : txt2).attr('opacity', 0).text(c.label);
+        svg.append('text').attr('x', lx + 70).attr('y', c.y + 32)
+          .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2).attr('opacity', 0)
+          .text(`score=${c.score}  ${c.alive ? '← kept' : '✗ evicted'}`);
+      });
+
+      svg.append('line').attr('x1', lx - 8).attr('y1', 95).attr('x2', lx - 8).attr('y2', 180)
+        .attr('stroke', pink).attr('stroke-width', 1.5).attr('stroke-dasharray', '4 3').attr('opacity', 0);
+      svg.append('text').attr('x', lx - 16).attr('y', 137)
+        .attr('text-anchor', 'middle').attr('font-size', 8).attr('fill', pink)
+        .attr('transform', `rotate(-90, ${lx - 16}, 137)`).attr('opacity', 0).text('evicted');
+
+      // Right side: Pareto Pool
+      const rx = 400;
+      svg.append('text').attr('x', rx + 70).attr('y', 22)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+        .attr('fill', txt2).attr('letter-spacing', 1).attr('opacity', 0).text('PARETO POOL');
+
+      const paretoCandidates = [
+        { label: 'Candidate A', score: '8.9', col: cyan, y: 45, note: 'wins on T_E' },
+        { label: 'Candidate B', score: '8.7', col: pink, y: 95, note: 'wins on T_D' },
+        { label: 'Candidate C', score: '8.5', col: green, y: 145, note: 'wins on T_B' },
+      ];
+
+      paretoCandidates.forEach(c => {
+        svg.append('rect').attr('x', rx).attr('y', c.y).attr('width', 140).attr('height', 40)
+          .attr('rx', 6).attr('fill', bg3).attr('stroke', c.col).attr('stroke-width', 1.5).attr('opacity', 0);
+        svg.append('text').attr('x', rx + 70).attr('y', c.y + 16)
+          .attr('text-anchor', 'middle').attr('font-size', 10).attr('font-weight', 700)
+          .attr('fill', c.col).attr('opacity', 0).text(c.label);
+        svg.append('text').attr('x', rx + 70).attr('y', c.y + 32)
+          .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2).attr('opacity', 0)
+          .text(`score=${c.score}  ${c.note}`);
+      });
+
+      // Sampling arrow
+      svg.append('line').attr('x1', rx + 148).attr('y1', 110).attr('x2', rx + 175).attr('y2', 110)
+        .attr('stroke', cyan).attr('stroke-width', 1.2).attr('stroke-dasharray', '4 3')
+        .attr('marker-end', 'url(#arr-pt-c)').attr('opacity', 0);
+      svg.append('text').attr('x', rx + 196).attr('y', 100)
+        .attr('font-size', 9).attr('fill', cyan).attr('opacity', 0).text('sample');
+      svg.append('text').attr('x', rx + 196).attr('y', 114)
+        .attr('font-size', 9).attr('fill', cyan).attr('opacity', 0).text('∝ score');
+      svg.append('text').attr('x', rx + 196).attr('y', 128)
+        .attr('font-size', 9).attr('fill', txt2).attr('opacity', 0).text('→ mutate');
+
+      // Footer labels
+      svg.append('text').attr('x', lx + 70).attr('y', H - 8)
+        .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2).attr('opacity', 0)
+        .text('One lineage — oscillation possible');
+      svg.append('text').attr('x', rx + 70).attr('y', H - 8)
+        .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', txt2).attr('opacity', 0)
+        .text('Multiple lineages — diversity preserved');
+
+      anime({
+        targets: '#pareto-svg rect, #pareto-svg text, #pareto-svg line',
+        opacity: [0, 1], duration: 500, delay: anime.stagger(35), easing: 'easeOutQuad',
+      });
+    })();
+  </script>
+</body>
+</html>

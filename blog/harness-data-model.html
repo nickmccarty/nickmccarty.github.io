@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Harness Data Model | Nick McCarty</title>
+  <meta name="description" content="Five JSONL files, one entity hierarchy, and everything tokens_by_stage is actually measuring.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/harness-data-model.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Harness Data Model">
+  <meta property="og:description" content="Five JSONL files, one entity hierarchy, and everything tokens_by_stage is actually measuring.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/harness-data-model.html">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .post-hero { padding-bottom: 0.25rem; }
+    .section-label {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--accent-pink);
+      margin-bottom: 0.35rem;
+    }
+    h2 { font-size: 1.35rem; font-weight: 700; margin: 2.5rem 0 0.75rem; color: var(--text-primary); }
+    h3 { font-size: 1.05rem; font-weight: 700; margin: 1.75rem 0 0.5rem; color: var(--text-primary); }
+    p  { margin-bottom: 1rem; line-height: 1.7; color: var(--text-secondary); }
+    pre {
+      background: var(--bg-tertiary); border: 1px solid var(--border-color);
+      border-radius: 8px; padding: 1.1rem 1.25rem; overflow-x: auto;
+      font-size: 0.82rem; line-height: 1.6; margin: 1rem 0 1.5rem;
+    }
+    code { font-family: 'Fira Code', 'Cascadia Code', monospace; }
+    p code, li code {
+      background: var(--bg-tertiary); border: 1px solid var(--border-color);
+      border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.85em;
+    }
+    ul, ol { padding-left: 1.4rem; margin-bottom: 1rem; color: var(--text-secondary); }
+    li { margin-bottom: 0.35rem; line-height: 1.65; }
+    .callout {
+      background: rgba(237,70,195,0.08); border-left: 3px solid var(--accent-pink);
+      border-radius: 0 8px 8px 0; padding: 1rem 1.25rem; margin: 1.5rem 0;
+      font-size: 0.9rem; color: var(--text-secondary);
+    }
+    .callout strong { color: var(--text-primary); }
+    .callout-cyan {
+      background: rgba(87,206,242,0.08); border-left: 3px solid var(--accent-cyan);
+    }
+    .schema-table {
+      width: 100%; border-collapse: collapse; font-size: 0.82rem;
+      margin: 1rem 0 1.5rem;
+    }
+    .schema-table th {
+      text-align: left; padding: 0.5rem 0.75rem;
+      background: var(--bg-tertiary); color: var(--text-secondary);
+      font-weight: 600; letter-spacing: 0.04em; font-size: 0.75rem;
+      text-transform: uppercase; border-bottom: 1px solid var(--border-color);
+    }
+    .schema-table td {
+      padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary); vertical-align: top;
+    }
+    .schema-table td:first-child { color: var(--accent-cyan); font-family: monospace; font-size: 0.8rem; white-space: nowrap; }
+    .schema-table td:nth-child(2) { color: var(--accent-pink); font-family: monospace; font-size: 0.78rem; white-space: nowrap; }
+    .schema-table tr:hover td { background: var(--bg-tertiary); }
+    .file-pill {
+      display: inline-block; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.04em; padding: 0.2rem 0.6rem; border-radius: 4px;
+      margin-right: 0.35rem; margin-bottom: 0.35rem;
+      border: 1px solid;
+    }
+    .hierarchy-diagram {
+      background: var(--bg-tertiary); border: 1px solid var(--border-color);
+      border-radius: 8px; padding: 1.25rem 1.5rem; margin: 1rem 0 1.5rem;
+      font-family: monospace; font-size: 0.85rem; line-height: 1.9;
+      color: var(--text-secondary);
+    }
+    .hierarchy-diagram .hi { color: var(--accent-cyan); }
+    .hierarchy-diagram .dim { color: var(--border-color); }
+    .post-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.5rem 0; border-top: 1px solid var(--border-color);
+      margin-top: 3rem; font-size: 0.85rem;
+    }
+    .post-nav a { color: var(--accent-cyan); text-decoration: none; font-weight: 600; }
+    .post-nav a:hover { text-decoration: underline; }
+    .post-nav .nav-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 0.2rem; }
+    .stage-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.5rem; margin: 1rem 0 1.5rem;
+    }
+    .stage-chip {
+      background: var(--bg-tertiary); border: 1px solid var(--border-color);
+      border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.8rem;
+    }
+    .stage-chip .name { color: var(--accent-cyan); font-family: monospace; font-size: 0.78rem; }
+    .stage-chip .desc { color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.15rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../patterns.html">Patterns</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <div class="hero post-hero">
+      <div class="section-label">Section K &mdash; Harness Data Model</div>
+      <h1><span class="gradient-text">The Harness Data Model</span></h1>
+      <p class="subtitle">Five JSONL files, one entity hierarchy, and everything <code>tokens_by_stage</code> is actually measuring.</p>
+      <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.5rem;">May 23, 2026 &bull; Agentic Harness Engineering</p>
+    </div>
+
+    <!-- K1 -->
+    <h2 id="k1">K1 &mdash; The Entity Hierarchy</h2>
+    <p>Every object the harness produces — from a single LLM message to a multi-session research project — lives somewhere in a five-level hierarchy:</p>
+
+    <div class="hierarchy-diagram">
+      <span class="hi">Project</span>                <span class="dim">──  projects.jsonl</span><br>
+      &nbsp;&nbsp;<span class="dim">└──</span> <span class="hi">Session</span>             <span class="dim">──  sessions.jsonl</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim">└──</span> <span class="hi">Run</span>              <span class="dim">──  runs.jsonl          (one record per completed run)</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim">├──</span> <span class="hi">Artifact</span>       <span class="dim">──  artifacts.jsonl     (output files, traces, datasets)</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim">├──</span> <span class="hi">Message</span>        <span class="dim">──  messages.jsonl      (every LLM prompt + response)</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim">├──</span> <span class="hi">Plan</span>           <span class="dim">──  plans.jsonl         (planner output before search)</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dim">└──</span> <span class="hi">Observation</span>    <span class="dim">──  data/memory.db      (ChromaDB + SQLite FTS5)</span>
+    </div>
+
+    <p>All IDs share one format: a UTC timestamp prefix followed by 12 hex chars from a random UUID.</p>
+
+    <pre><code class="language-python"># harness/schema.py
+def make_id() -> str:
+    ts = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    return f"{ts}-{uuid.uuid4().hex[:12]}"
+
+# 20260517T143022Z-a1b2c3d4e5f6
+#  ├── sortable by wall time ─┘
+#  └──────────── collision-safe uuid suffix</code></pre>
+
+    <p>The timestamp prefix makes every ID sortable without a secondary sort column and makes cross-file joins unambiguous — you always know when a record was created just by reading its ID. The <code>run_id</code> field threads through every downstream record: every Message, Artifact, Plan, and Observation written during a run carries the same <code>run_id</code>, enabling full-fidelity reconstruction of any run from the flat JSONL files alone.</p>
+
+    <!-- K2 -->
+    <h2 id="k2">K2 &mdash; The Run Record</h2>
+
+    <p>Every completed run appends exactly one JSON object to <code>data/runs.jsonl</code>. The record is the canonical audit trail for a run — the dashboard, telemetry router, autoresearch loop, and DPO curator all read from it. Here is the full top-level schema, annotated by concern:</p>
+
+    <pre><code class="language-json">{
+  // ── Identity ───────────────────────────────────────────────
+  "run_id":           "20260517T143022Z-a1b2c3d4e5f6",
+  "session_id":       "20260517T140000Z-...",
+  "project_id":       "20260501T000000Z-...",
+  "parent_run_id":    "",          // set by orchestrator for subtasks
+  "experiment_id":    "",          // set by autoresearch loop
+  "treatment_level":  "",          // autoresearch synth variant label
+  "task_id":          "",          // queue item ID (API path)
+
+  // ── Task ───────────────────────────────────────────────────
+  "timestamp":        "2026-05-17T14:30:22.000Z",
+  "task":             "survey speculative decoding papers from 2025",
+  "task_type":        "research",  // classified by Wiggum
+  "producer_model":   "pi-qwen3.6",
+  "evaluator_model":  "Qwen3-Coder:30b",
+
+  // ── Timing ─────────────────────────────────────────────────
+  "run_duration_s":   47.3,        // wall clock: start → finish() call
+  "total_eval_ms":    31200.0,     // sum of LLM generation time across all stages
+  "total_prompt_ms":  4100.0,      // sum of prefill time across all stages
+
+  // ── Token accounting ───────────────────────────────────────
+  "input_tokens":     14200,       // sum across all stages
+  "output_tokens":    3800,        // sum across all stages (incl. thinking tokens)
+  "total_tokens":     18000,
+  "generation_tok_s": 121.8,       // output_tokens / (total_eval_ms / 1000)
+  "total_thinking_chars": 4320,    // CoT chars across all stages
+
+  "tokens_by_stage":  { ... },     // see K3
+
+  // ── Research ───────────────────────────────────────────────
+  "tool_calls":       [...],       // [{name, query, result_chars, urls}]
+  "total_search_chars": 48200,
+  "quality_floor_hit":  false,     // true if total_search_chars < 1800
+  "memory_hits":      3,
+  "memory_context_titles": [...],
+  "injection_stripped": 0,
+  "files_read":       [],
+  "vision_images":    [],
+  "plan":             { ... },     // planner output; see K5
+
+  // ── Output ─────────────────────────────────────────────────
+  "output_path":      "data/eval/survey_speculative_decoding_20260517T143022Z.md",
+  "output_lines":     312,
+  "output_bytes":     18420,
+  "final_content":    "...",       // first 16 000 chars of the output
+  "synth_forced":     false,       // true if synthesis was forced despite low search quality
+
+  // ── Evaluation ─────────────────────────────────────────────
+  "wiggum_rounds":    2,
+  "wiggum_scores":    [6.8, 8.4],
+  "wiggum_dims":      [{"relevance":7.0,"completeness":6.5,...}, ...],
+  "wiggum_eval_log":  [...],       // full per-round eval trace
+  "synth_cot":        [...],       // thinking blocks from synthesis calls
+  "planner_cot":      [...],       // thinking blocks from planner call
+  "trajectory":       [...],       // ordered steps: {seq, stage, thinking, tool, query}
+  "final":            "PASS",
+
+  // ── Orchestration ──────────────────────────────────────────
+  "orchestrated":       false,
+  "orchestration_style": null,
+  "allow_parallelism":   null,
+  "subtask_count":       0,
+  "subtask_results":     [],
+
+  // ── Value accounting ───────────────────────────────────────
+  "tac_hours":  2.5,               // estimated human researcher-hours for same task
+  "leverage":   18.3,              // (tac_s × quality_norm) / (runtime_s + cost_s)
+
+  // ── Misc ───────────────────────────────────────────────────
+  "screenshots":        [],
+  "count_check_retry":  false,
+  "validation_passed":  null
+}</code></pre>
+
+    <div class="callout callout-cyan">
+      <strong>On leverage:</strong> when <code>tac_hours</code> is present (from the <code>tac_estimate</code> LLM call), leverage = <code>(tac_s &times; quality/10) / (runtime_s + cost_equivalent_s)</code> — a dimensionless ratio of human-equivalent output over machine time+cost. Without TAC, a proxy is computed from <code>wiggum_score &times; output_lines / runtime_hours</code>.
+    </div>
+
+    <!-- K3 -->
+    <h2 id="k3">K3 &mdash; Token Accounting: <code>tokens_by_stage</code></h2>
+
+    <p>The top-level <code>input_tokens</code> / <code>output_tokens</code> tell you the run total. <code>tokens_by_stage</code> is the breakdown that makes those numbers actionable: it tells you which part of the pipeline is burning compute, whether the evaluator dominates synthesis, and — after the accounting fixes in this commit — how fast each model is actually generating tokens.</p>
+
+    <p>Each key in <code>tokens_by_stage</code> is a pipeline stage name. The stages produced by a typical research run:</p>
+
+    <div class="stage-grid">
+      <div class="stage-chip"><div class="name">planner</div><div class="desc">Search query + gap generation</div></div>
+      <div class="stage-chip"><div class="name">search_query</div><div class="desc">Per-query reformulation calls</div></div>
+      <div class="stage-chip"><div class="name">compress_knowledge</div><div class="desc">Long-context summarisation</div></div>
+      <div class="stage-chip"><div class="name">synth</div><div class="desc">Primary synthesis call</div></div>
+      <div class="stage-chip"><div class="name">synth_count</div><div class="desc">Output length enforcement</div></div>
+      <div class="stage-chip"><div class="name">tool_loop</div><div class="desc">Browser / file tool calls</div></div>
+      <div class="stage-chip"><div class="name">wiggum_eval</div><div class="desc">Quality scoring (evaluator model)</div></div>
+      <div class="stage-chip"><div class="name">wiggum_revise</div><div class="desc">Revision after eval feedback</div></div>
+      <div class="stage-chip"><div class="name">summarize_eval</div><div class="desc">Context compression for evaluator</div></div>
+      <div class="stage-chip"><div class="name">summarize_revise</div><div class="desc">Surgical compression for revision</div></div>
+      <div class="stage-chip"><div class="name">memory_compress</div><div class="desc">Observation compression for store</div></div>
+      <div class="stage-chip"><div class="name">tac_estimate</div><div class="desc">Human researcher time estimate</div></div>
+      <div class="stage-chip"><div class="name">memory</div><div class="desc">Context-block injections</div></div>
+      <div class="stage-chip"><div class="name">annotate</div><div class="desc">Lit-review paper annotation</div></div>
+      <div class="stage-chip"><div class="name">cluster</div><div class="desc">Lit-review theme clustering</div></div>
+      <div class="stage-chip"><div class="name">synthesize</div><div class="desc">Lit-review cross-cluster synthesis</div></div>
+    </div>
+
+    <p>Each stage entry has this schema:</p>
+
+    <pre><code class="language-json">"synth": {
+  "input":          9400,     // tokens fed in (prompt tokens for this call)
+  "output":         1820,     // tokens generated
+  "calls":          1,        // number of LLM calls to this stage
+  "total_ms":       14800.0,  // wall time: request dispatch → response received
+  "eval_ms":        13200.0,  // generation time (first token → stream end)
+  "prompt_ms":      1600.0,   // prefill time (request → first token, TTFT)
+  "thinking_chars": 2840,     // chars of CoT in the response, if any
+  "tok_s":          137.9     // output / (eval_ms / 1000) — generation speed
+}</code></pre>
+
+    <p>The timing split matters. <code>total_ms = prompt_ms + eval_ms + overhead</code>. <code>eval_ms</code> is the generation phase — the part that scales with output length and determines throughput. <code>prompt_ms</code> is prefill — the part that scales with context length and determines TTFT. A high <code>prompt_ms</code> with a low <code>eval_ms</code> means the bottleneck is context processing, not generation; that's a signal to compress or cache the prompt, not to switch to a faster sampler.</p>
+
+    <div class="callout">
+      <strong>Previously invisible stages:</strong> before the accounting fix, two LLM calls contributed zero tokens to any run record. <code>tac_estimate</code> (the human-time estimation call) and <code>memory_compress</code> (the compression call that creates the stored observation) both made <code>ollama.chat()</code> calls whose responses were immediately discarded. For a model like <code>glm4:9b</code> on a 600-char excerpt prompt, <code>memory_compress</code> typically consumes 800–1200 input tokens per run — across 100 runs that's up to 120k tokens of invisible compute.
+    </div>
+
+    <h3>Run-Level Derived Metrics</h3>
+
+    <p>The following fields are computed at <code>trace.finish()</code> time from the accumulated stage data and written to every run record going forward:</p>
+
+    <table class="schema-table">
+      <thead><tr><th>Field</th><th>Type</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>total_tokens</td><td>int</td><td>input_tokens + output_tokens</td></tr>
+        <tr><td>total_eval_ms</td><td>float</td><td>Sum of eval_ms across all stages — total generation time</td></tr>
+        <tr><td>total_prompt_ms</td><td>float</td><td>Sum of prompt_ms across all stages — total prefill time</td></tr>
+        <tr><td>generation_tok_s</td><td>float</td><td>output_tokens / (total_eval_ms / 1000) — run-level throughput</td></tr>
+        <tr><td>total_thinking_chars</td><td>int</td><td>Sum of thinking_chars across all stages</td></tr>
+      </tbody>
+    </table>
+
+    <p>The complement of <code>total_eval_ms + total_prompt_ms</code> is wall-clock time spent outside LLM calls: web search latency, disk I/O, embedding, ChromaDB queries, memory retrieval, and Python overhead. On a typical research run, LLM time accounts for 75–85% of <code>run_duration_s</code>; the rest is search latency dominated by DuckDuckGo round-trips.</p>
+
+    <!-- K4 -->
+    <h2 id="k4">K4 &mdash; The Message Log</h2>
+
+    <p><code>data/messages.jsonl</code> is the full conversation log — every prompt sent to an LLM and every response received, written as individual records in send order. It is the only file in the harness that gives you the complete reconstruction of what the model saw and said during a run.</p>
+
+    <pre><code class="language-json">// One record per LLM message turn
+{
+  "run_id":     "20260517T143022Z-a1b2c3d4e5f6",
+  "session_id": "20260517T140000Z-...",
+  "project_id": "20260501T000000Z-...",
+  "seq":        4,                 // monotonically increasing within a run
+  "role":       "user",            // system | user | assistant | context | tool
+  "stage":      "synth",           // which pipeline stage produced this turn
+  "content":    "You are a research synthesizer...\n\n# Task\n...",
+  "cot":        null,              // thinking block (assistant turns only)
+  "tool_calls": null,
+  "tool_name":  null,
+  "chars":      12840,
+  "timestamp":  "2026-05-17T14:30:35.000Z"
+}</code></pre>
+
+    <p>The <code>role</code> field has five values. Four match the standard chat convention; the fifth is harness-specific:</p>
+
+    <table class="schema-table">
+      <thead><tr><th>Role</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>system</td><td>System prompt — pipeline instructions, persona, output constraints</td></tr>
+        <tr><td>user</td><td>Prompt sent to the model (task, context, feedback, revision instructions)</td></tr>
+        <tr><td>assistant</td><td>Model response — content field holds the answer, cot holds the thinking block</td></tr>
+        <tr><td>tool</td><td>Tool output injected as a message (search results, file contents)</td></tr>
+        <tr><td>context</td><td>Non-LLM injection logged for accounting only — memory blocks, research summaries. The chars field is used to estimate a context token count (chars / 4) that feeds the tokens_by_stage treemap.</td></tr>
+      </tbody>
+    </table>
+
+    <p>The <code>cot</code> field matters for thinking-mode models. For Qwen3 with <code>enable_thinking=True</code>, every assistant turn carries a separate reasoning block that precedes the final answer. Storing <code>cot</code> separately from <code>content</code> means you can study the model's internal reasoning without it contaminating the answer text in downstream processing — and you can compute thinking-to-answer ratios per stage to identify where the model is spending its reasoning budget.</p>
+
+    <pre><code class="language-python"># Reconstruct one run's full conversation from messages.jsonl
+import pandas as pd
+
+msgs = pd.read_json("data/messages.jsonl", lines=True)
+run  = msgs[msgs.run_id == "20260517T143022Z-a1b2c3d4e5f6"].sort_values("seq")
+
+for _, m in run.iterrows():
+    print(f"[{m.seq:03d}] {m.role:10} {m.stage or '':15} {m.chars or 0:6,}c")
+    if m.cot:
+        print(f"          thinking: {len(m.cot):,} chars")</code></pre>
+
+    <!-- K5 -->
+    <h2 id="k5">K5 &mdash; Plans and Artifacts</h2>
+
+    <h3>plans.jsonl</h3>
+
+    <p><code>data/plans.jsonl</code> records the planner's output before any search begins. One plan record is written per run (or per subtask in orchestrated runs). It captures the model's explicit belief state: what it already knows, what it doesn't, what it intends to search for, and how complex it judges the task.</p>
+
+    <pre><code class="language-json">{
+  "plan_id":       "20260517T143022Z-plan-a1b2c3",
+  "run_id":        "20260517T143022Z-a1b2c3d4e5f6",
+  "task":          "survey speculative decoding papers from 2025",
+  "plan_type":     "agent",       // agent | orchestrator
+  "task_type":     "research",
+  "complexity":    "medium",
+  "search_queries": [
+    "speculative decoding 2025 arxiv",
+    "draft model verification throughput benchmark",
+    "SpecTr EAGLE speculative sampling survey"
+  ],
+  "known_facts": [
+    "Speculative decoding uses a small draft model + large verifier",
+    "Token acceptance rate is the key throughput metric"
+  ],
+  "knowledge_gaps": [
+    "How does EAGLE-2 compare to SpecTr on coding tasks?",
+    "What's the VRAM overhead of keeping a draft model loaded?"
+  ],
+  "subtasks": [],
+  "created_at": "2026-05-17T14:30:25.000Z"
+}</code></pre>
+
+    <p><code>knowledge_gaps</code> is the signal the <a href="telemetry-router.html" style="color:var(--accent-cyan)">telemetry router</a> extracts to seed literature reviews and autoresearch targeting. A gap is the model's own statement of what it believes is underspecified — which makes it a high-quality query seed, since the model generated it after reading the task and its own memory context, not from keyword heuristics.</p>
+
+    <h3>artifacts.jsonl</h3>
+
+    <p>Every file the harness writes during a run is registered in <code>data/artifacts.jsonl</code>:</p>
+
+    <pre><code class="language-json">{
+  "artifact_id":  "20260517T143110Z-art-b5c6d7",
+  "run_id":       "20260517T143022Z-a1b2c3d4e5f6",
+  "type":         "output",   // output | trace | kg | annotation | dataset | lit_review
+  "path":         "/abs/path/data/eval/survey_speculative_decoding_20260517T143022Z.md",
+  "bytes":        18420,
+  "lines":        312,
+  "content_hash": null,
+  "created_at":   "2026-05-17T14:31:10.000Z"
+}</code></pre>
+
+    <p>The <code>type</code> enum distinguishes the kind of artifact: <code>output</code> is the primary research document, <code>trace</code> is the Chrome Trace JSON for Perfetto, <code>dataset</code> is a generated fine-tuning file, <code>lit_review</code> is a lit-review output. The dashboard's Artifacts view groups by type; the DPO flywheel reads <code>output</code> artifacts for pair curation.</p>
+
+    <!-- K6 -->
+    <h2 id="k6">K6 &mdash; Sessions and the Project Layer</h2>
+
+    <p>A session is a bounded execution context — one invocation of <code>oh</code> in REPL mode, or one API server instance. <code>data/sessions.jsonl</code> records two events per session: <code>session_start</code> (when the CLI launches) and <code>session_end</code> (when it exits or the API shuts down).</p>
+
+    <pre><code class="language-json">// session_start
+{ "event": "session_start", "session_id": "...", "project_id": "...",
+  "triggered_by": "cli", "started_at": "2026-05-17T14:00:00.000Z" }
+
+// session_end
+{ "event": "session_end", "session_id": "...", "project_id": "...",
+  "ended_at": "2026-05-17T15:12:00.000Z", "runs": 4,
+  "total_input_tokens": 58400, "total_output_tokens": 12800,
+  "artifacts": 4, "duration_s": 4320.0 }</code></pre>
+
+    <p>The project layer is the outer envelope. <code>data/projects.jsonl</code> is an append-only event log — creating or updating a project appends a new record rather than overwriting. The active project is resolved by checking <code>HARNESS_PROJECT_ID</code>, then the <code>.harness-project</code> dotfile, then the last active project in the log. Project-scoped aggregation is available via <code>project_stats()</code>:</p>
+
+    <pre><code class="language-python">from harness.schema import project_stats, resolve_project_id
+
+stats = project_stats(resolve_project_id())
+# {
+#   "runs": 47, "passes": 41, "pass_rate": 0.872,
+#   "avg_score": 8.3,
+#   "total_input_tokens": 682000, "total_output_tokens": 178400,
+#   "artifacts": 47,
+#   "artifact_types": {"output": 47, "trace": 47}
+# }</code></pre>
+
+    <!-- K7 -->
+    <h2 id="k7">K7 &mdash; Querying the Logs</h2>
+
+    <p>Because every file is append-only JSONL with consistent <code>run_id</code> keys, the whole data model can be queried with standard tools — no harness process needs to be running.</p>
+
+    <h3>jq</h3>
+
+    <pre><code class="language-bash"># Generation throughput for every PASS run (tok/s)
+cat data/runs.jsonl \
+  | jq 'select(.final=="PASS" and .generation_tok_s != null)
+        | {task: .task[:60], tok_s: .generation_tok_s, model: .producer_model}' \
+  | jq -s 'sort_by(-.tok_s)'
+
+# Stages that consumed the most output tokens
+cat data/runs.jsonl \
+  | jq -r 'select(.final=="PASS") | .tokens_by_stage | to_entries[]
+           | "\(.key)\t\(.value.output)\t\(.value.tok_s // "n/a")"' \
+  | sort -t$'\t' -k2 -rn | head -20
+
+# Knowledge gaps from the last 10 runs — lit-review seed candidates
+cat data/plans.jsonl \
+  | jq -s 'sort_by(.created_at) | last(.[]) | .knowledge_gaps[]'</code></pre>
+
+    <h3>pandas</h3>
+
+    <pre><code class="language-python">import pandas as pd
+import json
+
+runs = pd.read_json("data/runs.jsonl", lines=True)
+
+# Mean tok/s by producer model
+runs[runs.final == "PASS"].groupby("producer_model")["generation_tok_s"].mean()
+
+# Thinking overhead: thinking chars as share of total output chars
+runs["thinking_share"] = runs["total_thinking_chars"] / (runs["output_tokens"] * 4)
+runs[["task", "thinking_share", "wiggum_scores"]].query("thinking_share > 0.5")
+
+# Prefill dominance: stages where prompt_ms > eval_ms
+stage_rows = []
+for _, row in runs.iterrows():
+    for stage, vals in (row.tokens_by_stage or {}).items():
+        if isinstance(vals, dict):
+            stage_rows.append({
+                "run_id": row.run_id, "stage": stage,
+                "prompt_ms": vals.get("prompt_ms", 0),
+                "eval_ms":   vals.get("eval_ms", 0),
+                "output":    vals.get("output", 0),
+            })
+stages = pd.DataFrame(stage_rows)
+stages[stages.prompt_ms > stages.eval_ms][["stage","prompt_ms","eval_ms"]]</code></pre>
+
+    <h3>DuckDB — cross-file joins</h3>
+
+    <pre><code class="language-sql">-- Install: pip install duckdb
+
+-- Runs where the plan's knowledge gaps mention "latency"
+-- joined to wiggum scores (cross-file join using run_id)
+SELECT
+    r.run_id,
+    r.task,
+    r.wiggum_scores[-1]  AS final_score,
+    r.generation_tok_s,
+    p.knowledge_gaps
+FROM read_json_auto('data/runs.jsonl',   format='newline_delimited') r
+JOIN read_json_auto('data/plans.jsonl',  format='newline_delimited') p
+  ON r.run_id = p.run_id
+WHERE array_to_string(p.knowledge_gaps, ' ') ILIKE '%latency%'
+  AND r.final = 'PASS'
+ORDER BY final_score DESC;
+
+-- Total tokens and cost per session
+SELECT
+    s.session_id,
+    s.triggered_by,
+    s.duration_s / 60          AS session_min,
+    SUM(r.total_tokens)        AS tokens,
+    SUM(r.generation_tok_s)    AS avg_tok_s,
+    COUNT(r.run_id)            AS runs
+FROM read_json_auto('data/sessions.jsonl', format='newline_delimited') s
+JOIN read_json_auto('data/runs.jsonl',     format='newline_delimited') r
+  USING (session_id)
+WHERE s.event = 'session_start'
+GROUP BY 1, 2, 3
+ORDER BY tokens DESC;</code></pre>
+
+    <div class="callout">
+      <strong>What the schema reveals about system design choices:</strong> The split between <code>runs.jsonl</code> (aggregated) and <code>messages.jsonl</code> (per-turn) mirrors the difference between a metrics database and an event log. <code>runs.jsonl</code> is optimised for analytics queries — pass rate, score distribution, tok/s benchmarks. <code>messages.jsonl</code> is optimised for replay and DPO pair construction — you can reconstruct exact prompt/response pairs, filter by stage, and export chosen/rejected pairs without touching the run record at all. The model is deliberately denormalised for read performance at analysis time, with <code>run_id</code> as the join key when cross-file queries are needed.
+    </div>
+
+    <!-- nav -->
+    <div class="post-nav">
+      <div>
+        <div class="nav-label">← Previous</div>
+        <a href="telemetry-router.html">The Telemetry Router</a>
+      </div>
+      <div style="text-align:right">
+        <div class="nav-label">Series</div>
+        <a href="../blog.html">Agentic Harness Engineering</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555ZM0 4.697v7.104l5.803-3.558L0 4.697ZM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-1.239-.757Zm3.436-.586L16 11.801V4.697l-5.803 3.546Z"/></svg></a>
+    </div>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
+  </footer>
+</body>
+</html>

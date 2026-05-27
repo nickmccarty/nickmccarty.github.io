@@ -63,19 +63,73 @@
 
     <section>
       <div class="blog-grid">
+        <a href="./blog/sbom-aibom.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>SBOM and AIBOM for Agentic Systems</h3>
+            <div class="meta">May 25, 2026 &bull; 12 min read &bull; Agentic Harness Engineering</div>
+            <p><code>pip freeze</code> doesn't know about <code>kimi-k2.5:cloud</code>. An AIBOM does. Supply chain transparency for the full stack: Python packages, local GGUF models, custom Modelfiles with system-prompt overlays, and cloud endpoints that appear nowhere in a traditional SBOM.</p>
+          </div>
+        </a>
+
+        <a href="./blog/agentic-threat-hardening.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>Agentic Threat Hardening: The OWASP Top 10, Applied</h3>
+            <div class="meta">May 25, 2026 &bull; 25 min read &bull; Agentic Harness Engineering</div>
+            <p>OWASP's Agentic Security Initiative Top 10 maps ten attack classes that emerge when LLMs gain tools, memory, and autonomy. The full coverage audit against the harness&mdash;four defenses covered, four partial, two gaps&mdash;with nine prioritized mitigations, research citations, and code.</p>
+          </div>
+        </a>
+
+        <a href="./blog/leverage.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>Leverage: What the Metric Measures, and Why the Replacement Framing Gets the Math Wrong</h3>
+            <div class="meta">May 25, 2026 &bull; 12 min read &bull; Analysis</div>
+            <p>The harness computes a leverage value on every run. A close reading of the formula&mdash;token amortization, the CapEx gap, the TAC calibration assumption&mdash;produces a quantitative argument against the corporate narrative that AI &ldquo;naturally&rdquo; targets lower-value human capital first.</p>
+          </div>
+        </a>
+
+        <a href="./blog/agentic-design-patterns.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>Agentic Harness Engineering: The Architecture Series</h3>
+            <div class="meta">May 25, 2026 &bull; 12 posts &bull; 27 patterns</div>
+            <p>Twelve posts covering the complete harness design across eight categories&mdash;plus a pattern catalog presenting all 27 named agentic system design patterns in textbook structure: Intent, Problem, Solution, Structure, and Related patterns.</p>
+          </div>
+        </a>
+
+        <div class="card">
+          <h3>Closing the Loops</h3>
+          <div class="meta">May 25, 2026 &bull; 6 extensions &bull; Agentic Harness Engineering</div>
+          <p>Five posts extending the self-improvement patterns from Section G — the regression harness, the autoresearch optimizer, the voice pipeline, and the operational telemetry forming compounding feedback loops.</p>
+          <ul style="margin: 0.75rem 0 0; padding-left: 1.1rem; list-style: none; display: flex; flex-direction: column; gap: 0.35rem;">
+            <li><a href="./blog/eval-suite.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">The Regression Harness &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">9 tasks, 11 criterion functions, CRD runner, and three-persona experiment panel</span></li>
+            <li><a href="./blog/autoresearch-convergence.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">When the Loop Defeats Itself &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">90 experiments, three nested failure modes, four convergence detectors</span></li>
+            <li><a href="./blog/gepa-autoresearch.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">From Hill-Climbing to Pareto &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">GEPA's Pareto frontier explains the autoresearch oscillation</span></li>
+            <li><a href="./blog/skillopt-gaps.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">What SkillOpt Gets Right &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">Three gaps SkillOpt exposes: validation gating, fast/slow epochs, skill-as-artifact</span></li>
+            <li><a href="./blog/audio-data-flywheel.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">The Audio Data Flywheel &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">Voice requests as ASR training data; NeMo RL as the second loop</span></li>
+            <li><a href="./blog/telemetry-router.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">The Telemetry Router &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;"><code>runs.jsonl</code> simultaneously seeds autoresearch, lit-review, and DPO curation</span></li>
+          </ul>
+        </div>
+
+        <a href="./blog/harness-roadmap.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>Seven Principles and a Moving Frontier: The Harness Roadmap</h3>
+            <div class="meta">May 24, 2026 &bull; 14 min read &bull; Agentic Harness Engineering</div>
+            <p>The goals that stayed constant, the milestones that multiplied, and what three rounds of roadmap revision reveal about building self-improving systems. How each completed milestone made the next constraint visible.</p>
+          </div>
+        </a>
+
+        <a href="./blog/harness-data-model.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Harness Data Model: Schemas, Entities, and Query Patterns</h3>
+            <div class="meta">May 23, 2026 &bull; 7 subsections &bull; Agentic Harness Engineering</div>
+            <p>A complete reference for the five-file JSONL schema at the core of the harness: entity hierarchy, ID format, per-stage token accounting, message role taxonomy, and querying patterns in jq, pandas, and DuckDB.</p>
+          </div>
+        </a>
+
         <a href="./blog/experimental-methodology.html" style="text-decoration: none; color: inherit;">
           <div class="card">
             <h3>Experiments and Alignment Foundations</h3>
             <div class="meta">May 23, 2026 &bull; 2 posts</div>
             <p>Four production experiments that exposed the evaluator ceiling, the producer ceiling, and the synthesis instruction bottleneck&mdash;plus multi-objective alignment methods beyond scalar rewards.</p>
-          </div>
-        </a>
-
-        <a href="./blog/the-wiggum-loop.html" style="text-decoration: none; color: inherit;">
-          <div class="card">
-            <h3>Agentic Harness Engineering: The Architecture Series</h3>
-            <div class="meta">May 22, 2026 &bull; 11 posts</div>
-            <p>Eleven posts covering the complete harness design: the thesis, pipeline walkthrough, failure taxonomy, inference substrate, context engineering, verification, orchestration, security, observability flywheel, and hardware substrates for LLM workloads.</p>
           </div>
         </a>
 
@@ -221,7 +275,7 @@
         </svg>
       </a>
     </div>
-    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
   </footer>
 </body>
 </html>

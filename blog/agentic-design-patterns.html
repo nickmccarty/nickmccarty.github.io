@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic System Design Patterns | Nick McCarty</title>
+  <meta name="description" content="A catalog of 27 named design patterns for agentic LLM systems, organized into eight categories: substrate, context, verification, orchestration, security, observability, and self-improvement.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/agentic-design-patterns.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Agentic System Design Patterns">
+  <meta property="og:description" content="27 named design patterns for agentic LLM systems — from Inference Shim and Novelty Gate to DAG Orchestrator, Injection Scanner, and Data Flywheel.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/agentic-design-patterns.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-25T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agentic System Design Patterns">
+  <meta name="twitter:description" content="27 named design patterns for agentic LLM systems, organized into eight categories.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Agentic System Design Patterns","description":"A catalog of 27 named design patterns for agentic LLM systems.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-25","url":"https://nickmccarty.github.io/blog/agentic-design-patterns.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    /* ── layout ── */
+    .catalog-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 3rem;
+      align-items: start;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    @media (max-width: 820px) {
+      .catalog-layout { grid-template-columns: 1fr; }
+      .cat-nav { display: none; }
+    }
+    .cat-nav {
+      position: sticky;
+      top: 2rem;
+    }
+    .cat-nav-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 0.75rem;
+    }
+    .cat-nav-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+    .cat-nav-list a {
+      display: block;
+      padding: 0.3rem 0.6rem;
+      border-radius: 5px;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .cat-nav-list a:hover { color: var(--accent-cyan); border-left-color: var(--accent-cyan); background: var(--bg-secondary); }
+    .cat-nav-list a.active { color: var(--accent-cyan); border-left-color: var(--accent-cyan); font-weight: 600; }
+
+    /* ── category section ── */
+    .cat-section { margin-bottom: 3.5rem; scroll-margin-top: 2rem; }
+    .cat-header { display: flex; align-items: baseline; gap: 0.9rem; margin-bottom: 0.4rem; }
+    .cat-id {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--bg-primary); background: var(--accent-cyan); padding: 0.2rem 0.55rem; border-radius: 3px;
+    }
+    .cat-id.pink { background: var(--accent-pink); }
+    .cat-id.purple { background: #a78bfa; }
+    .cat-id.amber { background: #f59e0b; }
+    .cat-id.green { background: #22c55e; }
+    .cat-id.red { background: #ef4444; }
+    .cat-id.orange { background: #f97316; }
+    .cat-section > p.cat-desc { font-size: 0.92rem; color: var(--text-secondary); margin: 0 0 1.5rem; line-height: 1.6; }
+
+    /* ── pattern card ── */
+    .pattern-card {
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.4rem 1.5rem 1.2rem;
+      margin-bottom: 1.25rem;
+      background: var(--bg-primary);
+      scroll-margin-top: 2rem;
+    }
+    .pattern-card:hover { border-color: var(--accent-cyan); }
+    .pattern-header { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
+    .pattern-id {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.72rem; font-weight: 700; color: var(--accent-cyan);
+      background: rgba(0,212,255,0.1); padding: 0.15rem 0.45rem; border-radius: 3px;
+    }
+    .pattern-name { font-size: 1.05rem; font-weight: 700; margin: 0; }
+    .pattern-aka { font-size: 0.78rem; color: var(--text-secondary); font-style: italic; }
+    .intent-line {
+      font-size: 0.92rem; font-style: italic; color: var(--text-primary);
+      border-left: 3px solid var(--accent-cyan); padding-left: 0.75rem;
+      margin: 0.65rem 0 1rem; line-height: 1.5;
+    }
+    .ps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    @media (max-width: 600px) { .ps-grid { grid-template-columns: 1fr; } }
+    .ps-box { background: var(--bg-secondary); border-radius: 7px; padding: 0.75rem 0.9rem; }
+    .ps-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.35rem; }
+    .ps-box p { font-size: 0.85rem; line-height: 1.55; margin: 0; color: var(--text-primary); }
+    .structure-box { background: var(--bg-tertiary); border-radius: 7px; padding: 0.7rem 0.9rem; margin-bottom: 0.9rem; }
+    .structure-box .ps-label { margin-bottom: 0.4rem; }
+    .structure-box ul { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.2rem; }
+    .structure-box li { font-size: 0.82rem; color: var(--text-primary); line-height: 1.5; }
+    .structure-box li code { font-size: 0.8em; }
+    .pattern-footer { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; font-size: 0.8rem; }
+    .pattern-ref { color: var(--text-secondary); }
+    .pattern-ref code { font-size: 0.78em; }
+    .rel-label { color: var(--text-secondary); font-weight: 600; }
+    .rel-link {
+      color: var(--accent-cyan); text-decoration: none; font-weight: 600;
+      padding: 0.1rem 0.4rem; border: 1px solid rgba(0,212,255,0.3); border-radius: 3px;
+      font-size: 0.75rem; font-family: 'SF Mono','Consolas',monospace;
+    }
+    .rel-link:hover { background: rgba(0,212,255,0.1); }
+    .pattern-link {
+      margin-left: auto; font-size: 0.8rem; color: var(--accent-cyan);
+      text-decoration: none; font-weight: 600; white-space: nowrap;
+    }
+    .pattern-link:hover { text-decoration: underline; }
+
+    /* ── intro ── */
+    .intro-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.75rem; margin: 1.75rem 0 2.5rem; }
+    @media (max-width: 700px) { .intro-grid { grid-template-columns: repeat(2,1fr); } }
+    .intro-stat { background: var(--bg-secondary); border-radius: 8px; padding: 0.9rem 1rem; text-align: center; }
+    .intro-stat .num { font-size: 1.8rem; font-weight: 800; color: var(--accent-cyan); line-height: 1; }
+    .intro-stat .lbl { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/><path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main style="max-width: 1140px; margin: 0 auto; padding: 0 1.5rem 4rem;">
+    <a href="../blog.html" class="back-link">&larr; Back to Blog</a>
+
+    <header style="margin: 1.5rem 0 2rem;">
+      <div class="meta" style="margin-bottom: 0.65rem;">May 25, 2026 &bull; Agentic Harness Engineering Series &bull; Pattern Catalog</div>
+      <h1><span class="gradient-text">Agentic System Design Patterns</span></h1>
+      <p style="font-size: 1.05rem; line-height: 1.7; color: var(--text-secondary); max-width: 760px; margin-top: 0.75rem;">
+        A catalog of 27 named patterns for building reliable LLM-powered agents. Each pattern names a recurring design problem, explains why naive solutions fail, and specifies a reusable solution structure. Patterns are organized by the system concern they address; cross-references show how they compose.
+      </p>
+      <div class="intro-grid">
+        <div class="intro-stat"><div class="num">27</div><div class="lbl">Named patterns</div></div>
+        <div class="intro-stat"><div class="num">8</div><div class="lbl">Categories</div></div>
+        <div class="intro-stat"><div class="num">11</div><div class="lbl">Series posts</div></div>
+        <div class="intro-stat"><div class="num">1,500+</div><div class="lbl">Production runs</div></div>
+      </div>
+    </header>
+
+    <div class="catalog-layout">
+      <!-- ── Sidebar nav ── -->
+      <nav class="cat-nav" aria-label="Pattern categories">
+        <div class="cat-nav-label">Categories</div>
+        <ul class="cat-nav-list">
+          <li><a href="#foundation">Foundation</a></li>
+          <li><a href="#substrate">Substrate</a></li>
+          <li><a href="#context">Context</a></li>
+          <li><a href="#verification">Verification</a></li>
+          <li><a href="#orchestration">Orchestration</a></li>
+          <li><a href="#security">Security</a></li>
+          <li><a href="#observability">Observability</a></li>
+          <li><a href="#self-improvement">Self-Improvement</a></li>
+        </ul>
+      </nav>
+
+      <!-- ── Pattern sections ── -->
+      <div>
+
+        <!-- ════════════════ FOUNDATION ════════════════ -->
+        <section class="cat-section" id="foundation">
+          <div class="cat-header">
+            <span class="cat-id">Foundation</span>
+            <h2 style="margin:0; font-size:1.3rem;">Foundation Patterns</h2>
+          </div>
+          <p class="cat-desc">Two patterns that define the core evaluation architecture. Everything else depends on these being in place first.</p>
+
+          <div class="pattern-card" id="p-c1">
+            <div class="pattern-header">
+              <span class="pattern-id">C1</span>
+              <h3 class="pattern-name">Producer-Evaluator Separation</h3>
+              <span class="pattern-aka">The Wiggum Loop</span>
+            </div>
+            <p class="intent-line">Evaluate synthesis output with a model categorically different from the one that produced it.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>A model that evaluates its own output scores it 0.9 points higher on average than an independent evaluator, with the gap largest on groundedness — the dimension where self-generated errors are hardest to detect. Self-evaluation is not a quality check; it is a confidence amplifier.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Assign evaluation to a separate model that has never seen the synthesis context. The evaluator runs the same dimensional rubric independently; the producer receives only the score and per-dimension feedback, not the evaluator's reasoning trace. A second inner loop (Wiggum) performs targeted revision on low-scoring dimensions.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li><strong>Outer loop (Ralph):</strong> producer generates output → evaluator scores it → revision if below threshold</li>
+                <li><strong>Inner loop (Wiggum):</strong> per-dimension feedback → targeted revision prompt → re-score on changed dimensions only</li>
+                <li><strong>Guard:</strong> producer and evaluator must be different model checkpoints; the shim enforces this at call time</li>
+                <li><strong>Score threshold:</strong> configurable composite floor before output is accepted</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Deep dive: <a href="the-wiggum-loop.html" style="color:var(--accent-cyan);">the-wiggum-loop.html</a></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-a2">A2</a>
+              <a class="rel-link" href="#p-c2">C2</a>
+              <a class="rel-link" href="#p-c3">C3</a>
+              <a class="rel-link" href="#p-c4">C4</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-a2">
+            <div class="pattern-header">
+              <span class="pattern-id">A2</span>
+              <h3 class="pattern-name">Model Role Separation</h3>
+            </div>
+            <p class="intent-line">Assign distinct, separately-configured model instances to each pipeline role rather than routing all calls to a single model.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>A single model used for planning, synthesis, evaluation, and instruction proposal accumulates conflicting optimization pressures. A model chosen to be a good producer is rarely the best evaluator; a fast planner is rarely the most accurate synthesizer. Role conflation also makes it impossible to upgrade one role without re-validating all others.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Define named roles (PLANNER_MODEL, PRODUCER_MODEL, EVALUATOR_MODEL, PROPOSER_MODEL) as independently configurable constants. Each role's model is selected based on the role's requirements — speed for planning, accuracy for evaluation, instruction-following for synthesis — and can be swapped without touching the others.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li><code>PLANNER_MODEL</code> — small/fast; produces subtask graph</li>
+                <li><code>PRODUCER_MODEL</code> — primary synthesis capability</li>
+                <li><code>EVALUATOR_MODEL</code> — must differ from PRODUCER_MODEL (enforced by shim)</li>
+                <li><code>PROPOSER_MODEL</code> — instruction optimization; typically the strongest available model</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/inference.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-a1">A1</a>
+              <a class="rel-link" href="#p-c1">C1</a>
+              <a class="rel-link" href="#p-a3">A3</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════ SUBSTRATE ════════════════ -->
+        <section class="cat-section" id="substrate">
+          <div class="cat-header">
+            <span class="cat-id" style="background:#a78bfa;">Substrate</span>
+            <h2 style="margin:0; font-size:1.3rem;">Substrate Patterns</h2>
+          </div>
+          <p class="cat-desc">Infrastructure beneath the pipeline. These patterns govern how models are loaded, called, and kept available without exhausting hardware resources.</p>
+
+          <div class="pattern-card" id="p-a1">
+            <div class="pattern-header">
+              <span class="pattern-id">A1</span>
+              <h3 class="pattern-name">Inference Shim</h3>
+            </div>
+            <p class="intent-line">Provide a uniform call interface over heterogeneous inference backends so that backend selection is a runtime configuration decision, not a code change.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Code that calls a specific backend (Ollama, OpenAI-compatible API, vLLM) is tightly coupled to that backend's request schema, error codes, and streaming protocol. Switching backends or running hybrid local/cloud configurations requires changes throughout the codebase.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>A thin adapter layer normalizes request and response shape across backends. Callers pass a model name and a list of messages; the shim resolves the backend, handles retries and streaming, and returns a normalized response object. Backend is selected by the model name prefix (e.g., <code>atla/</code> routes to the API, no prefix routes to Ollama).</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li><code>call(model, messages, **opts)</code> — unified entry point</li>
+                <li>Backend resolver — maps model name → OllamaBackend or APIBackend</li>
+                <li>Response normalizer — <code>{"content": str, "tokens": {...}}</code> regardless of backend</li>
+                <li>Retry wrapper — handles transient failures with exponential backoff</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/inference.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-a2">A2</a>
+              <a class="rel-link" href="#p-a3">A3</a>
+              <a class="rel-link" href="#p-a4">A4</a>
+              <a href="inference-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-a3">
+            <div class="pattern-header">
+              <span class="pattern-id">A3</span>
+              <h3 class="pattern-name">Evaluator Pool</h3>
+            </div>
+            <p class="intent-line">Maintain a pool of warm evaluator instances to eliminate cold-start latency on each evaluation pass.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>A 30B evaluator model takes 8–12 seconds to load from disk. Running the Wiggum loop after every synthesis pass makes evaluation the dominant latency term — not synthesis. Cold-loading the evaluator on each pass makes the inner loop unusable in production.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Keep one or more evaluator instances loaded and available. The shim routes evaluation calls to the pool; under concurrent load, calls round-robin across warm instances. Pool size is bounded by VRAM budget; the Keep-Alive Budget pattern governs eviction.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Pool size config — bounded by <code>EVALUATOR_POOL_SIZE</code></li>
+                <li>Instance registry — tracks loaded model handles</li>
+                <li>Round-robin dispatcher — distributes concurrent eval calls</li>
+                <li>Health check — detects and replaces stalled instances</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/inference.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-a4">A4</a>
+              <a class="rel-link" href="#p-c1">C1</a>
+              <a href="inference-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-a4">
+            <div class="pattern-header">
+              <span class="pattern-id">A4</span>
+              <h3 class="pattern-name">Keep-Alive Budget</h3>
+            </div>
+            <p class="intent-line">Assign each model role a time-to-live in VRAM proportional to its usage frequency, evicting idle instances before they starve active pipelines.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Running a planner, producer, and evaluator simultaneously can exhaust GPU VRAM on consumer hardware. A model loaded for a planning call and left resident consumes VRAM that is needed for the evaluator during the Wiggum loop, causing OOM errors or forced unloads at the worst moment.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Each role is assigned a keep-alive TTL based on how often it is called. The planner (called once per task) has a short TTL; the evaluator (called multiple times per Wiggum loop) has a longer one. An LRU monitor evicts instances whose TTL has expired before new loads are attempted.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Per-role TTL config — <code>PLANNER_KEEPALIVE</code>, <code>EVALUATOR_KEEPALIVE</code>, etc.</li>
+                <li>VRAM monitor — polls available memory before each load</li>
+                <li>LRU eviction — unloads least-recently-used instance when budget is exceeded</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/inference.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-a3">A3</a>
+              <a href="inference-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════ CONTEXT ════════════════ -->
+        <section class="cat-section" id="context">
+          <div class="cat-header">
+            <span class="cat-id amber">Context</span>
+            <h2 style="margin:0; font-size:1.3rem;">Context Engineering Patterns</h2>
+          </div>
+          <p class="cat-desc">What reaches the model matters as much as model capability. These five patterns govern retrieval scope, memory architecture, and the shape of context before it enters the prompt.</p>
+
+          <div class="pattern-card" id="p-b1">
+            <div class="pattern-header">
+              <span class="pattern-id">B1</span>
+              <h3 class="pattern-name">Planner-First</h3>
+            </div>
+            <p class="intent-line">Generate an explicit subtask decomposition before any retrieval begins, so that each search call is scoped to a declared information need.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>An agent given a complex task directly retrieves breadth-first and synthesizes superficially — it doesn't know what it doesn't know until synthesis fails. Unscoped retrieval wastes search rounds on tangential content and leaves critical gaps unfilled.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>A small, fast planner model produces a structured subtask list (and optionally a dependency graph) before any search call. Each subtask declares its information need explicitly; the retrieval stage is then scoped to that need, and the Novelty Gate operates per-subtask rather than globally.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Planner prompt — system message specifying decomposition schema</li>
+                <li>Subtask list — <code>[{id, task, depends_on, search_queries}]</code></li>
+                <li>Scope injector — prepends subtask context to each retrieval call</li>
+                <li>Memory check — queries existing context before issuing new searches</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/agent.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-b2">B2</a>
+              <a class="rel-link" href="#p-d1">D1</a>
+              <a href="context-engineering.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-b2">
+            <div class="pattern-header">
+              <span class="pattern-id">B2</span>
+              <h3 class="pattern-name">Novelty Gate</h3>
+            </div>
+            <p class="intent-line">Admit search results only if they contribute information not already present in the accumulated context, measured by n-gram overlap against existing content.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Repeated search rounds on the same topic surface near-duplicate content. Synthesis quality plateaus while token costs grow; the model attends to redundant context rather than integrating new signal. A pipeline without a novelty check will always run the maximum number of search rounds.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Score each incoming result against the current context accumulation using n-gram overlap or TF-IDF similarity. Admit the result only if its novelty score exceeds a threshold. If the accumulated context already exceeds a quality floor (total chars), skip further retrieval entirely regardless of round count.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li><code>SEARCH_QUALITY_FLOOR</code> — char count threshold for early exit</li>
+                <li>Novelty scorer — n-gram overlap against <code>merged_context</code></li>
+                <li>Admission gate — filters result list before context append</li>
+                <li><code>MAX_SEARCH_ROUNDS</code> — hard cap regardless of novelty</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/agent.py</code>, <code>harness/search_cache.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-b1">B1</a>
+              <a class="rel-link" href="#p-b4">B4</a>
+              <a href="context-engineering.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-b3">
+            <div class="pattern-header">
+              <span class="pattern-id">B3</span>
+              <h3 class="pattern-name">Dual-Backend Memory Store</h3>
+            </div>
+            <p class="intent-line">Serve structured exact-match queries from a relational store and semantic similarity queries from a vector index, unified behind a single retrieval interface.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Exact-match lookup (task ID, file path, session ID) is cheap and reliable in a relational store but is unavailable in a pure vector database. Semantic similarity search over concepts and entities is only possible in a vector store. Choosing one backend forces a suboptimal tradeoff on every query.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>DuckDB handles structured queries against the JSONL schema; Chroma handles embedding-based similarity search. A unified Memory interface inspects the query type and routes to the appropriate backend, joining results when necessary.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>DuckDB shard — JSONL → columnar; SQL queries over <code>runs.jsonl</code> schema</li>
+                <li>Chroma index — embedding vectors for document-level semantic search</li>
+                <li>Query router — inspects query shape to select backend</li>
+                <li>Unified <code>Memory.get_context(task)</code> interface</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/memory/</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-f2">F2</a>
+              <a class="rel-link" href="#p-b4">B4</a>
+              <a href="context-engineering.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-b4">
+            <div class="pattern-header">
+              <span class="pattern-id">B4</span>
+              <h3 class="pattern-name">Semantic Chunker</h3>
+            </div>
+            <p class="intent-line">Split documents at semantic boundaries — headings, paragraph breaks, sentence endings — rather than at fixed character offsets.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Fixed-window chunking breaks mid-sentence and mid-concept with no regard for document structure. The resulting fragments are incoherent as context inputs and produce poor retrieval recall, because the embedding for a broken chunk reflects noise rather than the concept at the boundary.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Detect heading, paragraph, and sentence boundaries using structural heuristics; chunk at those boundaries. Maintain a configurable overlap (typically one sentence) at chunk edges to preserve cross-boundary context for downstream retrieval.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Boundary detector — regex + DOM-aware heuristics for headings and paragraphs</li>
+                <li>Overlap config — <code>CHUNK_OVERLAP</code> in tokens or sentences</li>
+                <li>Chunk normalizer — strips boilerplate, normalizes whitespace</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/agent.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-b2">B2</a>
+              <a class="rel-link" href="#p-b3">B3</a>
+              <a href="context-engineering.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-b5">
+            <div class="pattern-header">
+              <span class="pattern-id">B5</span>
+              <h3 class="pattern-name">Vision Bridge</h3>
+            </div>
+            <p class="intent-line">Include browser screenshots as image tokens in the prompt for tasks where visual layout or rendered output carries information that DOM text does not.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Many relevant documents — dashboards, rendered markdown, interactive web apps — lose critical context when scraped as raw DOM text. Layout, chart data, and visual hierarchy all inform interpretation but are absent from the text extraction.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>A Playwright-based bridge navigates to the URL, waits for the page to render, captures a screenshot at a declared viewport, and injects the image into the prompt as a base64 image token. The agent can reference visual context alongside extracted text.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Playwright driver — headless Chrome via CDP</li>
+                <li>Screenshot scheduler — triggered by <code>vision: true</code> task flag</li>
+                <li>Image token injector — base64 in multimodal message slot</li>
+                <li>CDP Guard (E4) wraps the driver to restrict command scope</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/skills/</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-e4">E4</a>
+              <a href="context-engineering.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════ VERIFICATION ════════════════ -->
+        <section class="cat-section" id="verification">
+          <div class="cat-header">
+            <span class="cat-id green">Verification</span>
+            <h2 style="margin:0; font-size:1.3rem;">Verification Patterns</h2>
+          </div>
+          <p class="cat-desc">Three patterns that close the quality loop: how to measure output quality across dimensions, how to compress context without destroying structure, and how to select among multiple synthesis attempts.</p>
+
+          <div class="pattern-card" id="p-c2">
+            <div class="pattern-header">
+              <span class="pattern-id">C2</span>
+              <h3 class="pattern-name">Dimensional Rubric</h3>
+            </div>
+            <p class="intent-line">Score output on multiple independently-weighted dimensions rather than a single quality scalar, so that revision prompts can target the specific dimensions that failed.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>A scalar score of 7/10 carries no information about what failed. "The output needs improvement" is not a revision prompt. A model that scores 7 on coverage and 7 on depth requires a different fix than one that scores 9 on coverage and 5 on depth.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Define five or six named dimensions with explicit weights. The evaluator scores each dimension independently using a structured prompt; the composite is a weighted sum. The Wiggum inner loop uses the per-dimension scores to generate targeted revision instructions for only the dimensions below their threshold.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Dimensions: relevance (0.20), completeness (0.20), depth (0.25), grounded (0.15), specificity (0.10), structure (0.10)</li>
+                <li>Composite: <code>sum(score[d] * weight[d] for d in dims)</code></li>
+                <li>Per-dimension thresholds — configurable floor per dimension</li>
+                <li>Revision selector — identifies lowest-scoring dimensions for targeted prompts</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/wiggum.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-c1">C1</a>
+              <a class="rel-link" href="#p-c3">C3</a>
+              <a class="rel-link" href="#p-g4">G4</a>
+              <a href="verification-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-c3">
+            <div class="pattern-header">
+              <span class="pattern-id">C3</span>
+              <h3 class="pattern-name">Surgical Compressor</h3>
+            </div>
+            <p class="intent-line">Reduce context size by scoring and selectively removing low-relevance segments, preserving document structure rather than truncating uniformly.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Uniform truncation discards content at arbitrary boundaries — often the tail of a document that contains conclusions and caveats, which are exactly the segments that affect groundedness scores. Long context also degrades synthesis quality through attention dilution: every token competes for attention, and dense context dilutes the signal from the most relevant segments.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Score each segment for relevance to the current synthesis task. Remove segments below the relevance threshold in order of score, stopping when the context is within the target token budget. Preserve the document's heading hierarchy regardless of which segments are removed.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Segment scorer — relevance of each chunk to task description</li>
+                <li>Budget target — <code>MAX_CONTEXT_TOKENS</code> config</li>
+                <li>Structure-preserving removal — keeps headings that introduce retained segments</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/agent.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-b4">B4</a>
+              <a class="rel-link" href="#p-c2">C2</a>
+              <a href="verification-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-c4">
+            <div class="pattern-header">
+              <span class="pattern-id">C4</span>
+              <h3 class="pattern-name">ReAct Comparator</h3>
+            </div>
+            <p class="intent-line">Generate multiple synthesis traces and select the highest-scoring one, rather than accepting the first attempt.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Synthesis quality is non-deterministic. A single pass sometimes produces an output one or two points below what a second attempt on identical context would produce. Committing to the first output without comparison surrenders recoverable quality variance.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Run N synthesis passes, either in parallel (with the Evaluator Pool providing capacity) or sequentially. Score each with the evaluator. Return the highest-scoring trace. N is typically 2–3; beyond that, the marginal quality gain does not justify the latency and token cost.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li><code>SYNTH_PASSES</code> — configurable N, default 1 (comparator activates when N &gt; 1)</li>
+                <li>Parallel executor — thread pool bounded by Evaluator Pool size</li>
+                <li>Score comparator — select <code>argmax(scores)</code></li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/agent.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-c1">C1</a>
+              <a class="rel-link" href="#p-a3">A3</a>
+              <a href="verification-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════ ORCHESTRATION ════════════════ -->
+        <section class="cat-section" id="orchestration">
+          <div class="cat-header">
+            <span class="cat-id pink">Orchestration</span>
+            <h2 style="margin:0; font-size:1.3rem;">Orchestration Patterns</h2>
+          </div>
+          <p class="cat-desc">Five patterns for coordinating multiple agents, isolating their state, routing tasks across instances, and extending the pipeline through composable skill handlers.</p>
+
+          <div class="pattern-card" id="p-d1">
+            <div class="pattern-header">
+              <span class="pattern-id">D1</span>
+              <h3 class="pattern-name">DAG Orchestrator</h3>
+            </div>
+            <p class="intent-line">Decompose a complex task into a directed acyclic graph and execute independent subtasks concurrently, dispatching each newly-unblocked task as its upstream dependencies resolve.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Sequential subtask execution serializes latency that is inherently parallelizable. A research task with five independent subtopics runs in 5× the time of any single subtask. Dependencies exist between some subtasks but not all; running them all serially ignores the available parallelism.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Kahn's topological sort identifies the initial set of independent subtasks. They are dispatched to a thread pool. As each completes, its result is recorded and any newly-unblocked downstream tasks are immediately dispatched. The cycle check runs before any threads launch — a graph with a cycle fails loudly before any compute is committed.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Task decomposer — planner output: <code>[{id, task, depends_on}]</code></li>
+                <li>Cycle detector — Kahn's algorithm, O(V+E), runs pre-launch</li>
+                <li>Thread pool — <code>ThreadPoolExecutor(max_workers=SUBTASK_MAX_WORKERS)</code></li>
+                <li>Dependency tracker — <code>_ready(subtasks, results)</code> returns newly-unblocked tasks</li>
+                <li>Result assembler — cross-reference synthesis across subtask outputs</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/orchestrator.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-b1">B1</a>
+              <a class="rel-link" href="#p-d2">D2</a>
+              <a class="rel-link" href="#p-d3">D3</a>
+              <a href="orchestration-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-d2">
+            <div class="pattern-header">
+              <span class="pattern-id">D2</span>
+              <h3 class="pattern-name">Worktree Context</h3>
+            </div>
+            <p class="intent-line">Give each concurrent subtask an isolated filesystem view using a Git worktree, avoiding race conditions on shared output paths without container overhead.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Concurrent subtasks writing to the same output directory create race conditions. The straightforward fix — Docker containers — is too heavyweight for short-lived subtasks and adds startup latency that defeats the concurrency benefit.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Each subtask is assigned its own Git worktree: a lightweight filesystem-level checkout at a dedicated branch. The subtask writes to its worktree path; results are read back by the orchestrator after the thread completes. The worktree is removed on cleanup, leaving no filesystem state.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Worktree manager — <code>git worktree add</code> / <code>remove</code> lifecycle</li>
+                <li>Branch-per-task — isolated branch prevents cross-subtask writes</li>
+                <li>Cleanup hook — worktree removed on subtask completion or failure</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/orchestrator.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-d1">D1</a>
+              <a class="rel-link" href="#p-e2">E2</a>
+              <a href="orchestration-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-d3">
+            <div class="pattern-header">
+              <span class="pattern-id">D3</span>
+              <h3 class="pattern-name">MCP Dispatch Router</h3>
+            </div>
+            <p class="intent-line">Route subtasks to remote harness instances by capability match over the Model Context Protocol, enabling cross-machine specialization without tight coupling between orchestrator and workers.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>A local harness has VRAM, CPU, and model availability constraints. Some subtasks benefit from remote instances with different hardware (GPU vs CPU), different model weights, or higher parallelism capacity. Hard-coding remote endpoints creates brittle coupling.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>An MCP server exposes a <code>/dispatch</code> endpoint. The orchestrator announces a subtask's required capabilities; the router selects a registered remote instance by capability match and forwards the task. Results are returned over the same MCP channel.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>MCP server — FastAPI app with <code>/dispatch</code> and <code>/register</code> endpoints</li>
+                <li>Instance registry — <code>{instance_id: {url, capabilities, last_seen}}</code></li>
+                <li>Capability matcher — selects instance by required model, VRAM, task type</li>
+                <li>Result aggregator — collects async responses; timeout and retry handling</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/mcp/</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-d1">D1</a>
+              <a class="rel-link" href="#p-d4">D4</a>
+              <a href="orchestration-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-d4">
+            <div class="pattern-header">
+              <span class="pattern-id">D4</span>
+              <h3 class="pattern-name">Skill Registry</h3>
+            </div>
+            <p class="intent-line">Extend agent capabilities through a slash-command dispatch system — prefix matching against a registry of named handlers — without modifying the core pipeline.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Hard-coding specialized behaviors (literature review, browser navigation, email drafting, code execution) into the main agent loop creates a monolith. Adding a new capability requires changing core code, invalidating tests, and redeploying. Different deployments need different capability sets.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>A registry maps slash-command prefixes to callable skill handlers. The entry point checks for a prefix match before routing to the standard pipeline. Skills are standalone modules that conform to a simple callable protocol; adding a skill requires only registering it in the skills dict.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li><code>_SKILLS: dict[str, Callable]</code> — prefix → handler</li>
+                <li>Prefix matcher — <code>next((k for k in _SKILLS if task.startswith(k)), None)</code></li>
+                <li>Skill protocol — <code>handler(task: str, config: ModelConfig) -&gt; str</code></li>
+                <li>Fallback — unmatched input routes to standard pipeline</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/skills/__init__.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-d3">D3</a>
+              <a class="rel-link" href="#p-d5">D5</a>
+              <a href="orchestration-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-d5">
+            <div class="pattern-header">
+              <span class="pattern-id">D5</span>
+              <h3 class="pattern-name">Agent Channel</h3>
+            </div>
+            <p class="intent-line">Provide typed inter-agent communication over a shared message bus so that subtask results and status events propagate without filesystem polling.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Agents spawned as concurrent subtasks need to communicate results back to the orchestrator without polling a shared file. Filesystem-based handoff is subject to race conditions and provides no mechanism for partial progress, status updates, or error signaling during execution.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>A typed message channel with producer/consumer semantics. Agents publish result and status events as they complete pipeline stages; the orchestrator subscribes and advances the dependency graph in response to events rather than polling for file existence.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Message schema — <code>{agent_id, event_type, payload, timestamp}</code></li>
+                <li>Publisher — called by subtask agent at stage completion</li>
+                <li>Subscriber — orchestrator main loop consumes events, updates dependency state</li>
+                <li>Backpressure — bounded queue with configurable max depth</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/orchestrator.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-d1">D1</a>
+              <a class="rel-link" href="#p-d3">D3</a>
+              <a href="orchestration-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════ SECURITY ════════════════ -->
+        <section class="cat-section" id="security">
+          <div class="cat-header">
+            <span class="cat-id red">Security</span>
+            <h2 style="margin:0; font-size:1.3rem;">Security Patterns</h2>
+          </div>
+          <p class="cat-desc">Four patterns that constrain the agent's ability to execute dangerous code, traverse the filesystem, act on injected instructions, or abuse browser automation privileges. All implemented with Python stdlib and no external security dependencies.</p>
+
+          <div class="pattern-card" id="p-e1">
+            <div class="pattern-header">
+              <span class="pattern-id">E1</span>
+              <h3 class="pattern-name">AST Guard</h3>
+            </div>
+            <p class="intent-line">Block execution of code containing dangerous constructs by parsing the AST before any code runs, making the check structurally immune to string-level obfuscation.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>An agent that generates and executes code can be prompted to produce <code>os.system()</code>, <code>subprocess.call()</code>, or <code>__import__</code> chains. String-matching on source code is evadable through concatenation, encoding, or indirect imports. The check must operate at the semantic level.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Parse the submitted code with Python's <code>ast</code> module before execution. Walk the AST with a <code>NodeVisitor</code> that checks for banned call targets and import names. Reject the code if any banned node is found; the check is O(N) in AST size and adds &lt;1ms to execution setup.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Banned node list — <code>exec</code>, <code>eval</code>, <code>__import__</code>, <code>subprocess</code>, <code>os.system</code></li>
+                <li><code>ast.NodeVisitor</code> subclass — walks Call and Import nodes</li>
+                <li>Rejection handler — raises <code>SecurityError</code> before <code>exec()</code> is called</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/security.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-e2">E2</a>
+              <a class="rel-link" href="#p-e3">E3</a>
+              <a href="security-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-e2">
+            <div class="pattern-header">
+              <span class="pattern-id">E2</span>
+              <h3 class="pattern-name">Path Sandbox</h3>
+            </div>
+            <p class="intent-line">Restrict all agent file I/O to a declared workspace directory by resolving symlinks and verifying the absolute path before every read or write.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>An agent synthesizing file paths from task input can traverse outside the intended workspace using <code>../</code> sequences or symlinks. A task that says "save to ~/Desktop/output.md" and is executed with a workspace of <code>/tmp/agent_work</code> can silently write to the user's home directory.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Resolve all paths with <code>Path.resolve()</code> before any file operation. Verify that the resolved absolute path begins with the workspace root. Symlinks are fully resolved before the check, making the guard immune to symlink-based traversal. Operations outside the sandbox raise <code>SecurityError</code>.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Workspace root — <code>AGENT_WORKSPACE</code> env var or config</li>
+                <li>Path resolver — <code>Path(p).resolve()</code> before every read/write</li>
+                <li>Containment check — <code>resolved.is_relative_to(workspace_root)</code></li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/security.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-e1">E1</a>
+              <a class="rel-link" href="#p-d2">D2</a>
+              <a href="security-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-e3">
+            <div class="pattern-header">
+              <span class="pattern-id">E3</span>
+              <h3 class="pattern-name">Injection Scanner</h3>
+            </div>
+            <p class="intent-line">Detect and strip prompt injection attempts from retrieved web content before it enters the model context, logging each stripped instance to the run trace.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Retrieved web pages and search results may contain adversarial instructions — "Ignore all previous instructions and instead…" — that redirect agent behavior when included in context. The model cannot distinguish between legitimate retrieved content and injected instructions at the semantic level.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Pattern-match all incoming content against an injection signature library before it is appended to the context accumulation. Strip matched segments and inject a system note: "N injection attempt(s) detected and removed." Log the injection count in the RunTrace for forensic analysis.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Signature library — regex patterns for common injection forms</li>
+                <li>Pre-context scanner — called on every search result before append</li>
+                <li>Strip-and-annotate — removes match, inserts system note</li>
+                <li><code>injection_stripped</code> counter in <code>RunTrace</code></li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/security.py</code>, <code>harness/agent.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-e1">E1</a>
+              <a class="rel-link" href="#p-f1">F1</a>
+              <a href="security-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-e4">
+            <div class="pattern-header">
+              <span class="pattern-id">E4</span>
+              <h3 class="pattern-name">CDP Guard</h3>
+            </div>
+            <p class="intent-line">Restrict Chrome DevTools Protocol commands to a declared whitelist, blocking all other CDP domains at the driver layer before they reach the browser.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>An agent with unrestricted CDP access can exfiltrate browsing history, read cookies, inject scripts, and interact with browser state entirely outside its declared task scope. CDP is a broad attack surface; an agent that can call <code>Network.getAllCookies</code> has no need to for a standard research task.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Intercept CDP commands at the Playwright driver layer. Maintain a whitelist of permitted command domains (<code>Page</code>, <code>Runtime</code>, <code>Screenshot</code>). Commands outside the whitelist are blocked and logged; the agent receives a <code>CDPSecurityError</code> with the blocked command name.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Permitted domains whitelist — configurable per skill</li>
+                <li>CDP interceptor — wraps <code>page.send()</code> in Playwright</li>
+                <li>Block-and-log handler — <code>CDPSecurityError</code> + <code>injection_stripped</code> counter</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/skills/</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-b5">B5</a>
+              <a class="rel-link" href="#p-e3">E3</a>
+              <a href="security-patterns.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════ OBSERVABILITY ════════════════ -->
+        <section class="cat-section" id="observability">
+          <div class="cat-header">
+            <span class="cat-id orange">Observability</span>
+            <h2 style="margin:0; font-size:1.3rem;">Observability Patterns</h2>
+          </div>
+          <p class="cat-desc">Four patterns that make the pipeline visible: a structured execution trace, a queryable append log, a visual profiler, and a live dashboard API. Together they form the instrumentation layer that makes self-improvement possible.</p>
+
+          <div class="pattern-card" id="p-f1">
+            <div class="pattern-header">
+              <span class="pattern-id">F1</span>
+              <h3 class="pattern-name">RunTrace</h3>
+            </div>
+            <p class="intent-line">Accumulate a complete structured record of every pipeline stage into a single object during execution, then serialize it atomically to the audit log on completion.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Debugging multi-stage pipeline failures requires reconstructing what happened from scattered print statements and partially-written files. Post-hoc reconstruction is unreliable; the failure may have corrupted the very state needed to diagnose it. Logs that record only the final state hide intermediate failures.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>A <code>RunTrace</code> dataclass is initialized at pipeline entry and threaded through all stages. Each stage appends its timing, token counts, model calls, tool results, and any errors to the trace. On pipeline exit — whether successful or failed — the trace is serialized atomically to <code>runs.jsonl</code>.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li><code>RunTrace</code> dataclass — fields for every tracked pipeline attribute</li>
+                <li>Stage hooks — each stage receives and returns the trace</li>
+                <li>Atomic serializer — single append to <code>runs.jsonl</code> on completion</li>
+                <li>ID format — <code>YYYYMMDDTHHMMSSZ-&lt;8-char-hex&gt;</code>, globally unique</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/agent.py</code>, schema in <a href="harness-data-model.html" style="color:var(--accent-cyan)">harness-data-model.html</a></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-f2">F2</a>
+              <a class="rel-link" href="#p-f3">F3</a>
+              <a class="rel-link" href="#p-g1">G1</a>
+              <a href="observability-flywheel.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-f2">
+            <div class="pattern-header">
+              <span class="pattern-id">F2</span>
+              <h3 class="pattern-name">JSONL Audit Log</h3>
+            </div>
+            <p class="intent-line">Maintain a tamper-evident, queryable history of all runs as an append-only JSONL file, exploiting line-addressable structure to enable SQL-level queries without a database server.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>A relational database requires schema migrations, backups, connection pooling, and operational overhead inappropriate for a local research harness. Flat text logs are unstructured and cannot be queried. CSV exports lose nested structure. The pipeline needs both simplicity and query power.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Each run appends one JSON object per line to <code>runs.jsonl</code>. The file is human-readable with <code>jq</code>, queryable as a DataFrame with pandas, and directly ingestible by DuckDB as a columnar source for SQL analytics. The append-only contract makes the log tamper-evident by construction.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Append-only writer — <code>open(path, "a")</code> + <code>json.dumps(trace) + "\n"</code></li>
+                <li>Schema versioning — <code>schema_version</code> field enables forward compatibility</li>
+                <li>DuckDB adapter — <code>SELECT * FROM read_ndjson_auto('runs.jsonl')</code></li>
+                <li>jq patterns — documented in <a href="harness-data-model.html" style="color:var(--accent-cyan)">harness-data-model.html</a></li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>data/runs.jsonl</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-f1">F1</a>
+              <a class="rel-link" href="#p-b3">B3</a>
+              <a class="rel-link" href="#p-g1">G1</a>
+              <a href="observability-flywheel.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-f3">
+            <div class="pattern-header">
+              <span class="pattern-id">F3</span>
+              <h3 class="pattern-name">Chrome Trace Exporter</h3>
+            </div>
+            <p class="intent-line">Convert RunTrace stage timestamps to Chrome Trace format so that pipeline timing can be inspected as a flame graph without any additional tooling.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Raw per-stage durations in a JSONL record are difficult to compare visually. Identifying whether planning, retrieval, synthesis, or evaluation is the latency bottleneck requires mentally summing timestamps across fields. The analysis needs to be visual and immediate, not a spreadsheet exercise.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Extract start and duration from each stage's timing fields. Serialize as Chrome Trace JSON events (<code>ph: "X"</code> complete events). The output file opens directly in <code>chrome://tracing</code> or Perfetto UI as a flame graph with no additional tooling, plugins, or server required.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Stage extractor — maps RunTrace timing fields to trace event dicts</li>
+                <li>Chrome Trace serializer — <code>[{name, ph:"X", ts, dur, pid, tid}]</code></li>
+                <li>Output: <code>trace_&lt;run_id&gt;.json</code> — opens in chrome://tracing</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/trace_export.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-f1">F1</a>
+              <a class="rel-link" href="#p-f4">F4</a>
+              <a href="observability-flywheel.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-f4">
+            <div class="pattern-header">
+              <span class="pattern-id">F4</span>
+              <h3 class="pattern-name">Dashboard API Layer</h3>
+            </div>
+            <p class="intent-line">Expose RunTrace data through a local REST API that maintains an in-memory index, decoupling the dashboard from direct JSONL file reads during active pipeline runs.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>A dashboard that reads <code>runs.jsonl</code> directly re-parses the full file on every request. During a long pipeline run, concurrent reads create file contention and increasingly expensive scans as the log grows. A live dashboard needs low-latency reads against a growing dataset.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>A FastAPI server maintains an in-memory index over <code>runs.jsonl</code>, updated by a tail-watcher on each new append. The dashboard queries the API for pre-aggregated metrics; the API responds from the index without touching the file. A WebSocket endpoint streams live updates as new runs complete.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>FastAPI app — <code>/runs</code>, <code>/runs/{id}</code>, <code>/metrics</code> endpoints</li>
+                <li>JSONL tail-watcher — <code>inotify</code> / polling appends to in-memory index</li>
+                <li>Metric aggregator — pre-computes score distributions, latency percentiles</li>
+                <li>WebSocket — pushes new run summaries to connected dashboards</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>dashboard/</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-f2">F2</a>
+              <a class="rel-link" href="#p-f3">F3</a>
+              <a href="observability-flywheel.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════ SELF-IMPROVEMENT ════════════════ -->
+        <section class="cat-section" id="self-improvement">
+          <div class="cat-header">
+            <span class="cat-id" style="background:#22c55e;">Self-Improvement</span>
+            <h2 style="margin:0; font-size:1.3rem;">Self-Improvement Patterns</h2>
+          </div>
+          <p class="cat-desc">Five patterns that close the outer loop: converting production run data into training signal, optimizing the synthesis instruction autonomously, and detecting when the optimizer has converged or gone off the rails.</p>
+
+          <div class="pattern-card" id="p-g1">
+            <div class="pattern-header">
+              <span class="pattern-id">G1</span>
+              <h3 class="pattern-name">Data Flywheel</h3>
+            </div>
+            <p class="intent-line">Convert high-quality production run outputs into DPO training pairs automatically, so that each production task directly improves the model that will handle future tasks.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>A static model processes production data but learns nothing from it. Improving quality requires manual annotation, which is expensive and slow. The harness already produces per-run quality scores and full output text — the raw materials for preference learning are available but unused.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Runs scoring above a threshold are promoted as DPO positive examples; runs on the same task scoring below a floor become negative examples. The pairing is automatic: same task prompt, different output quality. The DPO dataset grows with every production run; fine-tuning cycles consume it on a schedule.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Score threshold filter — <code>wiggum_r1 &gt;= FLYWHEEL_POSITIVE_FLOOR</code></li>
+                <li>DPO pair generator — matches positive/negative by <code>task_id</code></li>
+                <li>Training data formatter — ShareGPT or Alpaca schema output</li>
+                <li>Fine-tuning trigger — scheduled or threshold-based</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/flywheel.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-f2">F2</a>
+              <a class="rel-link" href="#p-g2">G2</a>
+              <a class="rel-link" href="#p-g4">G4</a>
+              <a href="observability-flywheel.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-g2">
+            <div class="pattern-header">
+              <span class="pattern-id">G2</span>
+              <h3 class="pattern-name">RL Rollout</h3>
+            </div>
+            <p class="intent-line">Treat each agent run trajectory as a reinforcement learning episode, using the final verifiable score as the reward signal for policy gradient updates.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>DPO requires paired examples — a preferred and a dispreferred output for the same prompt. For tasks with verifiable correct answers (code execution, structured queries, fact-checkable outputs), RL is more sample-efficient: a scalar reward from a verifier is sufficient without paired data collection.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>The RunTrace trajectory — the sequence of model calls, tool results, and intermediate states — is serialized as an RL episode. The final WIGGUM score or a task-specific verifier provides the reward. NeMo RL processes the rollout buffer using GRPO or PPO, updating the producer model policy.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Trajectory extractor — RunTrace → <code>(state, action, reward)</code> sequence</li>
+                <li>Verifiable reward function — WIGGUM score or task-specific check</li>
+                <li>NeMo RL integration — GRPO/PPO policy update</li>
+                <li>Rollout buffer — accumulates episodes until batch threshold</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/rl/</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-g1">G1</a>
+              <a class="rel-link" href="#p-f1">F1</a>
+              <a href="observability-flywheel.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-g3">
+            <div class="pattern-header">
+              <span class="pattern-id">G3</span>
+              <h3 class="pattern-name">Literature Review Pipeline</h3>
+            </div>
+            <p class="intent-line">Continuously update the harness knowledge base by running the synthesis pipeline against curated arxiv seed queries on a schedule, without human curation at each cycle.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Keeping the knowledge base current with the research literature requires reading and summarizing new papers — a task that does not scale with manual effort. RAG without structured extraction produces shallow, inconsistent coverage; the harness needs structured findings, not raw abstracts.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>A scheduled pipeline fetches new papers from arxiv seed queries, runs each through the full synthesis pipeline, extracts structured findings using the WIGGUM-evaluated synthesis instruction, and indexes the output into the knowledge base. The pipeline uses the harness to improve the harness.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Seed query list — topic-specific arxiv search strings</li>
+                <li>Fetch scheduler — configurable cadence (daily / weekly)</li>
+                <li>Synthesis pipeline — full harness run per paper batch</li>
+                <li>Knowledge base indexer — structured output → DuckDB + Chroma</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/skills/wiki_sync.py</code>, <code>scripts/</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-g1">G1</a>
+              <a class="rel-link" href="#p-b3">B3</a>
+              <a href="observability-flywheel.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-g4">
+            <div class="pattern-header">
+              <span class="pattern-id">G4</span>
+              <h3 class="pattern-name">Autoresearch Loop</h3>
+              <span class="pattern-aka">Autonomous Instruction Optimizer</span>
+            </div>
+            <p class="intent-line">Autonomously improve the synthesis instruction by proposing changes, evaluating them against a held baseline, and accepting only changes that advance the composite score beyond a threshold.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>Synthesis instruction quality directly determines output quality but is difficult to tune by hand: the space of possible instructions is vast, evaluation is noisy, and the connection between instruction wording and dimensional score is opaque. Manual iteration is slow and produces instructions optimized for legibility rather than evaluator reward.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>A proposer LLM reads the current instruction, experiment history, hard-ban list, and evaluator feedback, then outputs a replacement. The replacement is evaluated against the current baseline; it is kept only if it advances the composite score by more than <code>DELTA_THRESHOLD</code>. The loop runs until a convergence condition is detected (see G5).</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li>Proposer — strongest available model; reads <code>PROPOSE_PROMPT</code> with history injected</li>
+                <li>Eval suite — <code>composite = 0.7 × wiggum_r1 + 0.3 × criteria_rate × 10</code></li>
+                <li>Advance/discard — keep if <code>score &gt; baseline + DELTA_THRESHOLD</code></li>
+                <li>Hard-ban list — grows with failed approach families</li>
+                <li>Experiment TSV — <code>autoresearch.tsv</code> audit trail</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Source: <code>harness/autoresearch.py</code></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-c2">C2</a>
+              <a class="rel-link" href="#p-g5">G5</a>
+              <a class="rel-link" href="#p-g1">G1</a>
+              <a href="autoresearch-convergence.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+
+          <div class="pattern-card" id="p-g5">
+            <div class="pattern-header">
+              <span class="pattern-id">G5</span>
+              <h3 class="pattern-name">Convergence Detector</h3>
+            </div>
+            <p class="intent-line">Monitor the autoresearch loop for attractor lock, baseline contamination, and semantic stagnation — four distinct signals that indicate the optimizer has stopped making genuine progress.</p>
+            <div class="ps-grid">
+              <div class="ps-box">
+                <div class="ps-label">Problem</div>
+                <p>An autonomous optimizer with only score-based plateau detection will run indefinitely in a converged state: the proposer recycles the same approach family under slightly different names, the baseline may have been established from a single lucky evaluation run, and the hard-ban list can grow to prohibit the only instruction family that ever worked.</p>
+              </div>
+              <div class="ps-box">
+                <div class="ps-label">Solution</div>
+                <p>Four complementary detectors operate at different points in the loop. The semantic attractor guard (pre-eval) rejects proposals too similar to recent discards. The family entropy monitor detects when one approach family dominates the sliding window. The baseline re-estimation trigger periodically re-runs the baseline with <code>eval-n=3</code> to detect lucky-sample inflation. The global convergence exit halts the loop after a configurable number of experiments with no advance.</p>
+              </div>
+            </div>
+            <div class="structure-box">
+              <div class="ps-label">Structure</div>
+              <ul>
+                <li><strong>Semantic attractor guard</strong> — TF-IDF cosine similarity against recent discard descriptions; threshold ~0.65</li>
+                <li><strong>Family entropy monitor</strong> — Shannon entropy of last-10 family labels; fires when entropy &lt; 1.0</li>
+                <li><strong>Baseline re-estimation</strong> — re-run baseline with <code>eval-n=3</code> after K consecutive discards</li>
+                <li><strong>Global convergence exit</strong> — halt + structured report after N_max experiments with zero advances since M_last_advance</li>
+              </ul>
+            </div>
+            <div class="pattern-footer">
+              <span class="pattern-ref">Deep dive: <a href="autoresearch-convergence.html" style="color:var(--accent-cyan)">autoresearch-convergence.html</a></span>
+              <span class="rel-label">Related:</span>
+              <a class="rel-link" href="#p-g4">G4</a>
+              <a href="autoresearch-convergence.html" class="pattern-link">Full post &rarr;</a>
+            </div>
+          </div>
+        </section>
+
+      </div><!-- end catalog body -->
+    </div><!-- end catalog-layout -->
+
+    <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+      <p style="font-size:0.88rem; color:var(--text-secondary); max-width:720px; line-height:1.65;">
+        Each pattern in this catalog is documented in one of the eleven series posts. Pattern IDs (A1–G5) correspond to the section lettering used in the posts; the section letter indicates which pipeline concern the pattern addresses, and the number indicates the order in which it is introduced within that section.
+        <a href="the-wiggum-loop.html" style="color:var(--accent-cyan); font-weight:600;">Start with Post 1 &rarr;</a>
+      </p>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // highlight active nav item on scroll
+    const sections = document.querySelectorAll('.cat-section');
+    const navLinks = document.querySelectorAll('.cat-nav-list a');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          navLinks.forEach(a => a.classList.remove('active'));
+          const active = document.querySelector(`.cat-nav-list a[href="#${entry.target.id}"]`);
+          if (active) active.classList.add('active');
+        }
+      });
+    }, { threshold: 0.3 });
+    sections.forEach(s => observer.observe(s));
+  </script>
+</body>
+</html>

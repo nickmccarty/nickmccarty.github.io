@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leverage: What the Metric Measures, What It Doesn't, and Why the Replacement Framing Gets the Math Wrong | Nick McCarty</title>
+  <meta name="description" content="A quantitative look at the harness leverage metric — what it measures, how hourly rate enters the formula, and why the corporate narrative of AI 'replacing lower-value human capital' misreads what the math actually shows.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/leverage.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Leverage: What the Metric Measures, What It Doesn't, and Why the Replacement Framing Gets the Math Wrong">
+  <meta property="og:description" content="A quantitative look at the harness leverage metric and why the corporate narrative of AI 'replacing lower-value human capital' misreads what the math actually shows.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/leverage.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-25T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Leverage: What the Metric Measures, What It Doesn't, and Why the Replacement Framing Gets the Math Wrong">
+  <meta name="twitter:description" content="A quantitative look at the harness leverage metric and why the corporate narrative of AI 'replacing lower-value human capital' misreads what the math actually shows.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Leverage: What the Metric Measures, What It Doesn't, and Why the Replacement Framing Gets the Math Wrong", "description": "A quantitative look at the harness leverage metric and why the corporate narrative of AI replacing lower-value human capital misreads what the math actually shows.", "keywords": "AI leverage, labor economics, agentic AI, automation, workforce, productivity, replacement narrative", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-25", "dateModified": "2026-05-25", "url": "https://nickmccarty.github.io/blog/leverage.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/leverage.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Analysis"}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.amber { border-left-color: #f59e0b; }
+    .callout.pink  { border-left-color: var(--accent-pink); }
+    .callout.red   { border-left-color: #ef4444; }
+    .callout p, .callout ul { margin: 0; font-size: 1.05rem; }
+    .callout ul { padding-left: 1.25rem; }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.55rem 0.85rem;
+      background: var(--bg-tertiary);
+      border-bottom: 2px solid var(--border-color);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    td {
+      padding: 0.55rem 0.85rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    tr:last-child td { border-bottom: none; }
+    .formula-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.5rem 2rem;
+      margin: 1.5rem 0;
+      text-align: center;
+    }
+    .formula-main {
+      font-size: 1.15rem;
+      font-family: 'SF Mono', 'Consolas', monospace;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+    }
+    .formula-terms {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+    }
+    .formula-term strong { color: var(--accent-cyan); }
+    .lev-table td:nth-child(2), .lev-table td:nth-child(3), .lev-table td:nth-child(4) {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85rem;
+    }
+    .highlight { color: var(--accent-cyan); font-weight: 600; }
+    .dim { color: var(--text-secondary); }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.050 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 25, 2026 &bull; 12 min read &bull; Analysis</div>
+        <h1><span class="gradient-text">Leverage: What the Metric Measures, What It Doesn&rsquo;t, and Why the Replacement Framing Gets the Math Wrong</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          A corporate narrative is taking root: AI &ldquo;naturally&rdquo; displaces lower-value human capital first. The harness has been tracking a quantity called leverage for 1,500+ runs. The formula is more interesting than the narrative, and it points in a different direction.
+        </p>
+      </header>
+
+      <h2>The Formula</h2>
+
+      <p>
+        Every completed agentic run in the harness logs a leverage value to <code>runs.jsonl</code>. It is computed in <code>RunTrace.finish()</code> and printed to stdout:
+      </p>
+
+      <div class="formula-box">
+        <div class="formula-main">leverage = (tac_s &times; quality_norm) / max(runtime_s + cost_s, 1.0)</div>
+        <div class="formula-terms">
+          <div><strong>tac_s</strong> &mdash; time a skilled human would need, in seconds</div>
+          <div><strong>quality_norm</strong> &mdash; final WIGGUM score &divide; 10</div>
+          <div><strong>runtime_s</strong> &mdash; actual wall-clock time of the run</div>
+          <div><strong>cost_s</strong> &mdash; dollar cost converted to equivalent human-labor seconds</div>
+        </div>
+      </div>
+
+      <p>
+        In concrete terms: a run with <code>tac=3.0h</code>, quality <code>8/10</code>, and <code>runtime=714s</code> on local hardware (cost &asymp; $0.00) produces:
+      </p>
+
+<pre><code>tac_s       = 3.0 &times; 3600 = 10,800s
+quality_norm = 8.0 / 10.0  = 0.8
+runtime_s   = 714s
+cost_s      = ($0.00 / $75/hr) &times; 3600 = 0s
+
+leverage = (10,800 &times; 0.8) / (714 + 0) = 8,640 / 714 &asymp; 12.1&times;</code></pre>
+
+      <p>
+        The harness produced 12 hours of quality-adjusted skilled research in 12 minutes of machine time. That is what 12.1&times; means.
+      </p>
+
+      <p>
+        <code>tac_s</code> comes from two sources. The WIGGUM evaluator estimates it as part of its scoring response, using a calibration scale from 0.25h (trivial lookup) to 24h (novel research requiring primary data collection). A separate <code>_estimate_tac_hours()</code> call in <code>agent.py</code> breaks the estimate into <code>search_h + read_h + write_h</code> components for cross-validation. The two estimates are averaged. The denominator reflects what was actually spent, in machine time plus machine cost. The ratio is leverage.
+      </p>
+
+      <h2>Where Hourly Rate Enters the Formula</h2>
+
+      <p>
+        The <code>cost_s</code> term converts dollar costs to time-equivalent seconds:
+      </p>
+
+<pre><code>cost_s = ((energy_cost + infer_cost) / hourly_rate) &times; 3600</code></pre>
+
+      <p>
+        <code>hourly_rate</code> defaults to $75/hr and is configurable via <code>HARNESS_HOURLY_RATE</code>. Its role is to put machine cost on the same scale as human time — making the denominator a unified "cost in human-labor-seconds."
+      </p>
+
+      <p>
+        For a run with $0.50 in total machine cost, the cost penalty at three wage points:
+      </p>
+
+      <table class="lev-table">
+        <thead>
+          <tr>
+            <th>Hourly rate</th>
+            <th>cost_s</th>
+            <th>cost_s as % of 714s runtime</th>
+            <th>Leverage (3h TAC, quality 8/10)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>$15/hr</strong> (min wage)</td>
+            <td>120s</td>
+            <td>14.6%</td>
+            <td>10.3&times;</td>
+          </tr>
+          <tr>
+            <td><strong>$75/hr</strong> (default)</td>
+            <td>24s</td>
+            <td>3.3%</td>
+            <td>11.8&times;</td>
+          </tr>
+          <tr>
+            <td><strong>$200/hr</strong> (senior engineer)</td>
+            <td>9s</td>
+            <td>1.3%</td>
+            <td>12.1&times;</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The table shows that for a $0.50 run — already an expensive case, since local inference on the harness costs roughly $0.01 per run — the leverage penalty from the low-wage scenario is about 15% lower than the high-wage scenario. Not catastrophic. And for the actual harness running locally with near-zero cost, <code>cost_s &asymp; 0</code> at every wage level, and the table entries converge to the same number.
+      </p>
+
+      <p>
+        On 145 empirical runs, recalculating leverage at $15, $75, and $200/hr produces statistically indistinguishable distributions. The box plots are nearly identical. Local inference collapses the formula to:
+      </p>
+
+      <div class="formula-box" style="text-align: center;">
+        <div class="formula-main">leverage &asymp; (tac_hours &times; quality_norm &times; 3600) / runtime_s</div>
+        <p style="margin: 0.75rem 0 0; font-size: 0.88rem; color: var(--text-secondary);">When cost_s &asymp; 0 (local inference), hourly rate vanishes from the computation entirely.</p>
+      </div>
+
+      <p>
+        The leverage metric, as actually computed across 1,500+ logged runs, is independent of the operator's wage. It is a pure time multiplier.
+      </p>
+
+      <h2>The Asymmetry That Gets Weaponized</h2>
+
+      <p>
+        There is a real asymmetry in the formula, and it is worth being precise about what it is.
+      </p>
+
+      <p>
+        <code>tac_s</code> is calibrated to the time a <em>skilled researcher or engineer</em> would need. The WIGGUM prompt specifies this explicitly: a 3h TAC estimate means "a skilled practitioner, familiar with the domain, working efficiently, would take 3 hours." It does not mean "an average worker" or "anyone asked to do this task."
+      </p>
+
+      <p>
+        This creates a numerator asymmetry, distinct from the cost_s term analyzed above. If the person whose work is being replaced is <em>not</em> a skilled researcher — if the real-world task would take them 8 hours instead of 3 — the TAC estimate understates the value of the displacement. The formula gives conservative leverage numbers when used to evaluate the displacement of less-experienced workers, not inflated ones.
+      </p>
+
+      <p>
+        This is the asymmetry that corporate framings reach for when they talk about AI "naturally" targeting lower-value labor. The argument runs: automation makes economic sense first where the displaced labor is most expensive, therefore the displacement pressure falls first on cheaper workers. The formula can be read to support this reading — if expensive labor is harder to automate profitably, the cheap-labor case is even worse.
+      </p>
+
+      <p>
+        The argument is coherent and partially true. It is also incomplete in ways that matter.
+      </p>
+
+      <h2>What the Formula Doesn&rsquo;t Capture</h2>
+
+      <p>
+        The leverage metric answers a specific question: <em>given that the harness runs a task, how much time does it save relative to a skilled human doing the same task?</em> It does not answer:
+      </p>
+
+      <ul style="margin: 1rem 0; padding-left: 1.5rem; line-height: 1.9;">
+        <li><strong>Who is using the harness.</strong> The formula is the same regardless of whether the operator is a $200/hr consultant or a $15/hr worker who has chosen to install and run the tool. The leverage is identical. The dollar value of that leverage differs — 12&times; means $9,000 in saved effort at $200/hr and $1,800 at $15/hr — but the capability multiplier is the same physical reality.</li>
+        <li><strong>Whether the task category changes after leverage is applied.</strong> A $15/hr worker producing research syntheses at 12&times; leverage is no longer doing $15/hr work. They are producing output that, absent the tool, would require a skilled researcher. The market may or may not price this correctly and immediately, but it is not a property of the formula.</li>
+        <li><strong>The access cost.</strong> The harness runs on a $4,000 consumer workstation and open-source models. This is not a zero barrier, but it is orders of magnitude lower than the cost of employing a research team. It is also declining. The economic story about "who benefits from leverage" is substantially a story about access, not about who the formula is structurally designed for.</li>
+        <li><strong>Which task is actually being done.</strong> "Lower-value labor" is a description of the current task allocation, not a description of the person. The formula measures leverage over a specific task. When the task changes — because the person has a tool that makes the previous task trivially automatable — the "lower-value" descriptor no longer applies.</li>
+      </ul>
+
+      <div class="callout amber">
+        <p><strong>The formula's most important implicit assumption:</strong> <code>tac_s</code> is calibrated to skilled labor, which means the numerator always represents the value of skilled work — regardless of who is operating the system. The formula does not ask for the operator's credentials before computing leverage.</p>
+      </div>
+
+      <h2>Token Amortization: What the Formula Can&rsquo;t See</h2>
+
+      <p>
+        The leverage formula sees <code>runtime_s</code> — total wall-clock time. It does not see how that time was spent, or which tokens were productive. This matters because the token budget inside a typical run is not evenly productive. From trace analysis across the logged run history, wall time breaks down approximately as follows:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Stage</th>
+            <th>% of wall time</th>
+            <th>Nature</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>synth</code> + <code>synth_count</code></td>
+            <td>~53%</td>
+            <td>Productive — directly creates the output</td>
+          </tr>
+          <tr>
+            <td><code>wiggum_revise</code></td>
+            <td>~30%</td>
+            <td>Quality improvement — rewrites to raise score</td>
+          </tr>
+          <tr>
+            <td><code>gather_research</code> / <code>compress_knowledge</code></td>
+            <td>~15%</td>
+            <td>Overhead — preprocessing, not producing</td>
+          </tr>
+          <tr>
+            <td><code>wiggum_eval</code></td>
+            <td>~2%</td>
+            <td>Overhead — scoring only, no output produced</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        Roughly half the tokens are infrastructure. A concrete example: in a typical run, the tool loop consumed 5,773 tokens at 45% of total — overhead for search, retrieval, and compression — while synthesis consumed 5,581 tokens at 44%, directly producing the output. The leverage formula rewards the wall time of all of this equally.
+      </p>
+
+      <p>
+        This creates a subtle but important accounting issue: the formula measures leverage over the full pipeline, not over the productive portion. A run that spends 80% of its tokens on overhead but produces a high-quality synthesis in short wall time gets the same leverage as a run that spends 80% on productive synthesis. The lever the formula actually measures is the end-to-end pipeline efficiency, not the efficiency of any individual stage.
+      </p>
+
+      <p>
+        The revision tokens are the most interesting case. When a revision round raises the WIGGUM score from 6.4 to 8.3, those tokens produce measurable value — the quality_norm term improves, and leverage rises. When a revision round produces a regression (which happens in about 10% of multi-round runs, per the run logs), those tokens actively destroyed value. The formula captures this via the final quality_norm, but it cannot distinguish "revision helped" from "revision hurt" during the run — only after the fact, in the score.
+      </p>
+
+      <p>
+        What this means for the labor economics discussion: a token-level analysis of leverage would show higher effective multipliers than the formula currently computes, because the overhead tokens are getting credited against the output quality of the productive tokens. This biases the leverage numbers downward. Every estimate of "12&times; leverage" is a conservative one — the true productivity of the synthesis stage, isolated, is higher.
+      </p>
+
+      <h2>The CapEx Gap: When the Platform Is Free but the Hardware Isn&rsquo;t</h2>
+
+      <p>
+        The harness is open-source. Ollama is open-source. The models are open-weights. The total software cost of the stack is zero. But running it at the quality level that produces 12&times; leverage requires hardware that is not free.
+      </p>
+
+      <p>
+        The harness runs on a $4,000 consumer workstation. The dashboard computes a running breakeven comparison between local inference and cloud alternatives. Using the cloud pricing tiers the harness tracks, on a typical 12,815-token run:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Cloud tier</th>
+            <th>Approx. cost/run</th>
+            <th>Local electricity/run</th>
+            <th>Savings/run (local vs. cloud)</th>
+            <th>Breakeven runs (on $4K hardware)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Claude Sonnet (~$3/$15 per 1M tok)</td>
+            <td>~$0.07</td>
+            <td>~$0.01</td>
+            <td>$0.06</td>
+            <td>~67,000</td>
+          </tr>
+          <tr>
+            <td>GPT-4o (~$2.50/$10 per 1M tok)</td>
+            <td>~$0.06</td>
+            <td>~$0.01</td>
+            <td>$0.05</td>
+            <td>~80,000</td>
+          </tr>
+          <tr>
+            <td>Gemini Flash (~$0.075/$0.30 per 1M tok)</td>
+            <td>~$0.002</td>
+            <td>~$0.01</td>
+            <td>&minus;$0.008 (local is <em>more</em> expensive)</td>
+            <td>Never</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The breakeven calculation depends entirely on which cloud tier you are comparing against. For premium API calls (Sonnet, GPT-4o), the local hardware pays for itself after 67,000&ndash;80,000 runs. For the cheapest commodity cloud inference (Gemini Flash, Haiku), local hardware never reaches breakeven — the electricity alone exceeds the API cost per run.
+      </p>
+
+      <p>
+        The current formula accounts for <code>energy_cost</code> and <code>infer_cost</code> as per-run OpEx items. It does not account for hardware depreciation. If you add a depreciation term — a $4,000 machine over a 3-year useful life at 8-hour daily utilization contributes about $0.03 per 700-second run — the effective per-run cost rises from $0.01 to $0.04. The corrected leverage numbers are still compelling for Sonnet/GPT-4o displacement, but the formula is currently giving itself credit it hasn't fully earned.
+      </p>
+
+      <p>
+        This matters for the access discussion in a specific way. The hardware barrier is real but it is also a one-time investment, not a recurring cost. The leverage it produces is cumulative. After 67,000 runs against a Sonnet-tier API, the hardware has paid for itself in saved inference costs alone — without counting the value of the work it produced. And the $4,000 entry point is declining: comparable hardware cost roughly twice as much two years ago.
+      </p>
+
+      <p>
+        The "open-source but requires expensive computers" framing is accurate but incomplete. The full framing is: open-source, requires a one-time hardware investment, produces leverage that compounds across every subsequent run, at a cost that is declining over time, on hardware that has dual-use value outside the harness (training, development, other workloads). The CapEx barrier is real. It is also not permanent, and it is not a structural argument for who the tool is designed to benefit.
+      </p>
+
+      <h2>The Replacement Narrative&rsquo;s Actual Claim</h2>
+
+      <p>
+        To be fair to the corporate framing: it is not purely wrong. Automation does historically eliminate job categories more readily than it creates them in the short term. The clerical job losses from spreadsheet software in the 1980s were real. Call center job losses from IVR are real. The argument that current AI follows the same pattern is at least defensible.
+      </p>
+
+      <p>
+        What is specifically wrong — and worth objecting to — is the phrase <em>lower-value human capital</em>. The phrase conflates two things that the formula treats as separate:
+      </p>
+
+      <ol style="margin: 1rem 0; padding-left: 1.5rem; line-height: 1.9;">
+        <li><strong>The current market price of a person's labor</strong> — what they are currently paid, for the tasks they currently do, in a market that already exists.</li>
+        <li><strong>The person's potential leverage-adjusted output</strong> — what they could produce with access to tools that multiply their effective throughput.</li>
+      </ol>
+
+      <p>
+        "Lower-value human capital" collapses these into a single fixed quantity attached to the person. It treats the current wage as a property of the worker, not as the output of a specific task assignment in a specific market at a specific moment. It then uses this fixed quantity to predict automation priority — and from there, to predict that some people are natural candidates for displacement rather than augmentation.
+      </p>
+
+      <p>
+        This framing is not just uncharitable. It is empirically wrong about how leverage works. The leverage formula has a <code>HARNESS_HOURLY_RATE</code> parameter that you can set to any value. There is no version of the harness that checks whether the operator is worth amplifying.
+      </p>
+
+      <h2>A Concrete Counter-Example</h2>
+
+      <p>
+        The harness underlying this blog series was built by one person, running on local hardware, without a research team or institutional resources. Over the course of its development, it has logged over 1,500 production runs, run 90+ controlled autoresearch experiments, maintained a structured knowledge graph of retrieved literature, generated a full 12-post technical series, and produced a pattern catalog of 27 named engineering designs.
+      </p>
+
+      <p>
+        This is not a triumph of the expensive-labor category. It is a demonstration that the leverage the formula describes is available to whoever chooses to operate the system. The TAC estimates in the run logs represent thousands of hours of skilled research equivalent. The quality scores average above 8/10. The leverage values across 1,500 runs are consistently in the range of 10&ndash;20&times; on cognitively demanding tasks.
+      </p>
+
+      <p>
+        None of that leverage required institutional backing. It required a $4,000 workstation, open-source software, and the methodological discipline to run controlled experiments and measure what changed. The formula gives the same numbers whether the person running it has a PhD or doesn't, whether they're employed by a corporation or operating independently, whether their current market rate is $15/hr or $200/hr.
+      </p>
+
+      <h2>The Access Problem Is Real</h2>
+
+      <p>
+        None of the above means access barriers don&rsquo;t exist. They do, and they matter.
+      </p>
+
+      <p>
+        The hardware cost is real: $4,000 is not trivial. Cloud alternatives bring the upfront cost to zero but introduce per-run costs that change the economics at scale — the breakeven analysis depends heavily on which cloud tier and how many runs you're doing. The barrier to entry is lower than it was in 2023 and lower still than it was in 2020, but it is not zero.
+      </p>
+
+      <p>
+        The methodological investment is real. The harness is not a button you press to generate leverage. It is a system with a task registry, criterion functions, a multi-stage evaluation pipeline, and a self-improvement loop. Running it well requires understanding what the composite score measures and what it doesn't — exactly the kind of understanding that takes time and effort to develop.
+      </p>
+
+      <p>
+        The TAC calibration itself is biased toward skilled researcher output. The system is designed to replicate what a skilled researcher would produce. If the user wants to produce something categorically different — creative work, physical-world work, relationship-dependent work — the leverage metric either doesn't apply or requires recalibration.
+      </p>
+
+      <p>
+        These are genuine constraints. What they add up to is an access problem, not a structural argument that some people are better candidates for leverage than others. An access problem can be addressed: through open-source tooling (the harness is public), through declining hardware costs, through documentation that reduces the methodological learning curve.
+      </p>
+
+      <p>
+        A structural argument that some people have lower human capital and therefore face natural displacement — that argument cannot be addressed by changing anything about the tools, because it has located the problem in the person rather than in the task allocation or the access conditions.
+      </p>
+
+      <h2>What the Math Actually Shows</h2>
+
+      <p>
+        The leverage formula, as implemented and measured, shows the following:
+      </p>
+
+      <ul style="margin: 1rem 0; padding-left: 1.5rem; line-height: 1.9;">
+        <li>Leverage is highest on high-complexity tasks with high-quality outputs and short runtimes. Task complexity (TAC) drives the numerator; runtime efficiency drives the denominator.</li>
+        <li>For local inference, hourly rate has no effect on the leverage value. The metric is wage-agnostic at zero marginal cost.</li>
+        <li>Even at non-zero inference cost ($0.50/run), the leverage difference between a $15/hr operator and a $200/hr operator is about 15% — not the order-of-magnitude gap that "lower-value human capital" implies.</li>
+        <li>The <code>tac_s</code> numerator is calibrated to skilled labor output. This means anyone operating the system benefits from leverage that is <em>defined relative to skilled work</em>, regardless of their current market rate.</li>
+      </ul>
+
+      <div class="callout">
+        <p>The formula does not have a field for the operator&rsquo;s worth. It has a field for the task&rsquo;s complexity, the output&rsquo;s quality, the runtime&rsquo;s duration, and the machine&rsquo;s cost. Leverage is a property of the task and the tool, not a property of the person running either.</p>
+      </div>
+
+      <p>
+        The corporate framing that AI "naturally" displaces lower-value workers first is a claim about market dynamics and corporate decision-making — who <em>companies choose</em> to give access to, and which job categories they choose to automate. That is a policy and power question, not a mathematical one. The mathematics of leverage, as actually computed across 1,500 runs of a production agentic harness, points in the opposite direction: the tool amplifies whoever uses it, calibrated to skilled output, at a leverage ratio that is largely independent of the operator&rsquo;s current wage.
+      </p>
+
+      <p>
+        The interesting question is not who gets displaced. It is who gets access to the tool that makes the displacement question irrelevant.
+      </p>
+
+      <h2>What the Literature Leaves Open</h2>
+
+      <p>
+        <strong>&ldquo;Externalization in LLM Agents: A Unified Review of Memory, Skills, Protocols and Harness Engineering&rdquo;</strong> <a href="https://arxiv.org/abs/2604.08224" target="_blank" rel="noopener" style="color:var(--accent-cyan)">(2604.08224, April 2026)</a> provides direct academic framing for the leverage argument. The paper&rsquo;s central claim: &ldquo;practical agent progress depends on better external cognitive infrastructure rather than just stronger models.&rdquo; It categorizes agent cognitive artifacts into memory stores, reusable skills, interaction protocols, and harness engineering &mdash; the exact taxonomy this harness implements &mdash; and identifies self-evolving harnesses as the frontier direction.
+      </p>
+
+      <p>
+        The paper&rsquo;s framing of external infrastructure as the locus of capability gains is the academic version of the leverage argument: the multiplier is in the scaffold, not in the model weights. This matters for the labor economics discussion because it locates capability in the tooling rather than in innate properties of the operator &mdash; which is precisely the point the leverage formula makes when <code>HARNESS_HOURLY_RATE</code> drops out of the computation at near-zero inference cost.
+      </p>
+
+      <div class="callout amber">
+        <p><strong>Open question the paper raises:</strong> How do models and external infrastructure co-evolve over time? As models improve, do they reduce the leverage provided by harness engineering (because the model needs less scaffolding), or increase it (because better models extract more value from the same scaffold)? The harness&rsquo;s 1,500-run history, spanning multiple model upgrades (7B &rarr; 32B producer), is a small empirical dataset on exactly this question.</p>
+      </div>
+
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2025 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

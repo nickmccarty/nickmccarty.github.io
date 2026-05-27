@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Threat Hardening: The OWASP Top 10, Applied | Nick McCarty</title>
+  <meta name="description" content="OWASP's new Agentic Security Initiative Top 10 maps ten attack classes that emerge when LLMs gain tools, memory, and autonomy. Here's the full audit against the harness — what we have, what we're missing, and the mitigations worth implementing.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/agentic-threat-hardening.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Agentic Threat Hardening: The OWASP Top 10, Applied">
+  <meta property="og:description" content="OWASP's ASI Top 10 maps ten attack classes that emerge when LLMs gain tools, memory, and autonomy — audited against the harness and translated into concrete mitigations.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/agentic-threat-hardening.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-25T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agentic Threat Hardening: The OWASP Top 10, Applied">
+  <meta name="twitter:description" content="Ten attack classes from OWASP's new agentic security taxonomy — audited against the harness, translated into mitigations.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Agentic Threat Hardening: The OWASP Top 10, Applied","description":"OWASP's ASI Top 10 maps ten attack classes that emerge when LLMs gain tools, memory, and autonomy — audited against the harness and translated into concrete mitigations.","keywords":"agentic security, OWASP, ASI Top 10, prompt injection, tool misuse, memory poisoning, LLM security, harness hardening","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"publisher":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.github.io"},"datePublished":"2026-05-25","dateModified":"2026-05-25","url":"https://nickmccarty.github.io/blog/agentic-threat-hardening.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.github.io/blog/agentic-threat-hardening.html"},"image":"https://nickmccarty.github.io/assets/images/og-default.png","inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1.5rem 0;
+    }
+    th {
+      text-align: left;
+      padding: 0.55rem 0.85rem;
+      background: var(--bg-tertiary);
+      border-bottom: 2px solid var(--border-color);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+    td {
+      padding: 0.55rem 0.85rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    tr:last-child td { border-bottom: none; }
+    #threat-svg text, #coverage-svg text { font-family: inherit; }
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 1.5rem 0; }
+    .table-scroll table { margin: 0; }
+    @media (max-width: 640px) {
+      #threat-svg   { min-width: 540px; }
+      #coverage-svg { min-width: 500px; }
+      .diagram-container::after {
+        content: 'scroll to see more →';
+        display: block;
+        text-align: center;
+        font-size: 0.72rem;
+        color: var(--text-secondary);
+        margin-top: 0.5rem;
+        letter-spacing: 0.04em;
+        opacity: 0.7;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 25, 2026 &bull; 25 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">Agentic Threat Hardening: The OWASP Top 10, Applied</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          OWASP's new Agentic Security Initiative Top 10 is the first threat taxonomy written specifically for systems where LLMs plan, use tools, and persist state across sessions. Here's the full audit — what the harness already handles, where the gaps are, and the mitigations worth implementing today.
+        </p>
+      </header>
+
+      <p>
+        The original OWASP Top 10 for LLM Applications models the threat surface of a system in which a user sends a prompt and a model returns a response. That surface is real, but it is also narrow: the model is stateless, the tools are absent, and the damage from any single interaction is bounded by what one request can do. Agentic systems break all three of those assumptions. An agent that can execute code, browse the web, send email, write files, and remember what it did last week operates with a fundamentally different risk profile — and requires a fundamentally different threat model.
+      </p>
+
+      <p>
+        A 2026 survey of agent architecture (<a href="https://arxiv.org/abs/2604.08224" target="_blank" rel="noopener">Huang et al., 2026</a>) characterizes this as the shift from <em>weights</em> to <em>harness</em>: practical agent progress depends less on model capability than on the quality of external cognitive infrastructure — memory stores, skill protocols, and the execution harness itself. That framing has an immediate security corollary: the harness is not only where agent capability lives, it is also where agent vulnerability concentrates. Hardening the harness <em>is</em> hardening the agent.
+      </p>
+
+      <p>
+        OWASP's Agentic Security Initiative published its first <em>Top 10 for Agentic Applications</em> in December 2025. The ASI Top 10 defines ten attack classes — <strong>ASI01 through ASI10</strong> — that span goal hijacking, tool misuse, memory poisoning, supply chain compromise, cascading failures, and rogue agent behavior. Running it against the harness produces a coverage audit: four patterns have real defenses, four more have partial coverage, and two are largely unaddressed. Each gap maps to a specific, implementable mitigation.
+      </p>
+
+      <div class="callout">
+        <p>OWASP introduces the principle of <strong>Least Agency</strong> — the agentic equivalent of least privilege. Deploy autonomous behavior only where it adds value; every unnecessary grant of autonomy expands the attack surface without benefit. Before patching gaps, ask whether the capability that creates them is actually needed.</p>
+      </div>
+
+      <h2>The Three New Attack Surfaces</h2>
+
+      <p>
+        Three architectural properties of agentic systems create attack surfaces that have no equivalent in stateless LLM inference:
+      </p>
+
+      <p>
+        <strong>Tools create privilege.</strong> An agent that can send email, push to GitHub, or execute shell commands holds real-world capabilities. A successful prompt injection no longer produces a bad response — it triggers a real action under a real identity with real consequences. The blast radius of a compromised agent is bounded only by what its tools can do.
+      </p>
+
+      <p>
+        <strong>Memory creates persistence.</strong> An agent that stores information across sessions can be poisoned once and stay compromised indefinitely. Web content fetched in session 1 becomes context for session 2; a carefully crafted web page can plant instructions that surface on every future run that retrieves the relevant memory. This is qualitatively different from a single-session attack.
+      </p>
+
+      <p>
+        <strong>Autonomy removes human checkpoints.</strong> A multi-step agent that plans and executes without confirmation gates compounds errors silently. A hallucination in step 3 of a 10-step plan contaminates steps 4 through 10. In single-turn systems, each request is an implicit human checkpoint. In agentic pipelines, checkpoints must be explicitly designed in. Empirical evidence confirms the stakes: a 2026 study of 12 commercial planning and web-use agents (<a href="https://arxiv.org/abs/2601.10758" target="_blank" rel="noopener">Mathur et al., 2026</a>) found that without explicit safety requests, trip-planning agents bypassed safety constraints in over 92% of cases — and web-use agents reached near-deterministic execution of risky actions at up to a 100% bypass rate. Even when users expressed soft safety intent, bypass rates remained at 54.7%. The root cause: agents over-execute workflows due to a fundamental lack of stopping rules, and helpfulness bias fills the gap where checkpoints should be.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">ASI Threat Map &mdash; Attack Surfaces Across the Agent Pipeline</div>
+        <svg id="threat-svg" width="100%" height="150" style="max-width:680px; display:block; margin:0 auto;"></svg>
+        <p class="diagram-caption">Each of the five pipeline zones attracts a distinct subset of the ASI Top 10. Defenses must be applied at every zone independently — a guard at the input layer does not protect the memory layer.</p>
+      </div>
+
+      <h2>What the Harness Already Has</h2>
+
+      <p>
+        The harness implements four security patterns in <code>harness/security.py</code>, described in depth in the <a href="./security-patterns.html">previous security post</a>. Against the ASI framework, these patterns address:
+      </p>
+
+      <ul style="line-height: 2.1; margin: 1rem 0 1.5rem 1.5rem;">
+        <li><strong>ASI05 (Code Execution / RCE)</strong> — strongly covered. The AST Guard scans LLM-generated Python before execution using <code>ast.parse()</code> and a <code>NodeVisitor</code> that blocks dangerous imports, <code>exec</code>/<code>eval</code> calls, and subprocess invocations. A secondary regex pass catches obfuscation patterns that survive AST parsing.</li>
+        <li><strong>ASI02 (Tool Misuse)</strong> — partially covered. The Path Sandbox enforces an allowlist on all file reads and writes, resolving symlinks before comparison to prevent traversal attacks. The CDP Guard blocks browser navigation to localhost, RFC 1918 private ranges, and <code>file://</code> URLs. Neither covers rate limits or per-session tool budgets.</li>
+        <li><strong>ASI01 (Goal Hijack)</strong> — partially covered. The Injection Scanner applies ten heuristic regex patterns to external content before it reaches the synthesis prompt. Coverage is real but limited: the patterns target obvious English-language injections and miss encoding tricks, Unicode homoglyphs, and context-split attacks.</li>
+        <li><strong>ASI06 (Memory Poisoning)</strong> — partially covered. <code>memory.py</code> calls <code>scan_for_injection()</code> on every observation before writing it to SQLite or ChromaDB. Observations that trigger the scanner are dropped rather than written. What's missing: source trust scoring, TTL-based expiry, and session isolation between tasks.</li>
+      </ul>
+
+      <h2>The Coverage Audit</h2>
+
+      <div class="diagram-container">
+        <div class="diagram-title">ASI Coverage Matrix &mdash; Harness Status &amp; Implementation Priority</div>
+        <svg id="coverage-svg" width="100%" height="390" style="max-width:660px; display:block; margin:0 auto;"></svg>
+        <p class="diagram-caption">Coverage status reflects the current harness implementation. Priority reflects effort-to-impact ratio — low-effort gaps with high blast radius come first.</p>
+      </div>
+
+      <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>ASI</th>
+            <th>Threat</th>
+            <th>Harness Status</th>
+            <th>Highest-Value Gap</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>ASI01</strong></td>
+            <td>Goal Hijack</td>
+            <td>Partial</td>
+            <td>Research context in autoresearch is fetched but not injection-scanned before entering the proposer prompt</td>
+          </tr>
+          <tr>
+            <td><strong>ASI02</strong></td>
+            <td>Tool Misuse</td>
+            <td>Partial</td>
+            <td>No per-session tool budget; email and GitHub skills execute without confirmation gates</td>
+          </tr>
+          <tr>
+            <td><strong>ASI03</strong></td>
+            <td>Identity Abuse</td>
+            <td>Gap</td>
+            <td>All tasks share the same SQLite memory — no session namespace isolates task A from task B</td>
+          </tr>
+          <tr>
+            <td><strong>ASI04</strong></td>
+            <td>Supply Chain</td>
+            <td>Gap</td>
+            <td>Synthesis instructions in <code>agent.py</code> are modified autonomously by autoresearch with no integrity check at startup</td>
+          </tr>
+          <tr>
+            <td><strong>ASI05</strong></td>
+            <td>Code Execution</td>
+            <td>Strong</td>
+            <td>AST Guard + regex patterns + CDP Guard provide layered coverage; no container sandbox but risk is low given AST coverage</td>
+          </tr>
+          <tr>
+            <td><strong>ASI06</strong></td>
+            <td>Memory Poisoning</td>
+            <td>Partial</td>
+            <td>Memory has no source trust scoring or TTL — web-fetched observations persist indefinitely at the same trust level as human-authored notes</td>
+          </tr>
+          <tr>
+            <td><strong>ASI07</strong></td>
+            <td>Inter-Agent Comms</td>
+            <td>Gap</td>
+            <td>MCP dispatch calls remote endpoints over plain HTTP with no bearer token or endpoint validation</td>
+          </tr>
+          <tr>
+            <td><strong>ASI08</strong></td>
+            <td>Cascading Failures</td>
+            <td>Gap</td>
+            <td>autoresearch runs indefinitely with no hard-stop on consecutive failures or experiment count</td>
+          </tr>
+          <tr>
+            <td><strong>ASI09</strong></td>
+            <td>Human Trust Exploit</td>
+            <td>Partial</td>
+            <td>Wiggum provides a second opinion on outputs, but no confirmation prompt before externally visible actions</td>
+          </tr>
+          <tr>
+            <td><strong>ASI10</strong></td>
+            <td>Rogue Agents</td>
+            <td>Gap</td>
+            <td>No structured skill invocation log; no kill switch; behavioral drift from autoresearch is not monitored</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+
+      <h2>The Priority Queue: Mitigations Worth Implementing</h2>
+
+      <p>
+        The following mitigations are ordered by effort-to-impact ratio. Each targets a specific gap identified in the audit, and each can be implemented without architectural surgery to the harness.
+      </p>
+
+      <h3>1. Wire the Injection Scanner to Every Ingestion Point (ASI01)</h3>
+
+      <p>
+        The injection scanner exists and works — it just isn't wired to every place external content enters the system. In <code>autoresearch.py</code>, <code>gather_proposal_context()</code> fetches arbitrary URLs via MarkItDown and feeds the raw text directly to the proposer prompt. The fix is a one-liner: call <code>strip_injection_candidates()</code> (already in <code>security.py</code>) on each fetched page before appending it to the research brief.
+      </p>
+
+<pre><code># harness/autoresearch.py — in _fetch_page()
+from harness.security import strip_injection_candidates
+
+text = (result.text_content or "").strip()
+text, removed = strip_injection_candidates(text)
+if removed:
+    print(f"  [security] stripped {removed} injection candidate lines from {url[:60]}")
+if len(text) > max_chars:
+    text = text[:max_chars] + "\n[truncated]"
+return text</code></pre>
+
+      <p>
+        The broader principle: treat every ingestion boundary as a security checkpoint. Web search results, fetched pages, uploaded documents, and peer-agent messages all enter through different code paths; each path needs to call the scanner independently. The scanner's <code>warn</code> / <code>block</code> severity split means you can log without blocking for synthesis targets while still blocking for memory writes.
+      </p>
+
+      <h3>2. Add Per-Session Tool Budgets (ASI02)</h3>
+
+      <p>
+        Tool over-invocation is not purely an adversarial problem. The PEARL framework (<a href="https://arxiv.org/abs/2601.20439" target="_blank" rel="noopener">Song et al., 2026</a>), evaluated on multi-hop tool use benchmarks, found that even state-of-the-art agents exhibit weak planning, tool hallucination, and erroneous parameter generation — achieving only 56.5% success on the ToolHop benchmark despite being purpose-built for tool use. Budget limits protect against both injected over-invocation and organic agent confusion with equal efficiency.
+      </p>
+
+      <p>
+        A session-scoped budget counter prevents loop amplification — the ASI02 scenario where a planner repeatedly calls a costly API or an injected instruction sends 50 emails. The implementation is a small class added to <code>security.py</code>; each skill imports and checks it at entry.
+      </p>
+
+<pre><code># harness/security.py
+class ToolBudget:
+    DEFAULT_LIMITS = {
+        "email_send":        3,
+        "github_push":       2,
+        "browser_navigate":  25,
+        "run_python":        10,
+        "web_search":        20,
+    }
+
+    def __init__(self, limits: dict[str, int] | None = None):
+        self._limits = {**self.DEFAULT_LIMITS, **(limits or {})}
+        self._counts: dict[str, int] = {}
+
+    def check(self, tool: str) -> tuple[bool, str]:
+        n = self._counts.get(tool, 0)
+        limit = self._limits.get(tool, 50)
+        if n >= limit:
+            return False, f"tool budget exceeded: {tool!r} ({n}/{limit} calls this session)"
+        self._counts[tool] = n + 1
+        return True, "ok"
+
+    def reset(self):
+        self._counts.clear()</code></pre>
+
+      <p>
+        Instantiate once per <code>run()</code> call in <code>orchestrator.py</code> and pass it down to skills. Reset between runs. The limits above are conservative starting points — tune them based on observed legitimate usage from <code>data/runs.jsonl</code>.
+      </p>
+
+      <h3>3. Add Source Trust Scoring and TTL to Memory (ASI06)</h3>
+
+      <p>
+        The most dangerous gap in the harness is that web-fetched content enters memory with the same trust level as deliberately authored observations, and stays there forever. This is a formally studied attack surface: a 2025 analysis of minimum-cost poisoning attacks on preference-aligned models (<a href="https://arxiv.org/abs/2511.09105" target="_blank" rel="noopener">Cheng et al., 2025</a>) showed that an adversary can steer model behavior with a surprisingly small number of targeted label flips — a finding that translates directly to agent memory, where poisoned observations from a single fetched page can contaminate every downstream retrieval that touches the same topic. Two schema columns and two filter clauses close this gap:
+      </p>
+
+<pre><code># harness/memory.py — schema migration
+ALTER TABLE observations ADD COLUMN source_trust REAL DEFAULT 1.0;
+ALTER TABLE observations ADD COLUMN expires_at   TEXT;
+
+# Trust levels — apply at write time
+SOURCE_TRUST = {
+    "human":        1.0,   # user-provided, manually curated
+    "synthesized":  0.7,   # model output, post-wiggum-review
+    "web_fetched":  0.4,   # external search result or crawled page
+}
+
+# Context injection — filter at read time
+def get_context(task: str, session_id: str | None = None) -> list[dict]:
+    now = datetime.utcnow().isoformat()
+    rows = db.execute("""
+        SELECT * FROM observations
+        WHERE (expires_at IS NULL OR expires_at > ?)
+          AND source_trust >= 0.4
+          AND (session_id IS NULL OR session_id = ?)
+        ORDER BY created_at DESC LIMIT ?
+    """, (now, session_id, MAX_CONTEXT_OBSERVATIONS)).fetchall()</code></pre>
+
+      <p>
+        Web-fetched observations write with <code>source_trust=0.4</code> and <code>expires_at = now + 7 days</code>. Human-authored notes write with <code>source_trust=1.0</code> and no expiry. This means a poisoned web observation has limited reach — it can only influence context retrieval for 7 days and only up to its trust threshold.
+      </p>
+
+      <h3>4. Scope Memory by Session (ASI03)</h3>
+
+      <p>
+        The identity abuse vector that is easiest to exploit in the harness is cross-task memory bleed. Task A fetches a web page that contains an adversarial instruction; that observation is written to the shared memory store; Task B retrieves it as context. Adding a <code>session_id</code> column to <code>observations</code> and passing it through the run lifecycle costs one schema column and closes the bleed entirely.
+      </p>
+
+      <p>
+        The practical implementation: generate a <code>session_id = uuid4().hex[:12]</code> at the start of each <code>run()</code> call, pass it to <code>compress_and_store()</code> and <code>get_context()</code>. Observations with <code>session_id = NULL</code> are treated as global (human-authored, always-available context). Observations with a session ID are only returned to runs sharing that ID.
+      </p>
+
+      <h3>5. Authenticate MCP Dispatch (ASI07)</h3>
+
+      <p>
+        <code>mcp_dispatch.py</code> calls remote harness endpoints over plain HTTP with no authentication. Any process on the local network that can see the port can impersonate a valid endpoint. The fix is a single environment variable check:
+      </p>
+
+<pre><code># harness/mcp_dispatch.py
+import os
+from harness.security import check_cdp_navigate  # reuse private-IP guard
+
+MCP_TOKEN = os.environ.get("HARNESS_MCP_TOKEN", "")
+
+async def _call_run_task(endpoint: str, task: str) -> dict:
+    ok, reason = check_cdp_navigate(endpoint)
+    if not ok:
+        raise ValueError(f"MCP endpoint blocked: {reason}")
+    headers = {"Authorization": f"Bearer {MCP_TOKEN}"} if MCP_TOKEN else {}
+    async with httpx.AsyncClient(timeout=120) as client:
+        resp = await client.post(f"{endpoint}/run_task",
+                                 json={"task": task},
+                                 headers=headers)
+        resp.raise_for_status()
+        return resp.json()</code></pre>
+
+      <p>
+        Reusing <code>check_cdp_navigate()</code> on the endpoint URL means private-IP spoofing attacks are blocked by existing infrastructure. The bearer token is optional — setting <code>HARNESS_MCP_TOKEN</code> enables it. Requiring it in production is a one-line configuration change.
+      </p>
+
+      <h3>6. Gate High-Impact Skills (ASI09)</h3>
+
+      <p>
+        Email and GitHub push are externally visible and hard to reverse. The Mathur et al. study cited above is the clearest evidence for why a gate is necessary: agents with full autonomy reached 100% execution of risky actions on web-use tasks, and the researchers attributed this directly to the prioritization of helpfulness over safety — agents cannot be trusted to self-limit on high-stakes operations without an explicit mechanism forcing a pause. Without a confirmation gate, a single injected instruction can send email to arbitrary addresses or push code to a repository under a real identity. The gate is deliberately permissive by default — automation-heavy workflows set <code>HARNESS_AUTO_APPROVE=1</code> — but the default enforces explicit opt-in:
+      </p>
+
+<pre><code># harness/skills/email_skill.py and github_skill.py
+import os
+
+def _require_approval(action: str):
+    if not os.environ.get("HARNESS_AUTO_APPROVE"):
+        raise PermissionError(
+            f"{action!r} requires explicit approval. "
+            "Set HARNESS_AUTO_APPROVE=1 or confirm interactively."
+        )</code></pre>
+
+      <p>
+        The logged <code>PermissionError</code> also serves as an audit trail: any attempt to send email or push code without the flag set appears in the run log as a blocked action, making it easy to detect injected instructions that tried to exploit these skills.
+      </p>
+
+      <h3>7. Cap the autoresearch Loop (ASI08)</h3>
+
+      <p>
+        The autoresearch loop runs indefinitely and autonomously modifies <code>agent.py</code> on each iteration. This is the scenario OWASP classifies as cascading failure via governance drift — a self-modifying loop that degrades without a human observing the trajectory. Infrastructure research adds a second failure mode: a 2025 empirical study of five major LLM inference engines (<a href="https://arxiv.org/abs/2506.09713" target="_blank" rel="noopener">Zhou et al., 2025</a>) found memory leaks, OOM errors, and performance degradation as the most common failure classes. In a self-modifying loop, these infrastructure bugs compound — a hung inference call that retries indefinitely consumes all available resources before any safety check fires. Hard stops protect against both adversarial governance drift and ordinary operational cascades. Two CLI flags impose them:
+      </p>
+
+<pre><code># harness/autoresearch.py — in main()
+max_experiments = int(args[args.index('--max-experiments') + 1]) \
+                  if '--max-experiments' in args else None
+max_failures = int(args[args.index('--max-failures') + 1]) \
+               if '--max-failures' in args else 10  # default hard stop
+
+consecutive_failures = 0  # tracks proposer errors + eval errors
+experiment = 0
+
+while True:
+    if max_experiments and experiment >= max_experiments:
+        print(f"[autoresearch] max-experiments ({max_experiments}) reached — stopping.")
+        break
+    if consecutive_failures >= max_failures:
+        print(f"[autoresearch] {max_failures} consecutive failures — stopping.")
+        break</code></pre>
+
+      <p>
+        The <code>--max-failures</code> default of 10 provides a safety net without interfering with normal operation. A healthy run rarely sees more than 3 consecutive proposer failures.
+      </p>
+
+      <h3>8. Hash Synthesis Instructions at Startup (ASI04)</h3>
+
+      <p>
+        autoresearch commits changes to <code>agent.py</code> via git, which means every instruction change is attributable and reversible. What's missing is a startup check that catches changes made <em>outside</em> of git — a corrupted write, a supply-chain injection that edits <code>agent.py</code> directly, or a merge conflict that resolved incorrectly. Fine-tuning research illuminates why this matters: a 2025 analysis (<a href="https://arxiv.org/abs/2506.05346" target="_blank" rel="noopener">Wang et al., 2025</a>) found that LLM safety guardrails collapse after downstream fine-tuning when alignment and task data are too similar, reducing safety adherence by up to 10.33%. Autonomous instruction rewriting via autoresearch is structurally identical: each iteration fine-tunes the agent's operating instructions, with no mechanism to detect when rewrites have drifted past a safety threshold. The hash provides an integrity checkpoint without constraining the loop. A hash written to a sidecar file at each autoresearch commit provides the reference:
+      </p>
+
+<pre><code># harness/autoresearch.py — in git_commit()
+import hashlib, json
+from pathlib import Path
+
+def _write_instruction_hash(synth: str, synth_prose: str, experiment: int):
+    h = hashlib.sha256((synth + synth_prose).encode()).hexdigest()[:16]
+    Path("data/instruction_hashes.jsonl").open("a").write(
+        json.dumps({"exp": experiment, "hash": h,
+                    "ts": datetime.utcnow().isoformat()}) + "\n"
+    )
+
+# harness/agent.py — at module load
+def _check_instruction_integrity():
+    current = read_instructions()
+    h = hashlib.sha256((current["synth"] + current["synth_prose"]).encode()).hexdigest()[:16]
+    last_hash = _read_last_hash()  # reads last line of data/instruction_hashes.jsonl
+    if last_hash and h != last_hash:
+        print(f"[security] WARN: instruction hash mismatch — expected {last_hash}, got {h}")</code></pre>
+
+      <h3>9. Write a Structured Skill Invocation Log (ASI10)</h3>
+
+      <p>
+        Rogue agent detection requires a baseline of normal behavior against which anomalies are visible. Without a per-invocation log, all you have is the run-level <code>runs.jsonl</code> — too coarse to detect unusual tool-chaining patterns. A lightweight <code>invocations.jsonl</code> sidecar provides the audit trail:
+      </p>
+
+<pre><code># harness/security.py — add logging helper
+import json, time
+from pathlib import Path
+
+_INVOCATIONS_PATH = Path("data/invocations.jsonl")
+
+def log_invocation(skill: str, args_summary: str, outcome: str, run_id: str = ""):
+    record = {
+        "ts":      time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "skill":   skill,
+        "args":    args_summary[:120],
+        "outcome": outcome,   # "ok" | "blocked" | "error"
+        "run_id":  run_id,
+    }
+    with _INVOCATIONS_PATH.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record) + "\n")</code></pre>
+
+      <p>
+        Each skill calls <code>log_invocation()</code> at entry (before execution) and at exit (with outcome). Blocked calls are logged with <code>outcome="blocked"</code> and the reason from the security check. This log becomes the input for anomaly detection: unusual tool-chaining sequences, budget-exceeded patterns, and unexpected invocation rates are all visible in the flat JSONL without needing a database.
+      </p>
+
+      <h2>Defense in Depth, Not Perfection</h2>
+
+      <p>
+        None of these mitigations is a complete solution. The injection scanner has false negatives. The tool budget can be gamed by a patient attacker who stays within limits. The MCP bearer token provides authentication but not authorization. The memory TTL prevents indefinite poisoning but not seven-day poisoning. That is by design: the goal of defense in depth is not to make any individual layer impenetrable but to ensure that an attacker who bypasses one layer immediately encounters another.
+      </p>
+
+      <p>
+        The ASI framework is also evolving. OWASP's agentic attack corpus is updated weekly as new real-world exploits are documented — the incidents list in the published document already includes tools you use: Cursor, GitHub Copilot, VS Code agentic workflows, Amazon Q, Salesforce Agentforce. The threat model will outpace any static checklist. What matters is having a layered posture, an audit trail that makes anomalies visible, and a process for translating new documented exploits into updated controls.
+      </p>
+
+      <div class="callout pink">
+        <p>The most important mitigation isn't in the list above: it is logging. Every security event — blocked code execution, stripped injection candidate, budget-exceeded tool call, hash mismatch — writes a structured record to a JSONL file. Without that log, there is no way to distinguish a false positive from a real attack, and no way to know whether the controls are working. Build the audit trail first, then tune the thresholds.</p>
+      </div>
+
+      <div class="post-pagination">
+        <a href="./security-patterns.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">Security Patterns</span>
+        </a>
+        <a href="./prompt-injection-security.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">Injection Security</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./security-patterns.html" class="related-post-card">
+            <div class="related-post-num">Post 9</div>
+            <div class="related-post-title">Security Patterns</div>
+            <div class="related-post-desc">AST Guard, Path Sandbox, Injection Scanner, and CDP Guard — the four stdlib-only patterns that form the harness security layer.</div>
+          </a>
+          <a href="./prompt-injection-security.html" class="related-post-card">
+            <div class="related-post-num">Post 20</div>
+            <div class="related-post-title">Injection Security</div>
+            <div class="related-post-desc">HouYi compromises 86% of real LLM apps. Prompt Infection replicates virally through multi-agent DAGs.</div>
+          </a>
+          <a href="./observability-flywheel.html" class="related-post-card">
+            <div class="related-post-num">Post 10</div>
+            <div class="related-post-title">Observability &amp; Flywheel</div>
+            <div class="related-post-desc">The telemetry loop that turns every run into training signal — and why the security event log belongs in the same pipeline.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script type="module">
+    import anime from 'https://esm.sh/animejs@3.2.2';
+
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // ── Fig 1: Threat Surface Map ─────────────────────────────────────────────
+    (function drawThreat() {
+      const svg = d3.select('#threat-svg');
+      const W = parseInt(svg.style('width')) || 660;
+      const H = 150;
+      svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+      const cyan  = cssVar('--accent-cyan')  || '#57cef2';
+      const pink  = cssVar('--accent-pink')  || '#ed46c3';
+      const bg3   = cssVar('--bg-tertiary')  || '#1e1e1e';
+      const bdr   = cssVar('--border-color') || '#2a2a2a';
+      const txt2  = cssVar('--text-secondary') || '#888';
+      const orange = '#f97316';
+      const green  = '#34d399';
+
+      const zones = [
+        { label: 'External\nInput',    asis: ['ASI01', 'ASI04', 'ASI09'], col: pink   },
+        { label: 'Agent\nCore',        asis: ['ASI01', 'ASI03'],           col: cyan   },
+        { label: 'Tools &\nSkills',    asis: ['ASI02', 'ASI05'],           col: orange },
+        { label: 'Memory &\nState',    asis: ['ASI06', 'ASI08'],           col: cyan   },
+        { label: 'Inter-Agent\n& MCP', asis: ['ASI07', 'ASI10'],           col: pink   },
+      ];
+
+      const pad = 12;
+      const zoneW = Math.floor((W - pad * 2 - (zones.length - 1) * 8) / zones.length);
+      const zoneH = 90;
+      const zoneY = 20;
+
+      const defs = svg.append('defs');
+      defs.append('marker').attr('id', 'arr-flow')
+        .attr('viewBox', '0 -4 8 8').attr('refX', 7).attr('markerWidth', 5).attr('markerHeight', 5).attr('orient', 'auto')
+        .append('path').attr('d', 'M0,-4L8,0L0,4').attr('fill', txt2);
+
+      zones.forEach((z, i) => {
+        const x = pad + i * (zoneW + 8);
+        const cx = x + zoneW / 2;
+
+        svg.append('rect').attr('x', x).attr('y', zoneY).attr('width', zoneW).attr('height', zoneH)
+          .attr('rx', 8).attr('fill', bg3).attr('stroke', z.col).attr('stroke-width', 1.5).attr('opacity', 0);
+
+        const lines = z.label.split('\n');
+        lines.forEach((line, li) => {
+          svg.append('text').attr('x', cx).attr('y', zoneY + 22 + li * 16)
+            .attr('text-anchor', 'middle').attr('font-size', 11).attr('font-weight', 700).attr('fill', z.col)
+            .attr('opacity', 0).text(line);
+        });
+
+        const chipH = 18, chipW = 44, chipGap = 6;
+        const totalChipW = z.asis.length * chipW + (z.asis.length - 1) * chipGap;
+        const chipStartX = cx - totalChipW / 2;
+
+        z.asis.forEach((id, ai) => {
+          const cx2 = chipStartX + ai * (chipW + chipGap);
+          svg.append('rect').attr('x', cx2).attr('y', zoneY + 62).attr('width', chipW).attr('height', chipH)
+            .attr('rx', 4).attr('fill', bg3).attr('stroke', z.col).attr('stroke-width', 1).attr('opacity', 0);
+          svg.append('text').attr('x', cx2 + chipW / 2).attr('y', zoneY + 75)
+            .attr('text-anchor', 'middle').attr('font-size', 8.5).attr('font-weight', 700).attr('fill', z.col)
+            .attr('opacity', 0).text(id);
+        });
+
+        if (i < zones.length - 1) {
+          const arrowX1 = x + zoneW + 2;
+          const arrowX2 = x + zoneW + 6;
+          svg.append('line')
+            .attr('x1', arrowX1).attr('y1', zoneY + zoneH / 2)
+            .attr('x2', arrowX2).attr('y2', zoneY + zoneH / 2)
+            .attr('stroke', txt2).attr('stroke-width', 1.5)
+            .attr('marker-end', 'url(#arr-flow)').attr('opacity', 0);
+        }
+      });
+
+      svg.append('text').attr('x', W / 2).attr('y', H - 20)
+        .attr('text-anchor', 'middle').attr('font-size', 10).attr('fill', txt2).attr('opacity', 0)
+        .text('Agent execution pipeline →');
+
+      const coverageStatus = { ASI01:'partial', ASI02:'partial', ASI03:'absent', ASI04:'absent',
+                                ASI05:'strong',  ASI06:'partial', ASI07:'absent', ASI08:'absent',
+                                ASI09:'partial', ASI10:'absent' };
+      const statusCol = { strong: green, partial: orange, absent: pink };
+
+      svg.selectAll('text').filter(function() {
+        const t = this.textContent;
+        return t && t.match(/^ASI\d\d$/);
+      }).each(function() {
+        const id = this.textContent;
+        const col = statusCol[coverageStatus[id]] || txt2;
+        d3.select(this.previousSibling).attr('stroke', col);
+        d3.select(this).attr('fill', col);
+      });
+
+      anime({
+        targets: '#threat-svg rect, #threat-svg text, #threat-svg line',
+        opacity: [0, 1],
+        duration: 500,
+        delay: anime.stagger(20),
+        easing: 'easeOutQuad',
+      });
+    })();
+
+    // ── Fig 2: Coverage Matrix ───────────────────────────────────────────────
+    (function drawCoverage() {
+      const svg = d3.select('#coverage-svg');
+      const W = parseInt(svg.style('width')) || 640;
+      const H = 390;
+      svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+      const cyan   = cssVar('--accent-cyan')    || '#57cef2';
+      const pink   = cssVar('--accent-pink')    || '#ed46c3';
+      const bg3    = cssVar('--bg-tertiary')    || '#1e1e1e';
+      const bdr    = cssVar('--border-color')   || '#2a2a2a';
+      const txt    = cssVar('--text-primary')   || '#e8e8e8';
+      const txt2   = cssVar('--text-secondary') || '#888';
+      const orange = '#f97316';
+      const green  = '#34d399';
+      const red    = '#f87171';
+
+      const rows = [
+        { id:'ASI01', title:'Goal Hijack',        status:'partial', effort:'Low'    },
+        { id:'ASI02', title:'Tool Misuse',         status:'partial', effort:'Low'    },
+        { id:'ASI03', title:'Identity Abuse',      status:'absent',  effort:'Medium' },
+        { id:'ASI04', title:'Supply Chain',        status:'absent',  effort:'Medium' },
+        { id:'ASI05', title:'Code Execution',      status:'strong',  effort:null     },
+        { id:'ASI06', title:'Memory Poisoning',    status:'partial', effort:'Medium' },
+        { id:'ASI07', title:'Inter-Agent Comms',   status:'absent',  effort:'Low'    },
+        { id:'ASI08', title:'Cascading Failures',  status:'absent',  effort:'Low'    },
+        { id:'ASI09', title:'Human-Agent Trust',   status:'partial', effort:'Low'    },
+        { id:'ASI10', title:'Rogue Agents',        status:'absent',  effort:'Medium' },
+      ];
+
+      const statusMeta = {
+        strong:  { col: green,  label: 'Covered'  },
+        partial: { col: orange, label: 'Partial'  },
+        absent:  { col: red,    label: 'Gap'      },
+      };
+      const effortCol = { Low: green, Medium: orange };
+
+      const headerY = 16;
+      const rowH = 33;
+      const startY = 36;
+      const colID    = 0;
+      const colTitle = 56;
+      const colStatus = W - 175;
+      const colEffort = W - 82;
+
+      ['ASI', 'Threat', 'Coverage', 'Effort'].forEach((h, i) => {
+        const x = [colID, colTitle, colStatus, colEffort][i];
+        svg.append('text').attr('x', x).attr('y', headerY)
+          .attr('font-size', 9).attr('font-weight', 700).attr('fill', txt2)
+          .attr('letter-spacing', 0.8).attr('text-transform', 'uppercase').text(h.toUpperCase());
+      });
+
+      svg.append('line').attr('x1', 0).attr('y1', headerY + 6).attr('x2', W - 4).attr('y2', headerY + 6)
+        .attr('stroke', bdr).attr('stroke-width', 1);
+
+      rows.forEach((row, ri) => {
+        const y = startY + ri * rowH;
+        const sm = statusMeta[row.status];
+        const g = svg.append('g').attr('transform', `translate(0,${y})`).attr('opacity', 0);
+
+        g.append('rect').attr('x', colID).attr('y', 4).attr('width', 46).attr('height', 20)
+          .attr('rx', 4).attr('fill', bg3).attr('stroke', sm.col).attr('stroke-width', 1.5);
+        g.append('text').attr('x', colID + 23).attr('y', 18)
+          .attr('text-anchor', 'middle').attr('font-size', 9).attr('font-weight', 700).attr('fill', sm.col)
+          .text(row.id);
+
+        g.append('text').attr('x', colTitle).attr('y', 18)
+          .attr('font-size', 11).attr('fill', txt).text(row.title);
+
+        g.append('rect').attr('x', colStatus).attr('y', 4).attr('width', 66).attr('height', 20)
+          .attr('rx', 4).attr('fill', bg3).attr('stroke', sm.col).attr('stroke-width', 1);
+        g.append('text').attr('x', colStatus + 33).attr('y', 18)
+          .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('font-weight', 600).attr('fill', sm.col)
+          .text(sm.label);
+
+        if (row.effort) {
+          const ec = effortCol[row.effort] || txt2;
+          g.append('rect').attr('x', colEffort).attr('y', 4).attr('width', W - colEffort - 4).attr('height', 20)
+            .attr('rx', 4).attr('fill', bg3).attr('stroke', ec).attr('stroke-width', 1);
+          g.append('text').attr('x', colEffort + (W - colEffort - 4) / 2).attr('y', 18)
+            .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('font-weight', 600).attr('fill', ec)
+            .text(row.effort);
+        } else {
+          g.append('text').attr('x', colEffort + (W - colEffort - 4) / 2).attr('y', 18)
+            .attr('text-anchor', 'middle').attr('font-size', 9.5).attr('fill', txt2).text('—');
+        }
+
+        if (ri < rows.length - 1) {
+          g.append('line').attr('x1', 0).attr('y1', rowH - 2).attr('x2', W - 4).attr('y2', rowH - 2)
+            .attr('stroke', bdr).attr('stroke-width', 0.5);
+        }
+      });
+
+      anime({
+        targets: '#coverage-svg g',
+        opacity: [0, 1],
+        duration: 400,
+        delay: anime.stagger(40),
+        easing: 'easeOutQuad',
+      });
+    })();
+  </script>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

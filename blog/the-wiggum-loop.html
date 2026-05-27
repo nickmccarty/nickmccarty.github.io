@@ -754,11 +754,9 @@ def select_evaluator(seed: str) -> str:
         .text('next iteration (fresh context window)')
         .style('opacity', 0);
 
-      // ── WIGGUM inner box — nested inside "Execute" step ────────────────
-      const execIdx = 1;
-      const execX = rStartX + execIdx * (rBoxW + 28);
-      const wX = execX - 6, wY = rBoxY + rBoxH + 4;
-      const wW = rBoxW + 12, wH = H - 26 - wY;
+      // ── WIGGUM inner box — spans all three Ralph steps ────────────────
+      const wX = rStartX - 6, wY = rBoxY + rBoxH + 4;
+      const wW = rTotalW + 12, wH = H - 26 - wY;
 
       svg.append('rect').attr('class', 'n-wiggum-rect')
         .attr('x', wX).attr('y', wY)

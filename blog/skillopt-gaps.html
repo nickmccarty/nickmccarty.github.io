@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What SkillOpt Gets Right | Nick McCarty</title>
+  <meta name="description" content="Microsoft's SkillOpt (arXiv 2605.23904) formalizes three design choices our autoresearch loop lacks: proactive validation gating, a fast/slow epoch structure, and a persistent skill artifact. Here's what each gap means in practice, grounded in four lit-review sweeps run to fill them.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/skillopt-gaps.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="What SkillOpt Gets Right">
+  <meta property="og:description" content="Microsoft's SkillOpt formalizes three design choices our autoresearch loop lacks: proactive validation gating, a fast/slow epoch structure, and a persistent skill artifact.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/skillopt-gaps.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-25T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="What SkillOpt Gets Right">
+  <meta name="twitter:description" content="SkillOpt's validation gate, epoch structure, and best_skill.md artifact expose three concrete gaps in the hand-rolled autoresearch loop.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "What SkillOpt Gets Right", "description": "Microsoft's SkillOpt (arXiv 2605.23904) formalizes three design choices our autoresearch loop lacks: proactive validation gating, a fast/slow epoch structure, and a persistent skill artifact. Here's what each gap means in practice.", "keywords": "SkillOpt, prompt optimization, validation gating, meta-learning, skill persistence, autoresearch, fast slow learning, agentic systems, gradient-free optimization", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-25", "dateModified": "2026-05-25", "url": "https://nickmccarty.github.io/blog/skillopt-gaps.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/skillopt-gaps.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .diagram-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem 1rem;
+      margin: 2rem 0;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .diagram-title {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 1.25rem;
+    }
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.9rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.6rem 0.8rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    th {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    tr:last-child td { border-bottom: none; }
+    .lit-note {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      font-style: italic;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 25, 2026 &bull; 14 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">What SkillOpt Gets Right</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          Microsoft's SkillOpt (arXiv 2605.23904) is a gradient-free skill optimizer built around three design choices our autoresearch loop doesn't have: a proactive validation gate, a fast/slow epoch structure, and a persistent <code>best_skill.md</code> artifact. Each one exposes a concrete gap. One we've partially patched; two we haven't touched.
+        </p>
+
+        <nav class="series-nav" aria-label="Series navigation">
+          <a href="./harness-thesis.html" class="series-badge">Harness Thesis</a>
+          <a href="./experimental-methodology.html" class="series-badge">Methodology</a>
+          <a href="./autoresearch-convergence.html" class="series-badge">Autoresearch</a>
+          <a href="./gepa-autoresearch.html" class="series-badge">GEPA &amp; Autoresearch</a>
+          <a href="./skillopt-gaps.html" class="series-badge active">SkillOpt Gaps</a>
+        </nav>
+      </header>
+
+      <p>
+        SkillOpt dropped on arXiv the same week we hit experiments 105&ndash;106: two consecutive runs proposing the identical NAMED-SYSTEMS instruction variant, keeping neither, looping. The timing was irritating and instructive. SkillOpt is a gradient-free framework for optimizing LLM agent skills&mdash;it uses batch rollouts, LLM reflection, and a hard acceptance gate to converge on a <code>best_skill.md</code> that transfers across task instances. Reading the README against our loop log made the structural gaps immediately visible.
+      </p>
+
+      <p>
+        This post is a gap analysis, not a SkillOpt explainer. The three gaps are: (1) the loop proposes before it validates, (2) all updates happen at one timescale, and (3) the best instruction is never written to a file. For each gap I'll describe what SkillOpt does, what the harness does instead, what we built in response, and what the literature says about the underlying problem.
+      </p>
+
+      <div class="callout">
+        <p><strong>On the lit reviews:</strong> To ground each gap, we ran four targeted literature sweeps using the harness's own <code>lit_review_skill.py</code>. The queries were: gradient-free prompt optimization, validation gating convergence criteria, hierarchical multi-timescale LLM updates, and skill library procedural knowledge persistence. Reviews 3 and 4 pulled directly relevant papers. Reviews 1 and 2 drifted&mdash;the arxiv fetch surfaced prompt injection and mathematical optimization stopping criteria rather than the OPRO/APE/DSPy literature we were aiming for. What follows draws on what the sweeps found, honestly labeled.</p>
+      </div>
+
+      <h2>I1 &mdash; SkillOpt in One Paragraph</h2>
+
+      <p>
+        SkillOpt runs in epochs. Within each epoch: sample a batch of task instances, run rollouts using the current skill instruction, collect per-instance scores, and pass the full trace&mdash;including failures&mdash;to an LLM proposer that generates a candidate revision. The candidate is then evaluated on a <em>held-out validation set</em>. If it improves the validation score, it becomes the new current instruction for the next epoch. If it doesn't, the current instruction is unchanged. At the end of training, the best-validated instruction is written to <code>best_skill.md</code>&mdash;a file that persists independently of the training loop and can be loaded by any downstream agent that needs the skill.
+      </p>
+
+      <p>
+        The three structural elements&mdash;validation gate, epoch structure, persistent artifact&mdash;are individually known ideas. What SkillOpt does is compose them into a coherent gradient-free optimization loop. The autoresearch loop has none of the three; it proposes, evaluates on the full task suite, and keeps the current-best in a running Python variable.
+      </p>
+
+      <h2>I2 &mdash; Gap 1: Validation Gating</h2>
+
+      <p>
+        The most immediate gap. In autoresearch, a proposal is accepted if its composite score exceeds the current baseline by a delta threshold. Both training and acceptance use the same eval suite. There is no held-out set; the proposer can and does overfit to the tasks it's been scored on. Experiments 105&ndash;106 were a textbook example: the NAMED-SYSTEMS variant scored above baseline on the eval tasks, was accepted, scored below baseline on the next run (different random seed), was discarded, and the proposer reproposed the same variant. Two experiments wasted, same instruction at the end.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">I2 &mdash; Propose-Then-Validate vs. Propose-Then-Accept</div>
+        <svg id="gate-svg" width="100%" viewBox="0 0 720 200" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">SkillOpt (top) screens proposals against a held-out validation set before accepting; the autoresearch loop (bottom) accepts on the same task distribution used for training, with no independent check.</p>
+      </div>
+
+      <p>
+        The literature on stopping criteria&mdash;even the mathematical optimization literature that our validation-gating sweep accidentally surfaced&mdash;is consistent on this point. Kaur et al. (2026, arXiv 2602.22107, "Don't stop me now") ran an empirical study comparing early stopping on validation <em>accuracy</em> versus validation <em>loss</em> across neural classifiers. The punchline: early stopping on accuracy is the worst of the options tested, inferior to loss-based stopping and to post-hoc selection across all epochs. The mechanism is that accuracy is coarser and noisier than loss; a single-epoch accuracy read has high variance and will fire the acceptance criterion on variance rather than signal. For the harness, the analogy is direct: the composite Wiggum score is a coarse aggregate (single LLM judge, three tasks, n&le;5 samples). Accepting on a single eval run&mdash;which is what experiments 105&ndash;106 did&mdash;is accepting on noise.
+      </p>
+
+      <p>
+        A regret-based stopping criterion from Bayesian optimization (Pruher et al., 2026, arXiv 2605.22561) frames the same issue differently: a stopping rule is sound only if it provides an &epsilon;-optimality guarantee with high probability, which requires either a distributional bound on the evaluation function or multiple independent draws. A single composite score from a single eval run provides neither.
+      </p>
+
+      <p>
+        The TDD governance paper (2026, arXiv 2604.26615) that the gradient-free sweep surfaced&mdash;off-target for OPRO/APE but unexpectedly useful here&mdash;makes a similar argument from a software engineering angle. Operationalizing TDD in LLM pipelines requires "validation gates" that act as go/no-go checkpoints before a candidate is committed; without them, the pipeline's Red-Green-Refactor cycle collapses into a Red-Red loop where nothing is ever demonstrably green.
+      </p>
+
+      <h3>What We Built: Kimi Unblock</h3>
+
+      <p>
+        The change we made this week addresses cycling reactively, not validation proactively. When <code>consecutive_discards &ge; KIMI_STUCK_THRESHOLD</code> (default 6), the loop calls <code>get_kimi_unblock_suggestion()</code>&mdash;a cloud model (kimi-k2.5) consulted for an outside perspective on why the proposer is stuck. The suggestion is injected into the next proposer call as <code>{kimi_guidance}</code>.
+      </p>
+
+<pre><code>KIMI_STUCK_THRESHOLD = int(os.environ.get("KIMI_STUCK_THRESHOLD", "6"))
+
+def get_kimi_unblock_suggestion(current, history, eval_feedback,
+                                consecutive_discards) -> str:
+    prompt = _KIMI_UNBLOCK_PROMPT.format(
+        synth=current["synth"],
+        history=history[-3000:],
+        eval_feedback=eval_feedback,
+        consecutive_discards=consecutive_discards,
+    )
+    response = ollama.chat(
+        model=KIMI_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        options={"temperature": 0.7},
+    )
+    suggestion = response["message"]["content"]
+    suggestion = re.sub(r"&lt;think&gt;.*?&lt;/think&gt;", "", suggestion,
+                        flags=re.DOTALL).strip()
+    return suggestion</code></pre>
+
+      <p>
+        This is reactive: it fires after the cycle has already consumed 6 experiments. SkillOpt's validation gate is proactive: proposals are rejected before they're committed, before they're added to the history, and before they can mislead the proposer into treating a noise-accepted instruction as a genuine signal. The Kimi unblock prevents <em>indefinite</em> cycling; the validation gate prevents <em>initial</em> acceptance of noisy proposals. Both are needed; we have one.
+      </p>
+
+      <p>
+        We also added NAMED-SYSTEMS to the hard-banned list with an explicit note:
+      </p>
+
+<pre><code>HARD_BANNED = """
+  - Citing named tools, frameworks, or published benchmarks for each practice
+    (NAMED-SYSTEMS angle: tried in exps 105-106; proposer cycled the identical
+    proposal two experiments in a row; exp 104 showed zero score variance
+    across 5 samples — instruction changes had no measurable effect)
+"""</code></pre>
+
+      <p>
+        That's a post-hoc fix. The gate would have caught it prospectively, before the proposer had time to re-propose it.
+      </p>
+
+      <div class="callout pink">
+        <p><strong>Implementation note:</strong> A minimal validation gate for the harness doesn't require a separate held-out task suite&mdash;we don't have enough tasks for a true train/validation split. The pragmatic version: before committing, re-run the eval with a different random seed and require the proposal to clear baseline on <em>both</em> runs. This cuts the noise-acceptance rate substantially without requiring new eval tasks. The cost is one additional eval run per accepted proposal; on the current discard rate (&gt;80%), the net cost is roughly one extra run per five experiments rather than per experiment.</p>
+      </div>
+
+      <h2>I3 &mdash; Gap 2: Fast/Slow Epoch Structure</h2>
+
+      <p>
+        SkillOpt's epoch loop operates at two timescales. The fast timescale is within-epoch: the proposer sees per-instance rollout traces and generates a candidate revision. The slow timescale is cross-epoch: <code>best_skill.md</code> is only updated when a candidate clears the validation gate, which happens at most once per epoch, and often less frequently. The gap between timescales means the slow update is a genuine signal&mdash;it only fires when there's enough evidence across an epoch's batch to justify a change.
+      </p>
+
+      <p>
+        The autoresearch loop has one timescale. Every experiment is both a fast update (propose) and a slow update (commit if kept). There is no batch aggregation across experiments before proposing; the proposer sees a rolling window of recent eval results, not a structured epoch-batch summary. This makes the proposer reactive to last-run noise rather than responsive to epoch-level trends.
+      </p>
+
+      <p>
+        The meta-learning literature explains why two timescales help. The "Reusable Options via Gradient-based Meta Learning" paper (Harb et al., 2022, arXiv 2212.11726) demonstrates that temporal abstractions (options in hierarchical RL) that are learned and transferred across tasks require a fast adaptation loop (task-level) and a slow update loop (option-level). When the two loops are collapsed to one, options overfit to the current task and lose transferability. The analogy to the autoresearch loop is direct: the "option" is the instruction strategy (e.g., "add implementation steps with parameter values"), and collapsing fast and slow updates means the proposer re-discovers the same strategy from scratch each time rather than building on a stable cross-experiment signal.
+      </p>
+
+      <p>
+        The meta-gradient RL literature provides a related structural insight. Flennerhag et al. (2022, arXiv 2211.10550) show that when the inner and outer optimization loops share the same discount factor&mdash;the same timescale&mdash;the outer update develops a systematic bias toward myopic policies. The debiasing fix is an additional "outer value function" that runs at the slower timescale and corrects for the mismatch. In autoresearch terms: using eval feedback from the last experiment to propose the next instruction conflates fast (per-experiment) and slow (per-strategy) signals, and the proposer develops a systematic bias toward last-run performance rather than epoch-level trends.
+      </p>
+
+      <p>
+        The Tutorial on Meta-Reinforcement Learning (Beck et al., 2023, arXiv 2301.08028) frames this as the core challenge of meta-RL: the inner loop adapts a policy to a task; the outer loop updates the meta-parameters that make inner-loop adaptation fast. The two loops must be kept structurally separate to avoid conflating task-specific adaptation with meta-level learning. This is exactly the separation SkillOpt enforces and the autoresearch loop doesn't.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Timescale</th>
+            <th>SkillOpt</th>
+            <th>autoresearch.py</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Fast (within-epoch)</td>
+            <td>Per-instance rollout traces &rarr; proposer</td>
+            <td>Per-experiment eval feedback &rarr; proposer (same)</td>
+          </tr>
+          <tr>
+            <td>Slow (cross-epoch)</td>
+            <td>Validation-gated update of <code>best_skill.md</code></td>
+            <td><em>Not implemented</em> &mdash; every keep is both timescales</td>
+          </tr>
+          <tr>
+            <td>Proposer input</td>
+            <td>Epoch-batch summary + per-instance failures</td>
+            <td>Rolling window of recent experiments (last 5)</td>
+          </tr>
+          <tr>
+            <td>Commit criterion</td>
+            <td>Validation-gated improvement</td>
+            <td>delta &gt; threshold on single eval run</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        Adding an epoch structure to autoresearch doesn't require rewriting the loop. A minimal version: define an epoch as N experiments (e.g., N=10). Within the epoch, the loop runs as normal&mdash;propose, eval, keep/discard. At epoch boundary, the proposer receives a summary of the epoch's keeps and discards (not just the last-5 window) and generates an epoch-level candidate. The epoch-level candidate is evaluated with a different random seed (the validation gate from Gap 1). If it clears, it becomes the new baseline for the next epoch. If it doesn't, the epoch-level baseline rolls back to the pre-epoch instruction. This gives the slow update its own signal without requiring a separate held-out task suite.
+      </p>
+
+      <div class="lit-note">
+        Lit review note: The hierarchical multi-timescale sweep targeted LLM-specific fast/slow update schedules; it pulled the meta-RL literature instead. The MAML and Reptile comparison paper (arXiv 2310.06148) is a useful secondary source: it shows that MAML's inner-loop specialization produces less diverse features than fine-tuning when the test distribution shifts, which maps to the proposer overfitting problem&mdash;a proposer that adapts too fast to per-experiment signals loses the diversity needed to escape local optima. The epoch structure is a structural regularizer against this.
+      </div>
+
+      <h2>I4 &mdash; Gap 3: Skill as Persistent Artifact</h2>
+
+      <p>
+        SkillOpt writes <code>best_skill.md</code>. This is not a minor implementation detail. It means:
+      </p>
+
+      <ul>
+        <li>The best instruction survives a process crash and a machine restart.</li>
+        <li>It can be loaded by an agent that was never part of the training run.</li>
+        <li>It has a human-readable name that can be versioned, diffed, and rolled back independently of the training log.</li>
+        <li>Multiple skills can coexist as multiple files without coupling their update loops.</li>
+      </ul>
+
+      <p>
+        The autoresearch loop keeps the best instruction in two places: the running Python variable <code>baseline_score</code> tracks the numeric score, and the committed git state tracks the instruction text. Neither is a named, self-describing artifact. If you want to know what <code>SYNTH_INSTRUCTION</code> looks like in experiment 87, you <code>git log</code> the file; if you want to load it in a new process, you read <code>agent.py</code> and extract the string manually. The instruction is implicitly versioned by git, not explicitly versioned as a skill artifact with its own identity.
+      </p>
+
+      <p>
+        The Procedural Knowledge Libraries paper (Kapoor et al., 2025, arXiv 2506.14715) makes this distinction precisely. Traditional knowledge management stores <em>end products</em>&mdash;the final instruction, the final model, the published paper. What it discards is the full process record: the hypotheses that were tried, the failures that informed the final state, the decisions that were made at each branch point. PKLs argue for capturing the full arc in a structured storage schema; the end product is one entry in a larger procedural record, not a standalone artifact.
+      </p>
+
+      <p>
+        For the autoresearch loop, <code>autoresearch.tsv</code> is an incomplete PKL. It records per-experiment scores, descriptions, and keep/discard status&mdash;but it doesn't record <em>which instruction text produced which score</em> in a way that's independently loadable. To reconstruct experiment 87's instruction, you need both the TSV (for metadata) and the git log (for text). The TSV is a log; it's not a skill artifact.
+      </p>
+
+      <p>
+        UI-Voyager (Yan et al., 2026, arXiv 2603.24533) provides a complementary framing from the mobile GUI agent literature. UI-Voyager builds a self-evolving skill library through two stages: Rejection Fine-Tuning (RFT) that learns from failed trajectories, and Group Relative Self-Distillation (GRSD) that refines learned skills against successful ones. The key architectural choice: skills are stored as named, loadable entries in a skill library, not as weights in a single model. When a skill fails on a new task instance, the skill entry&mdash;not the whole model&mdash;is the unit of update. This decomposition is what makes UI-Voyager achieve 81% pass@1 on AndroidWorld without retraining the base model.
+      </p>
+
+      <p>
+        The analogous decomposition for autoresearch: <code>SYNTH_INSTRUCTION</code>, <code>SYNTH_COUNT</code>, and <code>SYNTH_PROSE</code> are currently embedded in <code>agent.py</code> as Python string constants. They should be a named file&mdash;<code>skills/synthesis.md</code> or similar&mdash;loaded at runtime, versioned by a hash, and loadable by any process that needs the current best synthesis skill. The training loop writes the file on each validated keep; the agent reads it on startup. The git history for <code>agent.py</code> becomes irrelevant for skill tracking; the skill file has its own history.
+      </p>
+
+      <p>
+        The Agentic Skill Discovery paper (Wang et al., 2024, arXiv 2405.15019) shows that skills built incrementally from zero&mdash;starting with no predefined library and growing through LLM-generated task proposals&mdash;are more transferable than skills defined upfront, because each skill entry is validated against a specific set of successful trajectories rather than specified by hand. The autoresearch loop builds one skill incrementally; it doesn't grow a library. But the transferability argument applies: a skill entry backed by a validated set of trajectories is more reusable than a string constant that happens to have a high composite score on the last eval run.
+      </p>
+
+      <div class="diagram-container">
+        <div class="diagram-title">I4 &mdash; Instruction-in-Code vs. Skill-as-Artifact</div>
+        <svg id="artifact-svg" width="100%" viewBox="0 0 720 160" preserveAspectRatio="xMidYMid meet"></svg>
+        <p class="diagram-caption">Current state (left): instruction text lives inside <code>agent.py</code>, retrievable only via git log. Proposed state (right): a named skill file, written on each validated keep, loadable independently of the training loop.</p>
+      </div>
+
+      <h3>The Minimal Implementation</h3>
+
+      <p>
+        The change is small. Add a <code>skills/</code> directory. On each keep, write the accepted instructions to <code>skills/synthesis.md</code> with a YAML front matter block that records the experiment number, composite score, and the task IDs it was validated on:
+      </p>
+
+<pre><code>---
+experiment: 112
+score: 8.91
+tasks: [T_A, T_B, T_C, T_D, T_E]
+validated: true
+date: 2026-05-25
+---
+
+# Synthesis Instruction
+
+[instruction text here]</code></pre>
+
+      <p>
+        In <code>agent.py</code>, replace the embedded string constant with a loader:
+      </p>
+
+<pre><code>def load_synthesis_skill(path: str = "skills/synthesis.md") -> dict:
+    with open(path) as f:
+        raw = f.read()
+    front, _, body = raw.partition("\n---\n")
+    meta = yaml.safe_load(front.lstrip("---\n"))
+    meta["instruction"] = body.strip()
+    return meta
+
+SYNTHESIS = load_synthesis_skill()</code></pre>
+
+      <p>
+        The training loop now has a single write target. The agent has a single read source. The git history for <code>agent.py</code> is no longer the versioning mechanism for the skill&mdash;<code>skills/synthesis.md</code> is. And if you want to roll back to experiment 87's instruction, you <code>git log -- skills/synthesis.md</code> and checkout the hash directly, without grepping through <code>agent.py</code>'s change history.
+      </p>
+
+      <h2>What the Literature Leaves Open</h2>
+
+      <ul>
+        <li>SkillOpt's validation gate uses a held-out set drawn from the same distribution as the training batch. For harnesses with small, fixed task suites (five tasks is typical), a train/validation split reduces the training signal to three or four tasks. Is a different-seed re-run on the same tasks a sound substitute for a true held-out set, or does it just sample the same noise distribution?</li>
+        <li>The fast/slow epoch structure works when the inner loop (fast) and outer loop (slow) have genuinely different update targets. In autoresearch, both loops update the same instruction text. Is there a meaningful decomposition of the instruction into a fast-updated component (e.g., task-specific phrasing) and a slow-updated component (e.g., structural strategy) that would make the two-timescale structure non-trivial?</li>
+        <li>The Kimi unblock is a reactive intervention: it fires after cycling is detected. SkillOpt's validation gate is proactive: it prevents noise-accepted proposals from entering the history. Is there a way to combine both&mdash;proactive gating <em>and</em> reactive diversification when the gate is consistently rejecting? Consistent rejection (no proposal clears the gate in N epochs) is a different failure mode from cycling (proposals accepted and discarded alternately), and they may need different interventions.</li>
+        <li>Skill files and PKLs capture the end state of a training run. The process&mdash;the sequence of discarded proposals, the reasons for each discard, the feedback that shifted the proposer's direction&mdash;is in <code>autoresearch.tsv</code> but not in <code>skills/synthesis.md</code>. For a PKL to be genuinely useful (Kapoor et al., 2025), both are needed. What is the right schema for a skill entry that includes enough process context to explain <em>why</em> the current instruction is what it is, without becoming a full log dump?</li>
+        <li>UI-Voyager's two-stage learning (RFT then GRSD) separates failure learning from success distillation. The autoresearch loop does neither explicitly&mdash;the proposer receives mixed feedback from kept and discarded experiments. Is there a benefit to structuring the proposer prompt as two stages: first, extract what failed and why; then, propose a change that addresses the failures while preserving what succeeded? This is a prompting change, not a loop change, and could be implemented without any of the structural changes above.</li>
+      </ul>
+
+      <div class="post-pagination">
+        <a href="./gepa-autoresearch.html" class="pagination-card pagination-prev">
+          <span class="pagination-dir">&larr;&nbsp;Previous</span>
+          <span class="pagination-title">From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop</span>
+        </a>
+        <a href="./autoresearch-convergence.html" class="pagination-card pagination-next">
+          <span class="pagination-dir">Next&nbsp;&rarr;</span>
+          <span class="pagination-title">Autoresearch Convergence</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related in this series</h3>
+        <div class="related-posts-grid">
+          <a href="./gepa-autoresearch.html" class="related-post-card">
+            <div class="related-post-num">Extension</div>
+            <div class="related-post-title">GEPA &amp; Autoresearch</div>
+            <div class="related-post-desc">DSPy's GEPA formalizes the autoresearch loop with Pareto frontier selection, minibatch screening, and rich textual feedback &mdash; three gaps that explain oscillation and plateau.</div>
+          </a>
+          <a href="./autoresearch-convergence.html" class="related-post-card">
+            <div class="related-post-num">Extension</div>
+            <div class="related-post-title">Autoresearch Convergence</div>
+            <div class="related-post-desc">The convergence behavior of the autoresearch loop across 100+ experiments, including the oscillation in experiments 20&ndash;38 and the plateau below 9.0.</div>
+          </a>
+          <a href="./observability-flywheel.html" class="related-post-card">
+            <div class="related-post-num">Post 10</div>
+            <div class="related-post-title">Observability and the Data Flywheel</div>
+            <div class="related-post-desc">The self-improvement patterns that turn pipeline output into training data &mdash; including the eval loop that autoresearch operationalizes.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555ZM0 4.697v7.104l5.803-3.558L0 4.697ZM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-1.239-.757Zm3.436-.586L16 11.801V4.697l-5.803 3.546Z"/>
+        </svg>
+      </a>
+    </div>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+    function cssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    /* ── I2: Validation Gate Flow ──────────────────────────────────────────── */
+    (function drawGate() {
+      const svg = d3.select('#gate-svg');
+      const W = 720, H = 200;
+      const cyan = cssVar('--accent-cyan') || '#22d3ee';
+      const pink = cssVar('--accent-pink') || '#f472b6';
+      const txt  = cssVar('--text-primary') || '#f1f5f9';
+      const txt2 = cssVar('--text-secondary') || '#94a3b8';
+      const bg2  = cssVar('--bg-secondary') || '#1e293b';
+      const bg3  = cssVar('--bg-tertiary') || '#334155';
+      const bdr  = cssVar('--border-color') || '#334155';
+      const green = '#34d399';
+
+      const boxW = 110, boxH = 30, gap = 18, r = 5;
+      const rows = [
+        { y: 50,  label: 'SkillOpt',     color: cyan,  steps: ['Propose', 'Validate Gate', 'Full Rollout', 'best_skill.md'], gates: [1] },
+        { y: 130, label: 'autoresearch', color: pink, steps: ['Propose', 'Full Eval', 'delta > 0?', 'Keep/Discard'], gates: [] },
+      ];
+
+      const totalW = rows[0].steps.length * (boxW + gap) - gap;
+      const startX = (W - totalW) / 2;
+
+      rows.forEach(row => {
+        // row label
+        svg.append('text')
+          .attr('x', startX - 10).attr('y', row.y + boxH / 2 + 5)
+          .attr('text-anchor', 'end')
+          .attr('font-size', '11px').attr('fill', txt2)
+          .text(row.label);
+
+        row.steps.forEach((step, i) => {
+          const x = startX + i * (boxW + gap);
+          const isGate = row.gates.includes(i);
+          const isLast = i === row.steps.length - 1;
+
+          // box
+          svg.append('rect')
+            .attr('x', x).attr('y', row.y)
+            .attr('width', boxW).attr('height', boxH)
+            .attr('rx', r).attr('ry', r)
+            .attr('fill', bg3)
+            .attr('stroke', isGate ? cyan : (isLast ? green : bdr))
+            .attr('stroke-width', isGate ? 2 : 1);
+
+          svg.append('text')
+            .attr('x', x + boxW / 2).attr('y', row.y + boxH / 2 + 5)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '11px')
+            .attr('fill', isGate ? cyan : (isLast ? green : txt))
+            .text(step);
+
+          // arrow
+          if (i < row.steps.length - 1) {
+            const ax = x + boxW + 2, ay = row.y + boxH / 2;
+            svg.append('line')
+              .attr('x1', ax).attr('y1', ay)
+              .attr('x2', ax + gap - 4).attr('y2', ay)
+              .attr('stroke', bdr).attr('stroke-width', 1.5)
+              .attr('marker-end', 'url(#arrow)');
+          }
+        });
+      });
+
+      // arrowhead marker
+      svg.append('defs').append('marker')
+        .attr('id', 'arrow').attr('viewBox', '0 0 8 8')
+        .attr('refX', 6).attr('refY', 4)
+        .attr('markerWidth', 6).attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,0 L0,8 L8,4 z')
+        .attr('fill', bdr);
+
+      // rejection arrow (gate rejects downward)
+      const gateX = startX + 1 * (boxW + gap) + boxW / 2;
+      const gateY = rows[0].y + boxH;
+      svg.append('text')
+        .attr('x', gateX).attr('y', gateY + 18)
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '10px').attr('fill', pink)
+        .text('reject &rarr; no commit, no history entry');
+
+    })();
+
+    /* ── I4: Instruction-in-Code vs. Skill-as-Artifact ─────────────────────── */
+    (function drawArtifact() {
+      const svg = d3.select('#artifact-svg');
+      const W = 720, H = 160;
+      const cyan = cssVar('--accent-cyan') || '#22d3ee';
+      const pink = cssVar('--accent-pink') || '#f472b6';
+      const txt  = cssVar('--text-primary') || '#f1f5f9';
+      const txt2 = cssVar('--text-secondary') || '#94a3b8';
+      const bg3  = cssVar('--bg-tertiary') || '#334155';
+      const bdr  = cssVar('--border-color') || '#334155';
+      const green = '#34d399';
+
+      const midX = W / 2;
+
+      // Left side: current (in-code)
+      const leftItems = [
+        { label: 'autoresearch loop', y: 30, color: pink },
+        { label: 'agent.py (string const)', y: 80, color: bdr },
+        { label: 'git log (retrieval)', y: 130, color: txt2 },
+      ];
+      leftItems.forEach((item, i) => {
+        const x = 80, w = 180, h = 28;
+        svg.append('rect').attr('x', x).attr('y', item.y).attr('width', w).attr('height', h)
+          .attr('rx', 5).attr('fill', bg3).attr('stroke', item.color).attr('stroke-width', 1.5);
+        svg.append('text').attr('x', x + w/2).attr('y', item.y + h/2 + 5)
+          .attr('text-anchor', 'middle').attr('font-size', '11px').attr('fill', txt)
+          .text(item.label);
+        if (i < leftItems.length - 1) {
+          svg.append('line')
+            .attr('x1', x + w/2).attr('y1', item.y + h)
+            .attr('x2', x + w/2).attr('y2', leftItems[i+1].y)
+            .attr('stroke', bdr).attr('stroke-dasharray', '4,3').attr('stroke-width', 1);
+        }
+      });
+      svg.append('text').attr('x', 170).attr('y', 16)
+        .attr('text-anchor', 'middle').attr('font-size', '10px').attr('font-weight', '600')
+        .attr('fill', pink).attr('letter-spacing', '0.06em').text('CURRENT');
+
+      // Divider
+      svg.append('line').attr('x1', midX).attr('y1', 20).attr('x2', midX).attr('y2', H - 20)
+        .attr('stroke', bdr).attr('stroke-width', 1).attr('stroke-dasharray', '6,4');
+
+      // Right side: proposed (skill file)
+      const rightItems = [
+        { label: 'autoresearch loop', y: 30, color: cyan },
+        { label: 'skills/synthesis.md', y: 80, color: green },
+        { label: 'any agent / any process', y: 130, color: txt2 },
+      ];
+      rightItems.forEach((item, i) => {
+        const x = midX + 60, w = 200, h = 28;
+        svg.append('rect').attr('x', x).attr('y', item.y).attr('width', w).attr('height', h)
+          .attr('rx', 5).attr('fill', bg3).attr('stroke', item.color).attr('stroke-width', 1.5);
+        svg.append('text').attr('x', x + w/2).attr('y', item.y + h/2 + 5)
+          .attr('text-anchor', 'middle').attr('font-size', '11px').attr('fill', txt)
+          .text(item.label);
+        if (i < rightItems.length - 1) {
+          svg.append('line')
+            .attr('x1', x + w/2).attr('y1', item.y + h)
+            .attr('x2', x + w/2).attr('y2', rightItems[i+1].y)
+            .attr('stroke', green).attr('stroke-width', 1.5);
+        }
+      });
+      svg.append('text').attr('x', midX + 160).attr('y', 16)
+        .attr('text-anchor', 'middle').attr('font-size', '10px').attr('font-weight', '600')
+        .attr('fill', cyan).attr('letter-spacing', '0.06em').text('PROPOSED');
+
+    })();
+  </script>
+</body>
+</html>

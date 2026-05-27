@@ -848,7 +848,7 @@ while active_requests or pending_requests:
       arrow(5, 215, 5, 275);
       arrow(5, 215, -75, 215);
       // Actually let's draw it more simply:
-      svg.append('text').attr('x', -10).attr('y', 198).attr('text-anchor', 'end').attr('font-size', 9).attr('fill', pink).text('NO');
+      svg.append('text').attr('x', 8).attr('y', 198).attr('text-anchor', 'start').attr('font-size', 9).attr('fill', pink).text('NO');
       // horizontal line to CPU only
       svg.append('line').attr('x1', 5).attr('y1', 215).attr('x2', 5).attr('y2', 215).attr('stroke', txt2); // placeholder
       // CPU only label at bottom left... let me just draw a simple box
@@ -862,8 +862,8 @@ while active_requests or pending_requests:
          .attr('stroke', pink).attr('stroke-width', 1.3);
       svg.append('line').attr('x1', 5).attr('y1', 360).attr('x2', 20).attr('y2', 360)
          .attr('stroke', pink).attr('stroke-width', 1.3).attr('marker-end', 'url(#arrowhead-def)');
-      svg.append('text').attr('x', 0).attr('y', 246).attr('text-anchor', 'middle')
-         .attr('font-size', 9).attr('fill', pink).attr('transform', 'rotate(-90,0,246)').text('NO');
+      svg.append('text').attr('x', 8).attr('y', 246).attr('text-anchor', 'middle')
+         .attr('font-size', 9).attr('fill', pink).attr('transform', 'rotate(-90,8,246)').text('NO');
 
       // Ollama wrapper label
       svg.append('rect').attr('x', 20).attr('y', 346).attr('width', 0).attr('height', 0).attr('opacity', 0); // reset

@@ -504,15 +504,15 @@ def scan_for_injection(text: str, source: str, target: str) -> tuple[bool, str, 
 
       outcomes.forEach((o, i) => {
         // Pass arrow
-        svg.append('rect').attr('x', 490).attr('y', o.y).attr('width', 100).attr('height', 24)
+        svg.append('rect').attr('x', 490).attr('y', o.y).attr('width', 155).attr('height', 24)
           .attr('rx', 5).attr('fill', bg3).attr('stroke', green).attr('stroke-width', 1).attr('opacity', 0);
-        svg.append('text').attr('x', 540).attr('y', o.y + 15)
+        svg.append('text').attr('x', 567).attr('y', o.y + 15)
           .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', green).attr('opacity', 0).text('✓ ' + o.pass);
 
         // Fail arrow
-        svg.append('rect').attr('x', 490).attr('y', o.y + 28).attr('width', 100).attr('height', 24)
+        svg.append('rect').attr('x', 490).attr('y', o.y + 28).attr('width', 155).attr('height', 24)
           .attr('rx', 5).attr('fill', bg3).attr('stroke', red).attr('stroke-width', 1).attr('opacity', 0);
-        svg.append('text').attr('x', 540).attr('y', o.y + 43)
+        svg.append('text').attr('x', 567).attr('y', o.y + 43)
           .attr('text-anchor', 'middle').attr('font-size', 9).attr('fill', red).attr('opacity', 0).text('✗ ' + o.fail);
 
         svg.append('line').attr('x1', 426).attr('y1', guards[i].y + 26).attr('x2', 489).attr('y2', o.y + 12)
