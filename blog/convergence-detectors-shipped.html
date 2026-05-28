@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Building the Detectors: What Actually Shipped After 107 Experiments | Nick McCarty</title>
+  <meta name="description" content="The four convergence detectors proposed after 90 failed experiments were implemented — but not as designed. A regex ban list replaced TF-IDF cosine similarity, a cloud model consultation replaced the global exit, and a new pre-proposal research phase emerged from scratch.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/convergence-detectors-shipped.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Building the Detectors: What Actually Shipped After 107 Experiments">
+  <meta property="og:description" content="What the four proposed convergence detectors became in actual implementation — regex over cosine similarity, Kimi unblocking over a hard stop, and a pre-proposal research phase that wasn't in the design.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/convergence-detectors-shipped.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-28T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Building the Detectors: What Actually Shipped After 107 Experiments">
+  <meta name="twitter:description" content="Four proposed convergence detectors, 107 experiments later: what they became vs. what was designed.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Building the Detectors: What Actually Shipped After 107 Experiments", "description": "The four convergence detectors proposed after 90 failed experiments were implemented — but not as designed. A regex ban list replaced TF-IDF cosine similarity, a cloud model consultation replaced the global exit, and a new pre-proposal research phase emerged from scratch.", "keywords": "autoresearch, prompt optimization, convergence detection, autonomous systems, kimi, ban list, proposal validation, agentic systems, hill-climbing", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-28", "dateModified": "2026-05-28", "url": "https://nickmccarty.github.io/blog/convergence-detectors-shipped.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/convergence-detectors-shipped.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout.amber { border-left-color: #f59e0b; }
+    .callout.green { border-left-color: #22c55e; }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin: 1rem 0 1.5rem;
+    }
+    .data-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .data-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--bg-secondary); }
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 3px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .tag.shipped  { background: rgba(34,197,94,0.15);  color: #22c55e; }
+    .tag.changed  { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .tag.replaced { background: rgba(139,92,246,0.15); color: #a78bfa; }
+    .tag.new      { background: rgba(0,212,255,0.12);  color: var(--accent-cyan); }
+    .tag.discard  { background: rgba(239,68,68,0.15);  color: #ef4444; }
+    .finding {
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      padding: 0.9rem 1.1rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+      line-height: 1.65;
+    }
+    .finding strong { color: var(--accent-cyan); }
+    .detector {
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.25rem 0;
+    }
+    .detector-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 0.6rem;
+    }
+    .detector-num {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .detector h3 { margin: 0; font-size: 1rem; }
+    .compare-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+    .compare-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+      font-size: 0.87rem;
+      line-height: 1.6;
+    }
+    .compare-card .compare-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      color: var(--text-secondary);
+    }
+    .compare-card.proposed .compare-label { color: #f59e0b; }
+    .compare-card.shipped .compare-label  { color: #22c55e; }
+    @media (max-width: 640px) {
+      .compare-row { grid-template-columns: 1fr; }
+    }
+  </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.github.io/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.github.io/blog.html"},{"@type":"ListItem","position":3,"name":"Building the Detectors: What Actually Shipped After 107 Experiments","item":"https://nickmccarty.github.io/blog/convergence-detectors-shipped.html"}]}</script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 28, 2026 &bull; 14 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">Building the Detectors: What Actually Shipped After 107 Experiments</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          The <a href="autoresearch-convergence.html" style="color: var(--accent-cyan);">previous post</a> proposed four convergence detectors to prevent the failure modes that caused 65 experiments to advance nowhere. Here is what actually got built &mdash; and how each detector diverged from its original design.
+        </p>
+      </header>
+
+      <div class="series-nav">
+        <a href="gepa-autoresearch.html" class="series-badge">From Hill-Climbing to Pareto</a>
+        <a href="experimental-methodology.html" class="series-badge">Experimental Methodology</a>
+        <a href="autoresearch-convergence.html" class="series-badge">Convergence Failures</a>
+        <span class="series-badge active">Detectors, Shipped</span>
+      </div>
+
+      <p>
+        The autoresearch loop in <code>harness/autoresearch.py</code> now has all four convergence mechanisms in place. None of them looks quite like the design. The TF-IDF cosine similarity from Detector 1 was replaced with a compiled regex ban list. The Shannon entropy monitor from Detector 2 collapsed into the same ban list, served differently. The hard global-exit from Detector 4 was traded for a cloud model consultation. Detector 3 shipped intact but as a flag rather than an automatic trigger.
+      </p>
+      <p>
+        Along the way, two additions that were not in the original design turned out to matter more than any of the four detectors: a pre-proposal research phase that grounds the proposer in current literature before it writes anything, and a routing check that prevents proposals from targeting instructions the current task set doesn&rsquo;t actually exercise.
+      </p>
+      <p>
+        This post walks through each detector, what was proposed, what shipped, and why the gap exists.
+      </p>
+
+      <h2>The Design vs. What Shipped</h2>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Detector</th>
+            <th>Proposed mechanism</th>
+            <th>Shipped as</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1 &mdash; Semantic Attractor Guard</td>
+            <td>TF-IDF cosine similarity &ge; 0.65 vs recent discards</td>
+            <td>Compiled regex ban list (<code>_PROSE_BAN_PATTERNS</code>) + <code>_validate_proposal()</code></td>
+            <td><span class="tag changed">Changed</span></td>
+          </tr>
+          <tr>
+            <td>2 &mdash; Family Entropy Monitor</td>
+            <td>Shannon entropy over 10-experiment sliding window; auto-inject ban when entropy &lt; threshold</td>
+            <td>Accumulated hard-ban section in <code>PROPOSE_PROMPT</code>; <code>_active_instruction_keys()</code> routing check</td>
+            <td><span class="tag changed">Changed</span></td>
+          </tr>
+          <tr>
+            <td>3 &mdash; Baseline Re-estimation</td>
+            <td>Automatic at <em>K</em> consecutive discards with <code>eval-n=3</code></td>
+            <td><code>--eval-n N</code> multi-sample averaging + <code>--reset-baseline</code> flag (user-triggered)</td>
+            <td><span class="tag shipped">Shipped</span></td>
+          </tr>
+          <tr>
+            <td>4 &mdash; Global Convergence Exit</td>
+            <td>Hard stop when experiments &gt; N_max with no advance in last M</td>
+            <td>Soft guard on consecutive propose failures (&ge; 10); Kimi unblocking at &ge; 6 discards</td>
+            <td><span class="tag replaced">Replaced</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Detector 1: Regex over Cosine Similarity</h2>
+
+      <p>
+        The original design called for computing TF-IDF cosine similarity between each new proposal and the last <em>N</em> discards. A match above 0.65 would reject the proposal before spending an eval run. The intent was to catch the HOW-FIRST attractor mechanically, before 14 compute runs got wasted on variations of the same blocked approach.
+      </p>
+      <p>
+        What shipped instead is a two-stage validation gate in <code>_validate_proposal()</code>. The first stage is a routing check (discussed below). The second is a compiled regex scan against <code>_PROSE_BAN_PATTERNS</code> &mdash; three patterns that match the structural signatures of the families that had most reliably produced attractor lock:
+      </p>
+
+<pre><code>_PROSE_BAN_PATTERNS = [
+    re.compile(r'\b(narrative|prose paragraph|flowing prose)\b', re.IGNORECASE),
+    re.compile(r'\b(sequential|step[- ]by[- ]step|ordered steps)\b', re.IGNORECASE),
+    re.compile(r'\b(logical[- ]chain|chain of reasoning|linear progression)\b', re.IGNORECASE),
+]</code></pre>
+
+      <p>
+        Any proposed instruction matching one of these patterns is rejected before the eval suite runs. The validation gate also enforces the full hard-ban list: the proposer is shown the ban list in its prompt, but in case it tries anyway, <code>_validate_proposal()</code> re-checks independently and refuses.
+      </p>
+
+      <div class="compare-row">
+        <div class="compare-card proposed">
+          <div class="compare-label">Proposed</div>
+          Similarity-based: catches novel phrasings of banned families if they are semantically close to previous discards, even if the surface text differs. Generalizes without enumeration. Requires scikit-learn at runtime.
+        </div>
+        <div class="compare-card shipped">
+          <div class="compare-label">Shipped</div>
+          Pattern-based: catches exact surface-level mentions of banned terms. Fast, zero-dependency, and deterministic. Does not generalize to paraphrases of banned families that use different terminology.
+        </div>
+      </div>
+
+      <p>
+        The tradeoff is explicit. The regex approach misses a proposer that writes &ldquo;use a narrative arc with flowing connective tissue&rdquo; if &ldquo;narrative arc&rdquo; is not in the compiled pattern. The cosine approach would have caught it if any prior discard used similar language. The decision to ship the regex version was pragmatic: the proposer (Qwen3-Coder:30b) is strong enough that, once the ban list is in the prompt, it rarely tries the exact banned phrasing. The rejection gate exists as a backstop, not as the primary defense. The primary defense is the prompt-level ban list accumulated over 107 experiments.
+      </p>
+
+      <div class="finding">
+        <strong>Implementation note:</strong> A secondary guard not in the original design is also present in <code>_validate_proposal()</code>: the routing check. If the proposer targets <code>SYNTH_INSTRUCTION_PROSE</code> but the current task set does not exercise that instruction (determined by <code>_active_instruction_keys()</code>), the proposal is rejected regardless of content. This prevents the common failure where the proposer correctly identifies an improvement but proposes it for an instruction path that the running tasks never invoke.
+      </div>
+
+      <h2>Detector 2: Accumulated Ban over Entropy Computation</h2>
+
+      <p>
+        The entropy monitor design computed Shannon entropy over a sliding window of family labels, then auto-injected a ban when one family dominated. The idea was to let the ban list grow organically from the loop&rsquo;s own observed behavior rather than requiring manual curation.
+      </p>
+      <p>
+        What shipped is a prompt-level hard-ban section in <code>PROPOSE_PROMPT</code> that serves the same purpose through a different mechanism. Instead of computing entropy, the ban list is maintained as a manually-verified accumulation of families that produced consecutive discards. It is injected into every proposal request. At 107 experiments in, it covers at least seven major families:
+      </p>
+
+      <ul>
+        <li>NARRATIVE / flowing prose (from experiment 25 attractor)</li>
+        <li>SEQUENTIAL / step-by-step enumeration (from HOW-FIRST attractor, exps 55&ndash;68)</li>
+        <li>LOGICAL-CHAIN / linear progression (adjacent to sequential)</li>
+        <li>COMPARISON format (A-vs-B structure)</li>
+        <li>HOW-FIRST family and all five named variants</li>
+        <li>NAMED-SYSTEMS / FAILURE-MODES / LIFECYCLE-COVERAGE (from grounded-targeting phase, exps 70&ndash;93)</li>
+        <li>PROBLEM&rarr;PRACTICE&rarr;CAVEAT three-part structure (from recent experiment block)</li>
+      </ul>
+
+      <p>
+        The proposer sees this list in full before generating any proposal. The <code>_validate_proposal()</code> regex check then provides a mechanical backstop for the most common families.
+      </p>
+
+      <div class="compare-row">
+        <div class="compare-card proposed">
+          <div class="compare-label">Proposed</div>
+          Automated: entropy falls below threshold &rarr; ban injected without human review. Self-updating with each experiment. Requires labeling each proposal with a coarse family tag.
+        </div>
+        <div class="compare-card shipped">
+          <div class="compare-label">Shipped</div>
+          Semi-automated: the hard-ban section grows manually when a pattern of consecutive discards is identified. Human decision required to add a new family. The ban text is visible in the prompt, not hidden in a computation.
+        </div>
+      </div>
+
+      <p>
+        The practical gap between these approaches has been smaller than expected. The proposer is strong enough that each new experiment tends to explore a genuinely novel angle rather than re-entering a known attractor. The entropy collapse that the original design was guarding against has not recurred since the ban list reached its current size. Whether this is because the ban list is comprehensive, or because the remaining search space has not yet exhausted its diversity, will become clear as the experiment count grows.
+      </p>
+
+      <p>
+        The <code>_active_instruction_keys()</code> routing check &mdash; new in the shipped version &mdash; adds a complementary guard that the entropy monitor design did not include. It determines which of the three instruction slots (<code>SYNTH_INSTRUCTION</code>, <code>SYNTH_INSTRUCTION_COUNT</code>, <code>SYNTH_INSTRUCTION_PROSE</code>) are actually exercised by the current task set, and constrains the proposer to target only those slots. This prevents entropy from collapsing because the proposer cycles through all three slots without restriction, producing surface novelty that doesn&rsquo;t translate to score movement.
+      </p>
+
+      <h2>Detector 3: Baseline Re-estimation, Shipped as Intended</h2>
+
+      <p>
+        This detector was implemented closest to its original design. The core capability is <code>run_eval(task_ids, n)</code>, which runs the eval suite <em>n</em> times per task and returns the mean composite score. Calling it with <code>n=3</code> gives a low-variance estimate of the instruction&rsquo;s true expected value rather than a point sample from a noisy distribution.
+      </p>
+
+<pre><code>def run_eval(task_ids: list[str], n: int = 1) -> float:
+    """Run eval suite n times and return mean composite score."""
+    scores = []
+    for i in range(n):
+        score = _single_eval_run(task_ids)
+        scores.append(score)
+        if n > 1:
+            print(f"  [eval {i+1}/{n}] composite={score:.3f}")
+    return round(sum(scores) / len(scores), 4)</code></pre>
+
+      <p>
+        Two CLI flags expose this capability:
+      </p>
+      <ul>
+        <li><code>--eval-n N</code> &mdash; sets the number of samples per eval step throughout the run. At <code>--eval-n 3</code>, each keep/discard decision is based on the mean of three runs rather than a single outcome.</li>
+        <li><code>--reset-baseline</code> &mdash; forces a fresh baseline measurement using the current <code>--eval-n</code> before entering the proposal loop. This is the practical resolution to the contamination failure: re-run the baseline instruction with multi-sample averaging before starting, regardless of what the stored single-eval baseline says.</li>
+      </ul>
+
+      <div class="callout green">
+        <p>The 8.740 baseline established from experiment 25 re-estimated to 8.530 with <code>--eval-n 3 --reset-baseline</code>. A 0.21-point correction resolved the false ceiling that 65 experiments had been racing against. The loop now has a realistic target.</p>
+      </div>
+
+      <p>
+        The one gap from the original design: re-estimation is not automatic at <em>K</em> consecutive discards. It requires a deliberate <code>--reset-baseline</code> invocation. The automatic trigger was deferred because instrumenting it required a reliable way to distinguish &ldquo;genuinely above baseline&rdquo; from &ldquo;baseline was contaminated and everything looks below it.&rdquo; The user-triggered version is the pragmatic first implementation; automatic triggering at 15 consecutive discards is a straightforward next step once the multi-sample baseline tooling has been exercised in production.
+      </p>
+
+      <h2>Detector 4: The Exit That Became a Consultation</h2>
+
+      <p>
+        The original Detector 4 proposed a hard stop: if the loop had run more than <em>N_max</em> experiments with no advance in the last <em>M</em>, declare convergence and exit with a structured report. The reasoning was that an indefinitely-running optimizer with no advance signal is wasting compute and should surface its own failure rather than continuing silently.
+      </p>
+      <p>
+        What shipped is philosophically different. The loop does have a soft abort guard:
+      </p>
+
+<pre><code>if consecutive_propose_failures >= 10:
+    print("[autoresearch] abort: too many consecutive propose failures")
+    break</code></pre>
+
+      <p>
+        But this fires on <em>propose</em> failures &mdash; cases where the proposer model itself fails to generate a parseable output &mdash; not on consecutive discards. It is an error-handling guard, not a convergence exit. The loop will still run indefinitely past a converged score distribution as long as the proposer keeps generating syntactically valid (but repeatedly discarded) proposals.
+      </p>
+      <p>
+        The practical replacement for the global exit is the Kimi unblocking mechanism:
+      </p>
+
+<pre><code>KIMI_STUCK_THRESHOLD = 6  # consecutive discards before consulting cloud model
+
+def get_kimi_unblock_suggestion(
+    current_instruction: str,
+    recent_discards: list[str],
+    baseline: float,
+    ban_list: list[str],
+) -> str:
+    """Consult kimi-k2.5:cloud for a fresh direction when local model is stuck."""
+    ...</code></pre>
+
+      <p>
+        When <code>consecutive_discards &ge; KIMI_STUCK_THRESHOLD</code>, the loop pauses its local proposal loop and calls <code>get_kimi_unblock_suggestion()</code>. This passes the current instruction, the last six discarded proposals, the current baseline, and the full ban list to <code>kimi-k2.5:cloud</code> &mdash; a cloud model with a different prior on instruction design than the local Qwen3-Coder:30b proposer. The suggestion is returned as a candidate instruction that the local proposer can then refine or build on.
+      </p>
+
+      <div class="compare-row">
+        <div class="compare-card proposed">
+          <div class="compare-label">Proposed</div>
+          Convergence exit: stop the loop, emit a structured report, and require a human or outer loop to decide what to do next. The loop terminates cleanly with full diagnosis.
+        </div>
+        <div class="compare-card shipped">
+          <div class="compare-label">Shipped</div>
+          Unblocking consultation: pause the local loop at stuck threshold, consult an external model with a different prior, then continue. The loop does not stop — it gets injected with a fresh direction.
+        </div>
+      </div>
+
+      <p>
+        This is a substantively different design philosophy. The original exit treated convergence as a terminal state requiring a human decision. The shipped unblocking treats it as a local minimum navigable by querying an oracle with a broader search space. The oracle (Kimi) is a cloud model with exposure to different instruction patterns than the locally-trained proposer, which means its suggestions are genuinely novel relative to the local search history rather than variations on the same families the proposer has exhausted.
+      </p>
+      <p>
+        The tradeoff is cost and privacy: each Kimi consultation sends the current instruction and recent discard history to an external endpoint. For six-per-stuck-event at the current experiment cadence, this is negligible. But it means the loop no longer exits cleanly when stuck &mdash; it continues running, potentially cycling through Kimi suggestions that also fail to advance the baseline. A Kimi suggestion that generates its own consecutive discards does not re-trigger the unblocking threshold until <em>KIMI_STUCK_THRESHOLD</em> new discards accumulate, which can extend a non-advancing run significantly.
+      </p>
+
+      <div class="finding">
+        <strong>Finding:</strong> Replacing a convergence exit with an unblocking oracle converts a &ldquo;stop and report&rdquo; failure mode into a &ldquo;run longer, possibly escape&rdquo; one. Whether this is better depends on whether the oracle&rsquo;s suggestions provide genuine exploration or merely defer the same convergence. After 107 experiments, Kimi unblocking has been invoked twice; in one case it provided an advance, in the other it did not. The sample size is too small to generalize.
+      </div>
+
+      <h2>Two New Additions Not in the Original Design</h2>
+
+      <p>
+        The original post was a diagnosis. In writing the fixes, two new mechanisms were added that had no equivalent in the four proposed detectors.
+      </p>
+
+      <div class="detector">
+        <div class="detector-header">
+          <span class="detector-num">New Addition 1</span>
+          <h3>Pre-Proposal Research Context (<code>gather_proposal_context()</code>)</h3>
+        </div>
+        <p>Before generating each proposal, the loop now runs a short web research phase: a DuckDuckGo search for recent work on instruction design and synthesis quality, followed by MarkItDown extraction of the most relevant results. The output is passed to the proposer as a research context block, alongside the experiment history and ban list.</p>
+        <p>The motivation was a specific failure pattern: the proposer was generating proposals based entirely on the history of what had and hadn&rsquo;t worked in the current experiment set &mdash; an increasingly narrow prior as the experiment count grew. By injecting current literature, the proposer has access to instruction strategies that have not yet appeared in the experiment history and are therefore not banned.</p>
+<pre><code>def gather_proposal_context(task: str) -> str:
+    """Run DuckDuckGo search + MarkItDown extraction before each proposal."""
+    query = f"LLM synthesis instruction design best practices {task[:60]}"
+    results = _ddg_search(query, max_results=3)
+    passages = [_markitdown_extract(r["url"]) for r in results if r.get("url")]
+    return "\n\n---\n\n".join(p for p in passages if p)[:4000]</code></pre>
+        <p>This runs on every proposal iteration when <code>--mode auto</code> or <code>--mode explore</code> is active, and is suppressed in <code>--mode exploit</code>. The explore/exploit distinction matters: in early exploration, fresh context is valuable; in late exploitation when the proposer is refining a near-optimal instruction, the overhead of a web search adds latency without proportional benefit.</p>
+      </div>
+
+      <div class="detector">
+        <div class="detector-header">
+          <span class="detector-num">New Addition 2</span>
+          <h3>Explore / Exploit Mode Control (<code>--mode</code>)</h3>
+        </div>
+        <p>Three modes control the loop&rsquo;s behavior:</p>
+        <ul>
+          <li><code>--mode explore</code>: always re-gather research context before each proposal; higher prior on novel directions over refinement</li>
+          <li><code>--mode exploit</code>: skip research phase; proposer works from experiment history alone; prioritizes refinement of a known-good approach</li>
+          <li><code>--mode auto</code> (default): switches to explore behavior after <code>PLATEAU_DISCARDS=3</code> consecutive discards, then resets to exploit on the next advance</li>
+        </ul>
+<pre><code>PLATEAU_DISCARDS = 3
+PLATEAU_DELTA    = 0.05
+
+def _should_explore(consecutive_discards: int, mode: str) -> bool:
+    if mode == "explore":
+        return True
+    if mode == "exploit":
+        return False
+    # auto: explore after plateau
+    return consecutive_discards >= PLATEAU_DISCARDS</code></pre>
+        <p>In practice, <code>auto</code> mode means the loop runs lean (no web research overhead) when it is making progress and switches to a broader search when it stalls. The <code>PLATEAU_DELTA=0.05</code> constant defines the minimum composite improvement to count as &ldquo;progress&rdquo; when resetting the discard counter.</p>
+      </div>
+
+      <h2>Observability: Rich JSONL Logging with Thinking CoT</h2>
+
+      <p>
+        A structural improvement not captured in the four detector descriptions is the addition of rich JSONL logging. The original loop wrote to <code>autoresearch.tsv</code> &mdash; a flat file with experiment number, composite score, and a description field. The shipped version writes in parallel to <code>data/autoresearch.jsonl</code>:
+      </p>
+
+<pre><code># Each record in data/autoresearch.jsonl
+{
+  "exp":         43,
+  "status":      "keep",
+  "composite":   8.640,
+  "delta":      +0.110,
+  "description": "Changed SYNTH_INSTRUCTION to require...",
+  "instruction": "...",
+  "thinking":    "&lt;thinking&gt;...&lt;/thinking&gt;",
+  "dims":        {"depth": 8, "grounded": 8, "specificity": 9, ...},
+  "task_ids":    ["T_B", "T_W"],
+  "eval_n":      1,
+  "mode":        "auto",
+  "kimi_used":   false,
+  "ts":          "2026-05-15T..."
+}</code></pre>
+
+      <p>
+        The <code>thinking</code> field captures the proposer&rsquo;s full extended-thinking chain-of-thought when the model supports it. This turns out to be the most useful debugging artifact: the thinking trace shows which constraints the proposer weighted most heavily, which directions it considered and rejected, and where its reasoning diverged from experiment evidence. The TSV file is still written for quick inspection; the JSONL file is the artifact that supports retrospective analysis.
+      </p>
+      <p>
+        The eval subprocess also sets <code>WIGGUM_PANEL=1</code> and <code>RESEARCH_CACHE=1</code> in its environment. Panel evaluation mode enables the multi-persona scoring path in Wiggum for relevant tasks; research cache skips the web research phase for tasks that have already gathered context, which cuts per-experiment latency by 30&ndash;60% for cached tasks.
+      </p>
+
+      <h2>Where Things Stand</h2>
+
+      <p>
+        After 107 experiments, the accumulated ban list covers enough families that the proposer&rsquo;s effective search space is substantially narrower than it was at experiment 1. This is both a feature and a risk. The ban list prevents re-entering known attractors; it also prevents re-entering approaches that failed to <em>beat</em> a now-corrected baseline but might have performed well against a truthful one.
+      </p>
+      <p>
+        The <a href="autoresearch-convergence.html" style="color: var(--accent-cyan);">original post</a>&rsquo;s third finding still holds: &ldquo;a ban list that encodes &lsquo;this approach cannot beat baseline&rsquo; is not the same as one that encodes &lsquo;this approach does not work.&rsquo;&rdquo; With the baseline now re-estimated at 8.530, some approaches that were banned after failing to reach 8.740 deserve a second look at the lower bar. The narrative-plus-word-count approach from experiment 25 &mdash; which was subsequently banned for failing to advance past the score it had set &mdash; is the clearest candidate.
+      </p>
+      <p>
+        The most consequential decision in the shipped implementation was the choice to replace the global convergence exit with the Kimi unblocking mechanism. The original design would have surfaced the loop&rsquo;s convergence as a clean signal requiring a human decision. The shipped design injects an external suggestion and continues running. At the current experiment scale, the two choices are roughly equivalent in practice. At higher experiment counts, the shipped approach risks an asymmetric burn: the loop consults Kimi at threshold, continues running, Kimi suggestions also fail, and the loop runs another stretch with no mechanism to surface the fact that even external intervention didn&rsquo;t help. Adding a secondary exit condition &mdash; &ldquo;if Kimi unblocking fails to produce an advance within M subsequent experiments, exit with a structured report&rdquo; &mdash; would close that gap.
+      </p>
+
+      <div class="callout amber">
+        <p><strong>The one open question from the previous post:</strong> conformal prediction intervals on the baseline &mdash; reporting it as 8.46&ndash;8.74 rather than 8.740 &mdash; remains unimplemented. The multi-sample <code>--eval-n</code> flag provides the raw material; converting those samples into an interval-valued baseline is the next instrumentation step. With interval baselines, the advance/discard decision becomes &ldquo;does the new instruction&rsquo;s expected composite exceed the baseline <em>interval&rsquo;s upper bound</em>&rdquo; rather than chasing a scalar that may be a sampling artifact.</p>
+      </div>
+
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

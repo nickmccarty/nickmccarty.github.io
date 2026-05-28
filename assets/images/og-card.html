@@ -1,129 +1,276 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     html, body {
-      width: 1200px; height: 630px;
+      width: 1200px;
+      height: 630px;
       overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
+
     body {
       background: #0d1117;
       display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 72px 80px;
+      align-items: stretch;
       position: relative;
     }
-    /* gradient border top */
+
+    /* top gradient bar */
     body::before {
       content: '';
       position: absolute;
       top: 0; left: 0; right: 0;
-      height: 5px;
-      background: linear-gradient(90deg, #ed46c3, #a855f7, #57cef2);
+      height: 4px;
+      background: linear-gradient(90deg, #ed46c3, #a855f7 50%, #57cef2);
+      z-index: 10;
     }
-    /* subtle grid pattern */
+
+    /* subtle dot-grid */
     body::after {
       content: '';
       position: absolute;
       inset: 0;
-      background-image:
-        linear-gradient(rgba(87,206,242,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(87,206,242,0.04) 1px, transparent 1px);
-      background-size: 48px 48px;
+      background-image: radial-gradient(circle, rgba(87,206,242,0.07) 1px, transparent 1px);
+      background-size: 36px 36px;
       pointer-events: none;
     }
-    .tag {
+
+    /* ── Left panel ── */
+    .left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 64px 56px 64px 72px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .eyebrow {
       font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
+      font-weight: 600;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
       color: #57cef2;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
+
+    .eyebrow::before {
+      content: '';
+      display: inline-block;
+      width: 24px;
+      height: 2px;
+      background: #57cef2;
+      border-radius: 2px;
+    }
+
     h1 {
-      font-size: 52px;
+      font-size: 68px;
       font-weight: 800;
-      line-height: 1.1;
-      background: linear-gradient(135deg, #ed46c3, #a855f7, #57cef2);
+      line-height: 1.0;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #e6edf3 0%, #c9d1d9 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 28px;
-      max-width: 900px;
     }
-    .desc {
+
+    .title {
       font-size: 22px;
-      color: #8b949e;
-      line-height: 1.5;
-      max-width: 860px;
-    }
-    .footer {
-      position: absolute;
-      bottom: 52px;
-      left: 80px;
-      right: 80px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .author {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-    .avatar {
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      border: 2px solid #30363d;
-      background: linear-gradient(135deg, #ed46c3, #57cef2);
-    }
-    .author-name {
-      font-size: 17px;
-      font-weight: 600;
-      color: #e6edf3;
-    }
-    .author-url {
-      font-size: 14px;
+      font-weight: 500;
       color: #57cef2;
-      margin-top: 2px;
+      margin-bottom: 20px;
+      letter-spacing: 0.01em;
     }
-    .badge {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
+
+    .desc {
+      font-size: 17px;
+      color: #8b949e;
+      line-height: 1.65;
+      max-width: 480px;
+      margin-bottom: 36px;
+    }
+
+    .chips {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       color: #8b949e;
       border: 1px solid #30363d;
-      border-radius: 6px;
-      padding: 6px 14px;
+      border-radius: 4px;
+      padding: 5px 12px;
       background: #161b22;
+    }
+
+    .chip.accent {
+      color: #57cef2;
+      border-color: rgba(87,206,242,0.3);
+      background: rgba(87,206,242,0.06);
+    }
+
+    /* ── Right panel ── */
+    .right {
+      width: 380px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* vertical separator */
+    .right::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 60px;
+      bottom: 60px;
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, #30363d 30%, #30363d 70%, transparent);
+    }
+
+    .photo-wrap {
+      position: relative;
+      width: 210px;
+      height: 210px;
+      margin-bottom: 28px;
+    }
+
+    /* gradient ring */
+    .photo-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ed46c3, #a855f7, #57cef2);
+      z-index: 0;
+    }
+
+    /* dark inset behind photo */
+    .photo-wrap::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 50%;
+      background: #0d1117;
+      z-index: 1;
+    }
+
+    .photo {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: center top;
+    }
+
+    .handle {
+      font-size: 14px;
+      font-weight: 500;
+      color: #57cef2;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+
+    .domain {
+      font-size: 13px;
+      color: #484f58;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Bottom-left URL ── */
+    .url-bar {
+      position: absolute;
+      bottom: 36px;
+      left: 72px;
+      font-size: 13px;
+      color: #484f58;
+      letter-spacing: 0.06em;
+      z-index: 2;
+    }
+
+    /* ── Corner marks ── */
+    .corner {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      z-index: 5;
+    }
+    .corner.tl { top: 20px; left: 20px; border-top: 1.5px solid rgba(87,206,242,0.3); border-left: 1.5px solid rgba(87,206,242,0.3); }
+    .corner.tr { top: 20px; right: 20px; border-top: 1.5px solid rgba(87,206,242,0.3); border-right: 1.5px solid rgba(87,206,242,0.3); }
+    .corner.bl { bottom: 20px; left: 20px; border-bottom: 1.5px solid rgba(87,206,242,0.3); border-left: 1.5px solid rgba(87,206,242,0.3); }
+    .corner.br { bottom: 20px; right: 20px; border-bottom: 1.5px solid rgba(87,206,242,0.3); border-right: 1.5px solid rgba(87,206,242,0.3); }
+
+    /* ambient glow behind photo */
+    .glow {
+      position: absolute;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
-  <div class="tag">Agentic Harness Engineering &bull; nickmccarty.github.io</div>
-  <h1>Nick McCarty</h1>
-  <p class="desc">Machine learning, computer vision, and AI systems engineering &mdash; with a focus on agentic pipeline design and inference infrastructure.</p>
-  <div class="footer">
-    <div class="author">
-      <div class="avatar"></div>
-      <div>
-        <div class="author-name">Nick McCarty</div>
-        <div class="author-url">nickmccarty.github.io</div>
-      </div>
+
+  <!-- corner marks -->
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+
+  <!-- left content -->
+  <div class="left">
+    <div class="eyebrow">nickmccarty.github.io</div>
+    <h1>Nick McCarty</h1>
+    <div class="title">Data Scientist &amp; ML/AI Consultant</div>
+    <p class="desc">
+      Building intelligent systems with computer vision, remote sensing,
+      and applied ML — with a focus on geospatial AI and agentic pipelines.
+    </p>
+    <div class="chips">
+      <span class="chip accent">Computer Vision</span>
+      <span class="chip accent">Remote Sensing</span>
+      <span class="chip accent">Agentic AI</span>
+      <span class="chip">ML &amp; AI</span>
+      <span class="chip">Open Courses</span>
     </div>
-    <div class="badge">ML &bull; AI &bull; Agentic Systems</div>
   </div>
+
+  <!-- right panel -->
+  <div class="right">
+    <div class="glow"></div>
+    <div class="photo-wrap">
+      <img class="photo" src="headshot.png" alt="Nick McCarty">
+    </div>
+    <div class="handle">@nickmccarty</div>
+    <div class="domain">upskilled.consulting</div>
+  </div>
+
+  <div class="url-bar">nickmccarty.github.io</div>
+
 </body>
 </html>
-<!--
-  TO GENERATE og-default.png:
-  1. Open this file in Chrome
-  2. Open DevTools → Cmd/Ctrl+Shift+P → "Capture screenshot" (full size)
-     OR use: chrome --headless --screenshot=og-default.png --window-size=1200,630 og-card.html
-  3. Save result as assets/images/og-default.png
--->

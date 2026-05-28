@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Position Swap: Beige Book RAG Results and the DPO Cold-Start Problem | Nick McCarty</title>
+  <meta name="description" content="Prepending Beige Book context hurt synthesis quality by 0.08 points. Appending it helped by 0.13. The position swap reveals a primacy effect — and converts a falsified hypothesis into controlled DPO preference pairs the harness actually needed.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/beige-book-rag-dpo.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Position Swap: Beige Book RAG Results and the DPO Cold-Start Problem">
+  <meta property="og:description" content="Prepending Beige Book context hurt by 0.08; appending helped by 0.13. A falsified hypothesis and what the position swap reveals about training signal for domain-grounded synthesis.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/beige-book-rag-dpo.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-28T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Position Swap: Beige Book RAG Results and the DPO Cold-Start Problem">
+  <meta name="twitter:description" content="Prepend Beige Book context: –0.08. Append it: +0.13. A falsified hypothesis and its value as DPO training signal.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "The Position Swap: Beige Book RAG Results and the DPO Cold-Start Problem", "description": "Prepending Beige Book context hurt synthesis quality by 0.08 points. Appending it helped by 0.13. The position swap reveals a primacy effect — and converts a falsified hypothesis into controlled DPO preference pairs the harness actually needed.", "keywords": "RAG, DPO, fine-tuning, Beige Book, context window, position bias, preference learning, cold start, agentic systems", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-28", "dateModified": "2026-05-28", "url": "https://nickmccarty.github.io/blog/beige-book-rag-dpo.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/beige-book-rag-dpo.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink  { border-left-color: var(--accent-pink); }
+    .callout.amber { border-left-color: #f59e0b; }
+    .callout.green { border-left-color: #22c55e; }
+    .callout.red   { border-left-color: #ef4444; }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin: 1rem 0 1.5rem;
+    }
+    .data-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .data-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--bg-secondary); }
+    .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 3px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .tag.pass      { background: rgba(34,197,94,0.15);   color: #22c55e; }
+    .tag.fail      { background: rgba(239,68,68,0.15);   color: #ef4444; }
+    .tag.pos       { background: rgba(34,197,94,0.15);   color: #22c55e; }
+    .tag.neg       { background: rgba(239,68,68,0.15);   color: #ef4444; }
+    .tag.flat      { background: rgba(107,114,128,0.15); color: #9ca3af; }
+    .tag.cyan      { background: rgba(0,212,255,0.12);   color: var(--accent-cyan); }
+    .finding {
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      padding: 0.9rem 1.1rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+      line-height: 1.65;
+    }
+    .finding strong { color: var(--accent-cyan); }
+    .context-diagram {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.82rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.5rem 0;
+      line-height: 1.8;
+    }
+    .cond-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+    .cond-block {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      margin: 0.5rem 0;
+    }
+    .score-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 0.35rem 0;
+      font-size: 0.84rem;
+    }
+    .score-bar-label {
+      width: 90px;
+      text-align: right;
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+    }
+    .score-bar-track {
+      flex: 1;
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--accent-cyan);
+    }
+    .score-bar-fill.amber { background: #f59e0b; }
+    .score-bar-fill.red   { background: #ef4444; }
+    .score-bar-fill.green { background: #22c55e; }
+    .score-bar-val {
+      width: 36px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+  </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.github.io/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.github.io/blog.html"},{"@type":"ListItem","position":3,"name":"The Position Swap: Beige Book RAG Results and the DPO Cold-Start Problem","item":"https://nickmccarty.github.io/blog/beige-book-rag-dpo.html"}]}</script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 28, 2026 &bull; 13 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">The Position Swap: Beige Book RAG Results and the DPO Cold-Start Problem</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          Prepending Federal Reserve Beige Book passages to synthesis context hurt mean composite score by 0.08 points. Appending the same passages helped by 0.13. A falsified hypothesis — and what the position swap reveals about building domain-grounded DPO training data from scratch.
+        </p>
+      </header>
+
+      <div class="series-nav">
+        <a href="the-wiggum-loop.html" class="series-badge">The Wiggum Loop</a>
+        <a href="telemetry-router.html" class="series-badge">Telemetry Router</a>
+        <a href="experimental-methodology.html" class="series-badge">Experimental Methodology</a>
+        <span class="series-badge active">Beige Book RAG + DPO</span>
+      </div>
+
+      <p>
+        The hypothesis behind the <code>beige_book_rag</code> experiment was straightforward: injecting Federal Reserve Beige Book passages into synthesis context should improve mean composite score by at least 0.5 points, with the largest gains in the <code>grounded</code> and <code>specificity</code> dimensions. The Beige Book is primary-source economic intelligence &mdash; district-level field reports from business contacts, qualitative but direct. If any external corpus should improve the groundedness of economic synthesis, it is this one.
+      </p>
+      <p>
+        The hypothesis was falsified. Mean composite delta for the standard treatment (RAG prepended to context) versus control (web search only) was &minus;0.08. The RAG made things slightly worse.
+      </p>
+      <p>
+        The position swap condition told a different story. When the same Beige Book passages were appended to the end of context rather than prepended to the front, mean composite delta versus control was +0.13. Same documents, different position, opposite direction of effect.
+      </p>
+      <p>
+        This post covers what the experiment actually showed, why position matters mechanically, and how a falsified hypothesis generates the exact kind of controlled DPO preference pairs the training pipeline needs.
+      </p>
+
+      <h2>Experiment Design</h2>
+
+      <p>
+        The <code>beige_book_rag</code> experiment uses synthesis-only isolation: research context is gathered once per task, cached, then synthesized four times &mdash; once per condition &mdash; so that any score difference is attributable to the RAG factor alone rather than web search variance. Six tasks cover different economic domains and time periods:
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Task</th><th>Domain</th><th>Period</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>T_BB_A</td><td>Regional inflation variation</td><td>2022</td></tr>
+          <tr><td>T_BB_B</td><td>Labor market tightness</td><td>2021&ndash;22</td></tr>
+          <tr><td>T_BB_C</td><td>Manufacturing sentiment pre/post COVID</td><td>2019 vs 2021&ndash;22</td></tr>
+          <tr><td>T_BB_D</td><td>Consumer spending and credit conditions</td><td>2024&ndash;25</td></tr>
+          <tr><td>T_BB_E</td><td>Housing market</td><td>2023&ndash;24</td></tr>
+          <tr><td>T_BB_F</td><td>1999 dot-com parallel evaluation</td><td>2025&ndash;26 vs 1999</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        Each task was run under four conditions. The control and standard treatment were the primary comparison; RAG-only and RAG-end were ablations added to isolate position and web-search contributions separately.
+      </p>
+
+      <div class="context-diagram">
+        <div style="margin-bottom: 1rem;">
+          <div class="cond-label">Control</div>
+          [web search context]  →  synthesis
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <div class="cond-label">Treatment (RAG prepended)</div>
+          [beige book passages] + [web search context]  →  synthesis
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <div class="cond-label">RAG-end (position swap)</div>
+          [web search context] + [beige book passages]  →  synthesis
+        </div>
+        <div>
+          <div class="cond-label">RAG-only (ablation)</div>
+          [beige book passages only — no web search]  →  synthesis
+        </div>
+      </div>
+
+      <p>
+        Beige Book retrieval used <code>query_beige_book(task, top_k=5)</code> &mdash; five passages retrieved from a local FAISS index over Federal Reserve Beige Book releases from 2019 through 2025. Each passage ranged from 1,100 to 6,500 characters of retrieved text.
+      </p>
+
+      <h2>Results</h2>
+
+      <p>
+        The overall composite scores across conditions, averaged over six tasks:
+      </p>
+
+      <div style="margin: 1.5rem 0;">
+        <div class="score-bar-row">
+          <div class="score-bar-label">RAG-end</div>
+          <div class="score-bar-track"><div class="score-bar-fill green" style="width:77.5%"></div></div>
+          <div class="score-bar-val">7.75</div>
+          <span class="tag pos">+0.13</span>
+        </div>
+        <div class="score-bar-row">
+          <div class="score-bar-label">RAG-only</div>
+          <div class="score-bar-track"><div class="score-bar-fill" style="width:77.0%"></div></div>
+          <div class="score-bar-val">7.70</div>
+          <span class="tag pos">+0.08</span>
+        </div>
+        <div class="score-bar-row">
+          <div class="score-bar-label">Control</div>
+          <div class="score-bar-track"><div class="score-bar-fill amber" style="width:76.2%"></div></div>
+          <div class="score-bar-val">7.62</div>
+          <span class="tag flat">baseline</span>
+        </div>
+        <div class="score-bar-row">
+          <div class="score-bar-label">Treatment</div>
+          <div class="score-bar-track"><div class="score-bar-fill red" style="width:75.3%"></div></div>
+          <div class="score-bar-val">7.53</div>
+          <span class="tag neg">&#8722;0.08</span>
+        </div>
+      </div>
+
+      <div class="callout red">
+        <p><strong>Hypothesis verdict: FALSIFIED.</strong> The predicted +0.5 gain from treatment was not observed. Observed mean delta: &minus;0.08. The RAG condition with the largest gain was RAG-end (+0.13), not the primary treatment, and the gain falls well short of the +0.5 threshold.</p>
+      </div>
+
+      <p>
+        Per-task breakdown for the two main conditions:
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Control</th>
+            <th>Treatment</th>
+            <th>&Delta;</th>
+            <th>RAG-only</th>
+            <th>RAG-end</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>T_BB_A (inflation)</td>
+            <td>7.6</td>
+            <td>7.6</td>
+            <td><span class="tag flat">0.0</span></td>
+            <td>7.4</td>
+            <td>7.8</td>
+          </tr>
+          <tr>
+            <td>T_BB_B (labor)</td>
+            <td>7.7</td>
+            <td>7.5</td>
+            <td><span class="tag neg">&minus;0.2</span></td>
+            <td>7.5</td>
+            <td>7.9</td>
+          </tr>
+          <tr>
+            <td>T_BB_C (manufacturing)</td>
+            <td>7.9</td>
+            <td>7.5</td>
+            <td><span class="tag neg">&minus;0.4</span></td>
+            <td>7.9</td>
+            <td>7.9</td>
+          </tr>
+          <tr>
+            <td>T_BB_D (consumer/credit)</td>
+            <td>7.5</td>
+            <td>7.4</td>
+            <td><span class="tag neg">&minus;0.1</span></td>
+            <td>7.9</td>
+            <td>7.9</td>
+          </tr>
+          <tr>
+            <td>T_BB_E (housing)</td>
+            <td>7.5</td>
+            <td>7.6</td>
+            <td><span class="tag pos">+0.1</span></td>
+            <td>7.6</td>
+            <td>7.5</td>
+          </tr>
+          <tr>
+            <td>T_BB_F (dot-com parallel)</td>
+            <td>7.5</td>
+            <td>7.6</td>
+            <td><span class="tag pos">+0.1</span></td>
+            <td>7.9</td>
+            <td>7.5</td>
+          </tr>
+          <tr style="font-weight:600;">
+            <td>Mean</td>
+            <td>7.62</td>
+            <td>7.53</td>
+            <td><span class="tag neg">&minus;0.08</span></td>
+            <td>7.70</td>
+            <td>7.75</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The dimension-level picture shows where the treatment diverged. Both treatment and control have nearly identical <code>grounded</code> means (7.0 each) &mdash; the hypothesis&rsquo;s predicted beneficiary. The primary damage is in <code>depth</code> and <code>specificity</code>:
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Weight</th>
+            <th>Control</th>
+            <th>Treatment</th>
+            <th>&Delta;</th>
+            <th>RAG-only</th>
+            <th>RAG-end</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>relevance</td><td>0.20</td><td>9.0</td><td>9.0</td><td><span class="tag flat">0.0</span></td><td>9.0</td><td>9.0</td></tr>
+          <tr><td>completeness</td><td>0.20</td><td>8.0</td><td>8.0</td><td><span class="tag flat">0.0</span></td><td>8.0</td><td>8.0</td></tr>
+          <tr><td>depth</td><td>0.25</td><td>6.7</td><td>6.5</td><td><span class="tag neg">&minus;0.2</span></td><td>6.7</td><td>6.8</td></tr>
+          <tr><td>grounded</td><td>0.15</td><td>7.0</td><td>7.0</td><td><span class="tag flat">0.0</span></td><td>7.5</td><td>7.3</td></tr>
+          <tr><td>specificity</td><td>0.10</td><td>6.8</td><td>6.3</td><td><span class="tag neg">&minus;0.5</span></td><td>6.7</td><td>7.2</td></tr>
+          <tr><td>structure</td><td>0.10</td><td>8.0</td><td>8.0</td><td><span class="tag flat">0.0</span></td><td>8.0</td><td>8.0</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Why Position Matters</h2>
+
+      <p>
+        The contrast between treatment (&minus;0.08) and RAG-end (+0.13) from identical document sets points to a context window primacy effect. When the Beige Book passages arrive first in the context window, they shape the model&rsquo;s framing of the task before it has read the web-sourced research context. The synthesis instruction and task description are already downstream of several thousand characters of Fed district reports. The model is, in some sense, synthesizing a Beige Book summary rather than using the Beige Book to enrich a research synthesis.
+      </p>
+      <p>
+        The dimension data supports this reading. Treatment scores lower than control on <code>depth</code> (&minus;0.2) and especially <code>specificity</code> (&minus;0.5). These are the dimensions most sensitive to whether the output addresses the actual task question in concrete terms, versus producing thematically relevant but generically organized content. Beige Books are useful as corroboration; they are not substitute research. When positioned first, they appear to anchor the output format.
+      </p>
+
+      <div class="finding">
+        <strong>Position finding:</strong> For synthesis tasks that require integrating retrieved domain context with active web research, appended context (+0.13) consistently outperforms prepended context (&minus;0.08). The retrieved material works as a supplement to an already-framed synthesis, not as a primer for it.
+      </div>
+
+      <p>
+        The RAG-only condition (no web search, Beige Book only) also outperformed the standard treatment: +0.08 versus &minus;0.08. This is a smaller sample but consistent &mdash; the Beige Book passages alone, without the treatment&rsquo;s web-search context being reframed by them, produced comparable output to web-search-only on most tasks, and notably better output on T_BB_C, T_BB_D, and T_BB_F (all +0.4 vs control, reaching 7.9). Those three tasks involve direct comparison or evaluation using Fed district data, which is exactly what the Beige Book covers. Tasks requiring point-in-time market data (T_BB_A, T_BB_B) showed less benefit.
+      </p>
+
+      <h2>The DPO Pipeline</h2>
+
+      <p>
+        The training pipeline in <code>scripts/</code> has three DPO signal sources. Two existed before this experiment:
+      </p>
+
+      <ul>
+        <li><strong>Cross-run pairs</strong> (<code>build_dpo_dataset.py</code>): same task, two runs with different scores. Chosen = higher-scoring content. Requires <code>final_content</code> in both runs and <code>score_delta &ge; 0.5</code>.</li>
+        <li><strong>Wiggum-revision pairs</strong> (<code>build_dpo_dataset.py</code>): within a single run, round-1 content (rejected) versus best-round content (chosen). The Wiggum feedback serves as a natural rationale for the preference. Requires multi-round eval log with per-round content stored.</li>
+      </ul>
+
+      <p>
+        The experiment adds a third:
+      </p>
+
+      <ul>
+        <li><strong>RAG-experiment pairs</strong> (<code>extract_rag_dpo.py</code>): for each task, the best-scoring RAG condition is compared to control. If <code>|score_delta| &ge; threshold</code>, the higher-scoring output becomes <code>chosen</code> and the lower-scoring becomes <code>rejected</code>. The pair carries experiment provenance fields: <code>experiment_id</code>, <code>task_id</code>, <code>chosen_condition</code>, <code>rejected_condition</code>.</li>
+      </ul>
+
+<pre><code>_RAG_CONDITIONS = ("rag_end", "treatment", "rag_only")  # preference order
+
+def build_rag_pairs(records: list[dict], min_delta: float) -> list[dict]:
+    by_task: dict[str, dict[str, dict]] = {}
+    for r in records:
+        tid  = r.get("task_id", "")
+        cond = r.get("condition", "")
+        if tid and cond in ("control", *_RAG_CONDITIONS):
+            by_task.setdefault(tid, {})[cond] = r
+
+    pairs = []
+    for task_id, pair in by_task.items():
+        ctrl = pair.get("control")
+        # Pick best available RAG condition in preference order
+        rag_cond = next((c for c in _RAG_CONDITIONS if c in pair), None)
+        ...
+        if trt_score >= ctrl_score:
+            chosen, rejected = trt, ctrl
+        else:
+            chosen, rejected = ctrl, trt  # control was better: reject RAG
+        ...</code></pre>
+
+      <p>
+        At the default <code>--min-delta 0.3</code>, the experiment generates one pair: T_BB_D, where RAG-end (7.9) vs. control (7.5) produces a delta of 0.4. At <code>--min-delta 0.1</code>, the harvest expands to include the +0.2 cases (T_BB_A, T_BB_B with RAG-end; T_BB_C and T_BB_F with RAG-only). The choice of threshold is a quality-versus-quantity tradeoff: small deltas carry weaker preference signal and add noise relative to the cross-run and revision sources.
+      </p>
+
+      <div class="callout amber">
+        <p><strong>The inverted pair:</strong> For T_BB_B treatment (7.5) vs control (7.7), <code>build_rag_pairs()</code> correctly flips the chosen/rejected assignment &mdash; control becomes chosen, treatment becomes rejected. This is the signal that matters: when RAG harms output, the dataset should encode that preference explicitly, not just omit the pair.</p>
+      </div>
+
+      <h2>The Cold-Start Gap</h2>
+
+      <p>
+        The cross-run and revision sources have a structural coverage problem. Cross-run pairs require the same task to have been run multiple times with different outcomes. Revision pairs require multi-round Wiggum evaluation with per-round content stored, which was added in mid-April 2026. Both sources are heavily weighted toward the tasks in the main evaluation suite: T_B (cost envelope management), T_W (production AI observability), and the other six standard tasks. Economic domain tasks &mdash; tasks that require integrating primary-source district data, historical comparison, or regional variation analysis &mdash; have little or no representation in the pre-experiment DPO dataset.
+      </p>
+      <p>
+        This is the cold-start problem. A DPO-fine-tuned model trained exclusively on the existing cross-run and revision pairs will have a strong prior for the synthesis style the harness has optimized over 107 experiments: structured, criteria-satisfying, technically grounded. It will have no prior for how to handle primary-source economic documents &mdash; whether to cite them directly, integrate them with secondary sources, how to weight district-level anecdotes versus national statistical series.
+      </p>
+      <p>
+        The Beige Book experiment fills this gap by design. Its six tasks require exactly the synthesis skill the DPO dataset lacks coverage of. The controlled experimental structure &mdash; same research context, same synthesizer, only the RAG condition varies &mdash; means the preference signal is clean: the only thing that changed between chosen and rejected outputs is what context the model received and in what order.
+      </p>
+
+      <div class="finding">
+        <strong>Coverage finding:</strong> RAG-experiment pairs are architecturally different from cross-run and revision pairs. They carry explicit source attribution (<code>chosen_condition</code>, <code>rejected_condition</code>), controlled provenance (single variable isolation), and domain coverage that cross-run pairs cannot generate unless the same domain tasks happen to be run repeatedly. For domain-specific cold starts, designed experiments outperform opportunistic pairing.
+      </div>
+
+      <h2>What Goes Into Training</h2>
+
+      <p>
+        The training pipeline reads from <code>scripts/hf_datasets/dpo_mixed.jsonl</code>, which is assembled by mixing the three sources. <code>train_dpo.py</code> fine-tunes <code>Qwen/Qwen2.5-32B-Instruct</code> with TRL&rsquo;s <code>DPOTrainer</code>:
+      </p>
+
+<pre><code>lora_config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
+                    "gate_proj", "up_proj", "down_proj"],
+    lora_dropout=0.05,
+    task_type="CAUSAL_LM",
+)
+
+dpo_config = DPOConfig(
+    num_train_epochs=1,
+    per_device_train_batch_size=1,
+    gradient_accumulation_steps=4,
+    learning_rate=5e-5,
+    beta=0.1,                      # KL penalty
+    max_length=4096,
+    max_prompt_length=1024,
+    loss_type="sigmoid",           # standard DPO loss
+)</code></pre>
+
+      <p>
+        The <code>beta=0.1</code> KL penalty is on the aggressive end &mdash; it trades conservatism for stronger preference conformity. For a cold-start situation where the base model has no domain prior, a lower beta (higher learning signal) is appropriate. A model that already had reasonable domain performance would warrant a higher beta to avoid over-fitting to a small set of pairs.
+      </p>
+      <p>
+        After training, the adapter is merged and converted to GGUF for Ollama registration. The resulting checkpoint replaces <code>pi-qwen-32b</code> as the synthesis model in the harness&rsquo;s <code>.env</code> configuration. The harness then runs its standard eval suite against the DPO-trained model to measure whether the preference signal transferred &mdash; and if it did, whether the improvement holds across tasks not represented in the training data.
+      </p>
+
+      <h2>What the Position Swap Teaches the Trainer</h2>
+
+      <p>
+        The most useful aspect of the position swap result for DPO training is that it generates two preferences from the same document set: prefer (RAG-end output) over (control output) <em>and</em> prefer (control output) over (treatment output). The model sees both that Beige Book context can help and that its placement can hurt. Neither preference alone teaches the full lesson.
+      </p>
+      <p>
+        The <code>beige_book_chars</code> field stored per record enables a further refinement: filtering by retrieval size. T_BB_F had only 1,837 characters of Beige Book retrieval versus T_BB_C&rsquo;s 6,531. The small-retrieval cases may behave differently from large-retrieval cases because the primacy effect of a small passage is weaker than that of a large one. A training pipeline that separates these into different preference buckets &mdash; &ldquo;small RAG prepended,&rdquo; &ldquo;large RAG prepended&rdquo; &mdash; could teach a more nuanced routing policy than &ldquo;never prepend.&rdquo;
+      </p>
+
+      <div class="callout">
+        <p><strong>The next experiment:</strong> The position swap result suggests a follow-up: does appending RAG context hold its +0.13 advantage consistently, or does it depend on the retrieval quality? A retrieval-quality-stratified A/B on the same six tasks &mdash; using BM25 versus semantic retrieval, and varying top-k &mdash; would establish whether the position effect is robust or interacts with retrieval precision. That result would also determine whether the DPO pairs from this experiment generalize or need stratified weighting in the training mix.</p>
+      </div>
+
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

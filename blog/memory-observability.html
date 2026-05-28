@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph | Nick McCarty</title>
+  <meta name="description" content="How the harness memory layer turns isolated run output into retrieval signal: dual-store architecture (SQLite + ChromaDB), quality-weighted ranking, RLHF feedback loops, and UMAP-based topic visualization — all running locally.">
+  <link rel="canonical" href="https://nickmccarty.github.io/blog/memory-observability.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph">
+  <meta property="og:description" content="How the harness memory layer turns isolated run output into retrieval signal: dual-store architecture, quality-weighted ranking, RLHF feedback loops, and UMAP-based topic visualization.">
+  <meta property="og:url" content="https://nickmccarty.github.io/blog/memory-observability.html">
+  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-28T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph">
+  <meta name="twitter:description" content="SQLite + ChromaDB dual-store, quality-weighted ranking, RLHF feedback, UMAP ontology graph — the harness memory layer in full.">
+  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph", "description": "How the harness memory layer turns isolated run output into retrieval signal: dual-store architecture (SQLite + ChromaDB), quality-weighted ranking, RLHF feedback loops, and UMAP-based topic visualization.", "keywords": "memory, RAG, retrieval-augmented generation, ChromaDB, SQLite, FTS5, UMAP, quality-weighted retrieval, RLHF, agentic systems, observability, sentence-transformers", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-28", "dateModified": "2026-05-28", "url": "https://nickmccarty.github.io/blog/memory-observability.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/memory-observability.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout {
+      border-left: 3px solid var(--accent-cyan);
+      padding: 1rem 1.25rem;
+      background: var(--bg-secondary);
+      border-radius: 0 8px 8px 0;
+      margin: 1.5rem 0;
+    }
+    .callout.pink { border-left-color: var(--accent-pink); }
+    .callout.amber { border-left-color: #f59e0b; }
+    .callout p { margin: 0; font-size: 1.05rem; }
+    .series-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0 2rem;
+    }
+    .series-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+    }
+    .series-badge.active {
+      background: var(--accent-cyan);
+      color: var(--bg-primary);
+      border-color: var(--accent-cyan);
+    }
+    .series-badge:hover:not(.active) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85em;
+      background: var(--bg-tertiary);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    pre {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { background: none; padding: 0; font-size: inherit; }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin: 1rem 0 1.5rem;
+    }
+    .data-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .data-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--bg-secondary); }
+    .store-card {
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.25rem 0;
+    }
+    .store-card-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 0.6rem;
+    }
+    .store-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .store-card h3 { margin: 0; font-size: 1rem; }
+    .rank-formula {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.1rem 1.5rem;
+      margin: 1.5rem 0;
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 0.85rem;
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+    .tab-pill {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      margin: 0 0.2rem;
+    }
+  </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.github.io/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.github.io/blog.html"},{"@type":"ListItem","position":3,"name":"Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph","item":"https://nickmccarty.github.io/blog/memory-observability.html"}]}</script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+        </svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+          <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom: 2rem;">
+        <div class="meta" style="margin-bottom: 0.75rem;">May 28, 2026 &bull; 15 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph</span></h1>
+        <p class="subtitle" style="font-size: 1.1rem; line-height: 1.7; margin-top: 1rem;">
+          Every harness run starts cold: the agent has no knowledge of the 200 research tasks it completed last month. The memory layer changes this &mdash; a dual-store system that compresses each run into an observation, ranks past observations by semantic similarity blended with output quality, and surfaces them as a context prefix before synthesis. This post covers the architecture, the ranking formula, the RLHF feedback loop, and the UMAP visualization that makes the knowledge base navigable.
+        </p>
+      </header>
+
+      <div class="series-nav">
+        <a href="observability-flywheel.html" class="series-badge">Observability &amp; Data Flywheel</a>
+        <a href="telemetry-router.html" class="series-badge">Telemetry Router</a>
+        <a href="the-wiggum-loop.html" class="series-badge">The Wiggum Loop</a>
+        <span class="series-badge active">Memory Observability</span>
+      </div>
+
+      <p>
+        The baseline agentic pipeline has a clean architecture problem: every run is independent. The agent searches the web, synthesizes a document, receives an evaluator score, and then the session ends. The next run starts with no knowledge of what was researched before &mdash; no awareness that an adjacent task was completed two days ago with a 9.1 score, no recall of the specific claims the evaluator praised or flagged. The pipeline is stateless by default, and statelessness is the enemy of improvement.
+      </p>
+      <p>
+        The memory system in <code>harness/memory.py</code> addresses this with two complementary ideas. First: every completed run is compressed into a structured observation and stored persistently. Second: before each new synthesis, the most relevant past observations are retrieved and injected into the synthesis prompt as context. The agent doesn't remember in the way a human does, but it can read its own history.
+      </p>
+
+      <h2>The Dual-Store Architecture</h2>
+
+      <p>
+        The core tension in agent memory design is between retrieval quality and retrieval reliability. Pure semantic search via vector embeddings gives high-quality similarity matching but degrades silently &mdash; if the embedding model changes, or ChromaDB's HNSW index drifts, or a library update shifts the embedding space, the system fails without any obvious signal. Pure keyword search (FTS5) is more reliable but misses synonyms and topically adjacent queries that semantic search handles well. The harness uses both, with a clear fallback hierarchy.
+      </p>
+
+      <div class="store-card">
+        <div class="store-card-header">
+          <span class="store-tag">Primary</span>
+          <h3>SQLite + FTS5</h3>
+        </div>
+        <p>Source of truth for all observations. Schema: <code>id</code>, <code>timestamp</code>, <code>task</code>, <code>task_type</code>, <code>title</code>, <code>narrative</code>, <code>facts</code> (JSON array), <code>output_path</code>, <code>final_score</code>, <code>final</code>, <code>run_id</code>, <code>quality</code> (integer ±3), <code>tags</code>. FTS5 virtual table (<code>observations_fts</code>) indexes task, title, narrative, and facts with <code>content='observations'</code> for row-join retrieval. WAL mode enabled for concurrent read/write safety. The FTS5 path is the fallback when ChromaDB is unavailable, and the source of ground truth for the auto-migration that keeps ChromaDB in sync.</p>
+      </div>
+
+      <div class="store-card">
+        <div class="store-card-header">
+          <span class="store-tag">Retrieval</span>
+          <h3>ChromaDB + sentence-transformers</h3>
+        </div>
+        <p>Persistent ChromaDB collection with cosine similarity (<code>hnsw:space: cosine</code>). Embedding model: <code>all-MiniLM-L6-v2</code> (~22MB, runs locally on CPU or CUDA, no API key required). Each observation is embedded as the concatenation of its title, narrative, and facts strings. At init time, the store compares SQLite count to ChromaDB count and backfills any missing observations in 50-row batches &mdash; so a ChromaDB wipe or backend migration doesn't silently leave the vector index stale.</p>
+      </div>
+
+      <p>
+        The split between the two stores is deliberate: SQLite holds the full row including quality scores and feedback history, while ChromaDB holds only the embedding and minimal metadata. The retrieval path queries ChromaDB for the top candidates, then joins against SQLite to get the quality-weighted ranking fields. This keeps the vector index lean and ensures that quality adjustments made through the feedback UI are reflected immediately without needing to re-embed anything.
+      </p>
+
+      <h2>The Compression Pipeline</h2>
+
+      <p>
+        After every completed run, <code>compress_and_store()</code> is called with the full context: task string, task type, web search queries issued, output content, line/byte counts, Wiggum scores, and evaluator-flagged issues. The compression model (<code>qwen3:8b</code> by default, overridable via <code>COMPRESS_MODEL</code>) receives a structured prompt and is required to respond in a fixed three-field format:
+      </p>
+
+<pre><code>Title: &lt;one-line summary of what was researched and produced, max 80 chars&gt;
+Narrative: &lt;2-3 sentences: what was researched, what the output contains, anything notable&gt;
+Facts: &lt;JSON array of 3-5 specific factual strings worth remembering&gt;</code></pre>
+
+      <p>
+        The compression prompt passes the first 600 characters of the output content as an excerpt &mdash; enough for the model to characterize what was produced without passing the full document. Search queries (up to 4) and the final Wiggum score are also included, so the model can describe what information was sought and how well the synthesis was received. Wiggum-flagged issues are appended to the facts array with a <code>[wiggum]</code> prefix, so downstream retrieval can surface the evaluator's specific objections alongside the observation itself.
+      </p>
+
+      <p>
+        Before any observation is written to SQLite or ChromaDB, the title, narrative, and facts are passed through <code>scan_for_injection()</code>. Web-fetched and synthesized content can carry adversarial instructions designed to be injected into future sessions as trusted memory context &mdash; the injection scan blocks these writes before they reach the store.
+      </p>
+
+      <h2>Run-ID Provenance</h2>
+
+      <p>
+        Every observation in the store carries a <code>run_id</code> foreign key linking it to the <code>RunTrace</code> record in <code>data/runs.jsonl</code> that produced it. This bidirectional linkage is the basis for memory observability: from the Memory panel, a user can click any observation and navigate directly to the run that created it &mdash; seeing the full synthesis content, token counts, Wiggum score, and evaluator feedback that the compressed observation was derived from.
+      </p>
+      <p>
+        The reverse direction is equally useful. <code>RunTrace.log_memory_hits(count, titles)</code> records which observations were injected before synthesis, with their titles. After a run completes, <code>data/runs.jsonl</code> contains <code>memory_hits</code> and <code>memory_context_titles</code> &mdash; so the runs view can show, for any run, which past observations influenced it. This is the provenance chain: observation &rarr; run &rarr; synthesis &rarr; evaluation &rarr; new observation.
+      </p>
+
+      <div class="callout">
+        <p>The <code>run_id</code> column was added via <code>ALTER TABLE observations ADD COLUMN run_id TEXT</code> at init time, with the existing rows left null. New runs populate it through <code>compress_and_store(..., run_id=self.run_id)</code>. The provenance chain is therefore partial for observations written before the column was added, but complete going forward.</p>
+      </div>
+
+      <h2>Quality-Weighted Retrieval</h2>
+
+      <p>
+        The default retrieval path uses ChromaDB to over-fetch 12 candidates (<code>SEMANTIC_CANDIDATES = 12</code>), then re-ranks them before returning the top 4 (<code>MAX_CONTEXT_OBSERVATIONS = 4</code>). The re-ranking formula blends cosine similarity with the observation's final score and its accumulated quality signal:
+      </p>
+
+      <div class="rank-formula">
+        rank = (0.7 &times; sim + 0.3 &times; qual_weight) &times; q_adjust
+      </div>
+
+      <p>
+        <code>sim</code> is the cosine similarity: <code>1.0 - (distance / 2.0)</code>, converting ChromaDB's cosine distance to a [0, 1] similarity. <code>qual_weight</code> is derived from the observation's Wiggum final score, with a soft floor:
+      </p>
+
+<pre><code>if raw_score is not None and raw_score &lt; 7.0:
+    qual = (raw_score / 10.0) * 0.5   # penalise low-quality runs
+else:
+    qual = (raw_score or 5.0) / 10.0  # neutral default if score missing</code></pre>
+
+      <p>
+        A run that scored 6.0 gets a quality weight of 0.30 rather than 0.60 &mdash; it can still be retrieved if it's highly semantically relevant, but it won't displace a higher-quality observation of similar relevance. The rationale is that a low-scoring observation, even on a topically adjacent task, may reflect a research failure that shouldn't anchor the current synthesis.
+      </p>
+      <p>
+        <code>q_adjust</code> is the accumulated human-feedback multiplier: <code>max(0.2, 1.0 + quality * 0.15)</code>. A quality score of +3 (the maximum, from three upvotes) multiplies the rank by 1.45. A quality score of &minus;3 multiplies it by 0.55 &mdash; the observation is still retrievable but needs significantly higher semantic similarity to displace a neutral one. The floor at 0.2 prevents negatively-rated observations from being completely zeroed out while still strongly deprioritizing them.
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Quality</th>
+            <th>q_adjust</th>
+            <th>Effect on rank</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>+3 (max upvotes)</td>
+            <td>1.45</td>
+            <td>Retrieval strongly preferred</td>
+          </tr>
+          <tr>
+            <td>+1</td>
+            <td>1.15</td>
+            <td>Mild preference boost</td>
+          </tr>
+          <tr>
+            <td>0 (default)</td>
+            <td>1.00</td>
+            <td>Rank driven by sim + score only</td>
+          </tr>
+          <tr>
+            <td>&minus;1</td>
+            <td>0.85</td>
+            <td>Mild suppression</td>
+          </tr>
+          <tr>
+            <td>&minus;3 (max downvotes)</td>
+            <td>0.55</td>
+            <td>Strongly deprioritized</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        After ranking, the results are deduplicated by title &mdash; if two observations have the same title (e.g., the same task was run twice), only the highest-ranked one is kept. This prevents the context injection from repeating near-identical observations that would waste the 4-slot budget.
+      </p>
+      <p>
+        If ChromaDB is unavailable (import error, corrupted index, dimension mismatch from a model change), the system falls through to <code>_search_fts()</code>, which runs a BM25-ranked FTS5 query built from the non-stopword content terms of the task string &mdash; up to 8 terms, deduped and OR-joined. The FTS5 fallback is slower and less precise but never fails silently.
+      </p>
+
+      <h2>RLHF Quality Signals</h2>
+
+      <p>
+        The quality score is the mechanism by which human judgment about retrieval quality propagates back into the ranking. The Memory panel exposes thumbs-up/thumbs-down buttons on every observation detail view. Each click calls <code>POST /api/memories/{id}/feedback</code>, which increments or decrements the quality column by 1 (clamped to [&minus;3, +3]) and appends a row to the <code>memory_feedback_log</code> table with the rating, an optional comment, and a timestamp.
+      </p>
+      <p>
+        The feedback log is not just for the quality adjustment. It is a labeled preference dataset: each row is a (memory_id, rating, comment) triple that records a human judgment about whether a specific compressed observation was useful or misleading. Over time, these labels can be used for fine-tuning the compression model &mdash; to preferentially generate observations of the kind that accumulate positive ratings, and avoid the patterns that accumulate negative ones. The log is a byproduct of normal workflow that accrues training signal at no additional cost.
+      </p>
+
+      <div class="callout pink">
+        <p><strong>Connection to DPO:</strong> The memory feedback log is structurally analogous to the preference pairs in <code>scripts/hf_datasets/dpo.jsonl</code>. Both record a human preference signal over LLM-generated text. The compression model's output (title + narrative + facts) is the kind of compact, structured generation that DPO fine-tuning can improve most directly &mdash; because the correct format is well-defined and the quality signal is explicit.</p>
+      </div>
+
+      <h2>The UMAP Ontology Graph</h2>
+
+      <p>
+        The graph view in the Memory panel renders the knowledge base as a 2D scatter plot of UMAP-projected embeddings, with KMeans cluster coloring. The implementation lives entirely in <code>MemoryStore.get_graph()</code> and runs on demand when the <span class="tab-pill">graph</span> tab is opened.
+      </p>
+      <p>
+        The projection uses <code>umap.UMAP(n_components=2, random_state=42, low_memory=True)</code> over the raw ChromaDB embeddings &mdash; no intermediate dimensionality reduction step. For a store of <em>N</em> observations, KMeans uses <em>k = min(8, max(1, N // 3))</em> clusters, bounded at 8 to avoid micro-clusters at high observation counts. The cluster count scales with corpus size so early sessions (20&ndash;30 observations) get a sensible number of topic groupings rather than 8 singleton clusters.
+      </p>
+      <p>
+        Each node in the returned JSON carries: 2D coordinates, cluster label, observation title, task type, and quality score. The frontend renders this as an interactive D3 scatter plot with zoom/pan, brush selection (for batch-selecting a region to review or prune), and per-node color coding by quality score &mdash; green nodes are positively-rated, red nodes negatively-rated, neutral nodes are dim. The graph makes two patterns visible that the list view does not: topic drift over time (later observations clustering away from earlier ones as the research domain shifts) and quality clustering (whether low-scoring observations are randomly distributed or concentrated in a particular topic region).
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>UMAP parameter</th>
+            <th>Value</th>
+            <th>Rationale</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>n_components</code></td>
+            <td>2</td>
+            <td>2D coordinates for D3 scatter rendering</td>
+          </tr>
+          <tr>
+            <td><code>random_state</code></td>
+            <td>42</td>
+            <td>Reproducible layout across refreshes</td>
+          </tr>
+          <tr>
+            <td><code>low_memory</code></td>
+            <td>True</td>
+            <td>Avoids duplicating the embedding array in RAM</td>
+          </tr>
+          <tr>
+            <td>KMeans <em>k</em></td>
+            <td>min(8, max(1, N // 3))</td>
+            <td>Scales with corpus, caps at 8 colors</td>
+          </tr>
+          <tr>
+            <td>Max nodes</td>
+            <td>600 (configurable)</td>
+            <td>Most-recent 600 by SQLite id; prevents layout slowdown</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        The graph endpoint is the most computationally expensive operation in the API &mdash; UMAP on 600 embeddings of dimension 384 (~1&ndash;3 seconds on CPU). It is intentionally not cached server-side, since the point is to reflect the current store state including recent quality updates. The frontend requests it once on tab open and caches the result for the session.
+      </p>
+
+      <h2>The Memory Panel</h2>
+
+      <p>
+        The dashboard Memory view (<code>dashboard/src/views/Memory.tsx</code>) exposes three tabs: <span class="tab-pill">memories</span>, <span class="tab-pill">review</span>, and <span class="tab-pill">graph</span>. The memories tab is a paginated, filterable list with search (FTS5-backed via the API), task type filter, quality range filter, and final verdict filter. Selecting an observation opens a detail pane with the full narrative, facts array, run ID (linked to the runs view), and thumbs-up/thumbs-down controls.
+      </p>
+      <p>
+        The review tab shows prune candidates: observations with <code>quality &le; &minus;2</code> or observations with both <code>final_score &lt; 6</code> and <code>quality &lt; 0</code>. These are the observations most likely to be misleading retrieval context &mdash; either explicitly downvoted multiple times, or a combination of low quality and at least one downvote. The tab makes it easy to bulk-delete low-signal observations before they accumulate enough retrieval weight to harm synthesis quality.
+      </p>
+      <p>
+        The graph tab renders the UMAP scatter plot via D3, with zoom behavior attached to the SVG viewport and a brush overlay for rectangular selection. Clicking a node shows the observation title and quality score in a tooltip; double-clicking navigates to the detail pane. The cluster legend on the right maps cluster indices to colors, though the clusters themselves are unlabeled (the labels are derived from KMeans and carry no semantic meaning unless the user reads the observation titles within each cluster).
+      </p>
+
+      <h2>Test Coverage</h2>
+
+      <p>
+        The memory module has 57 tests in <code>tests/test_memory.py</code>, covering: initialization and schema migration, compression prompt parsing (including malformed responses and markdown-fenced output from the compression model), FTS5 query construction and stopword filtering, ChromaDB backfill from SQLite, quality-weighted ranking with explicit score and q_adjust scenarios, feedback application and clamping, prune candidate selection, injection scan blocking, the UMAP graph generation path (mocked to avoid requiring a GPU), and the <code>store_direct()</code> bulk import path used by the literature-review ingestion pipeline.
+      </p>
+
+      <div class="callout amber">
+        <p><strong>Known gap:</strong> The <code>assess_novelty()</code> function &mdash; which scores how much new web search results add beyond the current knowledge state, using an ephemeral ChromaDB collection for per-query similarity &mdash; has no tests for the fallback heuristic path. The word-overlap heuristic is a rough approximation that could return misleading novelty scores when the research context and new results share domain vocabulary but differ in substance. A test suite for this path would clarify the edge cases.</p>
+      </div>
+
+      <h2>What the Literature Identifies</h2>
+
+      <p>
+        Three relevant results from the harness&rsquo;s own lit-review corpus bear on the memory design decisions made here.
+      </p>
+
+      <p>
+        <strong>MemoryOS</strong> <a href="https://arxiv.org/abs/2506.06326" target="_blank" rel="noopener" style="color:var(--accent-cyan)">(2506.06326)</a> proposes a three-tier memory architecture (working, short-term, long-term) analogous to operating system page management, with explicit promotion and eviction policies based on access frequency and recency. The harness memory store is flat &mdash; all observations are peers &mdash; which means a highly-relevant observation from six months ago competes on equal footing with a recent one, modulo quality score. A recency decay factor, even a mild one, would shift the retrieval distribution toward more current observations without discarding older ones.
+      </p>
+
+      <p>
+        <strong>HippoRAG</strong> <a href="https://arxiv.org/abs/2405.14831" target="_blank" rel="noopener" style="color:var(--accent-cyan)">(2405.14831)</a> argues that episodic memory for RAG should model the hippocampal-neocortical binding mechanism, storing not just the content of observations but the relational graph between them. Two observations that both cover &ldquo;LLM inference cost optimization&rdquo; but from different angles &mdash; one on batching, one on quantization &mdash; would be linked in the graph and retrievable as a pair when either is queried. The current store retrieves them independently and deduplicate by title, which discards the relational signal entirely.
+      </p>
+
+      <p>
+        <strong>PromptCache</strong> <a href="https://arxiv.org/abs/2311.04934" target="_blank" rel="noopener" style="color:var(--accent-cyan)">(2311.04934)</a> addresses the inference cost of prepending memory context: a 4-observation context prefix adds ~2,400 tokens to every synthesis prompt. PromptCache shows that KV-cache reuse for repetitive prefix structures can reduce this cost to near-zero at repeated query time. The harness currently pays full prompt cost for every memory injection; a prefix cache would be materially valuable at high run frequency.
+      </p>
+
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/>
+        </svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/>
+        </svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+        </svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>
