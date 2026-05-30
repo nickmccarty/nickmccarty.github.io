@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop | Nick McCarty</title>
   <meta name="description" content="DSPy's GEPA optimizer formalizes exactly what autoresearch.py does by hand — but adds Pareto frontier selection, minibatch screening, and rich textual feedback that explain why the hand-rolled loop oscillates and plateaus.">
-  <link rel="canonical" href="https://nickmccarty.github.io/blog/gepa-autoresearch.html">
+  <link rel="canonical" href="https://nickmccarty.me/blog/gepa-autoresearch.html">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop">
   <meta property="og:description" content="DSPy's GEPA optimizer formalizes exactly what autoresearch.py does by hand — but adds Pareto frontier selection, minibatch screening, and rich textual feedback that explain why the hand-rolled loop oscillates and plateaus.">
-  <meta property="og:url" content="https://nickmccarty.github.io/blog/gepa-autoresearch.html">
-  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:url" content="https://nickmccarty.me/blog/gepa-autoresearch.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -21,9 +21,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop">
   <meta name="twitter:description" content="GEPA's Pareto frontier, minibatch rollout, and textual feedback directly explain the oscillation and plateau problems in the autoresearch hill-climbing loop.">
-  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <!-- JSON-LD -->
-  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop", "description": "DSPy's GEPA optimizer formalizes exactly what autoresearch.py does by hand — but adds Pareto frontier selection, minibatch screening, and rich textual feedback that explain why the hand-rolled loop oscillates and plateaus.", "keywords": "GEPA, DSPy, prompt optimization, Pareto frontier, autoresearch, hill-climbing, agentic systems, reflective prompt evolution, NeMo RL", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-23", "dateModified": "2026-05-23", "url": "https://nickmccarty.github.io/blog/gepa-autoresearch.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/gepa-autoresearch.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop", "description": "DSPy's GEPA optimizer formalizes exactly what autoresearch.py does by hand — but adds Pareto frontier selection, minibatch screening, and rich textual feedback that explain why the hand-rolled loop oscillates and plateaus.", "keywords": "GEPA, DSPy, prompt optimization, Pareto frontier, autoresearch, hill-climbing, agentic systems, reflective prompt evolution, NeMo RL", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me"}, "datePublished": "2026-05-23", "dateModified": "2026-05-23", "url": "https://nickmccarty.me/blog/gepa-autoresearch.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.me/blog/gepa-autoresearch.html"}, "image": "https://nickmccarty.me/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.me/blog.html"}}</script>
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
   <link rel="stylesheet" href="../assets/css/styles.css">
@@ -135,7 +135,7 @@
     }
     tr:last-child td { border-bottom: none; }
   </style>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.github.io/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.github.io/blog.html"},{"@type":"ListItem","position":3,"name":"From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop","item":"https://nickmccarty.github.io/blog/gepa-autoresearch.html"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop","item":"https://nickmccarty.me/blog/gepa-autoresearch.html"}]}</script>
 </head>
 <body>
   <nav>

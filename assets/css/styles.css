@@ -49,6 +49,11 @@ a {
   transition: color 0.2s ease;
 }
 
+img {
+  max-width: 100%;
+  height: auto;
+}
+
 a:hover {
   color: var(--accent-pink);
 }
@@ -407,6 +412,7 @@ section p {
 /* Blog Post Page */
 article {
   max-width: 700px;
+  overflow-wrap: break-word;
 }
 
 article h1 {
@@ -529,11 +535,31 @@ article pre {
   padding: 1rem;
   overflow-x: auto;
   margin-bottom: 1.25rem;
+  width: 100%;
+  max-width: 100%;
 }
 
 article pre code {
   background: none;
   padding: 0;
+}
+
+/* JS in color-modes.js wraps article tables in .table-scroll divs at runtime.
+   This CSS-only fallback catches no-JS and posts that already have the class. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1.5rem 0;
+}
+
+.table-scroll table {
+  margin: 0;
+}
+
+article table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 article blockquote {
@@ -1042,7 +1068,27 @@ footer .social-links a:hover {
   }
 
   main {
-    padding: 9rem 2rem 4rem;
+    padding: 9rem 1.25rem 3rem;
+  }
+
+  article h1 {
+    font-size: 1.75rem;
+  }
+
+  article h2 {
+    font-size: 1.25rem;
+  }
+
+  article h3 {
+    font-size: 1.1rem;
+  }
+
+  .hero h1 {
+    font-size: 1.75rem;
+  }
+
+  .hero .subtitle {
+    font-size: 0.95rem;
   }
 }
 

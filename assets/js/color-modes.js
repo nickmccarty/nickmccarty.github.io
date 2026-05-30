@@ -46,5 +46,16 @@
     if (toggleBtn) {
       toggleBtn.addEventListener('click', toggleTheme);
     }
+
+    // Wrap all article tables in a scrollable container so wide tables
+    // scroll horizontally on mobile instead of overflowing the viewport.
+    document.querySelectorAll('article table').forEach((table) => {
+      if (table.parentElement && !table.parentElement.classList.contains('table-scroll')) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-scroll';
+        table.parentNode.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+      }
+    });
   });
 })();

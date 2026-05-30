@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Small Language Models and the Efficiency-Accuracy Frontier | Nick McCarty</title>
   <meta name="description" content="SLM-Bench: 15 models, 9 tasks, 4 hardware configs. What the benchmark reveals about model role separation — and how the three-model architecture from experiment-04 operationalizes it.">
-  <link rel="canonical" href="https://nickmccarty.github.io/blog/slm-efficiency.html">
+  <link rel="canonical" href="https://nickmccarty.me/blog/slm-efficiency.html">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="Small Language Models and the Efficiency-Accuracy Frontier">
   <meta property="og:description" content="SLM-Bench covers 15 models, 9 tasks, and 4 hardware configs. The key finding isn't which model is best — it's that accuracy and energy efficiency don't co-optimize. That's an architecture insight.">
-  <meta property="og:url" content="https://nickmccarty.github.io/blog/slm-efficiency.html">
-  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:url" content="https://nickmccarty.me/blog/slm-efficiency.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -21,9 +21,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Small Language Models and the Efficiency-Accuracy Frontier">
   <meta name="twitter:description" content="SLM-Bench benchmarks 15 models across accuracy, efficiency, and sustainability. What it means for harness model role separation and the three-model architecture.">
-  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <!-- JSON-LD -->
-  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Small Language Models and the Efficiency-Accuracy Frontier", "description": "SLM-Bench: 15 models, 9 tasks, 4 hardware configs. Accuracy and energy efficiency don't co-optimize — model selection is a portfolio problem, not a ranking problem.", "keywords": "small language models, SLM, efficiency benchmarking, energy efficiency, model selection, multi-model architecture, SLM-Bench", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-08", "dateModified": "2026-05-08", "url": "https://nickmccarty.github.io/blog/slm-efficiency.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/slm-efficiency.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Small Language Models and the Efficiency-Accuracy Frontier", "description": "SLM-Bench: 15 models, 9 tasks, 4 hardware configs. Accuracy and energy efficiency don't co-optimize — model selection is a portfolio problem, not a ranking problem.", "keywords": "small language models, SLM, efficiency benchmarking, energy efficiency, model selection, multi-model architecture, SLM-Bench", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me"}, "datePublished": "2026-05-08", "dateModified": "2026-05-08", "url": "https://nickmccarty.me/blog/slm-efficiency.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.me/blog/slm-efficiency.html"}, "image": "https://nickmccarty.me/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.me/blog.html"}}</script>
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
   <link rel="stylesheet" href="../assets/css/styles.css">
@@ -140,7 +140,7 @@
       border-radius: 4px;
     }
   </style>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.github.io/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.github.io/blog.html"},{"@type":"ListItem","position":3,"name":"Small Language Models and the Efficiency-Accuracy Frontier","item":"https://nickmccarty.github.io/blog/slm-efficiency.html"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"Small Language Models and the Efficiency-Accuracy Frontier","item":"https://nickmccarty.me/blog/slm-efficiency.html"}]}</script>
 </head>
 <body>
   <nav>

@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity | Nick McCarty</title>
   <meta name="description" content="LLMORPH finds evaluator inconsistencies with 561,000 test executions. Three novel scoring biases originate in prompt design, not response content. Holistic judges match atomic decomposition on most benchmarks. What the evaluation robustness literature means for harness design.">
-  <link rel="canonical" href="https://nickmccarty.github.io/blog/evaluation-robustness.html">
+  <link rel="canonical" href="https://nickmccarty.me/blog/evaluation-robustness.html">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity">
   <meta property="og:description" content="Metamorphic testing exposes evaluator inconsistencies without labels. Three novel scoring biases—rubric order, score ID, reference answer—originate in prompt design. Holistic judges outperform atomic decomposition on partially-supported cases. Hindi localization drops from 42.8% to 23.2% when only content is localized, not judge instructions.">
-  <meta property="og:url" content="https://nickmccarty.github.io/blog/evaluation-robustness.html">
-  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:url" content="https://nickmccarty.me/blog/evaluation-robustness.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -21,9 +21,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity">
   <meta name="twitter:description" content="Scoring biases from prompt design, not response content. Metamorphic testing without labels. Holistic judges beat atomic decomposition. Language is an experimental variable in agentic evaluation.">
-  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <!-- JSON-LD -->
-  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity", "description": "LLMORPH finds evaluator inconsistencies across 561,000 test executions. Three novel scoring biases — rubric order, score ID, reference answer — originate in prompt design.", "keywords": "metamorphic testing, LLMORPH, scoring bias, prompt sensitivity, rubric design, LLM evaluation robustness, evaluation consistency", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-04-29", "dateModified": "2026-04-29", "url": "https://nickmccarty.github.io/blog/evaluation-robustness.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/evaluation-robustness.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity", "description": "LLMORPH finds evaluator inconsistencies across 561,000 test executions. Three novel scoring biases — rubric order, score ID, reference answer — originate in prompt design.", "keywords": "metamorphic testing, LLMORPH, scoring bias, prompt sensitivity, rubric design, LLM evaluation robustness, evaluation consistency", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me"}, "datePublished": "2026-04-29", "dateModified": "2026-04-29", "url": "https://nickmccarty.me/blog/evaluation-robustness.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.me/blog/evaluation-robustness.html"}, "image": "https://nickmccarty.me/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.me/blog.html"}}</script>
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
   <link rel="stylesheet" href="../assets/css/styles.css">
@@ -144,7 +144,7 @@
       border-radius: 4px;
     }
   </style>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.github.io/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.github.io/blog.html"},{"@type":"ListItem","position":3,"name":"Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity","item":"https://nickmccarty.github.io/blog/evaluation-robustness.html"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity","item":"https://nickmccarty.me/blog/evaluation-robustness.html"}]}</script>
 </head>
 <body>
   <nav>

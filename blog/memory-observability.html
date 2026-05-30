@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph | Nick McCarty</title>
   <meta name="description" content="How the harness memory layer turns isolated run output into retrieval signal: dual-store architecture (SQLite + ChromaDB), quality-weighted ranking, RLHF feedback loops, and UMAP-based topic visualization — all running locally.">
-  <link rel="canonical" href="https://nickmccarty.github.io/blog/memory-observability.html">
+  <link rel="canonical" href="https://nickmccarty.me/blog/memory-observability.html">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph">
   <meta property="og:description" content="How the harness memory layer turns isolated run output into retrieval signal: dual-store architecture, quality-weighted ranking, RLHF feedback loops, and UMAP-based topic visualization.">
-  <meta property="og:url" content="https://nickmccarty.github.io/blog/memory-observability.html">
-  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:url" content="https://nickmccarty.me/blog/memory-observability.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -21,9 +21,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph">
   <meta name="twitter:description" content="SQLite + ChromaDB dual-store, quality-weighted ranking, RLHF feedback, UMAP ontology graph — the harness memory layer in full.">
-  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <!-- JSON-LD -->
-  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph", "description": "How the harness memory layer turns isolated run output into retrieval signal: dual-store architecture (SQLite + ChromaDB), quality-weighted ranking, RLHF feedback loops, and UMAP-based topic visualization.", "keywords": "memory, RAG, retrieval-augmented generation, ChromaDB, SQLite, FTS5, UMAP, quality-weighted retrieval, RLHF, agentic systems, observability, sentence-transformers", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-28", "dateModified": "2026-05-28", "url": "https://nickmccarty.github.io/blog/memory-observability.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/memory-observability.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph", "description": "How the harness memory layer turns isolated run output into retrieval signal: dual-store architecture (SQLite + ChromaDB), quality-weighted ranking, RLHF feedback loops, and UMAP-based topic visualization.", "keywords": "memory, RAG, retrieval-augmented generation, ChromaDB, SQLite, FTS5, UMAP, quality-weighted retrieval, RLHF, agentic systems, observability, sentence-transformers", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me"}, "datePublished": "2026-05-28", "dateModified": "2026-05-28", "url": "https://nickmccarty.me/blog/memory-observability.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.me/blog/memory-observability.html"}, "image": "https://nickmccarty.me/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.me/blog.html"}}</script>
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
   <link rel="stylesheet" href="../assets/css/styles.css">
@@ -159,7 +159,7 @@
       margin: 0 0.2rem;
     }
   </style>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.github.io/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.github.io/blog.html"},{"@type":"ListItem","position":3,"name":"Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph","item":"https://nickmccarty.github.io/blog/memory-observability.html"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph","item":"https://nickmccarty.me/blog/memory-observability.html"}]}</script>
 </head>
 <body>
   <nav>

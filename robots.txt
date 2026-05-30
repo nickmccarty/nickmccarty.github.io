@@ -4,4 +4,4 @@ Disallow: /nogooglebot/
 User-agent: *
 Allow: /
 
-Sitemap: https://nickmccarty.github.io/sitemap.xml
+Sitemap: https://nickmccarty.me/sitemap.xml

@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision | Nick McCarty</title>
   <meta name="description" content="The producer-evaluator separation pattern: how two loops—Ralph (outer) and Wiggum (inner)—compose to produce reliably high-quality agentic output.">
-  <link rel="canonical" href="https://nickmccarty.github.io/blog/the-wiggum-loop.html">
+  <link rel="canonical" href="https://nickmccarty.me/blog/the-wiggum-loop.html">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision">
   <meta property="og:description" content="The producer–evaluator separation pattern: how two loops — Ralph (outer) and Wiggum (inner) — compose to produce reliably high-quality agentic output. With D3.js architecture diagrams and score trajectory data from 1,500 production runs.">
-  <meta property="og:url" content="https://nickmccarty.github.io/blog/the-wiggum-loop.html">
-  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:url" content="https://nickmccarty.me/blog/the-wiggum-loop.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -21,9 +21,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision">
   <meta name="twitter:description" content="The producer–evaluator separation pattern: how Ralph (outer) and Wiggum (inner) loops compose to produce reliably high-quality agentic output.">
-  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <!-- JSON-LD -->
-  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision", "description": "The producer–evaluator separation pattern: two loops — Ralph (outer) and Wiggum (inner) — composing for high-quality agentic output. With D3.js diagrams and score trajectory data from 1,500 production runs.", "keywords": "LLM evaluation, producer-evaluator separation, self-preference bias, dimensional rubric, cross-model scoring, agentic systems, evaluator loop, Ralph loop, Wiggum loop", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-22", "dateModified": "2026-05-22", "url": "https://nickmccarty.github.io/blog/the-wiggum-loop.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/the-wiggum-loop.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision", "description": "The producer–evaluator separation pattern: two loops — Ralph (outer) and Wiggum (inner) — composing for high-quality agentic output. With D3.js diagrams and score trajectory data from 1,500 production runs.", "keywords": "LLM evaluation, producer-evaluator separation, self-preference bias, dimensional rubric, cross-model scoring, agentic systems, evaluator loop, Ralph loop, Wiggum loop", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me"}, "datePublished": "2026-05-22", "dateModified": "2026-05-22", "url": "https://nickmccarty.me/blog/the-wiggum-loop.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.me/blog/the-wiggum-loop.html"}, "image": "https://nickmccarty.me/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.me/blog.html"}}</script>
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
   <link rel="stylesheet" href="../assets/css/styles.css">
@@ -145,7 +145,7 @@
     pre code { font-size: 0.82rem; }
     #nested-svg text, #flowchart-svg text, #scores-svg text { font-family: inherit; }
   </style>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.github.io/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.github.io/blog.html"},{"@type":"ListItem","position":3,"name":"The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision","item":"https://nickmccarty.github.io/blog/the-wiggum-loop.html"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision","item":"https://nickmccarty.me/blog/the-wiggum-loop.html"}]}</script>
 </head>
 <body>
   <nav>

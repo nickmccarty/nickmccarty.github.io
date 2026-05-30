@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Building the Detectors: What Actually Shipped After 107 Experiments | Nick McCarty</title>
   <meta name="description" content="The four convergence detectors proposed after 90 failed experiments were implemented — but not as designed. A regex ban list replaced TF-IDF cosine similarity, a cloud model consultation replaced the global exit, and a new pre-proposal research phase emerged from scratch.">
-  <link rel="canonical" href="https://nickmccarty.github.io/blog/convergence-detectors-shipped.html">
+  <link rel="canonical" href="https://nickmccarty.me/blog/convergence-detectors-shipped.html">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="Building the Detectors: What Actually Shipped After 107 Experiments">
   <meta property="og:description" content="What the four proposed convergence detectors became in actual implementation — regex over cosine similarity, Kimi unblocking over a hard stop, and a pre-proposal research phase that wasn't in the design.">
-  <meta property="og:url" content="https://nickmccarty.github.io/blog/convergence-detectors-shipped.html">
-  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:url" content="https://nickmccarty.me/blog/convergence-detectors-shipped.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -21,9 +21,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Building the Detectors: What Actually Shipped After 107 Experiments">
   <meta name="twitter:description" content="Four proposed convergence detectors, 107 experiments later: what they became vs. what was designed.">
-  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <!-- JSON-LD -->
-  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Building the Detectors: What Actually Shipped After 107 Experiments", "description": "The four convergence detectors proposed after 90 failed experiments were implemented — but not as designed. A regex ban list replaced TF-IDF cosine similarity, a cloud model consultation replaced the global exit, and a new pre-proposal research phase emerged from scratch.", "keywords": "autoresearch, prompt optimization, convergence detection, autonomous systems, kimi, ban list, proposal validation, agentic systems, hill-climbing", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-05-28", "dateModified": "2026-05-28", "url": "https://nickmccarty.github.io/blog/convergence-detectors-shipped.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/convergence-detectors-shipped.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Building the Detectors: What Actually Shipped After 107 Experiments", "description": "The four convergence detectors proposed after 90 failed experiments were implemented — but not as designed. A regex ban list replaced TF-IDF cosine similarity, a cloud model consultation replaced the global exit, and a new pre-proposal research phase emerged from scratch.", "keywords": "autoresearch, prompt optimization, convergence detection, autonomous systems, kimi, ban list, proposal validation, agentic systems, hill-climbing", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me"}, "datePublished": "2026-05-28", "dateModified": "2026-05-28", "url": "https://nickmccarty.me/blog/convergence-detectors-shipped.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.me/blog/convergence-detectors-shipped.html"}, "image": "https://nickmccarty.me/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.me/blog.html"}}</script>
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
   <link rel="stylesheet" href="../assets/css/styles.css">
@@ -187,7 +187,7 @@
       .compare-row { grid-template-columns: 1fr; }
     }
   </style>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.github.io/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.github.io/blog.html"},{"@type":"ListItem","position":3,"name":"Building the Detectors: What Actually Shipped After 107 Experiments","item":"https://nickmccarty.github.io/blog/convergence-detectors-shipped.html"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"Building the Detectors: What Actually Shipped After 107 Experiments","item":"https://nickmccarty.me/blog/convergence-detectors-shipped.html"}]}</script>
 </head>
 <body>
   <nav>

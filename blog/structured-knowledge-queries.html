@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification | Nick McCarty</title>
   <meta name="description" content="ODA improves LLM+KG accuracy by 12.87%. GRASP achieves zero-shot SOTA on Wikidata without fine-tuning. ETLCH extracts structured JSON/KG/NER with a billion-parameter LoRA model trained on 100–1000 samples. What the ontology and SPARQL literature means for upgrading harness memory architecture.">
-  <link rel="canonical" href="https://nickmccarty.github.io/blog/structured-knowledge-queries.html">
+  <link rel="canonical" href="https://nickmccarty.me/blog/structured-knowledge-queries.html">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification">
   <meta property="og:description" content="Six papers on bridging LLMs and knowledge graphs: observation-driven agents, low-resource structured extraction, SPARQL capability benchmarks, zero-shot federated query generation, and KB-grounded chain of verification for pharmaceutical auditing.">
-  <meta property="og:url" content="https://nickmccarty.github.io/blog/structured-knowledge-queries.html">
-  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:url" content="https://nickmccarty.me/blog/structured-knowledge-queries.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -21,9 +21,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification">
   <meta name="twitter:description" content="ODA +12.87% accuracy via observation-action-reflection. GRASP: zero-shot SPARQL SOTA on Wikidata. ETLCH: billion-param LoRA on 100–1000 samples for structured extraction. PharmGraph-Auditor: KB-grounded CoV for prescription safety.">
-  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <!-- JSON-LD -->
-  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification", "description": "ODA improves LLM+KG accuracy by 12.87% via recursive observation-action-reflection. GRASP achieves zero-shot SPARQL SOTA on Wikidata without fine-tuning.", "keywords": "SPARQL, ontology, knowledge graphs, ODA, GRASP, ETLCH, chain of verification, Wikidata, knowledge graph querying, grounded generation", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-04-29", "dateModified": "2026-04-29", "url": "https://nickmccarty.github.io/blog/structured-knowledge-queries.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/structured-knowledge-queries.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification", "description": "ODA improves LLM+KG accuracy by 12.87% via recursive observation-action-reflection. GRASP achieves zero-shot SPARQL SOTA on Wikidata without fine-tuning.", "keywords": "SPARQL, ontology, knowledge graphs, ODA, GRASP, ETLCH, chain of verification, Wikidata, knowledge graph querying, grounded generation", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me"}, "datePublished": "2026-04-29", "dateModified": "2026-04-29", "url": "https://nickmccarty.me/blog/structured-knowledge-queries.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.me/blog/structured-knowledge-queries.html"}, "image": "https://nickmccarty.me/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.me/blog.html"}}</script>
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
   <link rel="stylesheet" href="../assets/css/styles.css">
@@ -144,7 +144,7 @@
       border-radius: 4px;
     }
   </style>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.github.io/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.github.io/blog.html"},{"@type":"ListItem","position":3,"name":"Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification","item":"https://nickmccarty.github.io/blog/structured-knowledge-queries.html"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification","item":"https://nickmccarty.me/blog/structured-knowledge-queries.html"}]}</script>
 </head>
 <body>
   <nav>

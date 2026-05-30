@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't | Nick McCarty</title>
   <meta name="description" content="JETTS: judges match outcome reward models for reranking but lose to process reward models in beam search. Omni-Judge is wrong in 96.4% of expert disagreements. Benchmark saturation may be an artifact of noisy judges, not model capability limits. M-JudgeBench: 10-dimensional multimodal evaluation with MCTS-trained judges.">
-  <link rel="canonical" href="https://nickmccarty.github.io/blog/judge-benchmarks-scaling.html">
+  <link rel="canonical" href="https://nickmccarty.me/blog/judge-benchmarks-scaling.html">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't">
   <meta property="og:description" content="JETTS benchmark: judges competitive for reranking, lose to PRMs in beam search, fail at critique refinement. Omni-MATH-2: Omni-Judge wrong in 96.4% of disagreements. M-JudgeBench + Judge-MCTS. IF-RewardBench. Multimodal judge model for text/audio/image/video. Verbal uncertainty estimation for personalized judgment.">
-  <meta property="og:url" content="https://nickmccarty.github.io/blog/judge-benchmarks-scaling.html">
-  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:url" content="https://nickmccarty.me/blog/judge-benchmarks-scaling.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -21,9 +21,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't">
   <meta name="twitter:description" content="JETTS: judges win at reranking, lose at beam search, fail at critique refinement. Omni-Judge wrong 96.4% of the time. Benchmark saturation as a judge failure mode, not a model capability ceiling.">
-  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <!-- JSON-LD -->
-  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't", "description": "JETTS: judges match outcome reward models for reranking but lose to process reward models in beam search. Omni-Judge is wrong in 96.4% of expert disagreements.", "keywords": "JETTS, Omni-MATH, M-JudgeBench, IF-RewardBench, test-time scaling, process reward models, outcome reward models, LLM judge benchmarks, reranking", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-04-29", "dateModified": "2026-04-29", "url": "https://nickmccarty.github.io/blog/judge-benchmarks-scaling.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/judge-benchmarks-scaling.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't", "description": "JETTS: judges match outcome reward models for reranking but lose to process reward models in beam search. Omni-Judge is wrong in 96.4% of expert disagreements.", "keywords": "JETTS, Omni-MATH, M-JudgeBench, IF-RewardBench, test-time scaling, process reward models, outcome reward models, LLM judge benchmarks, reranking", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me"}, "datePublished": "2026-04-29", "dateModified": "2026-04-29", "url": "https://nickmccarty.me/blog/judge-benchmarks-scaling.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.me/blog/judge-benchmarks-scaling.html"}, "image": "https://nickmccarty.me/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.me/blog.html"}}</script>
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
   <link rel="stylesheet" href="../assets/css/styles.css">
@@ -144,7 +144,7 @@
       border-radius: 4px;
     }
   </style>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.github.io/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.github.io/blog.html"},{"@type":"ListItem","position":3,"name":"Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't","item":"https://nickmccarty.github.io/blog/judge-benchmarks-scaling.html"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't","item":"https://nickmccarty.me/blog/judge-benchmarks-scaling.html"}]}</script>
 </head>
 <body>
   <nav>

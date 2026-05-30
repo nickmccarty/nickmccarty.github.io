@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Blog | Nick McCarty</title>
   <meta name="description" content="Articles on machine learning, computer vision, and AI research.">
-  <link rel="canonical" href="https://nickmccarty.github.io/blog.html">
+  <link rel="canonical" href="https://nickmccarty.me/blog.html">
   <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="Blog | Nick McCarty">
   <meta property="og:description" content="Articles on machine learning, computer vision, agentic systems, and AI research — including the full Agentic Harness Engineering series.">
-  <meta property="og:url" content="https://nickmccarty.github.io/blog.html">
-  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:url" content="https://nickmccarty.me/blog.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,7 +19,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Blog | Nick McCarty">
   <meta name="twitter:description" content="Articles on machine learning, computer vision, agentic systems, and AI research.">
-  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="./assets/images/favicon-16x16.png">
   <link rel="stylesheet" href="./assets/css/styles.css">
@@ -97,8 +97,8 @@
 
         <div class="card">
           <h3>Closing the Loops</h3>
-          <div class="meta">May 25, 2026 &bull; 6 extensions &bull; Agentic Harness Engineering</div>
-          <p>Five posts extending the self-improvement patterns from Section G — the regression harness, the autoresearch optimizer, the voice pipeline, and the operational telemetry forming compounding feedback loops.</p>
+          <div class="meta">May 25, 2026 &bull; 10 extensions &bull; Agentic Harness Engineering</div>
+          <p>Ten posts extending the self-improvement patterns from Section G — the regression harness, the autoresearch optimizer, the voice pipeline, operational telemetry, and RAG context enrichment experiments forming compounding feedback loops.</p>
           <ul style="margin: 0.75rem 0 0; padding-left: 1.1rem; list-style: none; display: flex; flex-direction: column; gap: 0.35rem;">
             <li><a href="./blog/eval-suite.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">The Regression Harness &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">9 tasks, 11 criterion functions, CRD runner, and three-persona experiment panel</span></li>
             <li><a href="./blog/autoresearch-convergence.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">When the Loop Defeats Itself &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">90 experiments, three nested failure modes, four convergence detectors</span></li>
@@ -106,6 +106,11 @@
             <li><a href="./blog/skillopt-gaps.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">What SkillOpt Gets Right &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">Three gaps SkillOpt exposes: validation gating, fast/slow epochs, skill-as-artifact</span></li>
             <li><a href="./blog/audio-data-flywheel.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">The Audio Data Flywheel &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">Voice requests as ASR training data; NeMo RL as the second loop</span></li>
             <li><a href="./blog/telemetry-router.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">The Telemetry Router &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;"><code>runs.jsonl</code> simultaneously seeds autoresearch, lit-review, and DPO curation</span></li>
+            <li><a href="./blog/memory-observability.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">Memory as Infrastructure &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">Dual-store (SQLite + ChromaDB), quality-weighted ranking, RLHF feedback, UMAP ontology graph</span></li>
+            <li><a href="./blog/convergence-detectors-shipped.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">Building the Detectors &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">What the four proposed convergence detectors became after 107 experiments: regex over cosine, Kimi over hard exit</span></li>
+            <li><a href="./blog/beige-book-rag-dpo.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">Beige Book RAG + DPO Cold Start &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">Prepend: &minus;0.08. Append: +0.13. A falsified hypothesis and what the position swap generates as DPO training signal</span></li>
+            <li><a href="./blog/fred-rag-results.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">Live Data Beats Narrative: FRED RAG Results &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">fred_end: +0.40 vs control. Live FRED series 3&times; more useful than Beige Book prose. Position-swap finding replicates.</span></li>
+            <li><a href="./blog/osint-enrichment.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">OSINT Enrichment: Nine Layers of Passive Recon &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">DNS, RDAP, crt.sh, Wayback, Shodan, urlscan, OTX &mdash; parallel fetch, zero-config baseline, wired into gather_research()</span></li>
           </ul>
         </div>
 

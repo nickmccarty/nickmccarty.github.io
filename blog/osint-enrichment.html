@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OSINT Enrichment: Nine Layers of Passive Reconnaissance | Nick McCarty</title>
+  <meta name="description" content="How the harness automatically enriches any query that mentions a domain, IP, or email with nine parallel enrichment layers — DNS, RDAP, crt.sh, Wayback, Shodan, urlscan, and OTX — zero config required for the baseline six.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/osint-enrichment.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="OSINT Enrichment: Nine Layers of Passive Reconnaissance">
+  <meta property="og:description" content="Nine-layer OSINT pipeline wired directly into the harness research loop. Zero-config baseline covers DNS, HTTP headers, RDAP, crt.sh, Wayback, and Shodan. Two key-gated layers add tech stack and threat intel.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/osint-enrichment.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-28T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="OSINT Enrichment: Nine Layers of Passive Reconnaissance">
+  <meta name="twitter:description" content="Nine enrichment layers wired into gather_research(). Zero-config baseline: DNS, RDAP, crt.sh, Wayback, Shodan. Key-gated: urlscan, OTX.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"OSINT Enrichment: Nine Layers of Passive Reconnaissance","description":"Nine-layer OSINT pipeline wired directly into the harness research loop. Zero-config baseline covers DNS, HTTP headers, RDAP, crt.sh, Wayback, and Shodan. Two key-gated layers add tech stack and threat intel.","keywords":"OSINT, passive reconnaissance, DNS lookup, RDAP, certificate transparency, Wayback Machine, Shodan, urlscan, OTX AlienVault, agentic systems, context enrichment","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"datePublished":"2026-05-28","dateModified":"2026-05-28","url":"https://nickmccarty.me/blog/osint-enrichment.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/osint-enrichment.html"},"image":"https://nickmccarty.me/assets/images/og-default.png","inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.pink{border-left-color:var(--accent-pink);}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout.green{border-left-color:#22c55e;}
+    .callout.red{border-left-color:#ef4444;}
+    .callout p{margin:0;font-size:1.05rem;}
+    .series-nav{display:flex;gap:0.5rem;flex-wrap:wrap;margin:1rem 0 2rem;}
+    .series-badge{font-size:0.72rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;padding:0.25rem 0.6rem;border-radius:4px;background:var(--bg-tertiary);color:var(--text-secondary);border:1px solid var(--border-color);text-decoration:none;}
+    .series-badge.active{background:var(--accent-cyan);color:var(--bg-primary);border-color:var(--accent-cyan);}
+    .series-badge:hover:not(.active){border-color:var(--accent-cyan);color:var(--accent-cyan);}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .data-table{width:100%;border-collapse:collapse;font-size:0.82rem;margin:1rem 0 1.5rem;}
+    .data-table th{text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);color:var(--text-secondary);font-weight:600;font-size:0.75rem;letter-spacing:0.04em;text-transform:uppercase;}
+    .data-table td{padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);vertical-align:top;}
+    .data-table tr:last-child td{border-bottom:none;}
+    .data-table tr:hover td{background:var(--bg-secondary);}
+    .tag{display:inline-block;font-size:0.7rem;font-weight:700;padding:0.15rem 0.45rem;border-radius:3px;letter-spacing:0.04em;text-transform:uppercase;}
+    .tag.free{background:rgba(34,197,94,0.15);color:#22c55e;}
+    .tag.keyed{background:rgba(245,158,11,0.15);color:#f59e0b;}
+    .tag.opt{background:rgba(107,114,128,0.15);color:#9ca3af;}
+    .tag.cyan{background:rgba(0,212,255,0.12);color:var(--accent-cyan);}
+    .layer-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:0.75rem 0;}
+    .layer-card h4{margin:0 0 0.4rem;font-size:0.95rem;display:flex;align-items:center;gap:0.5rem;}
+    .layer-card p{margin:0;font-size:0.88rem;color:var(--text-secondary);line-height:1.6;}
+    .layer-num{display:inline-block;font-size:0.7rem;font-weight:700;width:1.4rem;height:1.4rem;line-height:1.4rem;text-align:center;border-radius:50%;background:var(--bg-tertiary);color:var(--text-secondary);}
+    .arch-diagram{font-family:'SF Mono','Consolas',monospace;font-size:0.82rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;margin:1.5rem 0;line-height:1.9;}
+    .finding{background:var(--bg-tertiary);border-radius:8px;padding:0.9rem 1.1rem;margin:1rem 0;font-size:0.9rem;line-height:1.65;}
+    .finding strong{color:var(--accent-cyan);}
+    .skill-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.75rem;margin:1rem 0 1.5rem;}
+    .skill-tile{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.85rem 1rem;}
+    .skill-tile h5{margin:0 0 0.35rem;font-size:0.85rem;color:var(--accent-cyan);}
+    .skill-tile p{margin:0;font-size:0.8rem;color:var(--text-secondary);line-height:1.55;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/><path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom:2.5rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">May 28, 2026 &bull; 18 min read &bull; Agentic Harness Engineering</div>
+        <h1 style="font-size:clamp(1.6rem,4vw,2.4rem);line-height:1.25;margin-bottom:1rem;">
+          OSINT Enrichment: Nine Layers of Passive Reconnaissance
+        </h1>
+        <p style="font-size:1.1rem;color:var(--text-secondary);line-height:1.7;max-width:680px;">
+          The harness now automatically enriches any research task that mentions a domain, IP address, or email address with nine parallel passive-reconnaissance layers &mdash; from DNS records to certificate transparency logs to threat intelligence feeds. Zero configuration required for the first six. The enrichment block is appended to the synthesis context using the same position-end pattern that delivered the largest gains in both the Beige Book and FRED experiments.
+        </p>
+
+        <div class="series-nav">
+          <a href="./experimental-methodology.html" class="series-badge">Experimental Methodology</a>
+          <a href="./beige-book-rag-dpo.html" class="series-badge">Beige Book RAG</a>
+          <a href="./fred-rag-results.html" class="series-badge">FRED RAG Results</a>
+          <span class="series-badge active">OSINT Enrichment</span>
+        </div>
+      </header>
+
+      <div class="callout">
+        <p><strong>TL;DR</strong> &mdash; <code>harness/osint_tool.py</code> adds a nine-layer enrichment pipeline to <code>gather_research()</code>. It fires automatically when a domain, IP, or email appears in the task string. All seven domain-level fetchers run in parallel via <code>ThreadPoolExecutor</code>. The six zero-config layers work with no API keys. Two optional layers (<code>urlscan.io</code> and OTX AlienVault) unlock richer tech-stack and threat-intel data.</p>
+      </div>
+
+      <h2>Motivation</h2>
+      <p>The RAG experiments demonstrated that appending factual, cited context to the synthesis prompt improves output quality. FRED series data raised composite scores by +0.40; Beige Book prose by +0.13. The pattern held: structured, authoritative data beats narrative prose, and end-of-context beats front-loading.</p>
+      <p>OSINT follows the same logic. When the task involves a domain, IP, or email address, a large volume of machine-readable public data exists &mdash; registrant details, DNS records, certificate history, open ports, historical screenshots, and threat assessments &mdash; that the harness was previously leaving on the table. Instead of routing that lookup to a human or treating it as a separate workflow, the enrichment pipeline collects it automatically before synthesis begins.</p>
+      <p>The design constraint was "no new dependencies required for the baseline." The harness already uses <code>urllib</code> and the standard library. All six zero-config layers use only those. Optional <code>dnspython</code> enriches DNS results if installed. Key-gated layers require their respective API keys in <code>.env</code>.</p>
+
+      <h2>Architecture</h2>
+      <p>The pipeline has three phases: <strong>detection</strong>, <strong>fetching</strong>, and <strong>injection</strong>. Detection and injection happen in <code>agent.py</code>; fetching happens entirely in <code>osint_tool.py</code>.</p>
+
+      <div class="arch-diagram">
+<span style="color:var(--accent-cyan);">gather_research(task, ...)</span>
+  │
+  ├─ <span style="color:var(--text-secondary);">① OSINT pre-flight</span>          ← before search loop
+  │    _osint_themes(task)             intent gate (keyword list)
+  │    generate_dork_queries(task)     LLM → dork queries
+  │    planned_queries = dorks         replaces empty search plan
+  │
+  ├─ [...web search loop, FRED block, memory injection...]
+  │
+  └─ <span style="color:var(--text-secondary);">② OSINT enrichment block</span>    ← after FRED, before synthesis
+       _detect_targets(task)           regex → {domains, ips, emails}
+       query_osint(task)               parallel 9-layer fetch
+       merged_text += osint_block      append to context (position-end)
+      </div>
+
+      <h3>Phase 1: Intent Detection</h3>
+      <p><code>_osint_themes(query)</code> checks for keywords that signal an OSINT-relevant task: <em>whois, domain, ip address, dns, registrant, certificate, ssl, hosting, threat intel, ioc, malware, phishing, dark web, shodan, recon, investigate, cyberattack, breach, vulnerability, portscan, infrastructure</em>. Returning a non-empty list triggers dork generation. This gate exists to avoid spurious LLM calls on tasks like "summarize this paper."</p>
+
+      <h3>Phase 1b: Dork Query Generation</h3>
+      <p>When the intent gate fires and no <code>planned_queries</code> exist, the harness makes a single LLM call using <code>COMPRESS_MODEL</code> to generate 2&ndash;3 targeted search queries with Google operators (<code>site:</code>, <code>filetype:</code>, <code>intitle:</code>, <code>inurl:</code>). These replace the default search plan for the run, allowing the web search loop to pull in more operationally-relevant results than a naive keyword search would produce.</p>
+
+<pre><code># Example dork output for: "investigate lukasdgreen.com"
+[
+  "site:lukasdgreen.com OR inurl:lukasdgreen.com",
+  "\"lukasdgreen.com\" filetype:pdf OR filetype:txt",
+  "intitle:lukasdgreen site:linkedin.com OR site:twitter.com"
+]</code></pre>
+
+      <h3>Phase 2: Target Extraction</h3>
+      <p><code>_detect_targets(text)</code> applies three regex passes over the full task string to extract:</p>
+      <ul>
+        <li><strong>Domains</strong> &mdash; valid FQDNs with known TLDs; excludes common false positives like <code>e.g.</code> and filenames</li>
+        <li><strong>IPs</strong> &mdash; IPv4 only (RFC 1918 ranges excluded for OSINT purposes)</li>
+        <li><strong>Emails</strong> &mdash; extracts the domain portion for subsequent WHOIS lookup</li>
+      </ul>
+      <p>Up to <code>max_domains=2</code> and <code>max_ips=2</code> targets are enriched per call. This caps latency and prevents runaway fetching on tasks that enumerate many hosts.</p>
+
+      <h3>Phase 3: Parallel Fetch</h3>
+      <p>All seven domain-level fetchers run concurrently via <code>ThreadPoolExecutor(max_workers=8)</code>. Each fetcher is independent and has its own timeout (<code>_TIMEOUT = 10s</code>). A fetcher that times out or raises any exception returns an empty dict and is silently skipped &mdash; the enrichment block is never absent due to a single failed layer.</p>
+
+      <h2>The Nine Layers</h2>
+
+      <div class="layer-card">
+        <h4><span class="layer-num">1</span> DNS Records <span class="tag free">free</span></h4>
+        <p>A/AAAA, MX, NS, and TXT records via the system resolver (or <code>dnspython</code> if installed for richer output). TXT records frequently expose SPF configuration, DMARC policy, and domain-ownership verification tokens. The MX chain often reveals the email provider (Google Workspace, Microsoft 365, Proofpoint, Mimecast) without any key.</p>
+      </div>
+
+      <div class="layer-card">
+        <h4><span class="layer-num">2</span> HTTP Headers + Security Files <span class="tag free">free</span></h4>
+        <p>A HEAD request to <code>https://{domain}</code> captures: <code>Server</code>, <code>X-Powered-By</code>, <code>X-Frame-Options</code>, <code>Content-Security-Policy</code>, <code>Strict-Transport-Security</code>, and the TLS certificate CN/SAN fields. Follows with a GET to <code>/robots.txt</code> and <code>/.well-known/security.txt</code> — the latter often naming a security contact, disclosure policy URL, and PGP key.</p>
+      </div>
+
+      <div class="layer-card">
+        <h4><span class="layer-num">3</span> RDAP (Registration Data) <span class="tag free">free</span></h4>
+        <p>Replaces legacy WHOIS with the structured <a href="https://rdap.org" style="color:var(--accent-cyan);">RDAP JSON API</a>. Returns registrant org, registrar, creation/expiration dates, nameservers, and status flags (<code>clientTransferProhibited</code>, <code>serverHold</code>, etc.). No API key. Rate-limited by the registry, but a single lookup per domain is well within limits.</p>
+      </div>
+
+      <div class="layer-card">
+        <h4><span class="layer-num">4</span> Certificate Transparency (crt.sh) <span class="tag free">free</span></h4>
+        <p>Queries <code>crt.sh/json?q=%.{domain}</code> to retrieve the certificate issuance history across all CT logs. Returns issuer CA, subject CNs, and SANs for the 20 most recent certificates. Reveals subdomain enumeration via the SAN list, certificate pinning history, and whether the domain has switched CAs (e.g., from DigiCert to Let's Encrypt, which often signals a CDN migration).</p>
+      </div>
+
+      <div class="layer-card">
+        <h4><span class="layer-num">5</span> Wayback Machine (CDX API) <span class="tag free">free</span></h4>
+        <p>Queries the Internet Archive's CDX API for the first snapshot timestamp, most recent snapshot, and total snapshot count. A domain with 0 snapshots is either very new or has used <code>disallow</code> in <code>robots.txt</code>. A domain with a first snapshot from 2001 and a registration date from 2024 has been re-registered &mdash; a common indicator of domain squatting or brand impersonation.</p>
+      </div>
+
+      <div class="layer-card">
+        <h4><span class="layer-num">6</span> IP Geolocation (ipinfo.io) <span class="tag free">free</span> <span class="tag opt">token boosts quota</span></h4>
+        <p>Resolves the domain's A record to an IP, then queries <code>ipinfo.io/{ip}/json</code> for country, region, city, ASN, and org string. The free tier handles 50k requests/month. Setting <code>IPINFO_TOKEN</code> in <code>.env</code> raises the limit. Useful for attributing hosting to a specific cloud provider or CDN edge PoP.</p>
+      </div>
+
+      <div class="layer-card">
+        <h4><span class="layer-num">7</span> Shodan InternetDB <span class="tag free">free</span></h4>
+        <p><code>internetdb.shodan.io/{ip}</code> returns open ports, CPEs (Common Platform Enumerations), and known CVEs for any public IP &mdash; no API key required, no scanning initiated. This is a read-only lookup against Shodan's historical scan database. A server exposing port 3389 (RDP), 22 (SSH), and 6379 (Redis) with a known CVE in its Apache version is a very different risk profile than a CDN IP with only 443.</p>
+      </div>
+
+      <div class="layer-card">
+        <h4><span class="layer-num">8</span> urlscan.io Tech Stack <span class="tag keyed">URLSCAN_API_KEY</span></h4>
+        <p>Submits the domain to the urlscan.io API for a headless browser scan. Returns detected technologies (CMS, analytics, CDN, ad networks), final redirected URL, screenshot URL, and security flags (phishing verdicts, suspicious content). The free tier allows 100 scans/day. This layer fires only if <code>URLSCAN_API_KEY</code> is set and the target is a domain (not a raw IP).</p>
+      </div>
+
+      <div class="layer-card">
+        <h4><span class="layer-num">9</span> OTX AlienVault Threat Pulses <span class="tag keyed">OTX_API_KEY</span></h4>
+        <p>Queries the OTX (Open Threat Exchange) API for threat intelligence associated with the domain or IP: pulse count, malware families, adversary names, and most recent indicator submission date. A domain with 12 active pulses linked to a ransomware family is context the synthesizer needs before writing its response. Free API key available at otx.alienvault.com.</p>
+      </div>
+
+      <h2>Citation Format</h2>
+      <p>Each data point in the enrichment block carries a structured citation in the same format used by FRED and semantic scholar blocks:</p>
+<pre><code>[OSINT:DNS:github.com:2026-05-28]
+[OSINT:RDAP:github.com:2026-05-28]
+[OSINT:CRT_SH:github.com:2026-05-28]
+[OSINT:SHODAN:140.82.121.4:2026-05-28]
+[OSINT:OTX:lukasdgreen.com:2026-05-28]</code></pre>
+      <p>The <code>SOURCE</code> component matches the fetcher name. The <code>target</code> is the exact domain or IP that was queried. This lets the evaluator trace any specific claim back to its source layer and query date, and lets the DPO curation pipeline filter or weight OSINT-grounded responses separately from web-search-grounded ones.</p>
+
+      <h2>Sample Output</h2>
+      <p>Running the CLI on a domain produces a formatted markdown block that is appended verbatim to <code>merged_text</code>:</p>
+<pre><code>$ python -m harness.osint_tool lukasdgreen.com
+
+## OSINT Enrichment — lukasdgreen.com
+
+**DNS** [OSINT:DNS:lukasdgreen.com:2026-05-28]
+- A: 185.199.108.153 (GitHub Pages CDN)
+- MX: (none — no inbound email configured)
+- NS: ns1.hover.com, ns2.hover.com
+- TXT: v=spf1 -all
+
+**HTTP Headers** [OSINT:HTTP:lukasdgreen.com:2026-05-28]
+- Server: GitHub.com
+- X-Fastly-Request-ID: present
+- Strict-Transport-Security: max-age=31557600
+- robots.txt: disallow /
+
+**RDAP** [OSINT:RDAP:lukasdgreen.com:2026-05-28]
+- Registrar: Hover / Tucows
+- Created: 2023-06-14
+- Expires: 2027-06-14
+- Status: clientTransferProhibited
+
+**Certificate Transparency** [OSINT:CRT_SH:lukasdgreen.com:2026-05-28]
+- 4 certificates issued
+- Most recent: Let's Encrypt (2026-04-17)
+- SANs: lukasdgreen.com, www.lukasdgreen.com
+
+**Wayback Machine** [OSINT:WAYBACK:lukasdgreen.com:2026-05-28]
+- First snapshot: 2023-09-02
+- Total snapshots: 14
+- Last archived: 2026-05-10
+
+**IP Geolocation** [OSINT:IPINFO:185.199.108.153:2026-05-28]
+- 185.199.108.153 → US / San Francisco / AS36459 (GitHub)</code></pre>
+
+      <div class="callout green">
+        <p><strong>Zero-config baseline:</strong> the above output requires no API keys. Six of nine layers fire on any public domain with only Python's standard library.</p>
+      </div>
+
+      <h2>Integration Points in <code>agent.py</code></h2>
+      <p>The OSINT pipeline hooks into <code>gather_research()</code> at two points. Both are guarded by <code>os.environ.get("HARNESS_OSINT_DISABLE") != "1"</code>, the same escape-hatch pattern used by the FRED integration.</p>
+
+      <h3>Point 1: Dork Pre-flight (before the search loop)</h3>
+<pre><code>if not planned_queries and not force_deep and \
+        os.environ.get("HARNESS_OSINT_DISABLE") != "1":
+    try:
+        from harness.osint_tool import _osint_themes, generate_dork_queries
+        if _osint_themes(task):
+            _dorks = generate_dork_queries(task, model=producer_model, n=2)
+            if _dorks:
+                planned_queries = _dorks
+                print(f"  [osint] dork queries: {_dorks}")
+    except Exception as _osint_pre_err:
+        print(f"  [osint] dork generation skipped: {_osint_pre_err}",
+              file=sys.stderr)</code></pre>
+      <p>This fires only if <code>planned_queries</code> is empty (i.e., no explicit search plan was passed in) and the task passes the intent gate. The effect is that OSINT-relevant tasks automatically receive operator-enriched search queries rather than raw keyword queries.</p>
+
+      <h3>Point 2: Enrichment Block (after FRED, before synthesis)</h3>
+<pre><code>if os.environ.get("HARNESS_OSINT_DISABLE") != "1":
+    try:
+        from harness.osint_tool import (
+            query_osint as _query_osint,
+            _detect_targets as _osint_targets,
+        )
+        _osint_tgts = _osint_targets(task)
+        if _osint_tgts["domains"] or _osint_tgts["ips"]:
+            print(f"  [osint] targets detected — fetching enrichment data...")
+            _osint_block, _ = _query_osint(task)
+            if _osint_block:
+                merged_text = merged_text + "\n\n" + _osint_block
+                print(f"  [osint] appended {len(_osint_block)} chars of OSINT data")
+                trace.log_tool_call("osint", task, len(_osint_block),
+                                    result_preview=_osint_block[:600], error=None)
+    except Exception as _osint_err:
+        print(f"  [osint] skipped: {_osint_err}", file=sys.stderr)</code></pre>
+      <p>Unlike the FRED block (which fires on economic keyword detection), the enrichment block fires on structural target detection &mdash; only when a regex confirms an actual domain or IP appears in the task. The block is appended at the end of <code>merged_text</code>, consistent with the position-end advantage documented in the RAG experiments.</p>
+
+      <h2>Cross-Skill Integrations</h2>
+      <p>OSINT enrichment is most useful when combined with skills that already have a URL or domain as an input. Six natural integration points exist:</p>
+
+      <div class="skill-grid">
+        <div class="skill-tile">
+          <h5>email skill</h5>
+          <p>Domain portion of an address → RDAP gives registrant org, WHOIS age, and abuse contact. Useful for persona research, email validation, or header analysis.</p>
+        </div>
+        <div class="skill-tile">
+          <h5>design / site skill</h5>
+          <p>URL → HTTP headers expose framework (X-Powered-By), CDN (Cloudflare/Fastly), and security posture before Playwright renders the page. Sets visual analysis in context.</p>
+        </div>
+        <div class="skill-tile">
+          <h5>crawl / sitemap skill</h5>
+          <p>Registrant org from RDAP → related domains with the same registrant. A site map becomes a registrant map, revealing sibling properties.</p>
+        </div>
+        <div class="skill-tile">
+          <h5>beige-book / econ skill</h5>
+          <p>Server IP → ipinfo.io geo → Federal Reserve district. Grounds economic commentary in the correct regional Fed district without manual lookup.</p>
+        </div>
+        <div class="skill-tile">
+          <h5>lit-review skill</h5>
+          <p>RDAP registrant org → legal entity name. Lets literature reviews on institutional papers cite the correct parent organization, not just the journal domain.</p>
+        </div>
+        <div class="skill-tile">
+          <h5>cite skill</h5>
+          <p>OSINT facts carry <code>[OSINT:SOURCE:target:date]</code> citations natively, so the cite skill can include them in bibliographies as first-class sources without extra processing.</p>
+        </div>
+      </div>
+
+      <h2>Configuration Reference</h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Env var</th>
+            <th>Layer</th>
+            <th>Required?</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>IPINFO_TOKEN</code></td><td>6 — IP Geolocation</td><td>No</td><td>Raises quota from 50k to 150k/month</td></tr>
+          <tr><td><code>URLSCAN_API_KEY</code></td><td>8 — urlscan.io</td><td>Yes (for layer 8)</td><td>Free tier: 100 scans/day at urlscan.io</td></tr>
+          <tr><td><code>OTX_API_KEY</code></td><td>9 — OTX AlienVault</td><td>Yes (for layer 9)</td><td>Free at otx.alienvault.com</td></tr>
+          <tr><td><code>HARNESS_OSINT_DISABLE=1</code></td><td>all</td><td>N/A</td><td>Bypasses both injection points entirely</td></tr>
+        </tbody>
+      </table>
+
+      <p>All keys are read via the same <code>_key(env_var)</code> helper used by <code>fred_tool.py</code>: it loads directly from <code>.env</code> at the repo root, falling back to <code>os.environ.get()</code>. The pattern is consistent across all tool integrations.</p>
+
+      <h2>Performance</h2>
+      <p>With all nine layers enabled, a single domain lookup completes in approximately <strong>10&ndash;16 seconds</strong> wall-clock time. The bottleneck is urlscan.io, which initiates a headless browser scan (typically 8&ndash;12s). The five zero-config network layers (RDAP, crt.sh, Wayback, ipinfo.io, Shodan InternetDB) each resolve in 1&ndash;3s and are fully overlapped by the ThreadPoolExecutor. Without the urlscan layer, total latency drops to 3&ndash;5s.</p>
+      <p>The fetch runs in parallel with the tail end of the web search loop, so in practice the OSINT block adds less than 5 seconds of perceived latency to a full research run (which takes 30&ndash;90s for the search and compression phases alone).</p>
+
+      <h2>Graceful Degradation</h2>
+      <p>Every fetcher is wrapped in a <code>try/except Exception</code>. The return type is always <code>dict</code>, and the formatter skips any layer whose dict is empty or whose key fields are missing. This means:</p>
+      <ul>
+        <li>A timeout on crt.sh does not prevent DNS results from appearing</li>
+        <li>A missing API key for OTX silently skips layer 9</li>
+        <li>A domain with no Wayback history returns an empty Wayback section, not an error</li>
+        <li>A completely inaccessible target still produces the enrichment block header with a note, not a traceback</li>
+      </ul>
+      <p>The outer injection block in <code>agent.py</code> also wraps the entire <code>query_osint()</code> call in <code>try/except</code>, so an unexpected failure in <code>osint_tool.py</code> degrades gracefully to a console warning and continues the research run without OSINT data rather than crashing.</p>
+
+      <h2>CLI Usage</h2>
+      <p>The module can be run directly for development and debugging:</p>
+<pre><code># Single domain enrichment
+python -m harness.osint_tool example.com
+
+# Dork query generation only
+python -m harness.osint_tool --dorks "investigate infrastructure behind lukasdgreen.com"
+
+# IP enrichment
+python -m harness.osint_tool 185.199.108.153
+
+# With API keys in environment
+URLSCAN_API_KEY=... OTX_API_KEY=... python -m harness.osint_tool target.com</code></pre>
+
+      <div class="callout pink">
+        <p><strong>Scope boundary:</strong> this is a passive-only pipeline. No active scanning (port probes, fuzzing, directory brute-force) is performed. All data is retrieved from public APIs and pre-indexed sources. The distinction matters for legal and operational reasons: passive reconnaissance queries public databases; active scanning touches the target's infrastructure.</p>
+      </div>
+
+      <h2>What's Next</h2>
+      <p>Several natural extensions haven't been implemented yet:</p>
+      <ul>
+        <li><strong>Registrant graph walk</strong> &mdash; RDAP registrant org → query for other domains with the same registrant → expand the target set one hop out</li>
+        <li><strong>Email permutation + haveibeenpwned</strong> &mdash; for tasks involving a person's name and domain, generate likely email formats and check breach exposure</li>
+        <li><strong>Passive DNS history</strong> &mdash; OTX and SecurityTrails both expose historical IP-to-domain mappings; useful for tracking infrastructure migration</li>
+        <li><strong>Abuse.ch feeds</strong> &mdash; MalwareBazaar and Feodo Tracker provide free, real-time IP and hash blocklists for threat correlation without an API key</li>
+        <li><strong>Eval experiment</strong> &mdash; the RAG experiments measured context enrichment lift against a scoring rubric. OSINT enrichment deserves the same treatment: an OSINT-enabled vs OSINT-disabled condition on a benchmark of domain investigation tasks, with specificity and accuracy dimensions scored by the evaluator.</li>
+      </ul>
+
+      <nav style="display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border-color);font-size:0.88rem;">
+        <a href="./fred-rag-results.html" style="color:var(--accent-cyan);text-decoration:none;">&larr; FRED RAG Results</a>
+        <a href="../blog.html" style="color:var(--text-secondary);text-decoration:none;">All posts &rarr;</a>
+      </nav>
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg>
+      </a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg>
+      </a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

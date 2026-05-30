@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Judging the Judges: Benchmark Contamination and the Reliability Crisis in LLM Evaluation | Nick McCarty</title>
   <meta name="description" content="Best judges lag human agreement by 5 points. Omni-Judge is wrong in 96.4% of disagreements. 8 of 9 judges show always-A position bias. What the literature says — and what it means for harness design.">
-  <link rel="canonical" href="https://nickmccarty.github.io/blog/judge-reliability.html">
+  <link rel="canonical" href="https://nickmccarty.me/blog/judge-reliability.html">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="Judging the Judges: Benchmark Contamination and LLM Evaluation Reliability">
   <meta property="og:description" content="Best judges lag human agreement by 5 points. Omni-Judge wrong in 96.4% of disagreements. 8 of 9 judges show always-A position bias. The empirical case for dimensional rubrics, evaluator diversity, and calibration anchors.">
-  <meta property="og:url" content="https://nickmccarty.github.io/blog/judge-reliability.html">
-  <meta property="og:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta property="og:url" content="https://nickmccarty.me/blog/judge-reliability.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -21,9 +21,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Judging the Judges: Benchmark Contamination and LLM Evaluation Reliability">
   <meta name="twitter:description" content="96.4% judge error rate. 5-point gap from human agreement. Always-A bias in 8 of 9 judges. The empirical case for better harness evaluation design.">
-  <meta name="twitter:image" content="https://nickmccarty.github.io/assets/images/og-default.png">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
   <!-- JSON-LD -->
-  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Judging the Judges: Benchmark Contamination and Evaluation Reliability", "description": "Best judges lag human agreement by 5 points. Eight of nine judges show always-A position bias. What the reliability literature means for harness design.", "keywords": "LLM-as-a-judge, evaluation reliability, position bias, benchmark contamination, self-preference, judge calibration, evaluation bias", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.github.io"}, "datePublished": "2026-04-29", "dateModified": "2026-04-29", "url": "https://nickmccarty.github.io/blog/judge-reliability.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.github.io/blog/judge-reliability.html"}, "image": "https://nickmccarty.github.io/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.github.io/blog.html"}}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BlogPosting", "headline": "Judging the Judges: Benchmark Contamination and Evaluation Reliability", "description": "Best judges lag human agreement by 5 points. Eight of nine judges show always-A position bias. What the reliability literature means for harness design.", "keywords": "LLM-as-a-judge, evaluation reliability, position bias, benchmark contamination, self-preference, judge calibration, evaluation bias", "author": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me", "sameAs": ["https://linkedin.com/in/nicholasmccarty", "https://github.com/nickmccarty"]}, "publisher": {"@type": "Person", "name": "Nick McCarty", "url": "https://nickmccarty.me"}, "datePublished": "2026-04-29", "dateModified": "2026-04-29", "url": "https://nickmccarty.me/blog/judge-reliability.html", "mainEntityOfPage": {"@type": "WebPage", "@id": "https://nickmccarty.me/blog/judge-reliability.html"}, "image": "https://nickmccarty.me/assets/images/og-default.png", "inLanguage": "en-US", "articleSection": "Agentic Harness Engineering", "isPartOf": {"@type": "Blog", "name": "Nick McCarty", "url": "https://nickmccarty.me/blog.html"}}</script>
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
   <link rel="stylesheet" href="../assets/css/styles.css">
@@ -143,7 +143,7 @@
     tr:last-child td { border-bottom: none; }
     #bias-svg text, #contam-svg text, #harness-design-svg text { font-family: inherit; }
   </style>
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.github.io/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.github.io/blog.html"},{"@type":"ListItem","position":3,"name":"Judging the Judges: Benchmark Contamination and the Reliability Crisis in LLM Evaluation","item":"https://nickmccarty.github.io/blog/judge-reliability.html"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"Judging the Judges: Benchmark Contamination and the Reliability Crisis in LLM Evaluation","item":"https://nickmccarty.me/blog/judge-reliability.html"}]}</script>
 </head>
 <body>
   <nav>
