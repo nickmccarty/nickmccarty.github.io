@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Trading Skills: /validate-trades and /execute-trades | Nick McCarty</title>
+  <meta name="description" content="/validate-trades runs deterministic TA checks against every [THESIS:...] citation in a thesis file — momentum rank, Hurst exponent, BB z-score, SMA cross, volatility, R/R ratio, position sizing, price anchoring — using a local SQLite signals database. /execute-trades builds bracket orders from validated theses and submits them to Alpaca, dry-run by default.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/trade-execution-skills.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Trading Skills: /validate-trades and /execute-trades">
+  <meta property="og:description" content="/validate-trades: deterministic PASS/WARN/FLAG checks on each thesis using local TA signals. /execute-trades: bracket order construction from validated theses, dry-run by default, --live submits to Alpaca.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/trade-execution-skills.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-02T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Trading Skills: /validate-trades and /execute-trades">
+  <meta name="twitter:description" content="/validate-trades: 8 deterministic TA checks, no LLM, PASS/WARN/FLAG per thesis. /execute-trades: GTC bracket orders from passing theses, dry-run by default.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Trading Skills: /validate-trades and /execute-trades","description":"/validate-trades runs deterministic TA checks on trading thesis files. /execute-trades submits bracket orders for passing theses to Alpaca.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-02","dateModified":"2026-06-02","url":"https://nickmccarty.me/blog/trade-execution-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => { if (window.hljs) hljs.highlightAll(); });</script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{border:1px solid var(--border-color);border-radius:8px;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;padding:0;}
+    pre code.hljs{border-radius:8px;padding:1.25rem 1.5rem;font-size:inherit;}
+    .check-table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:0.81rem;}
+    .check-table th{text-align:left;padding:0.45rem 0.75rem;border-bottom:1px solid var(--border-color);color:var(--text-secondary);font-weight:600;}
+    .check-table td{padding:0.45rem 0.75rem;border-bottom:1px solid var(--border-color);vertical-align:top;}
+    .check-table code{font-size:0.78em;}
+    .status-pass{color:#22c55e;font-weight:700;}
+    .status-warn{color:#f59e0b;font-weight:700;}
+    .status-flag{color:#ef4444;font-weight:700;}
+    .related-section{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border-color);}
+    .related-section h2{margin-bottom:1.25rem;}
+    .related-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+    @media(max-width:700px){.related-grid{grid-template-columns:1fr;}}
+    .related-card{display:block;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:1rem 1.1rem;text-decoration:none;transition:border-color .2s,transform .15s;}
+    .related-card:hover{border-color:var(--accent-cyan);transform:translateY(-2px);}
+    .related-card .rc-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-cyan);margin-bottom:0.35rem;}
+    .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
+    .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 2, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Trading Skills: /validate-trades and /execute-trades</span></h1>
+        <p class="subtitle">Two skills that close the loop between LLM-generated trading theses and live market execution. <code>/validate-trades</code> runs eight deterministic technical analysis checks against every thesis in a file — no LLM involved, pure Python rules against a local signals database. <code>/execute-trades</code> builds GTC bracket orders from the theses that pass validation and submits them to Alpaca, dry-run by default.</p>
+      </header>
+
+      <p>A trading thesis generated by the harness contains structured fields — entry price, target, stop, position size — alongside a <code>[THESIS:direction:ticker:rationale:date]</code> citation anchor. These structured fields are machine-parseable. <code>/validate-trades</code> uses them to run deterministic checks before any capital is committed. <code>/execute-trades</code> consumes the same file, reads the validation status, and skips any thesis that carries a FLAG.</p>
+
+      <h2>/validate-trades: deterministic TA checks</h2>
+
+      <p><code>/validate-trades</code> is a <code>post_wiggum</code> skill that auto-activates on trading thesis keywords — "long thesis", "trade setup", "alpaca", and similar. It runs after the Wiggum loop has already scored the thesis for quality; validation checks technical consistency separately from prose quality.</p>
+
+      <p>The parser extracts each thesis block using <code>## Thesis N:</code> headers and reads structured fields via regex:</p>
+
+      <pre><code class="language-python">_FIELD = {
+    "direction":    re.compile(r"\*\*Direction\*\*:\s*(Long|Short)", re.IGNORECASE),
+    "ticker":       re.compile(r"\*\*Ticker\*\*:\s*([A-Z]{1,6})\b"),
+    "entry":        re.compile(r"\*\*Entry\*\*[^$]*\$([0-9]+(?:\.[0-9]+)?)"),
+    "target":       re.compile(r"\*\*Target\*\*[^$]*\$([0-9]+(?:\.[0-9]+)?)"),
+    "stop":         re.compile(r"\*\*Stop\*\*[^$]*\$([0-9]+(?:\.[0-9]+)?)"),
+    "position_pct": re.compile(r"\*\*Suggested position size\*\*:\s*([0-9]+(?:\.[0-9]+)?)\s*%"),
+    "stated_price": re.compile(r"(?:Current\s+)?Price[:\-]\s*\$\s*([0-9,]+(?:\.[0-9]+)?)"),
+}</code></pre>
+
+      <p>After parsing, the validator loads the latest signal row per ticker from <code>data/trending-tickers-unified.db</code> and runs eight rule-based checks:</p>
+
+      <table class="check-table">
+        <thead><tr><th>Check</th><th>Signal field</th><th>FLAG condition</th></tr></thead>
+        <tbody>
+          <tr><td>Momentum rank</td><td><code>momentum_rank</code></td><td>Long with rank &lt; 0.4; Short with rank &gt; 0.6</td></tr>
+          <tr><td>Hurst exponent</td><td><code>hurst_exp</code></td><td>WARN only — H &lt; 0.5 means mean-reverting</td></tr>
+          <tr><td>BB z-score</td><td><code>bb_zscore</code></td><td>WARN only — entry in overbought/oversold band</td></tr>
+          <tr><td>SMA cross</td><td><code>sma_cross</code>, <code>sma_20</code>, <code>sma_50</code></td><td>Long with death cross; Short with golden cross</td></tr>
+          <tr><td>Volatility</td><td><code>vol_30d</code></td><td>vol &gt; 120% annualized</td></tr>
+          <tr><td>R/R ratio</td><td>entry, target, stop</td><td>R/R &lt; 1.5 for Long; &gt; -1.5 for Short</td></tr>
+          <tr><td>Position sizing</td><td><code>position_pct</code></td><td>&gt; 20% single position; total &gt; 100%</td></tr>
+          <tr><td>Price anchoring</td><td><code>stated_price</code> vs yfinance</td><td>Model price deviates &gt; 5% from live price</td></tr>
+        </tbody>
+      </table>
+
+      <p>Overall status is the worst individual check result: one FLAG makes the thesis FLAG, one WARN makes it WARN, otherwise PASS. The validator appends a <code>## Trade Validation</code> section to the thesis file and returns the path.</p>
+
+      <p>The price anchoring check catches the most common failure mode in LLM-generated theses: the model writes entry/target/stop prices based on its training data or on a stale context block rather than the live price injected by the <code>[YF:ticker:snapshot:date]</code> context. A thesis where the "current price" is 5% off the live yfinance price is using stale data.</p>
+
+      <h2>/execute-trades: bracket orders to Alpaca</h2>
+
+      <pre><code class="language-bash"># Dry-run (default) — prints order params without submitting
+python agent.py "/execute-trades path/to/thesis.md"
+
+# Live mode — submits bracket orders to Alpaca paper trading
+python agent.py "/execute-trades path/to/thesis.md --live"</code></pre>
+
+      <p>The skill calls <code>execute_from_thesis_file()</code> from <code>alpaca_orders.py</code> which uses the same parser as <code>/validate-trades</code>. It then:</p>
+
+      <ol>
+        <li>Fetches account state (portfolio value, buying power) — returns early if Alpaca is unavailable</li>
+        <li>Loads existing positions to avoid doubling into held names</li>
+        <li>For each thesis, checks the validation status — theses with FLAG are skipped by default</li>
+        <li>Builds a bracket order spec: entry (limit or market), take_profit (limit), stop_loss (stop)</li>
+        <li>Validates bracket invariants: for Long, <code>take_profit &gt; stop_loss</code>; for Short, <code>take_profit &lt; stop_loss</code></li>
+        <li>In dry-run mode, prints the order params. In live mode, posts to <code>POST /v2/orders</code></li>
+        <li>Appends an <code>## Orders</code> section to the thesis file with the results</li>
+      </ol>
+
+      <p>All orders use GTC (Good Till Cancelled) time-in-force with whole-share quantities. Fractional shares are not used because Alpaca's bracket order class requires integer quantities with GTC.</p>
+
+      <div class="callout amber">
+        <p><code>/execute-trades</code> has no auto-activation predicate and is explicitly listed as "never auto-execute trades" in its registry entry. It is always explicit-only. Even in live mode, any thesis carrying a FLAG validation status is skipped by default — override with the <code>skip_flagged=False</code> argument if you want to submit flagged theses, but this is not exposed via the CLI flag by design.</p>
+      </div>
+
+      <div class="callout">
+        <p>The full workflow: run a trading thesis task to generate the file, <code>/validate-trades</code> auto-fires as a post_wiggum skill and appends the validation section, then run <code>/execute-trades thesis.md</code> to dry-run the orders and review them before adding <code>--live</code>. The thesis file accumulates all three sections (thesis body, validation, orders) in one document that serves as the complete audit trail.</p>
+      </div>
+
+      <div class="related-section">
+        <h2>Related articles</h2>
+        <div class="related-grid">
+          <a href="pipeline-view.html" class="related-card">
+            <div class="rc-label">Dashboard</div>
+            <div class="rc-title">The Pipeline View</div>
+            <div class="rc-desc">The data enrichment DAG that feeds trading theses — Market Signals, yfinance, Alpaca Portfolio, and FRED/BEA all converge before synthesis.</div>
+          </a>
+          <a href="agent-pipeline.html" class="related-card">
+            <div class="rc-label">Architecture</div>
+            <div class="rc-title">The Agent Pipeline</div>
+            <div class="rc-desc">SYNTH_INSTRUCTION_TRADING enforces the [THESIS:...] citation format and price anchoring rules that /validate-trades checks against.</div>
+          </a>
+          <a href="skills-registry.html" class="related-card">
+            <div class="rc-label">Architecture</div>
+            <div class="rc-title">The Skills Registry</div>
+            <div class="rc-desc">/validate-trades auto-activation predicate, /execute-trades explicit-only guard, and the post_wiggum hook that sequences validation after quality scoring.</div>
+          </a>
+        </div>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>
