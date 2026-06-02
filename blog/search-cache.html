@@ -162,6 +162,21 @@ python search_cache.py --expired</code></pre>
       <div class="callout amber">
         <p>The research cache (<code>RESEARCH_CACHE=1</code>) makes autoresearch experiments faster, but it also means experiments that change the search queries (e.g. planner prompt changes) reuse stale research contexts from before the change. Set <code>RESEARCH_CACHE=0</code> or run <code>python search_cache.py --clear</code> when evaluating changes that affect the gather step rather than just synthesis.</p>
       </div>
+
+      <h2>ChromaDB semantic layer</h2>
+
+      <p>On top of the SQLite exact-key cache, <code>search_cache.py</code> maintains two ChromaDB collections that enable semantic fallback and the Research History view:</p>
+
+      <ul>
+        <li><strong>search_cache_vec</strong> — when an exact SHA-256 key miss occurs, the module queries ChromaDB for the nearest cached query by cosine distance. If a sufficiently similar query exists (distance &lt; <code>SEMANTIC_CACHE_THRESHOLD = 0.15</code>), its results are returned rather than hitting DDGS again. Equivalent queries worded differently — "RAG best practices" vs "retrieval-augmented generation tips" — resolve to the same cached result.</li>
+        <li><strong>research_cache_vec</strong> — full research contexts are embedded and stored alongside their SQLite entry. This collection powers <code>GET /api/research-history</code>, which semantic-searches across all past research contexts by query string, returning ranked results with similarity scores.</li>
+      </ul>
+
+      <p>Both collections use the harness embedding model (falling back to <code>all-MiniLM-L6-v2</code> if the inference shim is unavailable). The ChromaDB client is a lazy singleton — it's only initialized on first use, so the SQLite-only code path remains unchanged when ChromaDB is not installed.</p>
+
+      <div class="callout">
+        <p>The semantic cache threshold of 0.15 cosine distance is conservative by design. At this distance, queries are near-paraphrases of each other. Looser thresholds risk serving results for a semantically adjacent but meaningfully different query — better to re-fetch than to silently return off-topic results.</p>
+      </div>
     </article>
   </main>
   <footer>
