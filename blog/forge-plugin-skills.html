@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Plugin System: /forge:plugin and /forge:list | Nick McCarty</title>
+  <meta name="description" content="/forge:plugin generates a new plugin from a natural-language description: the LLM produces a JSON spec with a manifest, skill files (domain knowledge auto-injected into synthesis), and command templates (prompt templates invoked by /plugin:command). Files are written to plugins/<name>/ and hot-loaded immediately. /forge:list shows all installed plugin commands grouped by plugin.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/forge-plugin-skills.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Plugin System: /forge:plugin and /forge:list">
+  <meta property="og:description" content="/forge:plugin: LLM generates plugin JSON spec, files written to plugins/<name>/, hot-loaded into skills.REGISTRY. /forge:list: grouped command listing. Plugin skills auto-inject into synthesis; commands invoked as /plugin:command.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/forge-plugin-skills.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-02T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Plugin System: /forge:plugin and /forge:list">
+  <meta name="twitter:description" content="Generate a harness plugin from a description, get files written and hot-loaded in one call. Skills auto-inject domain knowledge; commands become /plugin:cmd slash tokens.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Plugin System: /forge:plugin and /forge:list","description":"/forge:plugin generates plugin files from natural language and hot-loads them. /forge:list shows installed commands. Plugin skills auto-inject into synthesis context.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-02","dateModified":"2026-06-02","url":"https://nickmccarty.me/blog/forge-plugin-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => { if (window.hljs) hljs.highlightAll(); });</script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{border:1px solid var(--border-color);border-radius:8px;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;padding:0;}
+    pre code.hljs{border-radius:8px;padding:1.25rem 1.5rem;font-size:inherit;}
+    .file-grid{display:grid;grid-template-columns:auto 1fr;gap:0.3rem 1rem;margin:1.5rem 0;font-size:0.82rem;align-items:baseline;}
+    .file-grid .fg-path{font-family:'SF Mono','Consolas',monospace;color:var(--accent-cyan);white-space:nowrap;}
+    .file-grid .fg-desc{color:var(--text-secondary);line-height:1.5;}
+    .related-section{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border-color);}
+    .related-section h2{margin-bottom:1.25rem;}
+    .related-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+    @media(max-width:700px){.related-grid{grid-template-columns:1fr;}}
+    .related-card{display:block;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:1rem 1.1rem;text-decoration:none;transition:border-color .2s,transform .15s;}
+    .related-card:hover{border-color:var(--accent-cyan);transform:translateY(-2px);}
+    .related-card .rc-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-cyan);margin-bottom:0.35rem;}
+    .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
+    .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 2, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Plugin System: /forge:plugin and /forge:list</span></h1>
+        <p class="subtitle"><code>/forge:plugin</code> generates a complete plugin from a natural-language description: the LLM produces a JSON spec, files are written to <code>plugins/&lt;name&gt;/</code>, and the plugin is hot-loaded into the skill registry without a restart. <code>/forge:list</code> shows all installed plugin commands grouped by plugin. Plugin skills auto-inject domain knowledge into every synthesis run; plugin commands become first-class <code>/plugin:command</code> slash tokens.</p>
+      </header>
+
+      <p>The plugin system is the extension point above the built-in skills. Where a built-in skill requires editing <code>skills/__init__.py</code> and <code>agent.py</code>, a plugin is a directory of markdown files and a JSON manifest — no Python changes needed. <code>/forge:plugin</code> automates even that: describe what the plugin should do in plain English and the harness writes the files itself.</p>
+
+      <h2>Plugin structure</h2>
+
+      <p>Every plugin lives at <code>plugins/&lt;name&gt;/</code> with this layout:</p>
+
+      <div class="file-grid">
+        <span class="fg-path">plugin.json</span>
+        <span class="fg-desc">Manifest: plugin name, description, list of commands and skill files</span>
+        <span class="fg-path">skills/*.md</span>
+        <span class="fg-desc">Domain knowledge automatically injected into every synthesis run while the plugin is loaded — acts as a persistent system-prompt extension</span>
+        <span class="fg-path">commands/*.md</span>
+        <span class="fg-desc">Prompt templates for explicit slash commands, invoked by <code>/plugin:command-name</code> in the task string</span>
+      </div>
+
+      <p>The distinction between skills and commands matters. A skill file is passive — its content is appended to the synthesis context on every task regardless of what the user asked, providing always-on domain expertise. A command file is active — it's only injected when the user explicitly invokes <code>/plugin:command-name</code>, and its content becomes the primary task framing.</p>
+
+      <h2>/forge:plugin</h2>
+
+      <pre><code class="language-bash"># Generate a plugin from a description
+python agent.py "/forge:plugin a code-review plugin that applies the Karpathy rubric to diffs"
+
+# Another example
+python agent.py "/forge:plugin a financial-analysis plugin with FRED and BEA citation discipline"</code></pre>
+
+      <p>The skill passes the description directly to the LLM with a tightly structured prompt that enforces a specific JSON schema:</p>
+
+      <pre><code class="language-json">{
+  "name": "code-review",
+  "manifest": {
+    "name": "code-review",
+    "description": "Apply the Karpathy rubric to code diffs",
+    "version": "1.0",
+    "commands": [
+      {
+        "name": "review",
+        "description": "Review staged diff against rubric",
+        "path_optional": true,
+        "template": "commands/review.md"
+      }
+    ],
+    "skills": [
+      { "name": "rubric", "path": "skills/rubric.md" }
+    ]
+  },
+  "skills": {
+    "rubric.md": "# Karpathy Code Review Rubric\n\nNo magic numbers..."
+  },
+  "commands": {
+    "review.md": "Review the following diff against the rubric above..."
+  }
+}</code></pre>
+
+      <p>The prompt constrains the output to 1&ndash;3 commands and 1&ndash;2 skill files, and requires the name to be a lowercase hyphen-slug. The LLM is instructed to output only valid JSON with no markdown fences. If the model wraps its output in fences anyway, the handler strips them before parsing.</p>
+
+      <p>After the JSON is parsed, <code>create_plugin()</code> in <code>plugin_loader.py</code> writes the files to disk and immediately calls <code>load_all()</code> — the hot-reload function that re-scans <code>plugins/</code> and updates <code>skills.REGISTRY</code> in place. The new commands are live in the current process without a restart.</p>
+
+      <h2>Hot-loading into the skill registry</h2>
+
+      <p>Each plugin command is registered into <code>skills.REGISTRY</code> as a standalone skill with the key <code>plugin:command-name</code>:</p>
+
+      <pre><code class="language-python">registry["code-review:review"] = {
+    "description": "Review staged diff against rubric",
+    "hook":        "standalone",
+    "prompt":      None,
+    "auto":        None,
+}</code></pre>
+
+      <p>This means <code>parse_skills()</code> recognises <code>/code-review:review</code> as a valid skill token in any task string — the same way built-in skills like <code>/deep</code> or <code>/cite</code> are parsed. The plugin command is then dispatched through the synthesis pipeline with the command template prepended to the synthesis context as <code>_plugin_cmd_context</code>.</p>
+
+      <p>On <code>load_all()</code>, the loader tracks which keys it added to the registry (<code>_registry_keys</code>) so it can remove them cleanly before the next reload. This prevents stale commands from accumulating if a plugin is deleted or renamed between loads.</p>
+
+      <h2>/forge:list</h2>
+
+      <pre><code class="language-bash">python agent.py "/forge:list"</code></pre>
+
+      <p>Lists all installed plugin commands, grouped by plugin name:</p>
+
+      <pre><code class="language-text">[forge:list] 3 plugin command(s):
+
+  ▸ code-review
+    /code-review:review           Review staged diff against rubric
+    /code-review:summarize        Summarize changes in plain English
+
+  ▸ financial-analysis
+    /financial-analysis:thesis    Generate a trading thesis with citations</code></pre>
+
+      <p>The listing is sorted alphabetically by plugin name, then by command key within each plugin. The description comes from the <code>description</code> field in the manifest's command entry.</p>
+
+      <h2>Auto-inject skills vs. command templates</h2>
+
+      <p>Plugin skill files marked with <code>auto_inject: true</code> (the default) are concatenated into the synthesis context on every task via <code>get_skill_context()</code> in <code>plugin_loader.py</code>. This makes them equivalent to a persistent addition to the synthesis system prompt — useful for domain-specific heuristics, citation formats, or style rules that should apply across all tasks while the plugin is installed.</p>
+
+      <p>Command templates are only active when explicitly invoked. A <code>commands/review.md</code> file containing a detailed diff review rubric does nothing unless the user runs <code>/code-review:review</code> — it doesn't silently affect research synthesis or annotate tasks.</p>
+
+      <div class="callout">
+        <p>Plugins persist across restarts because they're files on disk. <code>load_all()</code> is called at agent startup automatically, so any plugin in <code>plugins/</code> is live from the first task. To disable a plugin without deleting it, rename its <code>plugin.json</code> to <code>plugin.json.disabled</code> — the loader skips directories without a valid manifest.</p>
+      </div>
+
+      <div class="callout amber">
+        <p><code>/forge:plugin</code> uses <code>temperature: 0.3</code> — low enough for consistent JSON structure, but not zero, so descriptions with ambiguous scope get slightly different interpretations on retry. If the generated plugin doesn't match your intent, run <code>/forge:plugin</code> again with a more specific description rather than editing the JSON by hand.</p>
+      </div>
+
+      <div class="related-section">
+        <h2>Related articles</h2>
+        <div class="related-grid">
+          <a href="skills-registry.html" class="related-card">
+            <div class="rc-label">Architecture</div>
+            <div class="rc-title">The Skills Registry</div>
+            <div class="rc-desc">The REGISTRY dict that /forge:plugin injects into — plugin commands become first-class skill tokens parsed by parse_skills().</div>
+          </a>
+          <a href="agent-pipeline.html" class="related-card">
+            <div class="rc-label">Architecture</div>
+            <div class="rc-title">The Agent Pipeline</div>
+            <div class="rc-desc">How plugin command templates and auto-inject skill content are woven into the synthesis prompt at the pre_synthesis hook.</div>
+          </a>
+          <a href="wiki-sync.html" class="related-card">
+            <div class="rc-label">Skills</div>
+            <div class="rc-title">The Wiki Sync Skill</div>
+            <div class="rc-desc">Another extension mechanism — /sync-wiki extracts implementation facts directly from source and writes them into the wiki for agent self-knowledge.</div>
+          </a>
+        </div>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>
