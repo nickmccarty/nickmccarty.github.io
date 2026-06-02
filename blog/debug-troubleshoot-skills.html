@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Diagnostic Skills: /debug and /troubleshoot | Nick McCarty</title>
+  <meta name="description" content="/debug loads the last two matching ERROR or FAIL runs from runs.jsonl, reads their Chrome Trace event sequences, maps task_type to relevant source anchors, and synthesizes a structured Diagnosis / Evidence / Fix response. /troubleshoot combines debug and suggest in a single LLM call, returning a four-part Issue / Root cause / Fix / Next task report.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/debug-troubleshoot-skills.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Diagnostic Skills: /debug and /troubleshoot">
+  <meta property="og:description" content="/debug: last 2 ERROR/FAIL runs, trace events, source anchors, structured Diagnosis/Evidence/Fix. /troubleshoot: debug + suggest in one call, Issue/Root cause/Fix/Next task.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/debug-troubleshoot-skills.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-02T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Diagnostic Skills: /debug and /troubleshoot">
+  <meta name="twitter:description" content="Two skills for diagnosing harness failures: /debug pinpoints the root cause of a specific ERROR or FAIL run; /troubleshoot combines diagnosis with a next-step recommendation in one call.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Diagnostic Skills: /debug and /troubleshoot","description":"/debug loads recent ERROR/FAIL runs, trace events, and source anchors to produce a structured diagnosis. /troubleshoot combines that with project state to deliver a four-part report in one call.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-02","dateModified":"2026-06-02","url":"https://nickmccarty.me/blog/debug-troubleshoot-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => { if (window.hljs) hljs.highlightAll(); });</script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{border:1px solid var(--border-color);border-radius:8px;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;padding:0;}
+    pre code.hljs{border-radius:8px;padding:1.25rem 1.5rem;font-size:inherit;}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:640px){.compare-grid{grid-template-columns:1fr;}}
+    .compare-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.9rem 1rem;}
+    .compare-card h4{margin:0 0 0.5rem;font-size:0.85rem;color:var(--accent-cyan);}
+    .compare-card ul{margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:0.25rem;}
+    .compare-card li{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
+    .related-section{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border-color);}
+    .related-section h2{margin-bottom:1.25rem;}
+    .related-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+    @media(max-width:700px){.related-grid{grid-template-columns:1fr;}}
+    .related-card{display:block;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:1rem 1.1rem;text-decoration:none;transition:border-color .2s,transform .15s;}
+    .related-card:hover{border-color:var(--accent-cyan);transform:translateY(-2px);}
+    .related-card .rc-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-cyan);margin-bottom:0.35rem;}
+    .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
+    .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 2, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Diagnostic Skills: /debug and /troubleshoot</span></h1>
+        <p class="subtitle">Two skills for diagnosing harness failures without manually reading run logs. <code>/debug</code> loads the last matching ERROR or FAIL runs, reads their trace event sequences, maps <code>task_type</code> to relevant source anchors, and returns a structured Diagnosis / Evidence / Fix. <code>/troubleshoot</code> combines that diagnosis with project state and delivers a four-part report — Issue, Root cause, Fix, Next task — in a single LLM call.</p>
+      </header>
+
+      <p>Harness failures come in two categories. Code crashes (<code>final: ERROR</code>) mean an exception escaped the pipeline — wrong argument, missing file, model timeout. Quality failures (<code>final: FAIL</code>) mean the run completed but the Wiggum evaluator scored it below <code>PASS_THRESHOLD</code>. The fix for each is different: code crashes need a diff, quality failures need a prompt or configuration change. Both skills detect which kind of failure occurred and adjust their guidance accordingly.</p>
+
+      <h2>/debug: targeted failure diagnosis</h2>
+
+      <p>Invoked as <code>/debug [filter]</code> where filter is any of: a <code>task_type</code>, the literal strings <code>ERROR</code> or <code>FAIL</code>, a partial run ID, or a model name. With no filter, it defaults to the last failure of any kind.</p>
+
+      <pre><code class="language-bash"># Diagnose the most recent failure
+python agent.py "/debug"
+
+# Diagnose only FAIL-scored research runs
+python agent.py "/debug research"
+
+# Diagnose failures from a specific model
+python agent.py "/debug qwen3.6-35b"</code></pre>
+
+      <p>The implementation loads <code>runs.jsonl</code>, filters to ERROR and FAIL records (skipping meta-runs — debug, suggest, orientation, re-orient — to avoid circular diagnosis), and selects the last two matching runs. Two runs rather than one enables pattern detection: if the same issue repeats across consecutive failures it's more likely a systematic problem than noise.</p>
+
+      <h2>Context assembly</h2>
+
+      <p>For each target run the skill assembles a structured context block:</p>
+
+      <ul>
+        <li>Run ID, task type, final status, model, duration</li>
+        <li>Task text (first 120 chars)</li>
+        <li>Wiggum scores and the last two evaluation rounds with dimension scores and issues list</li>
+        <li>Chrome Trace event sequence from <code>data/traces/{run_id}_*.json</code> — stage names and durations in milliseconds, with any <code>error</code> field in the args surfaced inline</li>
+      </ul>
+
+      <p>After the run blocks, it appends relevant source code. A <code>_SOURCE_MAP</code> dict maps each <code>task_type</code> to the file and anchor most likely to contain the bug:</p>
+
+      <pre><code class="language-python">_SOURCE_MAP = {
+    "research":       [("agent.py",           "SYNTH_INSTRUCTION"),
+                       ("wiggum.py",           "def loop")],
+    "enumerated":     [("agent.py",           "SYNTH_INSTRUCTION_COUNT"),
+                       ("wiggum.py",           "def loop")],
+    "annotate":       [("skills/__init__.py", "run_annotate_standalone")],
+    "orientation":    [("orientation_skill.py", "def build_orientation")],
+    "re-orient":      [("agent.py",           "_handle_reorient")],
+    # ...
+}</code></pre>
+
+      <p>The skill extracts 1,800 characters starting from 100 characters before each anchor — enough to include the function signature and the most relevant logic without overwhelming the context window.</p>
+
+      <h2>Error type branching</h2>
+
+      <p>The synthesis prompt changes based on whether any target run has <code>final: ERROR</code>:</p>
+
+      <div class="compare-grid">
+        <div class="compare-card">
+          <h4>Code crash (ERROR)</h4>
+          <ul>
+            <li>Prompt asks for exact lines to change as a minimal diff or replacement block</li>
+            <li>Trace event sequence is the primary diagnostic — the failing stage and its error field identify the crash site</li>
+          </ul>
+        </div>
+        <div class="compare-card">
+          <h4>Quality failure (FAIL)</h4>
+          <ul>
+            <li>Prompt asks for specific changes to synthesis instruction, prompt, or harness config</li>
+            <li>If a SYNTH_INSTRUCTION change is recommended, the full replacement string is requested</li>
+            <li>Wiggum dimension scores and issues are the primary signal</li>
+          </ul>
+        </div>
+      </div>
+
+      <p>The structured output format is enforced in the prompt:</p>
+
+      <pre><code class="language-markdown">**Diagnosis:** &lt;one sentence root cause&gt;
+
+**Evidence:** &lt;2-3 specific observations from the run data above&gt;
+
+**Fix:**
+&lt;concrete code change or config change, ready to apply&gt;</code></pre>
+
+      <h2>/troubleshoot: diagnosis + next step in one call</h2>
+
+      <p><code>/troubleshoot</code> is a higher-order skill that loads the same failure context as <code>/debug</code> — last two ERROR/FAIL runs, trace events, source excerpts — and adds the full project state context used by <code>/suggest</code>: orientation cache, git log, and autoresearch progress. Both are assembled into a single prompt and resolved in one LLM call.</p>
+
+      <pre><code class="language-bash"># Full troubleshoot — diagnose + recommend next step
+python agent.py "/troubleshoot"
+
+# Filter to annotation failures only
+python agent.py "/troubleshoot annotate"</code></pre>
+
+      <p>When no ERROR or FAIL runs are found, <code>/troubleshoot</code> falls back to suggest-only mode — it skips the diagnosis section and returns just a next-step recommendation. This makes it safe to run speculatively: if everything is passing, it still returns something useful.</p>
+
+      <p>The output format is four parts:</p>
+
+      <pre><code class="language-markdown">**Issue:** &lt;one sentence description of the failure&gt;
+
+**Root cause:** &lt;2-3 sentences of analysis&gt;
+
+**Fix:** &lt;concrete change ready to apply&gt;
+
+**Next task after fix:** `&lt;runnable command&gt;`</code></pre>
+
+      <div class="callout">
+        <p><code>/troubleshoot</code> uses <code>temperature: 0.1</code> — lower than the research pipeline's default. Diagnostic responses benefit from determinism: the same run logs should produce the same root cause analysis. The structured output format also helps — the model is constrained to four labeled sections rather than free-form prose.</p>
+      </div>
+
+      <div class="callout amber">
+        <p>Both skills skip meta-runs (debug, suggest, orientation, re-orient) when scanning for failures. Without this guard, a failed <code>/debug</code> run would recursively diagnose itself — a degenerate loop with no useful output. The filter is applied before candidate selection, not after.</p>
+      </div>
+
+      <div class="related-section">
+        <h2>Related articles</h2>
+        <div class="related-grid">
+          <a href="suggest-reorient-skills.html" class="related-card">
+            <div class="rc-label">Skills</div>
+            <div class="rc-title">/suggest and /re-orient</div>
+            <div class="rc-desc">The navigation counterparts — synthesize the next task from project state, or get a fast orientation snapshot with live GitHub data.</div>
+          </a>
+          <a href="failure-taxonomy.html" class="related-card">
+            <div class="rc-label">Verification</div>
+            <div class="rc-title">Failure Taxonomy</div>
+            <div class="rc-desc">The four failure categories /debug diagnoses — task drift, placeholder generation, role ambiguity, encoding corruption — and their harness-side countermeasures.</div>
+          </a>
+          <a href="observability-flywheel.html" class="related-card">
+            <div class="rc-label">Observability</div>
+            <div class="rc-title">Observability Flywheel</div>
+            <div class="rc-desc">The trace event format and runs.jsonl schema that /debug reads — how structured logging enables automated diagnosis.</div>
+          </a>
+        </div>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

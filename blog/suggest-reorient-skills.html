@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Navigation Skills: /suggest and /re-orient | Nick McCarty</title>
+  <meta name="description" content="/suggest synthesizes the single most valuable next task from orientation cache, last 8 runs, git log, and autoresearch state — returning a structured Suggested task / Why / Command with a whitelist-constrained runnable command. /re-orient fetches live GitHub data (commits, PRs, issues, CI runs) in parallel alongside the cached orientation doc and synthesizes a fast project state snapshot.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/suggest-reorient-skills.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Navigation Skills: /suggest and /re-orient">
+  <meta property="og:description" content="/suggest: next-task recommendation from orientation + runs + git log + autoresearch state. /re-orient: fast project snapshot combining orientation cache with live GitHub data fetched in parallel.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/suggest-reorient-skills.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-02T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Navigation Skills: /suggest and /re-orient">
+  <meta name="twitter:description" content="/suggest returns one concrete next task with rationale and a ready-to-run command. /re-orient fetches commits, PRs, issues, and CI runs in parallel alongside the orientation cache for an instant project state snapshot.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Navigation Skills: /suggest and /re-orient","description":"/suggest synthesizes the single most valuable next task from project state. /re-orient combines cached orientation with live GitHub data for a fast project snapshot.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-02","dateModified":"2026-06-02","url":"https://nickmccarty.me/blog/suggest-reorient-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => { if (window.hljs) hljs.highlightAll(); });</script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{border:1px solid var(--border-color);border-radius:8px;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;padding:0;}
+    pre code.hljs{border-radius:8px;padding:1.25rem 1.5rem;font-size:inherit;}
+    .source-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin:1.5rem 0;}
+    @media(max-width:640px){.source-grid{grid-template-columns:1fr;}}
+    .source-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.85rem 1rem;}
+    .source-card h4{margin:0 0 0.4rem;font-size:0.8rem;font-family:'SF Mono','Consolas',monospace;color:var(--accent-cyan);}
+    .source-card p{margin:0;font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
+    .related-section{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border-color);}
+    .related-section h2{margin-bottom:1.25rem;}
+    .related-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+    @media(max-width:700px){.related-grid{grid-template-columns:1fr;}}
+    .related-card{display:block;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:1rem 1.1rem;text-decoration:none;transition:border-color .2s,transform .15s;}
+    .related-card:hover{border-color:var(--accent-cyan);transform:translateY(-2px);}
+    .related-card .rc-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-cyan);margin-bottom:0.35rem;}
+    .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
+    .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 2, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Navigation Skills: /suggest and /re-orient</span></h1>
+        <p class="subtitle">Two skills for maintaining situational awareness. <code>/suggest</code> synthesizes the single most valuable next task from project state — orientation cache, recent run history, git log, and autoresearch progress — and returns a structured recommendation with a whitelist-constrained runnable command. <code>/re-orient</code> fetches five live GitHub data sources in parallel and synthesizes a fast project state snapshot against a focus question.</p>
+      </header>
+
+      <p>Most harness sessions start cold. You know something needs to happen next but not exactly what — experiments have been running, commits have landed, some runs passed and some failed. <code>/suggest</code> and <code>/re-orient</code> address this differently: <code>/suggest</code> makes a concrete recommendation from what it can read locally, while <code>/re-orient</code> fetches the current state of the GitHub remote and synthesizes it against the same local context. The difference is speed vs. freshness.</p>
+
+      <h2>/suggest: synthesizing the next task</h2>
+
+      <pre><code class="language-bash"># Default: recommend the single most valuable next task
+python agent.py "/suggest"</code></pre>
+
+      <p>The skill assembles four context sources, each bounded to prevent context window overflow:</p>
+
+      <div class="source-grid">
+        <div class="source-card">
+          <h4>Orientation cache</h4>
+          <p>Reads <code>harness_orientation_raw.md</code> from the system temp directory (written by <code>/orientation</code>). Truncated to 4,000 chars. If the cache is missing, it warns and continues with less context. If the cache is over 30 minutes old, it recommends running <code>/re-orient</code> first.</p>
+        </div>
+        <div class="source-card">
+          <h4>Recent runs</h4>
+          <p>Last 8 entries from <code>runs.jsonl</code>: timestamp, final status, last Wiggum score, model, and first 80 chars of the task string. Enough to spot a run-of-failures pattern or an incomplete benchmark without reading full records.</p>
+        </div>
+        <div class="source-card">
+          <h4>Git log</h4>
+          <p><code>git log --oneline -12</code> — the last 12 commit messages. Used to identify what was recently shipped and whether there are logical follow-ons (e.g. a commit adding a skill without a corresponding benchmark run).</p>
+        </div>
+        <div class="source-card">
+          <h4>Autoresearch state</h4>
+          <p>Header row + last 3 rows of <code>autoresearch.tsv</code>. Shows the current experiment count, recent keep/discard pattern, and whether the loop is stuck — relevant context for deciding whether to continue the loop or reset.</p>
+        </div>
+      </div>
+
+      <h2>Command whitelisting</h2>
+
+      <p>The synthesis prompt constrains the recommended command to a fixed set of real, runnable invocations. This is one of the most important details in the implementation — without it, the model will hallucinate flags, module paths, and subcommands that don't exist:</p>
+
+      <pre><code class="language-text">Use only these signatures:
+  python agent.py "&lt;task description and output path&gt;"
+  python bench_model_compare.py --test-model &lt;tag&gt; --baseline-model &lt;tag&gt; [--run-both]
+  python autoresearch.py [--tasks T_A,T_B] [--rounds N]
+  python eval_suite.py [--fast] [--no-wiggum]
+  python orchestrator.py "&lt;compound task&gt;"
+Do not invent flags, subcommands, or module paths that are not listed above.</code></pre>
+
+      <p>The output format is three labeled sections:</p>
+
+      <pre><code class="language-markdown">**Suggested task:** &lt;one sentence describing the task&gt;
+
+**Why:** &lt;2-3 sentences of rationale referencing specific evidence above&gt;
+
+**Command:** `&lt;the exact command or action to take&gt;`</code></pre>
+
+      <h2>/re-orient: live GitHub context</h2>
+
+      <pre><code class="language-bash"># Default: summarize project state, recent ships, and next priorities
+python agent.py "/re-orient"
+
+# Focus on a specific question
+python agent.py "/re-orient what's blocking the autoresearch loop?"</code></pre>
+
+      <p>Everything after the <code>/re-orient</code> token becomes the focus question. Without one, the default is: <em>"Summarise the current project state, what was recently shipped, and what should be prioritised next."</em></p>
+
+      <p>Five data sources are fetched in parallel using <code>ThreadPoolExecutor(max_workers=5)</code>, each with a 15-second timeout:</p>
+
+      <pre><code class="language-python">_cmds = [
+    (["git", "log", "--oneline", "-20"],                        "recent_commits"),
+    ([gh, "pr", "list", "--state", "merged", "--limit", "10",
+      "--json", "number,title,mergedAt,author"],                "merged_prs"),
+    ([gh, "pr", "list",
+      "--json", "number,title,author,createdAt,headRefName"],   "open_prs"),
+    ([gh, "issue", "list", "--limit", "10",
+      "--json", "number,title,labels,createdAt,state"],         "open_issues"),
+    ([gh, "run", "list", "--limit", "5",
+      "--json", "status,conclusion,name,createdAt,headBranch"], "ci_runs"),
+]</code></pre>
+
+      <p>Each section is capped at 1,200 characters in the prompt. The orientation cache contributes up to 6,000 characters. Failed commands (timeout, <code>gh</code> not installed, no GitHub remote) are silently omitted — the skill degrades gracefully to whatever sources are available.</p>
+
+      <h2>When to use each</h2>
+
+      <p><strong><code>/suggest</code></strong> is faster and works offline — it reads only local files. Use it during active experimentation when you need a quick recommendation without leaving the terminal. The orientation cache must be reasonably fresh (run <code>/orientation</code> at the start of each session).</p>
+
+      <p><strong><code>/re-orient</code></strong> makes network calls and takes a few extra seconds. Use it when returning to the project after time away, after a batch of PRs have been merged, or when you need the focus question answered with reference to specific issue numbers and CI status. The <code>gh</code> CLI must be authenticated.</p>
+
+      <div class="callout">
+        <p>Both skills are also components of <code>/troubleshoot</code>: it assembles the same context as <code>/suggest</code> alongside the failure data from <code>/debug</code> and synthesizes both in a single LLM call. If you're starting from a failure and want both a diagnosis and a next step, use <code>/troubleshoot</code> rather than running <code>/debug</code> and <code>/suggest</code> separately. See <a href="debug-troubleshoot-skills.html" style="color:var(--accent-cyan);">The Diagnostic Skills</a>.</p>
+      </div>
+
+      <div class="related-section">
+        <h2>Related articles</h2>
+        <div class="related-grid">
+          <a href="debug-troubleshoot-skills.html" class="related-card">
+            <div class="rc-label">Skills</div>
+            <div class="rc-title">/debug and /troubleshoot</div>
+            <div class="rc-desc">The diagnostic counterparts — pinpoint the root cause of a specific failure and combine it with a next-step recommendation.</div>
+          </a>
+          <a href="skills-registry.html" class="related-card">
+            <div class="rc-label">Architecture</div>
+            <div class="rc-title">The Skills Registry</div>
+            <div class="rc-desc">All 38 skills, hook points, and auto-activation predicates — the full registry that includes /suggest and /re-orient.</div>
+          </a>
+          <a href="github-skill.html" class="related-card">
+            <div class="rc-label">Skills</div>
+            <div class="rc-title">The GitHub Skill</div>
+            <div class="rc-desc">The /github skill that /re-orient uses under the hood — gh CLI operations for PRs, issues, and repository state.</div>
+          </a>
+        </div>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>
