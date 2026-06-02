@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Interview Skills: /grill-me and /onboarding | Nick McCarty</title>
+  <meta name="description" content="/grill-me is a saturation-driven user interview that mirrors the research loop: plan_question() generates targeted follow-ups, assess_novelty() gates rounds, compress_knowledge() accumulates state. Output is a five-section knowledge brief. /onboarding extends it with a fixed question scaffold, persistent TOML config, and ChromaDB memory seeding.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/onboarding-grill-me-skills.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Interview Skills: /grill-me and /onboarding">
+  <meta property="og:description" content="/grill-me: saturation-gated interview loop (3-8 rounds, novelty threshold 3/10, fatigue detector) producing a structured knowledge brief. /onboarding: fixed 3-round scaffold + free-form grill-me + TOML config + ChromaDB memory seed.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/onboarding-grill-me-skills.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-02T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Interview Skills: /grill-me and /onboarding">
+  <meta name="twitter:description" content="/grill-me: saturation-gated interview, novelty gate at round 3, fatigue detector, five-section knowledge brief. /onboarding: fixed scaffold + additive TOML config + ChromaDB memory seed.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Interview Skills: /grill-me and /onboarding","description":"/grill-me runs a saturation-driven interview loop producing a structured knowledge brief. /onboarding extends it with a fixed question scaffold, persistent TOML config, and ChromaDB memory seeding.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-02","dateModified":"2026-06-02","url":"https://nickmccarty.me/blog/onboarding-grill-me-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => { if (window.hljs) hljs.highlightAll(); });</script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{border:1px solid var(--border-color);border-radius:8px;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;padding:0;}
+    pre code.hljs{border-radius:8px;padding:1.25rem 1.5rem;font-size:inherit;}
+    .analogy-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin:1.5rem 0;font-size:0.82rem;}
+    @media(max-width:600px){.analogy-grid{grid-template-columns:1fr;}}
+    .analogy-row{display:contents;}
+    .analogy-cell{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;padding:0.5rem 0.75rem;color:var(--text-secondary);}
+    .analogy-cell.header{color:var(--accent-cyan);font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:.06em;}
+    .phase-list{margin:1.5rem 0;display:flex;flex-direction:column;gap:0.5rem;}
+    .phase-item{background:var(--bg-secondary);border-left:3px solid var(--accent-cyan);border-radius:0 6px 6px 0;padding:0.6rem 0.9rem;font-size:0.82rem;color:var(--text-secondary);}
+    .phase-item strong{color:var(--text-primary);}
+    .related-section{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border-color);}
+    .related-section h2{margin-bottom:1.25rem;}
+    .related-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+    @media(max-width:700px){.related-grid{grid-template-columns:1fr;}}
+    .related-card{display:block;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:1rem 1.1rem;text-decoration:none;transition:border-color .2s,transform .15s;}
+    .related-card:hover{border-color:var(--accent-cyan);transform:translateY(-2px);}
+    .related-card .rc-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-cyan);margin-bottom:0.35rem;}
+    .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
+    .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 2, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Interview Skills: /grill-me and /onboarding</span></h1>
+        <p class="subtitle"><code>/grill-me</code> is a saturation-driven user interview that mirrors the research pipeline's gather loop — questions are planned by an LLM, answers are novelty-gated, and knowledge accumulates through the same <code>compress_knowledge()</code> function used in research runs. <code>/onboarding</code> extends it with a three-question fixed scaffold, persistent TOML config, and ChromaDB memory seeding.</p>
+      </header>
+
+      <p>Both skills solve the same problem the research pipeline solves: how to stop gathering information at the right time. Too few questions and the knowledge brief is shallow. Too many and the user fatigues. The novelty gate from <code>gather_research()</code> — stop when marginal information value drops below threshold — applies equally well to human interview answers as it does to web search results. The implementation reuses the same functions.</p>
+
+      <h2>The research loop analogy</h2>
+
+      <div class="analogy-grid">
+        <div class="analogy-cell header">Research pipeline</div>
+        <div class="analogy-cell header">Interview loop</div>
+        <div class="analogy-cell"><code>plan_query()</code> — LLM generates next search query</div>
+        <div class="analogy-cell"><code>plan_question()</code> — LLM generates next interview question</div>
+        <div class="analogy-cell">DDGS web search — returns result documents</div>
+        <div class="analogy-cell"><code>ask_fn(question)</code> — returns user's answer string</div>
+        <div class="analogy-cell"><code>assess_novelty(results, context)</code> — score 0–10</div>
+        <div class="analogy-cell"><code>assess_novelty(packet, knowledge_state)</code> — same function</div>
+        <div class="analogy-cell"><code>compress_knowledge()</code> — roll new results into state</div>
+        <div class="analogy-cell"><code>compress_knowledge()</code> — same function, same signature</div>
+        <div class="analogy-cell">Oversearch detector — stop if no new queries possible</div>
+        <div class="analogy-cell">Fatigue detector — stop after 2 consecutive short answers</div>
+      </div>
+
+      <p>The fatigue detector mirrors the oversearch detector: if the user gives two consecutive answers under 15 words, the loop treats this as a signal that they're done or disengaged and stops. The novelty gate fires only after the minimum round count (3) — early rounds are allowed even if they score low, because the knowledge state is empty and the LLM can't assess novelty meaningfully against nothing.</p>
+
+      <h2>/grill-me: the general-purpose interview</h2>
+
+      <pre><code class="language-bash"># Interview about a goal, output a brief
+python agent.py "/grill-me understand my research needs for a lit review on RL"
+
+# Disable novelty gate, run all 8 rounds
+python agent.py "/grill-me understand my codebase --thorough"
+
+# Tailor questions toward a specific output type
+python agent.py "/grill-me plan my Q3 goals --for deck"
+python agent.py "/grill-me profile my use case --for research"</code></pre>
+
+      <p>The first question in every session is always the same fixed opener: <em>"Tell me about your goal: [goal] — what are you trying to accomplish and why?"</em> This anchors the knowledge state before the LLM starts planning follow-up questions from it. From round 2 onward, <code>plan_question()</code> receives the current knowledge state (capped at 1,200 chars) and generates one targeted question. The temperature is 0.4 — higher than synthesis — to encourage varied questions across sessions with similar goals.</p>
+
+      <p>The <code>--for &lt;skill&gt;</code> flag passes a <code>target_skill</code> string into the question prompt and brief synthesis prompt, steering the questions toward what a specific skill needs. <code>--for deck</code> prompts questions about slide count, audience, tone, and key message; <code>--for research</code> steers toward sources, depth, and scope constraints.</p>
+
+      <p>The output is a structured markdown brief written to <code>data/briefs/&lt;slug&gt;-&lt;timestamp&gt;.md</code>:</p>
+
+      <pre><code class="language-markdown">## Context
+## Goals
+## Constraints &amp; non-goals
+## Open questions
+## Suggested next steps</code></pre>
+
+      <h2>/onboarding: persistent personalization</h2>
+
+      <pre><code class="language-bash"># First run — starts the interview if .harness-user.toml is absent
+python agent.py "/onboarding"
+
+# Re-run — additive update, merges new answers with existing config
+python agent.py "/onboarding"</code></pre>
+
+      <p><code>/onboarding</code> auto-triggers when <code>.harness-user.toml</code> doesn't exist — the harness checks at startup and runs the interview interactively before the first task. Re-running is safe: answers are merged additively, new values overwrite old ones, and absent keys from the new run are preserved from the existing config.</p>
+
+      <p>The interview runs in two phases:</p>
+
+      <div class="phase-list">
+        <div class="phase-item"><strong>Phase 1 — fixed scaffold (rounds 1–3, no novelty gate)</strong><br>Three questions always asked in order: role and primary domain; main use cases; preferred output format. These populate the TOML config skeleton regardless of what else the user says.</div>
+        <div class="phase-item"><strong>Phase 2 — free-form novelty-gated (rounds 4–6)</strong><br>Calls <code>plan_question()</code> from <code>grill_me_skill</code> with goal "onboarding: learn about this user". Novelty gate and fatigue detector both active. Stops early if answers become repetitive or short.</div>
+      </div>
+
+      <h2>Persistent outputs</h2>
+
+      <p>After the interview, <code>synthesize_and_write()</code> calls the LLM once to produce two artifacts from the accumulated knowledge state:</p>
+
+      <p><strong><code>.harness-user.toml</code></strong> — machine-readable config loaded by the harness at startup:</p>
+
+      <pre><code class="language-toml">[user]
+role             = "ML researcher"
+domain           = "agentic systems"
+preferred_model  = "qwen3.6-35b"
+preferred_format = "markdown with headers"
+verbosity        = "detailed"
+
+[routing]
+research_tasks = "always use /deep"
+coding_tasks   = "add /cite for attribution"</code></pre>
+
+      <p><strong><code>data/user_profile.md</code></strong> — human-readable profile with five sections: Background, Primary use cases, Output preferences, Domain expertise, Notes.</p>
+
+      <p>After writing both files, <code>_seed_memory()</code> splits the knowledge state into sentences and upserts them into a <code>user_context</code> ChromaDB collection. This makes user context available for semantic retrieval during the <code>/contextualize</code> skill — when the agent handles self-referential tasks, it can retrieve relevant user context alongside the wiki pages.</p>
+
+      <div class="callout">
+        <p>The TOML merge strategy preserves old keys absent from the new run — it never overwrites with empty strings. This means partial re-runs are safe: if the user skips the output preferences question, the existing preference is kept. Only non-empty new values replace old ones.</p>
+      </div>
+
+      <div class="callout amber">
+        <p><code>/grill-me</code> uses the <code>COMPRESS_MODEL</code> environment variable for question planning and brief synthesis, defaulting to <code>HARNESS_PRODUCER_MODEL</code>. For interactive interviews the question planning calls are fast — question generation is capped at 120 tokens — but the brief synthesis at the end takes a full inference call at up to 800 tokens.</p>
+      </div>
+
+      <div class="related-section">
+        <h2>Related articles</h2>
+        <div class="related-grid">
+          <a href="skills-registry.html" class="related-card">
+            <div class="rc-label">Architecture</div>
+            <div class="rc-title">The Skills Registry</div>
+            <div class="rc-desc">All 38 skills — /onboarding auto-triggers when .harness-user.toml is absent; /grill-me is explicit-only.</div>
+          </a>
+          <a href="memory-observability.html" class="related-card">
+            <div class="rc-label">Memory</div>
+            <div class="rc-title">Memory and Observability</div>
+            <div class="rc-desc">The ChromaDB user_context collection that /onboarding seeds and the /contextualize skill queries during self-referential tasks.</div>
+          </a>
+          <a href="context-engineering.html" class="related-card">
+            <div class="rc-label">Context</div>
+            <div class="rc-title">Context Engineering</div>
+            <div class="rc-desc">The saturation gating and compress_knowledge() function that /grill-me reuses directly from the research pipeline.</div>
+          </a>
+        </div>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>
