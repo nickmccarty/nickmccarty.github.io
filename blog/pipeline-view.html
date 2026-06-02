@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Pipeline View: Data Enrichment DAG | Nick McCarty</title>
+  <meta name="description" content="The Pipeline view is a static SVG DAG showing the harness data enrichment architecture for financial and economic tasks. Six enrichment layers — Research, Economic APIs (FRED/BEA), Beige Book, Market Data (Trending DB, signals, yfinance), Portfolio (Alpaca), and Core Pipeline — feed a Context Merge node before LLM synthesis.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/pipeline-view.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Pipeline View: Data Enrichment DAG">
+  <meta property="og:description" content="Static SVG DAG showing how web search, Beige Book, FRED, BEA, Market Signals, yfinance, and Alpaca feed a context merge before LLM synthesis and Wiggum evaluation. Conditional dashed edge for trading thesis Alpaca order execution.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/pipeline-view.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-02T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Pipeline View: Data Enrichment DAG">
+  <meta name="twitter:description" content="Web search, Beige Book, FRED, BEA, Market Signals, yfinance, Alpaca — all enrichment sources visualized as a DAG feeding Context Merge, LLM Synthesis, and Wiggum evaluation.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Pipeline View: Data Enrichment DAG","description":"Static SVG DAG showing the harness data enrichment architecture for financial and economic tasks — FRED, BEA, Beige Book, Market Signals, yfinance, and Alpaca feeding LLM synthesis.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-02","dateModified":"2026-06-02","url":"https://nickmccarty.me/blog/pipeline-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{border:1px solid var(--border-color);border-radius:8px;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;padding:0;}
+    .layer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin:1.5rem 0;}
+    @media(max-width:680px){.layer-grid{grid-template-columns:1fr;}}
+    .layer-card{background:var(--bg-secondary);border-radius:8px;padding:0.85rem 1rem;border-left:3px solid;}
+    .layer-card .lc-label{font-family:'SF Mono','Consolas',monospace;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:0.4rem;}
+    .layer-card ul{margin:0;padding-left:1rem;display:flex;flex-direction:column;gap:0.2rem;}
+    .layer-card li{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
+    .related-section{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border-color);}
+    .related-section h2{margin-bottom:1.25rem;}
+    .related-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+    @media(max-width:700px){.related-grid{grid-template-columns:1fr;}}
+    .related-card{display:block;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:1rem 1.1rem;text-decoration:none;transition:border-color .2s,transform .15s;}
+    .related-card:hover{border-color:var(--accent-cyan);transform:translateY(-2px);}
+    .related-card .rc-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-cyan);margin-bottom:0.35rem;}
+    .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
+    .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 2, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Pipeline View: Data Enrichment DAG</span></h1>
+        <p class="subtitle">A static SVG DAG showing the harness enrichment architecture for financial and economic tasks. Six layers — web search, Beige Book, FRED, BEA, Market Data, and Portfolio — all converge at a Context Merge node before LLM synthesis and Wiggum evaluation. A dashed conditional edge marks trading thesis tasks that proceed to Alpaca order execution.</p>
+      </header>
+
+      <p>The standard harness pipeline gathers context from DDGS web search and the research cache. For economic and financial tasks, that's insufficient — the synthesis needs time-series data from FRED, regional income tables from BEA, district narrative from the Federal Reserve Beige Book, market signals from a local SQLite database, live fundamentals from yfinance, and current portfolio state from Alpaca. The Pipeline view documents how all these sources connect.</p>
+
+      <h2>Enrichment layers</h2>
+
+      <div class="layer-grid">
+        <div class="layer-card" style="border-color:#60a5fa;">
+          <div class="lc-label" style="color:#60a5fa;">Research</div>
+          <ul>
+            <li><strong>Web Search</strong> — live DDGS results for the task query</li>
+            <li><strong>Beige Book</strong> — Fed district narrative via semantic + keyword search over the 1996-present corpus</li>
+          </ul>
+        </div>
+        <div class="layer-card" style="border-color:#f59e0b;">
+          <div class="lc-label" style="color:#f59e0b;">Economic APIs</div>
+          <ul>
+            <li><strong>FRED</strong> — rates, inflation, employment, and 800k+ time series via <code>fred_tool.py</code></li>
+            <li><strong>BEA</strong> — GDP, regional personal income, trade balances via <code>bea_tool.py</code></li>
+          </ul>
+        </div>
+        <div class="layer-card" style="border-color:#34d399;">
+          <div class="lc-label" style="color:#34d399;">Market Data</div>
+          <ul>
+            <li><strong>Trending Tickers DB</strong> — momentum universe built from monthly yfinance sweeps</li>
+            <li><strong>Market Signals</strong> — Hurst exponent, Bollinger z-score, cointegration, momentum rank per ticker</li>
+            <li><strong>yfinance</strong> — live fundamentals, earnings, analyst targets, short ratio</li>
+          </ul>
+        </div>
+        <div class="layer-card" style="border-color:#a78bfa;">
+          <div class="lc-label" style="color:#a78bfa;">Portfolio</div>
+          <ul>
+            <li><strong>Alpaca Portfolio</strong> — current positions, buying power, pending orders</li>
+          </ul>
+        </div>
+        <div class="layer-card" style="border-color:#64c8b4;">
+          <div class="lc-label" style="color:#64c8b4;">Core Pipeline</div>
+          <ul>
+            <li><strong>Context Merge</strong> — all enrichment blocks concatenated into the synthesis prompt</li>
+            <li><strong>LLM Synthesis</strong> — producer model generates report or trading thesis</li>
+            <li><strong>Wiggum Eval</strong> — multi-round quality gate with rubric scoring and revision</li>
+          </ul>
+        </div>
+        <div class="layer-card" style="border-color:#34d399;">
+          <div class="lc-label" style="color:#34d399;">Output</div>
+          <ul>
+            <li><strong>Report (.md)</strong> — synthesis output written to disk, scored by Wiggum</li>
+            <li><strong>Alpaca Orders</strong> — paper trade execution for trading thesis tasks (conditional)</li>
+          </ul>
+        </div>
+      </div>
+
+      <h2>Conditional execution: the dashed edge</h2>
+
+      <p>The DAG has one dashed edge: Synthesis &rarr; Alpaca Orders. This edge only fires for trading thesis tasks — those matched by <code>_is_trading_task()</code> in <code>agent.py</code> — where the <code>/execute-trades</code> skill is active. For all other tasks, synthesis terminates at the <code>Report (.md)</code> output node and no orders are submitted. The dashed style distinguishes conditional from unconditional data flow at a glance.</p>
+
+      <p>Similarly, the Task &rarr; Alpaca Portfolio edge is routed below the main diagram rather than through the column layout. Portfolio state is fetched at task submission time, not as a research step, so it doesn't belong in the Research or Knowledge columns — it enters the merge alongside market data but via a different path in the pipeline code.</p>
+
+      <h2>Why a static diagram</h2>
+
+      <p>Unlike the Explorer view (which renders a unique DAG per run from live data), the Pipeline view is a fixed SVG. The enrichment architecture doesn't change run-to-run — FRED is always available for economic tasks, Beige Book is always queried when relevant keywords appear, the Alpaca portfolio is always fetched for trading tasks. A static diagram communicates the invariant architecture more clearly than a run-specific trace, which would show only the sources that happened to activate on a given task.</p>
+
+      <p>The diagram uses six columns: Input, Research, Knowledge, Market Data, Synthesis, Output. Bezier curves connect nodes across columns. Same-column edges (e.g. Trending DB &rarr; Market Signals, which represents the local data flow before external API calls) use straight vertical lines. The layout is hand-tuned in pixel coordinates for readability at the standard dashboard card width.</p>
+
+      <div class="callout amber">
+        <p>Not every enrichment source activates on every task. FRED and BEA are only queried when <code>FRED_API_KEY</code> and <code>BEA_API_KEY</code> are set and the task classifier identifies a macroeconomic context. Market Signals require the local Trending Tickers SQLite database to be populated. The Pipeline view shows the full capability graph — the actual activated path for a specific run is visible in the <a href="explorer-view.html" style="color:var(--accent-cyan);">Explorer view</a>.</p>
+      </div>
+
+      <div class="related-section">
+        <h2>Related articles</h2>
+        <div class="related-grid">
+          <a href="explorer-view.html" class="related-card">
+            <div class="rc-label">Dashboard</div>
+            <div class="rc-title">The Explorer View</div>
+            <div class="rc-desc">Per-run DAG inspector showing which enrichment sources actually activated and what each stage produced.</div>
+          </a>
+          <a href="agent-pipeline.html" class="related-card">
+            <div class="rc-label">Architecture</div>
+            <div class="rc-title">The Agent Pipeline</div>
+            <div class="rc-desc">The SYNTH_INSTRUCTION_RESEARCH and SYNTH_INSTRUCTION_TRADING variants that govern how enriched context is used in synthesis.</div>
+          </a>
+          <a href="search-cache.html" class="related-card">
+            <div class="rc-label">Infrastructure</div>
+            <div class="rc-title">The Search Cache</div>
+            <div class="rc-desc">SQLite TTL cache and ChromaDB semantic layer that back the web search and research context enrichment sources.</div>
+          </a>
+        </div>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>
