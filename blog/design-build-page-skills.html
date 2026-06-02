@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Site Generation Skills: /design and /build-page | Nick McCarty</title>
+  <meta name="description" content="/design visits a URL with Playwright, extracts CSS custom properties and computed element styles, analyzes screenshots with a vision model, and synthesizes a 10-section design system document. /build-page takes that document and a folder of markdown files and generates a self-contained HTML page in three passes: content analysis, shell generation, and per-file card injection.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/design-build-page-skills.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Site Generation Skills: /design and /build-page">
+  <meta property="og:description" content="/design: Playwright CSS extraction + vision screenshot analysis + 10-section design system. /build-page: three-pass generation — cluster analysis, HTML shell, per-file card injection with optional visual refinement loop.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/design-build-page-skills.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-02T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Site Generation Skills: /design and /build-page">
+  <meta name="twitter:description" content="/design extracts a structured design system from any URL. /build-page turns markdown files into a themed HTML page in three LLM passes. Together they form the /site pipeline.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Site Generation Skills: /design and /build-page","description":"/design extracts CSS tokens and screenshots from a URL and synthesizes a structured design system. /build-page generates a themed HTML page from markdown content in three LLM passes.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-02","dateModified":"2026-06-02","url":"https://nickmccarty.me/blog/design-build-page-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => { if (window.hljs) hljs.highlightAll(); });</script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{border:1px solid var(--border-color);border-radius:8px;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;padding:0;}
+    pre code.hljs{border-radius:8px;padding:1.25rem 1.5rem;font-size:inherit;}
+    .pass-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin:1.5rem 0;}
+    @media(max-width:640px){.pass-grid{grid-template-columns:1fr;}}
+    .pass-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.85rem 1rem;}
+    .pass-card .pc-num{font-family:'SF Mono','Consolas',monospace;font-size:0.7rem;font-weight:700;color:var(--accent-cyan);text-transform:uppercase;letter-spacing:.08em;margin-bottom:0.3rem;}
+    .pass-card h4{margin:0 0 0.35rem;font-size:0.85rem;color:var(--text-primary);}
+    .pass-card p{margin:0;font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
+    .related-section{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border-color);}
+    .related-section h2{margin-bottom:1.25rem;}
+    .related-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+    @media(max-width:700px){.related-grid{grid-template-columns:1fr;}}
+    .related-card{display:block;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:1rem 1.1rem;text-decoration:none;transition:border-color .2s,transform .15s;}
+    .related-card:hover{border-color:var(--accent-cyan);transform:translateY(-2px);}
+    .related-card .rc-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-cyan);margin-bottom:0.35rem;}
+    .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
+    .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 2, 2026 &bull; 7 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Site Generation Skills: /design and /build-page</span></h1>
+        <p class="subtitle"><code>/design</code> visits any URL with Playwright, extracts CSS custom properties and computed element styles, analyzes screenshots with a vision model, and synthesizes a structured 10-section design system document. <code>/build-page</code> takes that document and a folder of markdown files and produces a self-contained HTML page in three LLM passes: content clustering, shell generation, and per-file card injection.</p>
+      </header>
+
+      <p>The typical use case is turning a literature review — dozens of annotated markdown files — into a themed web page that matches an existing site's visual identity. The design system is the intermediary: it captures the site's colors, typography, spacing, and component styles in a portable format that the page generator can apply to arbitrary content without requiring the original site's codebase or assets.</p>
+
+      <h2>/design: extracting a design system</h2>
+
+      <pre><code class="language-bash"># Extract design system from a URL
+python agent.py "/design https://nickmccarty.me save to design.md"
+
+# Bare domain also works
+python agent.py "/design stripe.com save to stripe-design.md"</code></pre>
+
+      <p>The skill launches Playwright Chromium at 1440&times;900 with a realistic user-agent string, navigates to the URL, and waits 2 seconds after <code>domcontentloaded</code> for fonts and JavaScript to settle. It then runs a JavaScript extraction in the browser context that collects four data types:</p>
+
+      <ul>
+        <li><strong>CSS custom properties</strong> — all <code>--variable: value</code> pairs from the <code>:root</code> selector, up to 60 variables</li>
+        <li><strong>Computed styles</strong> — <code>getComputedStyle()</code> for 10 element types: <code>h1</code>, <code>h2</code>, <code>h3</code>, <code>body</code>, buttons, nav/header, hero section, cards, inputs, footer. Properties collected include <code>fontFamily</code>, <code>fontSize</code>, <code>fontWeight</code>, <code>color</code>, <code>backgroundColor</code>, <code>borderRadius</code>, <code>padding</code>, <code>boxShadow</code></li>
+        <li><strong>Background colors</strong> — distinct <code>backgroundColor</code> values across all <code>section</code>, <code>header</code>, <code>footer</code>, and <code>main</code> elements, converted from <code>rgb()</code> to hex</li>
+        <li><strong>Google Fonts links</strong> — any <code>&lt;link&gt;</code> tag referencing <code>fonts.googleapis.com</code></li>
+      </ul>
+
+      <p>Three screenshots are taken: a full-page capture, an above-fold hero shot, and a mid-page component section. The hero and mid-page shots are passed to the vision model (in daemon threads with a configurable timeout, default 300 seconds) for aesthetic description. If the vision model times out due to GPU contention, the skill continues with CSS tokens only.</p>
+
+      <h2>The design system document</h2>
+
+      <p>All extracted data is assembled into a prompt that instructs the LLM to produce a structured markdown document with these exact sections:</p>
+
+      <ol>
+        <li>Overview — aesthetic description and key characteristics</li>
+        <li>Color System — background surfaces, text, accents, gradients, borders</li>
+        <li>Typography System — font families, CDN link, hierarchy table, CSS stacks</li>
+        <li>Spacing System — 4px base scale, max-width and padding layout table</li>
+        <li>Border Radius — token table</li>
+        <li>Components — CSS for primary button, secondary button, cards, inputs</li>
+        <li>Shadows — token table with CSS values</li>
+        <li>Animation System — transition variables and common patterns</li>
+        <li>Complete CSS Implementation — full <code>:root</code> block, reset, typography, buttons, containers</li>
+        <li>Design Principles — 5&ndash;7 principles derived from the visual style</li>
+      </ol>
+
+      <p>Proprietary fonts are handled gracefully: the prompt instructs the LLM to document a Google Fonts substitute at the top of the document so the page generator can load it from CDN without needing the original font files.</p>
+
+      <h2>/build-page: three-pass HTML generation</h2>
+
+      <pre><code class="language-bash"># Generate a page from a design system and content folder
+python agent.py "/build-page design.md from ~/Desktop/lit-review/ save to index.html"
+
+# With visual refinement (opens Chrome, compares screenshots, iterates)
+python agent.py "/build-page design.md from ~/Desktop/lit-review/ save to index.html --refine 3"</code></pre>
+
+      <p>The page generator reads all <code>.md</code> files from the content directory and runs three sequential LLM passes. Each pass has a distinct responsibility and its own prompt — they never share context, which keeps each call focused and avoids context window bloat.</p>
+
+      <div class="pass-grid">
+        <div class="pass-card">
+          <div class="pc-num">Pass 1</div>
+          <h4>Content analysis</h4>
+          <p>LLM receives file summaries (title + opening paragraph per file) and returns a JSON cluster plan: 3&ndash;6 topic groups, each file assigned a display role — <code>featured</code>, <code>card</code>, or <code>compact</code>. Falls back to a flat "All Papers" cluster if JSON parsing fails.</p>
+        </div>
+        <div class="pass-card">
+          <div class="pc-num">Pass 2</div>
+          <h4>Shell generation</h4>
+          <p>LLM receives the cluster plan JSON and design system (6,000 char cap) and generates a complete HTML document with <code>&lt;!-- SECTION:filename.md --&gt;</code> placeholders where cards will go. Nav, hero, section headings, footer, and all CSS are included in this pass.</p>
+        </div>
+        <div class="pass-card">
+          <div class="pc-num">Pass 3</div>
+          <h4>Card injection</h4>
+          <p>One LLM call per file. Each call receives the filename, its assigned role, the CSS class to use, and the file content (capped by role: 5,000 chars featured, 3,000 card, 800 compact). Returns an <code>&lt;article&gt;</code> element that replaces the placeholder.</p>
+        </div>
+      </div>
+
+      <p>The role system controls both content depth and token budget. Featured cards get all body paragraphs, key findings, and tags; card-role files get an abstract paragraph plus 3&ndash;5 bullet findings; compact-role files get only a title and one sentence. This means a collection of 30 papers generates 32 LLM calls total (1 analysis + 1 shell + 30 cards) rather than attempting to fit everything into one enormous prompt.</p>
+
+      <h2>Visual refinement loop</h2>
+
+      <p>When <code>--refine N</code> is specified and a vision model is available, the skill opens the generated HTML in headless Chromium, screenshots it, and compares the result to the original site screenshots captured during <code>/design</code>. A diff prompt identifies up to five specific visual differences (wrong hex color, font-size should be Xpx, spacing mismatch). A refine prompt then applies only those changes, outputting the complete updated HTML. The loop runs up to N iterations or until the diff prompt returns "NO CHANGES NEEDED".</p>
+
+      <pre><code class="language-python"># Diff step — low temperature, constrained to specific changes
+"Compare these two page descriptions and list up to 5 SPECIFIC visual differences
+to fix in the HTML (be precise: wrong color #hex, font-size should be Xpx, etc.)."
+
+# Refine step — applies only the listed fixes, returns full HTML
+"Apply ONLY the listed fixes. Output the complete updated HTML document.
+Do not change content — only visual/layout properties."</code></pre>
+
+      <div class="callout amber">
+        <p>The refinement loop truncates the current HTML to 24,000 characters before passing it to the refine prompt. For large pages with many content cards this may cause the model to lose later sections. Run refinement on pages with fewer than ~15 cards for best results, or use <code>--refine 1</code> for a single pass that catches the most obvious structural issues.</p>
+      </div>
+
+      <div class="callout">
+        <p>The shell generation prompt explicitly forbids generating card content: <em>"Do NOT generate card titles, abstracts, or any paper content. Cards will be injected later."</em> Without this constraint, the shell LLM call would hallucinate placeholder content that conflicts with the actual content injected in pass 3 — a common failure mode in single-pass page generation.</p>
+      </div>
+
+      <div class="related-section">
+        <h2>Related articles</h2>
+        <div class="related-grid">
+          <a href="site-deck-skills.html" class="related-card">
+            <div class="rc-label">Skills</div>
+            <div class="rc-title">/site and /deck</div>
+            <div class="rc-desc">The combined pipeline: /site runs /design + /build-page in one command. /deck generates a themed .pptx from the same inputs.</div>
+          </a>
+          <a href="playwright-skill.html" class="related-card">
+            <div class="rc-label">Skills</div>
+            <div class="rc-title">The Playwright Skill</div>
+            <div class="rc-desc">The browser automation layer that /design uses for navigation, CSS extraction, and screenshot capture.</div>
+          </a>
+          <a href="lit-review-skill.html" class="related-card">
+            <div class="rc-label">Skills</div>
+            <div class="rc-title">The Lit-Review Skill</div>
+            <div class="rc-desc">The primary content source for /build-page — annotated markdown files from the literature review pipeline become the cards in the generated page.</div>
+          </a>
+        </div>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>
