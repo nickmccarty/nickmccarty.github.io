@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Supervisor: Four Convergence Signals and Advisory Interventions | Nick McCarty</title>
+  <meta name="description" content="supervisor.py monitors the harness pipeline for convergence collapse across four signals — score variance, output size CV, search utilization, and content similarity — and recommends specific interventions when thresholds are crossed.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/supervisor.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Supervisor: Four Convergence Signals and Advisory Interventions">
+  <meta property="og:description" content="supervisor.py monitors the harness pipeline for convergence collapse across four signals — score variance, output size CV, search utilization, and content similarity — and recommends specific interventions when thresholds are crossed.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/supervisor.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Supervisor: Four Convergence Signals and Advisory Interventions">
+  <meta name="twitter:description" content="Four signals, twelve interventions, no pipeline modifications — supervisor.py detects convergence collapse and tells you exactly what to tune.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Supervisor: Four Convergence Signals and Advisory Interventions","description":"supervisor.py monitors the harness pipeline for convergence collapse across four signals and recommends specific interventions when thresholds are crossed.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/supervisor.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .signal-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:680px){.signal-grid{grid-template-columns:1fr;}}
+    .signal-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.1rem;}
+    .signal-card h4{margin:0 0 0.35rem;font-size:0.88rem;color:var(--accent-cyan);}
+    .signal-card .threshold{font-family:'SF Mono','Consolas',monospace;font-size:0.78rem;background:rgba(14,165,233,0.12);color:#38bdf8;padding:0.1rem 0.45rem;border-radius:4px;margin-bottom:0.4rem;display:inline-block;}
+    .signal-card .direction{font-size:0.72rem;color:var(--text-secondary);margin-left:0.3rem;}
+    .signal-card p{margin:0.4rem 0 0;font-size:0.83rem;line-height:1.6;color:var(--text-secondary);}
+    .intervention-block{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:1.5rem 0;}
+    .intervention-block h4{margin:0 0 0.6rem;font-size:0.88rem;color:var(--accent-cyan);}
+    .intervention-block ol{margin:0;padding-left:1.2rem;}
+    .intervention-block li{font-size:0.84rem;line-height:1.65;color:var(--text-secondary);margin-bottom:0.35rem;}
+    .intervention-block li code{color:var(--text-primary);}
+    .status-row{display:flex;align-items:center;gap:0.75rem;padding:0.55rem 0;border-bottom:1px solid var(--border-color);font-size:0.86rem;}
+    .status-row:last-child{border-bottom:none;}
+    .badge{display:inline-block;font-size:0.72rem;font-weight:700;padding:0.12rem 0.5rem;border-radius:4px;min-width:48px;text-align:center;}
+    .badge-ok{background:rgba(34,197,94,0.15);color:#4ade80;}
+    .badge-warn{background:rgba(239,68,68,0.15);color:#f87171;}
+    .badge-unk{background:rgba(255,255,255,0.08);color:var(--text-secondary);}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Supervisor: Four Convergence Signals and Advisory Interventions</span></h1>
+        <p class="subtitle">A read-only monitor that scans <code>runs.jsonl</code> for signs that the pipeline is collapsing toward a fixed point — and tells you exactly which knob to turn.</p>
+      </header>
+
+      <p>The harness is a self-improving system. Autoresearch mutates the synthesis instruction, Wiggum evaluates each output, and the best runs feed back into the next generation. But self-improvement loops have a failure mode: they can converge to a local optimum and stop exploring. Outputs start looking the same. Evaluator scores cluster in a tight band. The search loop terminates early on every run. The system appears healthy on any single run but is quietly collapsing in diversity.</p>
+
+      <p><code>supervisor.py</code> detects this. It reads a sliding window of recent runs from <code>runs.jsonl</code>, computes four convergence signals, compares each to a threshold, and prints a colored report with specific intervention recommendations for any signal that fires. It never modifies pipeline behavior — it is advisory only.</p>
+
+      <h2>Four signals</h2>
+
+      <div class="signal-grid">
+        <div class="signal-card">
+          <h4>Wiggum score variance</h4>
+          <span class="threshold">warn &lt; 0.5σ</span><span class="direction">low is bad</span>
+          <p>Standard deviation of final Wiggum scores across recent runs that used the evaluation loop. Low variance means the evaluator has stopped differentiating outputs — every run looks equally good (or equally mediocre) to the judge.</p>
+        </div>
+        <div class="signal-card">
+          <h4>Output size CV</h4>
+          <span class="threshold">warn &lt; 0.10</span><span class="direction">low is bad</span>
+          <p>Coefficient of variation (std/mean) of <code>output_bytes</code> across research runs. A CV below 0.10 means outputs are converging in length and density — the pipeline is producing the same size document regardless of task complexity.</p>
+        </div>
+        <div class="signal-card">
+          <h4>Search utilization</h4>
+          <span class="threshold">warn &lt; 0.45</span><span class="direction">low is bad</span>
+          <p>Mean fraction of <code>MAX_SEARCH_ROUNDS</code> (5) actually used. Consistently low utilization means the novelty gate is firing too early — the pipeline is saturating after 1–2 search rounds on tasks that should require more.</p>
+        </div>
+        <div class="signal-card">
+          <h4>Content similarity</h4>
+          <span class="threshold">warn &gt; 0.65</span><span class="direction">high is bad</span>
+          <p>Mean <code>SequenceMatcher</code> ratio between consecutive <code>final_content</code> values (capped at 4000 chars per side for speed). Rising similarity means successive outputs are converging in structure or vocabulary — the hallmark of mode collapse.</p>
+        </div>
+      </div>
+
+      <p>The four signals cover different parts of the pipeline. Score variance catches evaluator collapse. Output size CV catches structural uniformity in the synthesis stage. Search utilization catches premature saturation in the search stage. Content similarity catches mode collapse in the generated text itself. A pipeline that passes all four is genuinely diverse across its recent history.</p>
+
+      <h2>Interventions</h2>
+
+      <p>Each signal has three specific interventions, drawn from practical experience tuning the pipeline:</p>
+
+      <div class="intervention-block">
+        <h4>If Wiggum score variance is too low</h4>
+        <ol>
+          <li>Rotate the Wiggum rubric — add a novelty-biased evaluator 1-in-5 runs</li>
+          <li>Temporarily lower <code>PASS_THRESHOLD</code> in <code>wiggum.py</code> to accept more diverse outputs</li>
+          <li>Add a <code>/deep</code> or higher-temperature synthesis pass to surface different angles</li>
+        </ol>
+      </div>
+
+      <div class="intervention-block">
+        <h4>If output size CV is too low</h4>
+        <ol>
+          <li>Vary <code>num_predict</code> across runs (e.g. 4096 → 8192 alternating)</li>
+          <li>Add task-format diversity to the eval suite (additional task types T_G / T_H)</li>
+          <li>Check whether <code>SYNTH_INSTRUCTION</code> is forcing uniform structure regardless of task — a common cause after aggressive autoresearch convergence</li>
+        </ol>
+      </div>
+
+      <div class="intervention-block">
+        <h4>If search utilization is too low</h4>
+        <ol>
+          <li>Raise <code>NOVELTY_EPSILON</code> (currently 0.15) to let more sub-threshold rounds through</li>
+          <li>Lower <code>NOVELTY_THRESHOLD</code> from 3 to 2 to require stronger saturation before stopping</li>
+          <li>Expand the eval task suite to include topics where the current <code>knowledge_state</code> is sparse</li>
+        </ol>
+      </div>
+
+      <div class="intervention-block">
+        <h4>If content similarity is too high</h4>
+        <ol>
+          <li>Drop memory influence for 1-in-N runs by skipping <code>memory.get_context()</code></li>
+          <li>Rotate compression prompts in <code>compress_and_store()</code> to avoid schema lock-in</li>
+          <li>Add raw excerpt memory alongside compressed summaries in <code>memory.py</code> to break structural uniformity</li>
+        </ol>
+      </div>
+
+      <h2>Sample report output</h2>
+
+      <pre><code>=== Supervisor Report  2026-06-01 14:22 UTC  (20 runs analyzed) ===
+
+  [OK]               Wiggum score variance
+             value=0.821σ  threshold=0.5σ
+  n=17, mean_final_score=8.31, mean_revision_delta=0.44
+
+  [OK]               Output size CV (std/mean)
+             value=0.243  threshold=0.10
+  n=19, mean_bytes=4821.00
+
+  [WARN]             Search utilization (rounds used / max)
+             value=0.380  threshold=0.45
+  n=18, min=0.20, max=0.60
+
+  Diagnosis: search_utilization is below threshold.
+    1. Raise NOVELTY_EPSILON (currently 0.15) to let more sub-threshold rounds through
+    2. Lower NOVELTY_THRESHOLD from 3 to 2 to require stronger saturation before stopping
+    3. Expand eval tasks to include topics where current knowledge_state is sparse
+
+  [OK]               Content similarity (sequential pairs)
+             value=0.312  threshold=0.65
+  n=17, max_pair=0.51, min_pair=0.18</code></pre>
+
+      <p>The colored terminal output uses ANSI codes: green for OK, red for WARN. Machine-readable JSON output is available via <code>--json</code> for integration with monitoring scripts.</p>
+
+      <h2>Signal computation details</h2>
+
+      <p><strong>Score variance</strong> uses only runs that have a <code>wiggum_scores</code> list (i.e. Wiggum ran). It takes the <em>final</em> score from each run's score list, ignoring intermediate revision scores. The <code>mean_revision_delta</code> in the detail line is the mean of (last score − first score) per run — positive deltas indicate the revision loop is improving outputs.</p>
+
+      <p><strong>Output size CV</strong> excludes task types that naturally produce short outputs: email, GitHub, review, recall, queue. These would compress the variance artificially. Only research-type runs are included.</p>
+
+      <p><strong>Search utilization</strong> uses two measurement paths: if <code>tool_calls</code> is logged, it counts entries where <code>tool == "web_search"</code>. If not, it falls back to estimating rounds from <code>total_search_chars</code> at ~1800 chars per round, capped at <code>MAX_SEARCH_ROUNDS</code>. Orchestrated runs are excluded since they don't follow the standard search loop.</p>
+
+      <p><strong>Content similarity</strong> computes pairwise <code>SequenceMatcher.ratio()</code> between consecutive <code>final_content</code> values in the analysis window, truncated at 4000 characters per side to bound computation time. The metric is sensitive to vocabulary and structure but not to minor reordering — appropriate for detecting the kind of template lock-in that autoresearch convergence produces.</p>
+
+      <h2>Usage</h2>
+
+      <pre><code># Analyze last 20 runs (default)
+python supervisor.py
+
+# Analyze last 50 runs
+python supervisor.py --n 50
+
+# Filter to research tasks only
+python supervisor.py --task-type research
+
+# Machine-readable JSON output
+python supervisor.py --json
+
+# No ANSI color (for log files)
+python supervisor.py --no-color</code></pre>
+
+      <div class="callout amber">
+        <p>The supervisor is advisory only — it never modifies <code>config.ini</code>, <code>wiggum.py</code>, or any pipeline parameter. Interventions require a human decision. This is intentional: automated parameter tuning based on aggregate statistics risks chasing noise, especially with a window of only 20 runs.</p>
+      </div>
+
+      <h2>Relation to autoresearch and the convergence literature</h2>
+
+      <p>The four signals were developed in response to the convergence failures documented in <a href="autoresearch-convergence.html" style="color:var(--accent-cyan);">When the Loop Defeats Itself</a> — three nested failure modes across 90 experiments. The supervisor operationalizes those failure modes as measurable signals: score variance catches the evaluator ceiling failure, search utilization catches the novelty saturation failure, and content similarity catches the output homogenization failure.</p>
+
+      <p>The GEPA framing from <a href="gepa-autoresearch.html" style="color:var(--accent-cyan);">From Hill-Climbing to Pareto</a> suggests that autoresearch oscillation is partly explained by the pipeline optimizing one objective (Wiggum score) while neglecting diversity. The supervisor's four signals are a proxy for the diversity half of that Pareto frontier — not optimizable directly, but monitorable.</p>
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inside agent.py: The Three-Turn Research Pipeline | Nick McCarty</title>
+  <meta name="description" content="agent.py is the core of the harness: Turn 1 handles vision preprocessing and web search, Turn 2 writes the synthesis to disk, Turn 3 runs the Wiggum evaluation and revision loop. This post covers the pipeline design, novelty gating, thinking-model detection, keep_alive estimation, and SYNTH_INSTRUCTION.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/agent-pipeline.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Inside agent.py: The Three-Turn Research Pipeline">
+  <meta property="og:description" content="Three turns: vision preprocessing + search, synthesis written to disk, Wiggum evaluation loop. Plus novelty gating, keep_alive estimation from run history, thinking-model detection, and the SYNTH_INSTRUCTION autoresearch target.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/agent-pipeline.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Inside agent.py: The Three-Turn Research Pipeline">
+  <meta name="twitter:description" content="agent.py is the core harness loop: vision preprocessing, novelty-gated web search, synthesis written to disk, and iterative Wiggum evaluation until PASS or max rounds.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Inside agent.py: The Three-Turn Research Pipeline","description":"The three-turn research pipeline at the core of the harness: search, synthesize, verify.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/agent-pipeline.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .turn-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin:1.5rem 0;}
+    @media(max-width:640px){.turn-grid{grid-template-columns:1fr;}}
+    .turn-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.9rem 1rem;}
+    .turn-card .turn-label{font-family:'SF Mono','Consolas',monospace;font-size:0.78rem;font-weight:700;color:var(--accent-cyan);margin-bottom:0.25rem;}
+    .turn-card h4{margin:0 0 0.4rem;font-size:0.88rem;}
+    .turn-card ul{margin:0;padding-left:1.1rem;font-size:0.8rem;line-height:1.7;color:var(--text-secondary);}
+    .param-table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:0.83rem;}
+    .param-table th{text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);color:var(--text-secondary);font-weight:600;}
+    .param-table td{padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);vertical-align:top;}
+    .param-table code{font-size:0.8em;}
+    .flow-row{display:flex;align-items:center;flex-wrap:wrap;gap:0.5rem;margin:1.5rem 0;font-size:0.84rem;}
+    .flow-box{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.75rem;font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--text-primary);}
+    .flow-arrow{color:var(--text-secondary);}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 1, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">Inside agent.py: The Three-Turn Research Pipeline</span></h1>
+        <p class="subtitle"><code>agent.py</code> is the central file in the harness — the orchestrator that sequences vision preprocessing, novelty-gated web search, LLM synthesis, and the Wiggum evaluation loop from a single task string.</p>
+      </header>
+
+      <p>Every research run, eval task, skill invocation, and autoresearch experiment passes through <code>agent.py</code>. It's not a large framework — it's a tight pipeline with clear stages and explicit constants. Understanding this file is understanding how the harness works.</p>
+
+      <h2>Three turns</h2>
+
+      <div class="turn-grid">
+        <div class="turn-card">
+          <div class="turn-label">Turn 1</div>
+          <h4>Gather</h4>
+          <ul>
+            <li>Detect image paths in task string</li>
+            <li>Extract vision context via <code>vision.py</code> if images found</li>
+            <li>Run planner (<code>make_plan</code>) to get targeted queries</li>
+            <li>Execute novelty-gated web search rounds (2–5)</li>
+            <li>Optionally enrich top-N URLs for full page content</li>
+          </ul>
+        </div>
+        <div class="turn-card">
+          <div class="turn-label">Turn 2</div>
+          <h4>Synthesize</h4>
+          <ul>
+            <li>Build synthesis prompt with memory context + planner notes</li>
+            <li>Inject <code>SYNTH_INSTRUCTION</code> (technical/count/prose variant)</li>
+            <li>Call producer model (default: <code>pi-qwen-32b</code>)</li>
+            <li>Write output directly to the path specified in the task</li>
+            <li>Log token counts, model, duration to <code>runs.jsonl</code></li>
+          </ul>
+        </div>
+        <div class="turn-card">
+          <div class="turn-label">Turn 3</div>
+          <h4>Verify</h4>
+          <ul>
+            <li>Run Wiggum evaluation on the written file</li>
+            <li>On FAIL: extract issue, revise synthesis</li>
+            <li>Loop until PASS or <code>MAX_WIGGUM_ROUNDS</code></li>
+            <li>Store output in memory store on PASS</li>
+            <li>Skip entirely if <code>--no-wiggum</code> flag set</li>
+          </ul>
+        </div>
+      </div>
+
+      <h2>Novelty gating</h2>
+
+      <p>The search loop in Turn 1 doesn't just run N fixed rounds — it uses novelty scoring to decide whether another search round would add meaningful information. After each round, the new results are scored 0–10 against the accumulated knowledge state. If the score falls below <code>NOVELTY_THRESHOLD</code>, the loop stops early.</p>
+
+      <table class="param-table">
+        <thead><tr><th>Constant</th><th>Value</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>SEARCHES_PER_TASK</code></td><td>2</td><td>Minimum rounds before novelty gating kicks in</td></tr>
+          <tr><td><code>MAX_SEARCH_ROUNDS</code></td><td>5</td><td>Hard cap regardless of novelty scores</td></tr>
+          <tr><td><code>NOVELTY_THRESHOLD</code></td><td>3</td><td>0–10 score below which a round is skipped</td></tr>
+          <tr><td><code>NOVELTY_EPSILON</code></td><td>0.15</td><td>ε-greedy pass-through: 15% of sub-threshold rounds still run</td></tr>
+          <tr><td><code>SEARCH_QUALITY_FLOOR</code></td><td>1800 chars</td><td>If total merged content is below this, run one more round</td></tr>
+          <tr><td><code>MAX_RESULTS_PER_SEARCH</code></td><td>5</td><td>DDGS results per query</td></tr>
+          <tr><td><code>URL_ENRICH_COUNT</code></td><td>2</td><td>Top-N URLs to fetch for full-page enrichment</td></tr>
+          <tr><td><code>URL_ENRICH_MAX_CHARS</code></td><td>8000</td><td>Per-URL character cap to prevent context bloat</td></tr>
+        </tbody>
+      </table>
+
+      <p>The epsilon term prevents the loop from permanently abandoning a search direction based on one unlucky round. A 15% pass-through means sub-threshold queries occasionally run, which catches cases where the novelty scorer itself was wrong about the marginal value of a search direction. <code>/deep</code> disables this gate entirely, forcing all 5 rounds regardless of scores — used by <code>mine_knowledge.py</code> for authoritative reference mining.</p>
+
+      <h2>SYNTH_INSTRUCTION: the autoresearch target</h2>
+
+      <p>The synthesis prompt always ends with <code>SYNTH_INSTRUCTION</code>. This is the string that <code>autoresearch.py</code> reads, mutates, and writes back between experiments — it's the only variable the autoresearch loop changes between runs.</p>
+
+      <p>There are actually three instruction variants, selected based on task classification:</p>
+
+      <ul>
+        <li><strong><code>SYNTH_INSTRUCTION</code></strong> — technical tasks (keyword match against ~45 technical terms: "api", "deploy", "cuda", "docker", etc.)</li>
+        <li><strong><code>SYNTH_INSTRUCTION_COUNT</code></strong> — "top N" / enumerated tasks (matched by planner's <code>task_type == "enumerated"</code>)</li>
+        <li><strong><code>SYNTH_INSTRUCTION_PROSE</code></strong> — non-technical analysis tasks (data analysis, file-reading tasks where explicit coding keywords are absent)</li>
+      </ul>
+
+      <p>The prose variant exists because data-analysis tasks — "read autoresearch.tsv and report score trajectories" — shouldn't be prompted to include code examples and API signatures. Without the classification gate, the technical instruction would cause the model to hallucinate code blocks for tasks that don't involve code. The <code>_is_technical_task()</code> function checks both a technical keyword set and a set of analysis phrases to make this determination.</p>
+
+      <p>All three instruction strings are guarded by <code># AUTORESEARCH:SYNTH_INSTRUCTION:BEGIN/END</code> sentinels. The autoresearch loop writes new values between the sentinels using regex substitution — renaming them or moving them to a different line would break the experiment loop.</p>
+
+      <h2>Thinking model detection</h2>
+
+      <p>Some Ollama models (Qwen3, QwQ) default to a chain-of-thought "thinking" mode that produces reasoning tokens before the actual response. This consumes the model's <code>num_predict</code> budget before any output appears — on an 8192-token limit, a thinking run can exhaust the budget entirely and produce no response body.</p>
+
+      <p><code>_synth_options()</code> detects thinking models by name and sets <code>think=False</code> by default. An override via <code>HARNESS_PRODUCER_THINK=1</code> re-enables thinking and doubles <code>num_predict</code> to 16,384 to accommodate the reasoning token overhead.</p>
+
+      <pre><code>_THINKING_MODELS = {"qwen3", "qwq"}
+
+def _synth_options(producer_model: str) -> dict:
+    opts = {"temperature": 0.1, "num_predict": 8192}
+    think_override = os.environ.get("HARNESS_PRODUCER_THINK", "")
+    if think_override == "1":
+        opts["think"] = True
+        opts["num_predict"] = 16384
+    elif _is_thinking_model(producer_model):
+        opts["think"] = False
+    return opts</code></pre>
+
+      <h2>Keep-alive estimation</h2>
+
+      <p>Ollama unloads a model from GPU memory after a period of inactivity. If the keep-alive is too short, the model reloads mid-pipeline — adding 30–90 seconds of latency between synthesis and evaluation. If it's too long, GPU memory stays committed to a model that won't be used again for hours.</p>
+
+      <p><code>_estimate_keep_alive()</code> computes a per-run value from the last 100 entries in <code>runs.jsonl</code>:</p>
+
+      <div class="flow-row">
+        <span class="flow-box">Read last 100 runs.jsonl entries</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-box">Filter by task_type</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-box">90th-percentile duration &times; 1.2</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-box">keep_alive seconds</span>
+      </div>
+
+      <p>If fewer than 5 matching runs exist, it falls back to all task types. If history is entirely absent, a skill-aware heuristic applies: 90 seconds for short skills (github, email), indefinite (<code>-1</code>) for lit-review, 300–450 seconds for standard research, more for <code>/deep</code> runs. The <code>OLLAMA_KEEP_ALIVE</code> env var overrides everything — set it to <code>-1</code> to keep the model loaded permanently, which is useful during autoresearch experiments where back-to-back eval runs would otherwise trigger repeated cold reloads.</p>
+
+      <h2>Python code execution tool</h2>
+
+      <p>The synthesis step has access to a <code>run_python</code> tool — a sandboxed Python executor with a 10-second timeout. When the model requests code execution (for data processing, computation, or analysis), the agent runs the code via <code>subprocess</code>, captures stdout/stderr, and feeds the output back into the next synthesis turn. The tool is available for up to 3 rounds (<code>PYTHON_TOOL_ROUNDS</code>) before the loop ends. Security checks from <code>security.py</code> run on the code before execution to catch obvious injection attempts.</p>
+
+      <h2>Skill dispatch</h2>
+
+      <p>Before the research loop begins, <code>parse_skills()</code> checks the task string for slash commands (<code>/github</code>, <code>/email</code>, <code>/lit-review</code>, etc.). If a standalone skill is detected, execution branches immediately to that skill and skips the research pipeline entirely. <code>auto_activate()</code> activates implicit skills based on task content — an image path in the task auto-activates the vision skill even without an explicit <code>/vision</code> command. For the full skill registry, see <a href="op-cli.html" style="color:var(--accent-cyan);">The op.py CLI</a>.</p>
+
+      <div class="callout">
+        <p>The producer model defaults to <code>HARNESS_PRODUCER_MODEL</code> → <code>pi-qwen-32b</code>. On startup, <code>agent.py</code> probes the vLLM <code>/models</code> endpoint and falls back to whatever model is currently loaded if the configured model isn't available — preventing 404 errors when switching model configs without a server restart.</p>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The MCP View: Exposing the Harness as a Tool Server | Nick McCarty</title>
+  <meta name="description" content="A tour of the harness MCP view: three registered tools (run_task, run_orchestrated, get_run) that expose the research pipeline as a Model Context Protocol server callable from any MCP client.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/mcp-view.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The MCP View: Exposing the Harness as a Tool Server">
+  <meta property="og:description" content="Three MCP tools — run_task, run_orchestrated, get_run — expose the full harness research pipeline to any MCP-compatible client. Tool manifests, parameter badges, and a live task log auto-refreshing every 5 seconds.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/mcp-view.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The MCP View: Exposing the Harness as a Tool Server">
+  <meta name="twitter:description" content="run_task, run_orchestrated, get_run — three MCP tools that make the research pipeline callable from any MCP client, including Claude Desktop.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The MCP View: Exposing the Harness as a Tool Server","description":"A tour of the harness MCP view: three registered tools that expose the research pipeline as a Model Context Protocol server callable from any MCP client.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/mcp-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .screenshot{width:100%;border-radius:8px;border:1px solid var(--border-color);margin:1.5rem 0;display:block;}
+    .screenshot-caption{font-size:0.8rem;color:var(--text-secondary);text-align:center;margin-top:-1rem;margin-bottom:1.5rem;}
+    .schema-block{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:1.5rem 0;}
+    .tool-row{padding:0.8rem 0;border-bottom:1px solid var(--border-color);font-size:0.88rem;}
+    .tool-row:last-child{border-bottom:none;}
+    .tool-name{font-family:'SF Mono','Consolas',monospace;font-size:0.9rem;font-weight:700;color:var(--accent-cyan);margin-bottom:0.3rem;}
+    .param-badge{display:inline-block;font-size:0.72rem;font-family:'SF Mono','Consolas',monospace;padding:0.15rem 0.5rem;border-radius:4px;margin-right:0.3rem;}
+    .param-req{background:rgba(129,140,248,0.15);color:#818cf8;}
+    .param-opt{background:rgba(255,255,255,0.07);color:var(--text-secondary);}
+    .tool-desc{color:var(--text-secondary);line-height:1.55;margin-top:0.3rem;}
+    .feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:640px){.feature-grid{grid-template-columns:1fr;}}
+    .feature-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.1rem;}
+    .feature-card h4{margin:0 0 0.4rem;font-size:0.9rem;color:var(--accent-cyan);}
+    .feature-card p{margin:0;font-size:0.85rem;line-height:1.6;color:var(--text-secondary);}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.050a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The MCP View: Exposing the Harness as a Tool Server</span></h1>
+        <p class="subtitle">Three tools — <code>run_task</code>, <code>run_orchestrated</code>, <code>get_run</code> — make the full harness research pipeline callable from any Model Context Protocol client, with a live task log auto-refreshing every 5 seconds.</p>
+      </header>
+
+      <p>The Model Context Protocol (MCP) is a standard interface for exposing tool capabilities to LLM-based clients. Claude Desktop, Claude Code, and any MCP-compatible agent can call registered tools by name with typed parameters. The harness implements an MCP server alongside its REST API, which means the entire research pipeline — planner, search, synthesis, Wiggum evaluation loop — is callable as a tool from another agent.</p>
+
+      <p>The MCP view surfaces the registered tool manifest and a live log of every tool invocation that has been dispatched through the MCP interface.</p>
+
+      <img src="../assets/images/ui-mcp-01.png" alt="MCP view showing TOOLS (3) section with run_task, run_orchestrated, and get_run tool cards, each showing parameter badges and description, and TASK LOG section showing 0 entries" class="screenshot">
+      <p class="screenshot-caption">MCP view: three registered tools with parameter badges (indigo = required, dim = optional) and descriptions. The task log is currently empty — no MCP-originated calls have been made in this session.</p>
+
+      <h2>The Three Tools</h2>
+
+      <div class="schema-block">
+        <div class="tool-row">
+          <div class="tool-name">run_task <span class="param-badge param-req">task</span><span class="param-badge param-opt">api_key</span></div>
+          <div class="tool-desc">Run a single research or synthesis task through the harness agent pipeline. The <code>task</code> parameter is the same natural-language task string accepted by the CLI and Submit view — it can include skill flags like <code>/deep</code> or <code>/cite</code>, and should include a <code>.md</code> output path. <code>api_key</code> is optional; when omitted, the server uses its configured default key. Returns the queued item ID synchronously; the run executes asynchronously.</div>
+        </div>
+        <div class="tool-row">
+          <div class="tool-name">run_orchestrated <span class="param-badge param-req">task</span><span class="param-badge param-opt">api_key</span></div>
+          <div class="tool-desc">Run a complex multi-subtask task through the orchestrator. The orchestrator decomposes the task into parallel subtasks, runs them concurrently (up to <code>subtask_max_workers=4</code>), and aggregates results before synthesis. Use this for tasks that benefit from parallel research across multiple angles — the MCP caller gets back a single synthesis when all subtasks complete.</div>
+        </div>
+        <div class="tool-row">
+          <div class="tool-name">get_run <span class="param-badge param-req">run_id</span></div>
+          <div class="tool-desc">Retrieve a run record from <code>data/runs.jsonl</code> by run ID. Returns a JSON summary: task string, final score, pass/fail status, duration, producer model, and output path. This is the read side of the MCP interface — poll after <code>run_task</code> to check whether a submitted run has completed and what it scored.</div>
+        </div>
+      </div>
+
+      <p>Parameter badges use two visual states: indigo background for required parameters, dim background for optional ones. This matches the convention from the harness Runs view and lets you read the tool signature at a glance without reading the description.</p>
+
+      <h2>Usage Pattern: Task → Poll</h2>
+
+      <p>The intended MCP usage pattern from a client like Claude Desktop:</p>
+
+      <pre><code># 1. Submit a task — returns an item_id immediately
+result = run_task(task="Research DPO fine-tuning best practices and save to ~/Desktop/dpo.md")
+item_id = result["item_id"]
+
+# 2. Poll for completion using get_run (or wait for webhook)
+run = get_run(run_id=item_id)
+# run.final: "PASS" | "FAIL" | "ERROR"
+# run.wiggum_scores: [8.3]
+# run.output_path: "~/Desktop/dpo.md"</code></pre>
+
+      <p>The MCP server doesn't block on task completion — <code>run_task</code> enqueues and returns immediately, matching the behavior of the REST queue endpoint. The MCP client is responsible for deciding whether to poll with <code>get_run</code>, listen for a webhook (<code>CLAUDE_WEBHOOK_URL</code>), or simply wait a fixed duration before requesting results.</p>
+
+      <div class="callout amber">
+        <p>This is the pattern behind the harness MCP server used in this project's own development loop: Claude Code calls <code>run_task</code> to execute a research synthesis, waits for the run to complete, then calls <code>get_run</code> to retrieve the score and output path — all without leaving the coding environment.</p>
+      </div>
+
+      <h2>The Task Log</h2>
+
+      <p>The lower section of the MCP view is a live task log, auto-refreshing every 5 seconds. Each entry shows a timestamp (HH:MM:SS), a label identifying the source tool call, an event type (<code>start</code> / <code>done</code> / <code>fail</code> / <code>line</code>), and the event text. The current log shows 0 entries because no MCP-originated calls have been made in the current server session — the pipeline runs shown in the Analytics view were all submitted via the CLI or Submit view, not via MCP.</p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>Same pipeline, different interface</h4>
+          <p><code>run_task</code> calls exactly the same code path as <code>POST /api/queue</code> and the CLI. Skills, flags, Wiggum evaluation, context window management — all identical. The MCP interface is a thin wrapper, not a different execution path.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Harness-as-tool for other agents</h4>
+          <p>Any MCP client can register the harness server and call <code>run_task</code> to delegate research to a local expert. A Claude Code agent that needs literature context can hand off to the harness, get back a scored Markdown report, and incorporate the findings — without running the full pipeline itself.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Orchestrated vs. single-task</h4>
+          <p><code>run_orchestrated</code> is appropriate for tasks where the decomposition into parallel subtasks is valuable — "compare three RAG architectures" vs. "research RAG best practices." The orchestrator incurs additional overhead for the decomposition pass and synchronization, so single-task is faster for straightforward research questions.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Tool manifest source</h4>
+          <p>The tool list is fetched from <code>/api/mcp/tools</code> and reflects the live registered tools. Adding a new MCP tool to <code>harness/api/routes/mcp.py</code> and restarting the server causes it to appear in the MCP view immediately — no dashboard rebuild required.</p>
+        </div>
+      </div>
+
+      <nav style="margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <a href="../blog/voice-view.html" style="color:var(--accent-cyan);text-decoration:none;font-size:0.9rem;">&larr; The Voice View</a>
+        <a href="../blog.html" style="color:var(--accent-cyan);text-decoration:none;font-size:0.9rem;">All posts &rarr;</a>
+      </nav>
+    </article>
+  </main>
+  <footer><p>&copy; 2026 Nick McCarty &bull; <a href="../blog.html">Blog</a></p></footer>
+</body>
+</html>

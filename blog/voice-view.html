@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Voice View: Push-to-Talk Notes, Task Dictation, and the Audio Data Flywheel | Nick McCarty</title>
+  <meta name="description" content="A tour of the harness Voice panel: push-to-talk recording via Space bar, Note and Task modes with LLM transcription correction, auto-transcribe to training corpus, and direct task submission from speech.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/voice-view.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Voice View: Push-to-Talk Notes, Task Dictation, and the Audio Data Flywheel">
+  <meta property="og:description" content="Hold Space to record, release to transcribe. Note mode saves to corpus. Task mode corrects the transcript with an LLM and submits to the run queue. Three result types: task, answer, note.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/voice-view.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Voice View: Push-to-Talk Notes, Task Dictation, and the Audio Data Flywheel">
+  <meta name="twitter:description" content="Hold Space to record, release to transcribe. Note mode auto-feeds the ASR training corpus. Task mode submits to the run queue after LLM correction.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Voice View: Push-to-Talk Notes, Task Dictation, and the Audio Data Flywheel","description":"A tour of the harness Voice panel: push-to-talk recording, Note and Task modes with LLM transcription correction, auto-transcribe to training corpus, and direct task submission from speech.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/voice-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.green{border-left-color:#22c55e;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    .screenshot{width:100%;border-radius:8px;border:1px solid var(--border-color);margin:1.5rem 0;display:block;}
+    .screenshot-caption{font-size:0.8rem;color:var(--text-secondary);text-align:center;margin-top:-1rem;margin-bottom:1.5rem;}
+    .schema-block{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:1.5rem 0;}
+    .mode-row{display:flex;gap:0.75rem;align-items:flex-start;padding:0.55rem 0;border-bottom:1px solid var(--border-color);font-size:0.88rem;}
+    .mode-row:last-child{border-bottom:none;}
+    .mode-name{font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--accent-cyan);min-width:80px;padding-top:0.1rem;}
+    .mode-desc{color:var(--text-secondary);line-height:1.55;}
+    .feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:640px){.feature-grid{grid-template-columns:1fr;}}
+    .feature-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.1rem;}
+    .feature-card h4{margin:0 0 0.4rem;font-size:0.9rem;color:var(--accent-cyan);}
+    .feature-card p{margin:0;font-size:0.85rem;line-height:1.6;color:var(--text-secondary);}
+    .flow-step{display:flex;gap:0.75rem;align-items:flex-start;padding:0.45rem 0;}
+    .step-num{font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--accent-cyan);min-width:28px;font-weight:700;}
+    .step-text{font-size:0.88rem;color:var(--text-secondary);line-height:1.55;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.050a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Voice View: Push-to-Talk Notes, Task Dictation, and the Audio Data Flywheel</span></h1>
+        <p class="subtitle">Hold Space to record, release to transcribe. Note mode saves to the ASR training corpus. Task mode corrects the transcript with an LLM and drops the result into the run queue. Three result types, one floating panel.</p>
+      </header>
+
+      <p>The Voice panel is a floating overlay that sits above whichever view is currently active in the dashboard. It doesn't replace the main view — it appears in the corner, captures a recording, and dismisses itself after you act on the result. The interaction is designed to be fast: hold Space, dictate, release, review, submit or save. The whole interaction takes roughly five seconds for a short task string.</p>
+
+      <img src="../assets/images/ui-voice-01.png" alt="Voice panel floating over the MCP view, showing Note/Task toggle buttons, Auto-transcribe checkbox, circular mic FAB button, and status text" class="screenshot">
+      <p class="screenshot-caption">Voice panel in Note mode, idle state. The circular mic FAB and status hint are the only controls visible at rest. The MCP view remains active in the background — the panel overlays without navigating away.</p>
+
+      <h2>Two Modes</h2>
+
+      <p>A toggle at the top of the panel switches between <strong>Note</strong> and <strong>Task</strong>. The mode determines how the audio is processed after transcription:</p>
+
+      <div class="schema-block">
+        <div class="mode-row">
+          <span class="mode-name">Note</span>
+          <span class="mode-desc">Transcribe speech to text for freeform capture — meeting observations, ideas, reminders. The transcript is editable before saving. An <strong>Auto-transcribe to corpus</strong> checkbox (Note mode only) controls whether the raw audio and transcript are appended to the Whisper training corpus for future fine-tuning. Saving calls <code>POST /api/notes/save</code> with the text content, timestamp, and optional filename.</span>
+        </div>
+        <div class="mode-row">
+          <span class="mode-name">Task</span>
+          <span class="mode-desc">Transcribe speech and interpret it as a harness research task. The API runs the raw transcript through an LLM correction pass that converts casual speech ("research best practices for RAG and save it to my desktop") into a well-formed harness task string. The corrected string lands in an editable textarea for review before submission to the run queue via <code>POST /api/queue</code>.</span>
+        </div>
+      </div>
+
+      <h2>Recording and Transcription</h2>
+
+      <p>Two ways to start recording:</p>
+
+      <ul>
+        <li><strong>Click the mic FAB</strong> — single click to start, single click to stop.</li>
+        <li><strong>Hold Space ≥ 900 ms</strong> — push-to-talk from anywhere in the dashboard (not captured inside a text input or textarea). Release Space to stop. The 900 ms hold threshold prevents accidental triggers from quick spacebar presses during normal keyboard use.</li>
+      </ul>
+
+      <p>During recording, a green frequency-bar waveform renders on a canvas element above the mic button, driven by the Web Audio API <code>AnalyserNode</code>. The bars reflect real-time amplitude — a live visual confirmation that the microphone is capturing audio.</p>
+
+      <p>On stop, the browser packages the recorded chunks into a <code>webm</code> blob and POSTs it to <code>/api/voice</code> as a multipart form with <code>audio</code>, <code>mode</code>, and <code>auto_transcribe</code> fields. The server runs Whisper (on CUDA, per the system config) and returns a structured <code>VoiceResult</code> object.</p>
+
+      <h2>Three Result Types</h2>
+
+      <p>The server classifies the utterance into one of three result types and the panel renders accordingly:</p>
+
+      <div class="schema-block">
+        <div class="mode-row">
+          <span class="mode-name" style="min-width:70px;">task</span>
+          <span class="mode-desc">The utterance is a research instruction. The panel shows the LLM's reasoning for the correction (e.g. "added output path, inferred task type"), a pre-filled editable textarea with the corrected task string, and a <strong>Run task</strong> button. Edit the string if needed, then click Run — it submits to the queue and closes the panel.</span>
+        </div>
+        <div class="mode-row">
+          <span class="mode-name" style="min-width:70px;">answer</span>
+          <span class="mode-desc">The utterance is a question the harness can answer directly (e.g. "what was my last run score?"). The panel shows the corrected transcript and the LLM's response inline — no pipeline run is triggered. A <strong>Copy</strong> button copies the answer text.</span>
+        </div>
+        <div class="mode-row">
+          <span class="mode-name" style="min-width:70px;">note</span>
+          <span class="mode-desc">The utterance is a freeform note. The panel shows an editable textarea with the transcript and an optional filename input. <strong>Save note</strong> writes the content to <code>notes/</code> with the recorded timestamp. If auto-transcribe was enabled, the audio pair was already saved to the corpus at transcription time.</span>
+        </div>
+      </div>
+
+      <h2>The Auto-Transcribe Flywheel</h2>
+
+      <p>The <strong>Auto-transcribe to corpus</strong> checkbox is the voice panel's contribution to the self-improvement loop. When enabled in Note mode, each recording produces two artifacts:</p>
+
+      <div class="schema-block" style="padding:0.75rem 1.25rem;">
+        <div class="flow-step"><span class="step-num">1.</span><span class="step-text">The audio file is saved as <code>.wav</code> with the recording timestamp.</span></div>
+        <div class="flow-step"><span class="step-num">2.</span><span class="step-text">The Whisper transcript is saved as the paired text label.</span></div>
+        <div class="flow-step"><span class="step-num">3.</span><span class="step-text">Both are registered in the ASR training corpus used to fine-tune the local Whisper model via NeMo RL.</span></div>
+        <div class="flow-step"><span class="step-num">4.</span><span class="step-text">More recordings → better Whisper accuracy on the operator's voice, vocabulary, and domain terms → faster task dictation.</span></div>
+      </div>
+
+      <p>This is the audio equivalent of the RLHF preference loop that drives DPO fine-tuning in the Fine-tune view. Voice recordings accumulate in the background; periodically a NeMo RL training pass uses them to improve the local ASR model's accuracy on the operator's specific speech patterns and technical vocabulary.</p>
+
+      <div class="callout green">
+        <p>The practical benefit is domain adaptation: the local Whisper model learns to correctly transcribe harness-specific terms like "wiggum", "SYNTH_INSTRUCTION", "DPO", "autoresearch", and model names like "qwen3.6-35b" — terms that a general-purpose ASR model reliably garbles.</p>
+      </div>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>Floating panel design</h4>
+          <p>Voice renders as an overlay rather than replacing the active view. This means you can initiate a recording while reviewing a run in the Runs view, dictate a follow-up task, and return to the same run without any navigation. The panel is stateless — dismissing it (with the X button or after submitting) restores full focus to the background view.</p>
+        </div>
+        <div class="feature-card">
+          <h4>LLM correction pass</h4>
+          <p>Task mode runs an extra LLM inference step beyond raw Whisper transcription. The corrector interprets casual speech into valid task syntax — adding output file paths, converting "do a deep dive on X" to the correct <code>/deep research X save to ~/Desktop/out.md</code> form, and normalizing skill flags.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Push-to-talk threshold</h4>
+          <p>The 900 ms Space hold threshold is intentional. Quick spacebar presses during typing should not trigger recording, so the timer waits for a sustained hold before opening the microphone. Releasing Space before 900 ms cancels without recording.</p>
+        </div>
+        <div class="feature-card">
+          <h4>CUDA transcription</h4>
+          <p>The Whisper inference runs on the local GPU (<code>WHISPER_DEVICE=cuda</code> in the active config). Transcription latency for a 5-second clip is typically under 1 second on the current hardware — fast enough to feel synchronous with the recording.</p>
+        </div>
+      </div>
+
+      <nav style="margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <a href="../blog/security-view.html" style="color:var(--accent-cyan);text-decoration:none;font-size:0.9rem;">&larr; The Security View</a>
+        <a href="../blog/mcp-view.html" style="color:var(--accent-cyan);text-decoration:none;font-size:0.9rem;">The MCP View &rarr;</a>
+      </nav>
+    </article>
+  </main>
+  <footer><p>&copy; 2026 Nick McCarty &bull; <a href="../blog.html">Blog</a></p></footer>
+</body>
+</html>

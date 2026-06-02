@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deploying the Harness with Docker: CPU, GPU, and Compose Variants | Nick McCarty</title>
+  <meta name="description" content="Three Docker artifacts — Dockerfile (CPU/PyTorch slim), Dockerfile.gpu (CUDA 11.8 + cuDNN), and docker-compose.yml (vLLM + Ollama + harness three-service stack) — cover the full deployment surface from laptop development to GPU inference server.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/docker-deployment.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Deploying the Harness with Docker: CPU, GPU, and Compose Variants">
+  <meta property="og:description" content="CPU and GPU Dockerfiles plus a three-service Compose stack (vLLM for large models, Ollama for fast models, harness dashboard) with health checks, live code mounts, and GPU passthrough.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/docker-deployment.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Deploying the Harness with Docker: CPU, GPU, and Compose Variants">
+  <meta name="twitter:description" content="Three Docker artifacts covering laptop dev to GPU server: CPU slim image, CUDA 11.8 GPU image, and a Compose stack with vLLM + Ollama + harness dashboard, health checks, and live mounts.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Deploying the Harness with Docker: CPU, GPU, and Compose Variants","description":"Three Docker artifacts for deploying the harness from laptop dev to GPU inference server.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/docker-deployment.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .service-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin:1.5rem 0;}
+    @media(max-width:640px){.service-grid{grid-template-columns:1fr;}}
+    .service-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.9rem 1rem;}
+    .service-card h4{margin:0 0 0.4rem;font-size:0.88rem;color:var(--accent-cyan);}
+    .service-card ul{margin:0;padding-left:1.1rem;font-size:0.8rem;line-height:1.7;color:var(--text-secondary);}
+    .compare-table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:0.83rem;}
+    .compare-table th{text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);color:var(--text-secondary);font-weight:600;}
+    .compare-table td{padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);}
+    .compare-table code{font-size:0.8em;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">Deploying the Harness with Docker: CPU, GPU, and Compose Variants</span></h1>
+        <p class="subtitle">Three Docker artifacts cover the full deployment range — a CPU slim image for development, a CUDA GPU image for production inference, and a three-service Compose stack that brings up vLLM, Ollama, and the harness dashboard together.</p>
+      </header>
+
+      <p>Running the harness locally with a Conda environment and a native Ollama install is the fastest path for development. But for reproducible deployments — on a rented GPU instance, a shared inference server, or a CI environment — Docker provides the isolation and repeatability that <code>conda activate</code> can't. The harness ships with two Dockerfiles and a Compose configuration that cover both cases.</p>
+
+      <h2>Two Dockerfiles</h2>
+
+      <table class="compare-table">
+        <thead>
+          <tr><th>File</th><th>Base image</th><th>PyTorch</th><th>Use case</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Dockerfile</code></td>
+            <td><code>python:3.11-slim</code></td>
+            <td>CPU build from <code>download.pytorch.org/whl/cpu</code></td>
+            <td>Development, CI, no GPU required</td>
+          </tr>
+          <tr>
+            <td><code>Dockerfile.gpu</code></td>
+            <td><code>pytorch/pytorch:2.7.1-cuda11.8-cudnn9-runtime</code></td>
+            <td>Pre-installed in base image (CUDA 11.8)</td>
+            <td>Production inference, sentence-transformers on GPU</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>Both Dockerfiles follow the same layer order: system packages (git, build-essential, curl, ffmpeg), Python dependencies from <code>requirements.txt</code>, Playwright browser installation, then the project source. The CPU variant installs PyTorch in its own layer before <code>requirements.txt</code> — PyTorch is large and changes rarely, so it benefits from Docker layer caching during iterative development. The GPU variant skips this step because PyTorch is already present in the base image.</p>
+
+      <p>Both expose port 8765 and start the server with:</p>
+      <pre><code>CMD ["python", "server.py", "--host", "0.0.0.0", "--port", "8765"]</code></pre>
+
+      <p>The <code>ffmpeg</code> system package is included to support <code>youtube_transcribe.py</code>, which needs ffmpeg available as a system binary for its Whisper fallback path.</p>
+
+      <h2>The three-service Compose stack</h2>
+
+      <div class="service-grid">
+        <div class="service-card">
+          <h4>vllm</h4>
+          <ul>
+            <li>Image: <code>vllm/vllm-openai:latest</code></li>
+            <li><code>runtime: nvidia</code>, GPU passthrough</li>
+            <li>Model from <code>VLLM_MODEL</code> env var (default: Qwen/Qwen2.5-14B-Instruct)</li>
+            <li><code>bfloat16</code>, 16k max context</li>
+            <li>HuggingFace cache mounted from <code>./model-cache</code></li>
+            <li>Health: <code>/health</code> endpoint, 20 retries, 120s start</li>
+          </ul>
+        </div>
+        <div class="service-card">
+          <h4>ollama</h4>
+          <ul>
+            <li>Image: <code>ollama/ollama:latest</code></li>
+            <li>Optional GPU passthrough</li>
+            <li>Manages its own model downloads</li>
+            <li>Handles smaller/fast models (planner, evaluator, <code>glm4:9b</code>)</li>
+            <li>Data mounted from <code>./ollama-data</code></li>
+            <li>Health: root endpoint, 10 retries, 30s start</li>
+          </ul>
+        </div>
+        <div class="service-card">
+          <h4>harness</h4>
+          <ul>
+            <li>Built from <code>Dockerfile</code> (or <code>Dockerfile.gpu</code>)</li>
+            <li>Live code mount: <code>.:/app</code> — no rebuild during dev</li>
+            <li>Persists <code>./runs</code> and <code>./memory-db</code> as volumes</li>
+            <li>Env vars: <code>VLLM_BASE_URL</code> and <code>OLLAMA_HOST</code> set for service discovery</li>
+            <li>Depends on vllm and ollama (both healthy) before starting</li>
+            <li><code>restart: on-failure</code></li>
+          </ul>
+        </div>
+      </div>
+
+      <h2>Service dependency and startup</h2>
+
+      <p>The Compose file uses <code>condition: service_healthy</code> for both vLLM and Ollama before the harness starts. This matters because vLLM can take 1–2 minutes to load a 14B model into GPU memory before it's ready to serve requests. Without the health check, the harness would start, attempt an LLM call during initialization, get a connection refused, and fail.</p>
+
+      <p>The vLLM service has a generous startup window: <code>start_period: 120s</code> with <code>retries: 20</code> at 15-second intervals. On a cold start with model weights not yet cached, the first pull from HuggingFace can extend this further — but Docker health checks don't count failed checks during <code>start_period</code>, so the 120s window absorbs most first-run delays.</p>
+
+      <h2>Live code mount</h2>
+
+      <p>The harness service mounts the project directory at <code>/app</code>:</p>
+
+      <pre><code>volumes:
+  - .:/app                    # live code — no rebuild during dev
+  - ./runs:/app/runs          # persist run data
+  - ./memory-db:/app/memory-db  # persist ChromaDB + SQLite</code></pre>
+
+      <p>The live mount means that editing a Python file on the host is immediately reflected in the container — no <code>docker compose build</code> required. For a workflow that involves frequent edits to <code>agent.py</code> or skill files, this makes the Compose stack nearly as fast to iterate on as running the harness natively. The separate volume mounts for <code>runs/</code> and <code>memory-db/</code> ensure run history and the ChromaDB memory store persist across container restarts.</p>
+
+      <h2>Switching to the GPU image</h2>
+
+      <pre><code># In docker-compose.yml, change:
+harness:
+  build:
+    context: .
+    dockerfile: Dockerfile.gpu   # was: Dockerfile
+  runtime: nvidia                # add this line
+  environment:
+    - NVIDIA_VISIBLE_DEVICES=all</code></pre>
+
+      <p>The GPU variant is worth switching to when <code>sentence-transformers</code> (used by the memory store for embedding generation) is a throughput bottleneck. Embedding generation on CPU can add 200–500ms per research step when the memory store is active; on GPU it's typically under 20ms.</p>
+
+      <h2>Quick start</h2>
+
+      <pre><code># Copy environment template
+cp .env.example .env
+
+# Set your HuggingFace token (for model downloads)
+echo "HF_TOKEN=your_token_here" >> .env
+
+# Launch all three services
+docker compose up
+
+# Dashboard at http://localhost:8765
+# vLLM at http://localhost:8000
+# Ollama at http://localhost:11434</code></pre>
+
+      <div class="callout amber">
+        <p>The <code>VLLM_MODEL</code> default is <code>Qwen/Qwen2.5-14B-Instruct</code>, which requires ~28 GB VRAM in bfloat16. Set <code>VLLM_MODEL=Qwen/Qwen2.5-7B-Instruct</code> in <code>.env</code> for a 24 GB card, or use a quantized GGUF variant via Ollama if you don't have a second GPU to dedicate to vLLM.</p>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

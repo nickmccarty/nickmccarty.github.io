@@ -93,6 +93,294 @@
 
     <section>
       <div class="blog-grid">
+        <a href="./blog/page-feedback-widget.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Page Feedback Widget: Closing the Loop Between Browser and Agent</h3>
+            <div class="meta">June 2, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+            <p>A Chrome extension injects a floating feedback panel on every localhost and <code>file:///</code> page. Notes are written to <code>localStorage</code> and POSTed to <code>/api/page-feedback</code>, landing in <code>data/page_feedback.jsonl</code> for agents to read, act on, and clear. Shadow DOM isolation, badge counter, completion checklist, and a <code>null</code>-origin CORS fix for local HTML files.</p>
+          </div>
+        </a>
+
+        <a href="./blog/skills-registry.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Skills Registry: Hook Points, Auto-Activation, and 38 Built-In Skills</h3>
+            <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+            <p>skills.py wires 38 capabilities into six hook points across the research pipeline — standalone, pre_research, pre_synthesis, post_synthesis, post_wiggum, and modifier. Seven skills activate automatically via predicate lambdas: keyword detection, regex matching task text against self-referential patterns, plan complexity checks, macroeconomic term matching, and trading thesis detection. Lazy loading keeps import time zero unless a skill is actually invoked.</p>
+          </div>
+        </a>
+
+        <a href="./blog/server.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>harness/api: The FastAPI Backend and Dashboard Server</h3>
+            <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+            <p>Async-native FastAPI replaces Flask: modular routers per concern, WebSocket live streaming that tails <code>runs.jsonl</code> instead of SSE thread hacks, static Vite dashboard served at root, CORS regex for any localhost port, and auto OpenAPI docs at <code>/docs</code>. Lifespan context manager handles startup and teardown cleanly.</p>
+          </div>
+        </a>
+
+        <a href="./blog/inference-shim.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>inference.py: The Unified LLM Backend Shim</h3>
+            <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+            <p>A drop-in <code>import ollama</code> replacement that routes to Ollama, vLLM, or llama-server via a three-level priority stack: per-model endpoint JSON, hybrid routing map, or global backend flag. Adapters normalize response shapes across backends and measure real wall-clock TTFT, while a 14-entry name translation table keeps model tags consistent across the codebase.</p>
+          </div>
+        </a>
+
+        <a href="./blog/search-cache.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts</h3>
+            <div class="meta">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
+            <p>Two SQLite tables, two use cases: <code>search_cache</code> deduplicates DDGS queries across all runs (always on, 24-hour TTL); <code>research_cache</code> stores full research contexts for autoresearch experiments (opt-in via <code>RESEARCH_CACHE=1</code>). SHA-256 keys, lazy eviction on write, schema migration on connect.</p>
+          </div>
+        </a>
+
+        <a href="./blog/planner.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Planner: Two-Pass Pre-Research Analysis</h3>
+            <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+            <p>Before a single web search runs, two fast <code>glm4:9b</code> calls assess prior knowledge and produce a structured plan. The prior knowledge pass identifies what the model already knows and what gaps need search; the main plan pass generates targeted queries, classifies the task, extracts section counts, and injects planner notes into synthesis.</p>
+          </div>
+        </a>
+
+        <a href="./blog/agent-pipeline.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>Inside agent.py: The Three-Turn Research Pipeline</h3>
+            <div class="meta">June 1, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
+            <p>Turn 1 gathers via novelty-gated web search (2&ndash;5 rounds, &epsilon;-greedy pass-through, URL enrichment); Turn 2 synthesizes with <code>SYNTH_INSTRUCTION</code> selected by task classifier (technical / count / prose); Turn 3 runs the Wiggum loop until PASS. Plus keep_alive estimation from run history, thinking-model detection, and Python code execution tool.</p>
+          </div>
+        </a>
+
+        <a href="./blog/docker-deployment.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>Deploying the Harness with Docker: CPU, GPU, and Compose Variants</h3>
+            <div class="meta">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
+            <p>A CPU slim image for development, a CUDA 11.8 GPU image for production inference, and a three-service Compose stack (vLLM for large models, Ollama for fast models, harness dashboard) with health-check dependency ordering, GPU passthrough, and a live code mount so no rebuild is needed during iteration.</p>
+          </div>
+        </a>
+
+        <a href="./blog/tinytroupe-tasks.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>Synthetic Eval Task Generation with TinyTroupe Personas</h3>
+            <div class="meta">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
+            <p>Eight practitioner archetypes &mdash; DevOps, data scientist, PM, security engineer, ML infra, and others &mdash; generate role-grounded research tasks via Microsoft TinyTroupe (with raw Ollama fallback). Evaluation criteria are auto-derived from the generated text: count detection triggers <code>exact_sections(N)</code>; structural and quality checks apply unconditionally.</p>
+          </div>
+        </a>
+
+        <a href="./blog/subagent-demo.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Subagent Demo Suite: Orchestrating Multi-Task Research Portfolios</h3>
+            <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+            <p>Two orchestration scripts show sequential and parallel multi-task execution: v1 submits six literature-review tasks to the FastAPI queue and has the agent render its own landing page; v2 runs five data-grounded self-analysis tasks (reading real repo files) with an optional parallel mode through the MCP HTTP server.</p>
+          </div>
+        </a>
+
+        <a href="./blog/github-skill.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The GitHub Skill: LLM-Assisted Git Operations from the Agent Loop</h3>
+            <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+            <p>Twelve operations auto-detected from a task string &mdash; push with LLM-generated commit message, PR creation with LLM title and body from the branch diff, issue creation from plain-text problem description, plus read-only status, list, view, and merge operations. Three distinct system prompts, one <code>/github</code> command.</p>
+          </div>
+        </a>
+
+        <a href="./blog/mine-knowledge.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>Mining a Ground-Truth Knowledge Base for the Eval Suite</h3>
+            <div class="meta">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
+            <p>Five deep research runs with the novelty gate disabled build authoritative reference documents &mdash; one per eval task &mdash; injected as <code>file_context</code> when the eval suite runs. <code>/deep</code> forces MAX_SEARCH_ROUNDS; <code>--no-wiggum</code> skips revision to cut mining time by 50&ndash;70%.</p>
+          </div>
+        </a>
+
+        <a href="./blog/wiki-sync.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Wiki Sync Skill: Deterministic Source Extraction and Gap-Targeted Code Injection</h3>
+            <div class="meta">June 1, 2026 &bull; 7 min read &bull; Agentic Harness Engineering</div>
+            <p>No LLM required &mdash; regex reads six source files and writes an idempotent Implementation Reference section into wiki/pipeline.md. A second mode, triggered by Wiggum FAIL cycles, matches the evaluator&rsquo;s issue text to nine trigger patterns and injects the relevant function bodies directly into the wiki.</p>
+          </div>
+        </a>
+
+        <a href="./blog/email-skill.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs</h3>
+            <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+            <p>Two LLM calls per contact &mdash; a subject line and a warm, specific body referencing the speaker&rsquo;s talk &mdash; with slide content fetched via MarkItDown, per-contact JSON output, a manifest file, and every draft logged to runs.jsonl as <code>task_type: email_draft</code> for full dashboard visibility.</p>
+          </div>
+        </a>
+
+        <a href="./blog/lit-review-skill.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Lit-Review Skill: Seven Steps from ArXiv Query to Rendered Survey</h3>
+            <div class="meta">June 1, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
+            <p>ArXiv fetch &rarr; Semantic Scholar citation enrichment (hub scores) &rarr; five-persona curation &rarr; per-paper annotation with Wiggum &rarr; LLM thematic clustering &rarr; cross-cluster synthesis with open questions &rarr; Jinja2 render. Three output templates: survey, gaps, executive. Per-paper checkpointing makes long runs resumable.</p>
+          </div>
+        </a>
+
+        <a href="./blog/playwright-skill.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Playwright Skill: LLM-Guided Navigation via ARIA Snapshots</h3>
+            <div class="meta">June 1, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
+            <p>ARIA accessibility-tree snapshots instead of raw DOM, pre-navigation sitemap planning that picks the best URL before the browser opens, a completeness oracle that pulls up to three pages when coverage is below threshold 7/10, blocked-click memory, SPA URL-change polling, and detached Chromium persistence via CDP for multi-task sessions.</p>
+          </div>
+        </a>
+
+        <a href="./blog/youtube-transcribe.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>YouTube and Media Transcription: Two Paths, One Research Input</h3>
+            <div class="meta">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
+            <p>Auto-captions via youtube-transcript-api (no download) with a pytubefix &plus; Whisper fallback for uncaptioned videos, plus direct ffmpeg extraction for any mp4, mp3, webm, or other media URL. <code>imageio_ffmpeg</code> bundles its own binary so no system ffmpeg install is required.</p>
+          </div>
+        </a>
+
+        <a href="./blog/supervisor.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Supervisor: Four Convergence Signals and Advisory Interventions</h3>
+            <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+            <p>A read-only convergence monitor that scans <code>runs.jsonl</code> for four collapse signals &mdash; Wiggum score variance, output size CV, search utilization, and content similarity &mdash; and recommends specific interventions when thresholds are crossed. Advisory only; never modifies pipeline behavior.</p>
+          </div>
+        </a>
+
+        <a href="./blog/curator.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>Five Personas, One Veto: Consensus Filtering for Fine-Tuning Data</h3>
+            <div class="meta">June 1, 2026 &bull; 7 min read &bull; Agentic Harness Engineering</div>
+            <p>Five LLM personas &mdash; Pragmatic Engineer, Academic Rigorist, Synthesis Thinker, Contrarian, Newcomer &mdash; each score every annotated paper 1&ndash;5. A paper reaches the fine-tuning dataset only if the mean is &ge; 3.5 and no single persona scores below a veto floor of 2. The Contrarian is the most common vetoer.</p>
+          </div>
+        </a>
+
+        <a href="./blog/op-cli.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The op CLI: A Rich REPL for the Research Harness</h3>
+            <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+            <p>Two invocation modes (interactive REPL and single-task), eight slash commands covering browser navigation, sitemap discovery, paper annotation, Gmail drafting, and free-form research, four browser flags, and a pyfiglet isometric splash screen with live endpoint display. Persistent <code>~/.op_history</code> for up-arrow recall across sessions.</p>
+          </div>
+        </a>
+
+        <a href="./blog/mcp-view.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The MCP View: Exposing the Harness as a Tool Server</h3>
+            <div class="meta">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
+            <p>Three tools &mdash; run_task, run_orchestrated, get_run &mdash; expose the full harness pipeline to any MCP client. Tool manifest with required/optional parameter badges and a live task log auto-refreshing every five seconds.</p>
+          </div>
+        </a>
+
+        <a href="./blog/voice-view.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Voice View: Push-to-Talk, Waveform Capture, and an ASR Training Flywheel</h3>
+            <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+            <p>Floating panel overlay with Note/Task mode toggle, 900ms push-to-talk threshold, WebAudio waveform canvas during recording, and three result types (task, answer, note). Every voice request auto-transcribes to a growing ASR corpus that feeds NeMo RL fine-tuning.</p>
+          </div>
+        </a>
+
+        <a href="./blog/security-view.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Security View: 36 Events, Six Layers, and Real Injection Payloads</h3>
+            <div class="meta">June 1, 2026 &bull; 7 min read &bull; Agentic Harness Engineering</div>
+            <p>28 blocks and 8 warnings across six defense layers &mdash; injection scanner, Python scanner, file sandbox, output sandbox, CDP guard, and scratch guard. Real injection payloads surfaced from web research content, including an output sandbox block on ~/.Desktop/.env.local.</p>
+          </div>
+        </a>
+
+        <a href="./blog/sessions-artifacts-view.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Sessions and Artifacts Views: CLI Audit Log and 1,053 Output Files</h3>
+            <div class="meta">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
+            <p>59 CLI sessions logged since April 27 with per-session token accounting, duration, and run counts. 1,053 output files totaling 5,718 KB, color-coded by extension with inline Markdown preview and run-ID linkage back to the source pipeline execution.</p>
+          </div>
+        </a>
+
+        <a href="./blog/system-view.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The System View: Governance Docs, Active Configuration, and 38 Skills</h3>
+            <div class="meta">May 31, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
+            <p>Editable AGENTS.md and four wiki files, a live config pane showing active inference endpoints and runtime settings (pass threshold 8.0, wiggum max rounds 3, research cache on), and a 38-skill registry with hook-type filter chips covering standalone, pre-synthesis, pre-research, post-synthesis, post-wiggum, and modifier tiers.</p>
+          </div>
+        </a>
+
+        <a href="./blog/submit-view.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Submit View: Queuing Tasks and Watching the Pipeline Execute in Real Time</h3>
+            <div class="meta">May 31, 2026 &bull; 7 min read &bull; Agentic Harness Engineering</div>
+            <p>Task form with producer model override and skip-wiggum flag, live SSE event feed rendering memory hits, plan queries, search rounds, synthesis checkpoints, and wiggum scores as typed cards, an optional plan gate for human approval before research begins, expandable chain-of-thought accordions per pipeline stage, and a result card with rendered Markdown output.</p>
+          </div>
+        </a>
+
+        <a href="./blog/osint-skill.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The OSINT Skill: 11-Layer Target Enrichment for Research Tasks</h3>
+            <div class="meta">May 31, 2026 &bull; 9 min read &bull; Agentic Harness Engineering</div>
+            <p>Automatic target detection from task strings, 11 parallel enrichment layers (DNS through HIBP breach check), LLM-generated dork queries with advanced operators, and citation-tagged markdown injected directly into the synthesis context window.</p>
+          </div>
+        </a>
+
+        <a href="./blog/fine-tune-view.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Fine-tune View: DPO Training Runs, RL Data, and the Preference Feedback Loop</h3>
+            <div class="meta">May 31, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
+            <p>DPO training to COMPLETE: 2,145 steps, 0.4665 final loss, 87.3% token accuracy, 39 minutes. The RL DATA tab surfaces the full preference dataset &mdash; 163 pairs, 76 reward signals, 40 ORPO examples &mdash; accumulating from autoresearch experiments and RLHF quality signals.</p>
+          </div>
+        </a>
+
+        <a href="./blog/autoresearch-view.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate</h3>
+            <div class="meta">May 31, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
+            <p>Real-time supervision of the SYNTH_INSTRUCTION optimizer: 40 experiments run, 1 kept, 39 discarded, 3% keep rate, best score 8.530, average delta &minus;1.038. The experiment table surfaces every mutation description, score delta, and discard count &mdash; the full hill-climbing log in one view.</p>
+          </div>
+        </a>
+
+        <a href="./blog/analytics-view.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Analytics View: Score Trends, Token Spend, and Run Distribution</h3>
+            <div class="meta">May 31, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+            <p>Score trend across all 1,442 runs, daily volume and pass-rate charts, daily token spend with input/output split peaking at 285k, a score distribution histogram concentrated at 8, task type breakdown, and 15,855,026 lifetime input tokens.</p>
+          </div>
+        </a>
+
+        <a href="./blog/runs-view.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Runs View: Pipeline Stage Visualization and Live Run Monitoring</h3>
+            <div class="meta">May 31, 2026 &bull; 7 min read &bull; Agentic Harness Engineering</div>
+            <p>1,442 runs filterable by PASS&nbsp;/&nbsp;FAIL&nbsp;/&nbsp;ERROR, a real-time pipeline stage map, a per-stage COMPUTE table, and a Context Window treemap that shows model context fill by stage — so you can see at a glance whether a run had headroom or was close to truncating its own prompt.</p>
+          </div>
+        </a>
+
+        <a href="./blog/research-history-view.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Research History View: A Unified Activity Log</h3>
+            <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+            <p>Every search query, browser visit, and research output in one reverse-chronological feed. Filterable by type and time window, with score bars, visit counts, and direct links from timeline entries into the Memory store.</p>
+          </div>
+        </a>
+
+        <a href="./blog/memory-view.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Memory View: 2,173 Observations, Quality Signals, and an Ontology Graph</h3>
+            <div class="meta">May 31, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
+            <p>A tour of the harness Memory UI: a semantic observation store that accumulates every run as structured facts, filterable by quality signal, searchable by task, provenance-linked to the run that created it, and visualized as a force-directed ontology graph.</p>
+          </div>
+        </a>
+
+        <a href="./blog/github-view.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The GitHub View: Repo Health at a Glance</h3>
+            <div class="meta">May 31, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+            <p>Branch status, ahead/dirty counts, a 107-commit year-long heatmap, a searchable commit log, open PRs and issues, and a full CI run history with pass/fail status &mdash; all live in the harness dashboard without leaving the experiment environment.</p>
+          </div>
+        </a>
+
+        <a href="./blog/perplexity-vs-harness.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>Harness vs. Perplexity: Eight Iterations to Parity</h3>
+            <div class="meta">May 31, 2026 &bull; 18 min read &bull; Agentic Harness Engineering</div>
+            <p>Eight iterations against a frozen Perplexity output on a current-conditions Fed district inflation task. Best stable result: tied 7.7/7.7. Four bugs fixed, a rubric rewritten for economic research, a two-pass extraction experiment that proved depth=7 is achievable but trades grounded for it, and a Beige Book chunking root cause that explains why.</p>
+          </div>
+        </a>
+
+        <a href="./blog/alt-data-pipeline.html" style="text-decoration: none; color: inherit;">
+          <div class="card">
+            <h3>The Alt-Data Pipeline: From Beige Book to Paper Trading Thesis</h3>
+            <div class="meta">May 31, 2026 &bull; 15 min read &bull; Agentic Harness Engineering</div>
+            <p>Five enrichment layers close the loop from macro narrative to actionable paper trading theses: BEA economic accounts, cross-sectional market signals (Hurst, momentum rank, cointegration), yfinance fundamentals, Alpaca portfolio context, and a structured <code>[THESIS:...]</code> citation template. The report gates every trade.</p>
+          </div>
+        </a>
+
         <a href="./blog/sbom-aibom.html" style="text-decoration: none; color: inherit;">
           <div class="card">
             <h3>SBOM and AIBOM for Agentic Systems</h3>

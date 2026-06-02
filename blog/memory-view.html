@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Memory View: 2,173 Observations, Quality Signals, and an Ontology Graph | Nick McCarty</title>
+  <meta name="description" content="A tour of the harness Memory UI: a semantic observation store that accumulates every run as a structured fact, filterable by quality signal, searchable by task, and visualized as a force-directed ontology graph.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/memory-view.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Memory View: 2,173 Observations, Quality Signals, and an Ontology Graph">
+  <meta property="og:description" content="A tour of the harness Memory UI: semantic observation store, RLHF quality signals, provenance tracking, and a force-directed ontology graph over 2,173 accumulated run observations.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/memory-view.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-31T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Memory View: 2,173 Observations, Quality Signals, and an Ontology Graph">
+  <meta name="twitter:description" content="Semantic observation store, RLHF quality signals, provenance tracking, and a force-directed ontology graph over 2,173 run observations.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Memory View: 2,173 Observations, Quality Signals, and an Ontology Graph","description":"A tour of the harness Memory UI — semantic observation store, RLHF quality signals, provenance tracking, and a force-directed ontology graph.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/memory-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout.green{border-left-color:#22c55e;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .tag{display:inline-block;font-size:0.7rem;font-weight:700;padding:0.15rem 0.45rem;border-radius:3px;letter-spacing:0.04em;text-transform:uppercase;}
+    .tag.cyan{background:rgba(0,212,255,0.12);color:var(--accent-cyan);}
+    .tag.green{background:rgba(34,197,94,0.15);color:#22c55e;}
+    .tag.amber{background:rgba(245,158,11,0.15);color:#f59e0b;}
+    .tag.red{background:rgba(239,68,68,0.15);color:#ef4444;}
+    .screenshot{width:100%;border-radius:8px;border:1px solid var(--border-color);margin:1.5rem 0;display:block;}
+    .screenshot-caption{font-size:0.8rem;color:var(--text-secondary);text-align:center;margin-top:-1rem;margin-bottom:1.5rem;}
+    .feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:640px){.feature-grid{grid-template-columns:1fr;}}
+    .feature-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.1rem;}
+    .feature-card h4{margin:0 0 0.4rem;font-size:0.9rem;color:var(--accent-cyan);}
+    .feature-card p{margin:0;font-size:0.85rem;line-height:1.6;color:var(--text-secondary);}
+    .field-row{display:flex;gap:0.5rem;align-items:baseline;padding:0.45rem 0;border-bottom:1px solid var(--border-color);font-size:0.88rem;}
+    .field-row:last-child{border-bottom:none;}
+    .field-name{font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--accent-cyan);min-width:120px;}
+    .field-desc{color:var(--text-secondary);line-height:1.5;}
+    .schema-block{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:1.5rem 0;}
+  </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Memory View","item":"https://nickmccarty.me/blog/memory-view.html"}]}</script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">May 31, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Memory View: 2,173 Observations, Quality Signals, and an Ontology Graph</span></h1>
+        <p class="subtitle" style="font-size:1.1rem;line-height:1.7;margin-top:1rem;">
+          Every run the harness completes writes structured observations into a persistent semantic store. The Memory view is the interface into that store: a paginated, searchable list of 2,173 memories across 87 pages, a detail panel with full provenance and inline RLHF quality signals, and a force-directed ontology graph that maps concept relationships across the entire accumulated corpus.
+        </p>
+      </header>
+
+      <p>
+        Most agentic systems treat each run as stateless. The harness deliberately does not. After every research task completes, the run is decomposed into discrete observations &mdash; named facts extracted from the synthesis, tagged with source type, quality score, and task provenance &mdash; and written into a ChromaDB-backed semantic store. The Memory view is how you inspect and curate what the system has learned.
+      </p>
+
+      <div class="callout">
+        <p><strong>Memory subtitle:</strong> <em>Semantic observation store &middot; RLHF quality signals &middot; Ontology graph</em> &mdash; three distinct functions in one view.</p>
+      </div>
+
+      <h2>The Memories List</h2>
+
+      <p>
+        The default tab shows all accumulated memories in reverse-chronological order. As of this writing the store holds 2,173 entries across 87 pages.
+      </p>
+
+      <img src="../assets/images/ui-memory-list.png" alt="Memory list view showing 2,173 memories with type badges and quality scores" class="screenshot">
+      <p class="screenshot-caption">The Memories tab: 2,173 observations, paginated 25 per page, filterable by sentiment and searchable by content.</p>
+
+      <p>
+        Each row in the list is a memory card carrying four pieces of inline metadata: the date the observation was created, its source type (a controlled vocabulary), a Wiggum quality score where applicable, and a fact count. The type vocabulary reflects the full range of things the harness does:
+      </p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>Research types</h4>
+          <p><code>lit-review</code> &mdash; arXiv/S2 synthesis<br><code>research</code> &mdash; general web + RAG<br><code>best_practices</code> &mdash; structured rules extraction<br><code>osint</code> &mdash; open-source intelligence</p>
+        </div>
+        <div class="feature-card">
+          <h4>System types</h4>
+          <p><code>skill</code> &mdash; skill-level performance observations<br><code>browser_history</code> &mdash; browser task observations<br><code>market</code> &mdash; market signals tasks<br><code>research</code> &mdash; general synthesis outputs</p>
+        </div>
+      </div>
+
+      <p>
+        The filter bar at the top offers four views: <strong>All</strong>, <strong>Positive</strong>, <strong>Neutral</strong>, and <strong>Negative</strong>. These map directly to the RLHF sentiment attached to each memory. The free-text search box queries against memory titles and narrative content. Together they make it possible to, for example, find all positively-rated lit-review observations from a specific domain without scrolling through 87 pages.
+      </p>
+
+      <h2>The Detail Panel</h2>
+
+      <p>
+        Clicking any memory opens a full detail panel on the right. This is where the semantic structure of the memory store becomes concrete.
+      </p>
+
+      <img src="../assets/images/ui-memory-detail.png" alt="Memory detail panel showing provenance, task string, narrative, quality signals, and facts for a SLM vs LLM efficiency lit review" class="screenshot">
+      <p class="screenshot-caption">Detail view for a lit-review memory: run ID, output path, full task string, narrative summary, upvote/downvote quality signals, and extracted facts.</p>
+
+      <p>
+        The detail panel is structured around four sections:
+      </p>
+
+      <div class="schema-block">
+        <div class="field-row">
+          <span class="field-name">Provenance</span>
+          <span class="field-desc">Run ID (e.g. <code>20260601T001320Z-01e19668aae6</code>) and the exact output file path on disk. Every memory is traceable to the run that produced it.</span>
+        </div>
+        <div class="field-row">
+          <span class="field-name">Task</span>
+          <span class="field-desc">The full task string passed to the harness, including all skill flags and output path. Reproducing the run is a copy-paste away.</span>
+        </div>
+        <div class="field-row">
+          <span class="field-name">Narrative</span>
+          <span class="field-desc">A one-to-two sentence summary of what the run found, auto-generated at write time. The narrative is what surfaces in search results and graph node labels.</span>
+        </div>
+        <div class="field-row">
+          <span class="field-name">Quality signal</span>
+          <span class="field-desc">Inline upvote / downvote buttons with the current sentiment score displayed in real time. Clicking either writes an RLHF signal back to the store &mdash; these votes accumulate and can drive future DPO fine-tuning.</span>
+        </div>
+        <div class="field-row">
+          <span class="field-name">Facts</span>
+          <span class="field-desc">Discrete extracted observations from the run output. Each fact is a claim the synthesis made that survived extraction, stored as a named string in the memory record.</span>
+        </div>
+      </div>
+
+      <p>
+        The quality signal mechanism is the most consequential part of the detail panel. The upvote/downvote interface is not cosmetic &mdash; every interaction writes a labeled preference pair to the RLHF store. As the harness accumulates signal, those pairs become the training data for direct preference optimization. The pipeline from "human rates a run output" to "model improves on similar tasks" runs through this UI.
+      </p>
+
+      <h2>The Review Tab</h2>
+
+      <p>
+        Between the Memories list and the Graph sits a Review tab. This surfaces memories that have not yet received a quality signal &mdash; newly created observations awaiting human judgment. The workflow is: run completes &rarr; memory is written &rarr; memory appears in Review &rarr; human votes &rarr; memory moves to the rated pool. Keeping the Review queue short is a proxy for how current the preference signal is.
+      </p>
+
+      <h2>The Ontology Graph</h2>
+
+      <p>
+        The Graph tab renders all 2,173 memories as a force-directed network. Nodes are concepts extracted from memory narratives; edges connect concepts that co-occur across runs. The layout is physics-simulated: related concepts cluster, isolated observations drift to the periphery. The result is a visual map of what the harness knows and how those topics are connected.
+      </p>
+
+      <div class="callout amber">
+        <p><strong>Note:</strong> The graph requires a separate API call that builds the full ontology at render time. With inference running concurrently on the same machine (e.g. lit review jobs), the graph endpoint can time out. Switch away and back to retry once the model server is free.</p>
+      </div>
+
+      <p>
+        At 2,173 nodes the graph is dense. The intended use is not to read individual nodes but to identify clusters &mdash; topic areas where the harness has accumulated concentrated signal &mdash; and gaps, where nodes are sparse or isolated. A well-used harness over time produces a graph whose cluster structure mirrors the research agenda: dense in areas of repeated investigation, sparse at the frontier.
+      </p>
+
+      <h2>What the Memory View Enables</h2>
+
+      <p>
+        The practical use cases for the Memory view fall into three categories:
+      </p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>Provenance lookup</h4>
+          <p>When a run output contains a claim you want to verify, search the memory for the task string or run ID to find the exact source file and the full task that generated it.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Quality curation</h4>
+          <p>The Review queue surfaces unrated memories. Regular curation keeps the RLHF signal fresh and ensures the preference store reflects current quality standards, not just historical runs.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Coverage mapping</h4>
+          <p>The Graph view shows which topics have deep coverage (dense clusters) and which are underexplored (isolated nodes). Use it to identify where the next research batch should focus.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Signal-guided retrieval</h4>
+          <p>Filter to Positive memories only, then search a domain. The result is a curated subset of the highest-rated prior research on that topic &mdash; a fast orientation before running new tasks.</p>
+        </div>
+      </div>
+
+      <h2>The Numbers</h2>
+
+      <p>
+        As of May 31, 2026: <strong>2,173 memories</strong> across <strong>87 pages</strong>. The store has been accumulating since the harness was first deployed, and includes research, lit-review, OSINT, skill-level, and browser-task observations. The oldest entries are from early experiments; the newest reflect lit reviews kicked off minutes before this screenshot was taken. The store grows by 4&ndash;10 new observations per run depending on how many discrete facts the synthesis produces.
+      </p>
+
+      <div class="callout green">
+        <p>The memory store doubles as the harness's institutional knowledge. Any task that has been run before leaves a trace that future runs can learn from &mdash; through explicit retrieval, through RLHF signal, or through the DPO pairs that quality votes eventually generate.</p>
+      </div>
+    </article>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Nick McCarty. Built with care.</p>
+  </footer>
+</body>
+</html>

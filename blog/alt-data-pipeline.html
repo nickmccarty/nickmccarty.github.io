@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Alt-Data Pipeline: From Beige Book to Paper Trading Thesis | Nick McCarty</title>
+  <meta name="description" content="Five new enrichment layers — BEA, market signals, yfinance, Alpaca portfolio context, and a structured thesis synthesis template — close the loop from macro narrative to actionable paper trading theses.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/alt-data-pipeline.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Alt-Data Pipeline: From Beige Book to Paper Trading Thesis">
+  <meta property="og:description" content="Five new enrichment layers close the loop from macro narrative to actionable paper trading theses. BEA GDP structure, cross-sectional momentum, yfinance fundamentals, Alpaca portfolio state, and a structured [THESIS:...] citation format.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/alt-data-pipeline.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-31T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Alt-Data Pipeline: From Beige Book to Paper Trading Thesis">
+  <meta name="twitter:description" content="BEA + market signals + yfinance + Alpaca: five layers that take the harness from economic data mining to structured, human-reviewed paper trading theses.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Alt-Data Pipeline: From Beige Book to Paper Trading Thesis","description":"Five new enrichment layers — BEA, market signals, yfinance, Alpaca portfolio context, and a structured thesis synthesis template — close the loop from macro narrative to actionable paper trading theses.","keywords":"BEA API, market signals, yfinance, Alpaca paper trading, trading thesis, context enrichment, agentic systems, momentum, Hurst exponent, cointegration","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/alt-data-pipeline.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/alt-data-pipeline.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og-default.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout.green{border-left-color:#22c55e;}
+    .callout.purple{border-left-color:#a78bfa;}
+    .callout p{margin:0;font-size:1.05rem;}
+    .series-nav{display:flex;gap:0.5rem;flex-wrap:wrap;margin:1rem 0 2rem;}
+    .series-badge{font-size:0.72rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;padding:0.25rem 0.6rem;border-radius:4px;background:var(--bg-tertiary);color:var(--text-secondary);border:1px solid var(--border-color);text-decoration:none;}
+    .series-badge.active{background:var(--accent-cyan);color:var(--bg-primary);border-color:var(--accent-cyan);}
+    .series-badge:hover:not(.active){border-color:var(--accent-cyan);color:var(--accent-cyan);}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .data-table{width:100%;border-collapse:collapse;font-size:0.82rem;margin:1rem 0 1.5rem;}
+    .data-table th{text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);color:var(--text-secondary);font-weight:600;font-size:0.75rem;letter-spacing:0.04em;text-transform:uppercase;}
+    .data-table td{padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);vertical-align:top;}
+    .data-table tr:last-child td{border-bottom:none;}
+    .data-table tr:hover td{background:var(--bg-secondary);}
+    .tag{display:inline-block;font-size:0.7rem;font-weight:700;padding:0.15rem 0.45rem;border-radius:3px;letter-spacing:0.04em;text-transform:uppercase;}
+    .tag.pass{background:rgba(34,197,94,0.15);color:#22c55e;}
+    .tag.pos{background:rgba(34,197,94,0.15);color:#22c55e;}
+    .tag.neg{background:rgba(239,68,68,0.15);color:#ef4444;}
+    .tag.flat{background:rgba(107,114,128,0.15);color:#9ca3af;}
+    .tag.cyan{background:rgba(0,212,255,0.12);color:var(--accent-cyan);}
+    .tag.amber{background:rgba(245,158,11,0.15);color:#f59e0b;}
+    .tag.purple{background:rgba(167,139,250,0.15);color:#a78bfa;}
+    .finding{background:var(--bg-tertiary);border-radius:8px;padding:0.9rem 1.1rem;margin:1rem 0;font-size:0.9rem;line-height:1.65;}
+    .finding strong{color:var(--accent-cyan);}
+    .context-diagram{font-family:'SF Mono','Consolas',monospace;font-size:0.82rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;margin:1.5rem 0;line-height:1.8;}
+    .cond-label{font-size:0.68rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:0.25rem;}
+    .citation-block{font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:1rem 0;line-height:2;}
+    .layer-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:0.75rem 0;}
+    .layer-card h4{margin:0 0 0.4rem;font-size:0.9rem;}
+    .layer-card p{margin:0;font-size:0.85rem;color:var(--text-secondary);line-height:1.6;}
+  </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Alt-Data Pipeline","item":"https://nickmccarty.me/blog/alt-data-pipeline.html"}]}</script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">May 31, 2026 &bull; 15 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Alt-Data Pipeline: From Beige Book to Paper Trading Thesis</span></h1>
+        <p class="subtitle" style="font-size:1.1rem;line-height:1.7;margin-top:1rem;">
+          Five new enrichment layers &mdash; BEA economic accounts, cross-sectional market signals, yfinance fundamentals, Alpaca portfolio context, and a structured thesis synthesis template &mdash; extend the harness from economic data mining into a human-reviewed paper trading pipeline. The report comes before any trade gets greenlit.
+        </p>
+      </header>
+
+      <div class="series-nav">
+        <a href="beige-book-rag-dpo.html" class="series-badge">Beige Book RAG</a>
+        <a href="fred-rag-results.html" class="series-badge">FRED RAG Results</a>
+        <a href="osint-enrichment.html" class="series-badge">OSINT Enrichment</a>
+        <span class="series-badge active">Alt-Data Pipeline</span>
+      </div>
+
+      <p>
+        The <a href="fred-rag-results.html">FRED RAG experiment</a> established that live quantitative series data produces a +0.40 composite score lift over web-search-only control &mdash; three times the effect of Beige Book prose. The mechanism is straightforward: numeric observations are harder to hallucinate around than qualitative summaries, and the evaluator's specificity and grounded dimensions reward the difference.
+      </p>
+      <p>
+        But FRED is a macro-level instrument. It tells you that GDP contracted at &minus;0.6% in Q1 2025 and that fixed investment accelerated to +6.4% in Q1 2026. It does not tell you which companies are benefiting from that capex surge, what their momentum looks like relative to peers, whether their valuation leaves room for the thesis to pay off, or whether you already own them. For that, you need more layers.
+      </p>
+      <p>
+        This post documents the five layers added to close that gap: BEA economic accounts, market signals computed from the trending tickers database, yfinance fundamentals, Alpaca portfolio state, and a structured synthesis instruction that forces the model to output machine-readable theses rather than free-form prose.
+      </p>
+
+      <h2>The Enrichment Stack</h2>
+
+      <p>The full pipeline, in the order layers fire during <code>gather_research()</code>:</p>
+
+      <div class="context-diagram">
+        <div style="margin-bottom:0.75rem;">
+          <div class="cond-label" style="color:#60a5fa;">research layer</div>
+          [web search context] + [Beige Book narrative]
+        </div>
+        <div style="margin-bottom:0.75rem;">
+          <div class="cond-label" style="color:#f59e0b;">economic APIs</div>
+          + [FRED series: rates, employment, inflation, housing]
+          + [BEA accounts: GDP components, state income, trade balance]
+        </div>
+        <div style="margin-bottom:0.75rem;">
+          <div class="cond-label" style="color:#34d399;">market data</div>
+          + [Market Signals: momentum rank, Hurst H, Bollinger z, cointegration]
+          + [yfinance: P/E, revenue growth, analyst targets, upcoming earnings]
+        </div>
+        <div style="margin-bottom:0.75rem;">
+          <div class="cond-label" style="color:#a78bfa;">portfolio state</div>
+          + [Alpaca: current positions, buying power, pending orders]
+        </div>
+        <div>
+          <div class="cond-label" style="color:#64c8b4;">synthesis</div>
+          → LLM synthesis → Wiggum eval → Report (.md)
+          → [human review] → optional Alpaca order execution
+        </div>
+      </div>
+
+      <p>
+        Each layer is intent-gated: FRED fires only when <code>_themes_for_query()</code> detects economic keywords; BEA fires on similar themes; market signals and yfinance fire when equity intent is detected; Alpaca fires on trading intent. A pure OSINT task gets none of them. A trading thesis task gets all five.
+      </p>
+
+      <h2>Layer 1: BEA Economic Accounts</h2>
+
+      <p>
+        The Bureau of Economic Analysis publishes GDP components, state-level income, price parities, and international trade data at a structural level that FRED does not cover. Where FRED gives you the real GDP growth rate, BEA gives you the decomposition: which industries drove the growth, which states led or lagged, and how the current account balance evolved across goods and services.
+      </p>
+
+      <p>
+        The <code>bea_tool.py</code> catalogue covers four BEA datasets across 17 curated queries:
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Dataset</th><th>Coverage</th><th>Catalogue entries</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>NIPA</code></td><td>National income and product accounts: GDP components, personal income</td><td>2</td></tr>
+          <tr><td><code>Regional</code></td><td>Real GDP, personal income, price parities by state and county</td><td>9</td></tr>
+          <tr><td><code>GDPbyIndustry</code></td><td>Value-added decomposition across 22 industry groups</td><td>2</td></tr>
+          <tr><td><code>ITA</code></td><td>International transactions: goods balance, services balance, total</td><td>3</td></tr>
+          <tr><td colspan="3"></td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        One implementation detail worth noting: BEA's API does not support the <code>LAST{N}</code> year shorthand that FRED uses. Passing <code>Year=LAST5</code> returns error 201 (&ldquo;No data exists for the Year/Frequencies passed&rdquo;). The fix is a one-line helper that computes specific year strings dynamically:
+      </p>
+
+      <pre><code>def _yr(n: int) -> str:
+    cur = date.today().year
+    return ",".join(str(y) for y in range(cur - n + 1, cur + 1))</code></pre>
+
+      <p>
+        Every catalogue entry now uses <code>_yr(5)</code>, <code>_yr(3)</code>, or <code>_yr(2)</code> instead of string literals. This is evaluated at module load time, so the catalogue always reflects the current calendar year without manual updates.
+      </p>
+
+      <p>
+        The citation format for BEA carries enough context to trace any claim back to its source table:
+      </p>
+
+      <div class="citation-block">
+        [BEA:NIPA:T10101:US:2026Q1]<br>
+        [BEA:Regional:SAGDP9N:STATE:2024]<br>
+        [BEA:GDPbyIndustry:1:ALL:2025]<br>
+        [BEA:ITA:BalGdsSrvs:AllCountries:2025Q4]
+      </div>
+
+      <div class="callout amber">
+        <p><strong>BEA key activation.</strong> Unlike FRED, BEA API keys require email activation before first use. The activation email link sometimes takes several hours to propagate on BEA's backend even after clicking. The correct diagnostic is a direct <code>GetDataSetList</code> call: if it returns error code 4, the key is not yet active. If it returns a dataset list, the key is live and you can proceed.</p>
+      </div>
+
+      <h2>Layer 2: Market Signals</h2>
+
+      <p>
+        The trending tickers database (<code>trending-tickers-unified.db</code>) is populated by <code>trending_tickers_skill.py</code>, which runs on a schedule and stores daily OHLCV data for a momentum-screened universe. The <code>market_signals_skill.py</code> layer reads that database and computes five signal families per ticker:
+      </p>
+
+      <div class="layer-card">
+        <h4>Cross-sectional momentum rank</h4>
+        <p>Percentile rank of N-day returns across the full universe. An adaptive window selector checks 175d, 120d, 90d, 60d, and 30d in sequence and picks the longest window where at least 50% of tickers have sufficient history. This prevents the rank from being computed over inconsistent lookback periods when the database is young.</p>
+      </div>
+
+      <div class="layer-card">
+        <h4>Hurst exponent (R/S method)</h4>
+        <p>Estimated from log-return R/S analysis across lags [4, 8, 16, 32, 64, 128]. H &lt; 0.50 indicates mean-reverting behavior; H &gt; 0.65 indicates a persistent trending regime. A linear fit of log(lag) vs. log(R/S) over at least three lags is required &mdash; tickers with fewer than 64 price observations return <code>None</code>.</p>
+      </div>
+
+      <div class="layer-card">
+        <h4>Bollinger band z-score</h4>
+        <p>z = (last_price &minus; SMA₂₀) / &sigma;₂₀. Values above +1.5 flag overbought conditions; below &minus;1.5 flag oversold. Combined with the Hurst regime, this distinguishes between a trending breakout (high H, high z) and a mean-reversion setup (low H, high z).</p>
+      </div>
+
+      <div class="layer-card">
+        <h4>ADF stationarity + Johansen cointegration (pairs)</h4>
+        <p>For each pair in the universe, the Johansen test identifies cointegrated pairs at the 95% confidence level. Cointegrated pairs feed an Ornstein&ndash;Uhlenbeck half-life estimate: &Delta;spread = &beta; &times; spread<sub>t&minus;1</sub>; half_life = &minus;log(2) / log(1 + &beta;). Short half-lives (under 20 days) identify viable mean-reversion candidates.</p>
+      </div>
+
+      <div class="layer-card">
+        <h4>SMA-20/50 cross signal</h4>
+        <p>Classifies each ticker as <code>golden</code> (SMA20 crossing above SMA50), <code>death</code> (crossing below), <code>above</code>, or <code>below</code>. Used as a secondary confirmation signal rather than a primary entry trigger.</p>
+      </div>
+
+      <p>
+        All signals carry citation IDs that survive into the synthesis context and can be scored by the Wiggum evaluator for groundedness:
+      </p>
+
+      <div class="citation-block">
+        [SIGNAL:momentum_rank:NVDA:2026-05-28]<br>
+        [SIGNAL:hurst:ADSK:2026-05-28]<br>
+        [SIGNAL:bb_zscore:TSLA:2026-05-28]<br>
+        [SIGNAL:johansen:GOOG-META:2026-05-28]
+      </div>
+
+      <h2>Layer 3: yfinance Fundamentals</h2>
+
+      <p>
+        Market signals tell you what price is doing. yfinance tells you what the business is doing and what the market thinks it's worth. The <code>yfinance_tool.py</code> layer pulls a snapshot for each ticker detected in the query or drawn from the trending tickers database (up to 10 by default):
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Field group</th><th>Fields fetched</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Valuation</td><td>P/E (trailing + forward), EPS, market cap, beta</td></tr>
+          <tr><td>Financials</td><td>Revenue, revenue growth YoY, gross margin, operating margin</td></tr>
+          <tr><td>Analyst consensus</td><td>Rating (1&ndash;5 scale), # analysts, price target range and mean, implied upside</td></tr>
+          <tr><td>Positioning</td><td>Short ratio (days to cover)</td></tr>
+          <tr><td>Earnings calendar</td><td>Next earnings date, last reported EPS vs. estimate</td></tr>
+          <tr><td>Recent news</td><td>Top 3 headlines from <code>yf.Ticker.news</code></td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        Ticker extraction works in two modes. If the query contains explicit uppercase 1&ndash;5 character sequences (filtered against a stopword list), those tickers are fetched directly. If no explicit tickers are found, the tool falls back to the trending database, pulling the tickers with the most recent and densest OHLCV coverage.
+      </p>
+
+      <p>
+        A live snapshot from the day this post was written, for illustration:
+      </p>
+
+      <pre><code>### [YF:NVDA:snapshot:2026-05-28] NVIDIA Corporation (NVDA)
+Sector/Industry: Technology / Semiconductors
+Price: $214.25  52w: $132.92 – $236.54
+Valuation: P/E=32.81 (fwd 16.93)  EPS=6.53  MCap=$5.19T  β=2.24
+Financials: Revenue=$253.5B (+85.2% YoY)  GrossMargin=+74.1%  OpMargin=+65.6%
+Analysts (58): Strong Buy  Target=$180–$500 mean=$295.69  (+38.0% upside)
+Short ratio: 1.92 days to cover</code></pre>
+
+      <p>
+        The 58-analyst strong-buy consensus, +38% implied upside from mean target, and 85% revenue growth are exactly the kind of figures that move a thesis from vague macro correlation (&ldquo;AI capex is accelerating&rdquo;) to specific claim (&ldquo;NVDA at 32x trailing earnings with 38% upside to consensus target, supported by +85% revenue growth and expanding margins&rdquo;). The citation <code>[YF:NVDA:snapshot:2026-05-28]</code> makes that claim attributable and Wiggum-scorable.
+      </p>
+
+      <h2>Layer 4: Alpaca Portfolio Context</h2>
+
+      <p>
+        Any trading system that ignores current positions will eventually recommend buying what you already own or selling what you don't have. The Alpaca layer solves this by injecting a live portfolio snapshot for any query with trading intent:
+      </p>
+
+      <pre><code>## Portfolio State (Alpaca PAPER)
+
+Account
+- Portfolio value: $116,771.77
+- Cash: $41,533.83
+- Buying power: $339,530.04
+- Day trades today: 0
+
+Open Positions (3)
+- [PORTFOLIO:TSLA] TSLA long 106sh entry=$343.72 current=$442.10
+  MV=$46,863 P&L=+$10,424 (+27.9%)
+- [PORTFOLIO:GOOG] GOOG long 45sh entry=$198.25 current=$386.12
+  MV=$17,376 P&L=+$8,453 (+93.9%)
+- [PORTFOLIO:NVDA] NVDA long 53sh entry=$179.60 current=$214.25
+  MV=$11,355 P&L=+$1,836 (+19.2%)</code></pre>
+
+      <p>
+        The model now knows that $41k in cash is available, that NVDA is already held at a 19% gain, and that adding to it would increase concentration in semiconductors. This directly influences how the synthesis weights new thesis ideas against existing exposure. The <code>[PORTFOLIO:{ticker}]</code> citation format is included in the structured thesis template so the model can explicitly reference existing holdings in its risk factor sections.
+      </p>
+
+      <h2>The Structured Thesis Template</h2>
+
+      <p>
+        The fifth layer is not a data source but a synthesis instruction. When <code>_is_trading_task()</code> detects trading-intent keywords in the query &mdash; phrases like <code>trading thesis</code>, <code>paper trade</code>, <code>trade setup</code>, <code>alpaca</code>, or <code>long thesis</code> &mdash; the synthesis instruction switches from the default research template to <code>SYNTH_INSTRUCTION_TRADING</code>:
+      </p>
+
+      <pre><code>SYNTH_INSTRUCTION_TRADING = """
+Output a trading thesis report in markdown starting with # (no preamble).
+
+Structure each thesis exactly as follows:
+
+## Thesis N: [Direction] [TICKER] — [One-line rationale]
+**Direction**: Long | Short
+**Ticker**: SYMBOL
+**Conviction**: High | Medium | Low
+[THESIS:{direction}:{ticker}:{rationale-slug}:{date}]
+
+**Macro context**: cite [FRED:...], [BEA:...], or Beige Book signals
+**Signal support**: cite [SIGNAL:momentum_rank:...], [SIGNAL:hurst:...]
+**Fundamentals**: cite [YF:{ticker}:snapshot:{date}]
+**Risk factors**: 2-3 specific bearish counters
+
+**Entry**: price level or range
+**Target**: price target with basis
+**Stop**: stop-loss level with basis
+**Time horizon**: weeks | 1-3 months | 3-6 months | 6-12 months
+**Suggested position size**: % of paper portfolio
+"""</code></pre>
+
+      <p>
+        The template forces three things the default instruction does not. First, every claim must cite a specific data source from the enrichment context &mdash; a FRED series ID, a BEA table, a signal citation, or a yfinance snapshot. The evaluator's groundedness dimension scores against this. Second, risk factors are mandatory. A thesis without bearish counters is not a thesis, it's a wish. Third, the <code>[THESIS:...]</code> citation is machine-readable: direction, ticker, rationale slug, and date are all parseable fields that could drive downstream execution.
+      </p>
+
+      <div class="callout green">
+        <p><strong>The citation taxonomy.</strong> By the time synthesis fires, the context window contains six distinct citation namespaces: <code>[FRED:...]</code>, <code>[BEA:...]</code>, <code>[SIGNAL:...]</code>, <code>[YF:...]</code>, <code>[PORTFOLIO:...]</code>, and <code>[THESIS:...]</code>. The Wiggum evaluator already scores groundedness by checking whether the synthesis output contains verifiable claims tied to specific sources. Adding new citation types extends the surface area it can evaluate against without changing the evaluation rubric.</p>
+      </div>
+
+      <h2>Human in the Loop</h2>
+
+      <p>
+        The Alpaca integration is deliberately split into two phases. The enrichment layer &mdash; injecting current portfolio state &mdash; fires automatically whenever trading intent is detected. The execution layer &mdash; placing orders &mdash; does not.
+      </p>
+
+      <div class="context-diagram">
+        <div style="margin-bottom:0.75rem;">
+          <div class="cond-label" style="color:#34d399;">automatic (fires on trading intent)</div>
+          gather_research() → enrich with portfolio context → synthesize → Wiggum eval → Report (.md)
+        </div>
+        <div>
+          <div class="cond-label" style="color:#a78bfa;">manual (explicit command only)</div>
+          conda run -n ollama-pi python -m harness.alpaca_tool buy NVDA 10
+        </div>
+      </div>
+
+      <p>
+        The report is the gate. A thesis that looks compelling in the context window may not survive contact with the actual numbers &mdash; position sizing that implies 80% concentration in one sector, a stop-loss that's already been breached, or a target that's below the current price. The report surfaces these problems before any capital is committed, even paper capital.
+      </p>
+      <p>
+        The Alpaca CLI supports market orders, limit orders, dollar-notional sizing, and good-till-cancelled flags:
+      </p>
+
+      <pre><code># review the report first, then execute selectively
+python -m harness.alpaca_tool positions          # check current state
+python -m harness.alpaca_tool buy NVDA 10        # market order, 10 shares
+python -m harness.alpaca_tool buy NVDA --notional 2000 --limit 212.00 --gtc
+python -m harness.alpaca_tool cancel-all         # pull all pending orders</code></pre>
+
+      <h2>The Pipeline DAG</h2>
+
+      <p>
+        The full enrichment graph is visualized in the dashboard's Pipeline view, added alongside the other nav items. Each node shows its data category; edges show the direction of data flow. The <code>synth &rarr; orders</code> edge is dashed to indicate it is conditional on explicit human action rather than automatic.
+      </p>
+
+      <p>
+        The DAG has two structural properties worth naming. The first is that all enrichment layers are additive: each one appends to the context window, and any individual layer can be disabled without breaking the others (via environment flags like <code>HARNESS_BEA_DISABLE=1</code>). The second is that the synthesis step sees all layers simultaneously &mdash; it can cite a FRED rate, a BEA state GDP figure, a momentum rank, and a yfinance analyst target in the same thesis section, because they all live in the same context merge.
+      </p>
+
+      <div class="callout">
+        <p>This is a different architecture than a multi-agent pipeline where specialized agents hand off results in sequence. Here, all data collection happens in parallel during <code>gather_research()</code>, then merges into a single context block. The LLM sees the full picture in one shot rather than receiving pre-summarized outputs from upstream agents. Whether this approach or the agentic handoff approach produces better synthesis quality is an open empirical question; the RAG experiments to date have only tested single-pass synthesis.</p>
+      </div>
+
+      <h2>What's Next</h2>
+
+      <p>
+        The pipeline is now complete from macro narrative to paper trade. The natural next experiments are:
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Direction</th><th>What it tests</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Run the thesis generator against live market conditions</td><td>Whether the model produces well-structured, grounded theses with all six citation types present</td></tr>
+          <tr><td>Wiggum scoring on thesis output</td><td>Whether the trading instruction template achieves higher groundedness scores than the default research template on finance tasks</td></tr>
+          <tr><td>Backtest the signal layer</td><td>Whether the Hurst H &gt; 0.65 trending filter and cross-sectional momentum rank have predictive validity over 30- and 90-day horizons in the current universe</td></tr>
+          <tr><td>Broader alt-data sources</td><td>Prediction market data (Kalshi, Polymarket), Google Trends, SEC EDGAR filings &mdash; each following the same intent-gated enrichment pattern</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        The thesis generation experiment is the most immediately actionable: it closes the design loop, produces a Wiggum-scorable artifact, and requires no new infrastructure. Running it against the same six tasks used in the FRED and Beige Book RAG experiments would produce a direct comparison of how much the additional four layers move the needle on composite score.
+      </p>
+
+    </article>
+  </main>
+
+  <footer>
+    <div class="footer-links">
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="https://nickmccarty.me/blog.html">Blog</a>
+    </div>
+    <p style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.5rem;">&copy; 2026 Nick McCarty</p>
+  </footer>
+</body>
+</html>

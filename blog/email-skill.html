@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs | Nick McCarty</title>
+  <meta name="description" content="email_skill.py drafts personalized outreach emails from a CSV of conference speakers — two LLM calls per contact for subject line and body, slide content fetched via MarkItDown, and every draft logged to runs.jsonl for dashboard visibility.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/email-skill.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs">
+  <meta property="og:description" content="Two LLM calls per contact — subject line and body — with slide content fetched via MarkItDown, per-contact JSON output, a manifest file, and every draft logged to runs.jsonl as task_type email_draft.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/email-skill.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs">
+  <meta name="twitter:description" content="Two LLM calls per contact, slide content via MarkItDown, warm-and-specific system prompt, manifest JSON — and every draft visible in the harness dashboard.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs","description":"email_skill.py drafts personalized outreach emails from a CSV of conference speakers with two LLM calls per contact and full dashboard logging.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/email-skill.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:640px){.two-col{grid-template-columns:1fr;}}
+    .info-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.1rem;}
+    .info-card h4{margin:0 0 0.35rem;font-size:0.88rem;color:var(--accent-cyan);}
+    .info-card p{margin:0;font-size:0.83rem;line-height:1.65;color:var(--text-secondary);}
+    .csv-table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:0.85rem;}
+    .csv-table th{text-align:left;padding:0.5rem 1rem;font-size:0.76rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-secondary);border-bottom:2px solid var(--border-color);}
+    .csv-table td{padding:0.6rem 1rem;border-bottom:1px solid var(--border-color);vertical-align:top;}
+    .csv-table tr:last-child td{border-bottom:none;}
+    .csv-table td:first-child{font-family:'SF Mono','Consolas',monospace;font-size:0.82rem;color:var(--accent-cyan);white-space:nowrap;}
+    .csv-table td:last-child{color:var(--text-secondary);line-height:1.5;}
+    .req-badge{display:inline-block;font-size:0.7rem;font-weight:600;padding:0.1rem 0.4rem;border-radius:3px;margin-left:0.3rem;}
+    .req{background:rgba(129,140,248,0.18);color:#818cf8;}
+    .pref{background:rgba(251,191,36,0.15);color:#fbbf24;}
+    .opt{background:rgba(255,255,255,0.07);color:var(--text-secondary);}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs</span></h1>
+        <p class="subtitle">Two LLM calls per contact — a subject line and a warm-and-specific body — with slide content fetched automatically via MarkItDown, per-contact JSON output, and every draft logged to <code>runs.jsonl</code> for full dashboard visibility.</p>
+      </header>
+
+      <p>After attending a conference or watching a batch of recorded talks, following up with speakers is high-value but time-consuming to personalize at scale. <code>email_skill.py</code> turns a CSV of speaker records into a directory of ready-to-review JSON drafts. The drafts are not templates — each one references the speaker's specific talk topic, connects to the sender's context, and is grounded in extracted slide content when available.</p>
+
+      <h2>CSV input format</h2>
+
+      <p>The skill reads any CSV that contains speaker data. Column requirements are tiered:</p>
+
+      <table class="csv-table">
+        <thead>
+          <tr><th>Column</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>name<span class="req-badge req">required</span></td><td>Full name. First name is extracted for the salutation.</td></tr>
+          <tr><td>affiliation<span class="req-badge req">required</span></td><td>University, company, or research group.</td></tr>
+          <tr><td>markdown<span class="req-badge pref">preferred</span></td><td>Pre-converted slide text. If present, used directly (first 600 chars).</td></tr>
+          <tr><td>summary<span class="req-badge pref">preferred</span></td><td>Talk abstract or summary. Included in the body prompt (first 400 chars).</td></tr>
+          <tr><td>topic_keywords<span class="req-badge pref">preferred</span></td><td>Comma-separated or Python-list-format keywords. Used in both subject and body prompts.</td></tr>
+          <tr><td>content_url<span class="req-badge opt">optional</span></td><td>URL to slides or session page. Fetched via MarkItDown if <code>markdown</code> is empty.</td></tr>
+          <tr><td>emails<span class="req-badge opt">optional</span></td><td>Email address(es). Falls back to <code>emails_regex</code>, <code>email</code>, <code>contact_email</code>, <code>speaker_email</code> in that order. If none found, draft is written with a <code>&lt;email-not-found&gt;</code> placeholder.</td></tr>
+        </tbody>
+      </table>
+
+      <p>The email column fallback chain is intentionally broad — conference CSV exports use inconsistent column names, and the skill adapts rather than requiring a fixed schema.</p>
+
+      <h2>Two LLM calls per contact</h2>
+
+      <div class="two-col">
+        <div class="info-card">
+          <h4>Subject line (64 tokens)</h4>
+          <p>A separate system prompt instructs the model to write a concise, specific subject line under 60 characters. The prompt includes speaker name, affiliation, topic keywords, sender company, and goal. Output is direct — no "Subject:" prefix, no quotes.</p>
+        </div>
+        <div class="info-card">
+          <h4>Email body (512 tokens)</h4>
+          <p>A warm, specific body in three paragraphs: sincere thanks referencing the talk topic; natural connection to the sender's context; light mention of the platform framed as useful to the speaker, not as a pitch. No bullet points, no em dashes. Plain professional prose.</p>
+        </div>
+      </div>
+
+      <p>Both calls use temperature 0.7, which allows variation across contacts without the outputs becoming generically repetitive. Qwen3 chain-of-thought <code>&lt;think&gt;...&lt;/think&gt;</code> blocks are stripped from both outputs before saving.</p>
+
+      <h2>Slide content via MarkItDown</h2>
+
+      <p>When a row has <code>markdown</code> pre-populated, that text is used directly. When it's empty but <code>content_url</code> is present, the skill fetches the URL via <a href="https://github.com/microsoft/markitdown" style="color:var(--accent-cyan);">MarkItDown</a> (<code>MarkItDown(enable_plugins=False).convert_url(url)</code>), which handles PDFs, HTML pages, PPTX files, and DOCX documents. The first 600 characters of the converted text form the slide excerpt injected into the body prompt.</p>
+
+      <p>MarkItDown also handles local file paths — passing a local PDF path loads and converts it the same way. The skill treats the source field uniformly: URL → <code>convert_url()</code>, file path with recognized extension → <code>convert(path)</code>, anything else → raw text up to 2000 characters.</p>
+
+      <h2>Output structure</h2>
+
+      <p>For a batch run, each contact produces a JSON file in the output directory:</p>
+
+      <pre><code>{
+  "name": "Jane Smith",
+  "affiliation": "UC Berkeley BIDS",
+  "to_email": "jsmith@berkeley.edu",
+  "email_found": true,
+  "sender_name": "Nick",
+  "sender_email": "nick@upskilled.consulting",
+  "subject": "Your geospatial AI talk at GeoWeek",
+  "body": "Hi Jane,\n\nThank you for your excellent talk on...",
+  "generated_at": "2026-06-01T14:22:31.045Z"
+}</code></pre>
+
+      <p>A <code>manifest.json</code> in the output directory consolidates all records. The final console summary reports how many contacts had email addresses found versus how many received a placeholder — useful for knowing which drafts need manual address lookup before sending.</p>
+
+      <h2>Dashboard logging</h2>
+
+      <p>Every email draft is logged to <code>runs.jsonl</code> as a distinct entry with <code>task_type: "email_draft"</code>. The record includes the full token count (subject + body calls combined), the email address, subject line, body text, and the goal string. This means the Sessions view in the dashboard shows email drafting as part of the normal session activity, and the Artifacts view includes the JSON files as outputs.</p>
+
+      <div class="callout">
+        <p>The skill was built for conference follow-up from <code>geo-week-talks.csv</code> — a CSV of geospatial AI conference speakers. The invocation pattern was:<br><code>op /email geo-week-talks.csv reach out about our geospatial AI platform save to outreach/</code></p>
+      </div>
+
+      <h2>Single-contact mode</h2>
+
+      <p>Beyond batch CSV processing, <code>generate_single_email()</code> generates one draft for a named contact with an arbitrary source (URL, file, or inline text). This is the entry point used when the agent dispatches an <code>/email &lt;contact&gt; &lt;goal&gt;</code> slash command from the <code>op</code> CLI — the agent resolves the contact name to an email address from known contacts, assembles the source context, and calls this function directly.</p>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

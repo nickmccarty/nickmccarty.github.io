@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The System View: Governance Docs, Active Configuration, and 38 Skills | Nick McCarty</title>
+  <meta name="description" content="A tour of the harness System UI: editable governance and knowledge files, a live active-config pane showing every env var and runtime setting, and a skills registry with 38 entries filterable by hook type.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/system-view.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The System View: Governance Docs, Active Configuration, and 38 Skills">
+  <meta property="og:description" content="Editable AGENTS.md and wiki files, a live config pane with inference endpoints and runtime settings, and a 38-skill registry filterable by hook type — all in one dashboard panel.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/system-view.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-31T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The System View: Governance Docs, Active Configuration, and 38 Skills">
+  <meta name="twitter:description" content="Editable governance files, live config pane, and 38-skill registry filterable by hook type.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The System View: Governance Docs, Active Configuration, and 38 Skills","description":"A tour of the harness System UI: editable governance and knowledge files, a live active-config pane showing every env var and runtime setting, and a skills registry with 38 entries filterable by hook type.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/system-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The System View","item":"https://nickmccarty.me/blog/system-view.html"}]}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout.green{border-left-color:#22c55e;}
+    .callout.purple{border-left-color:#a78bfa;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .tag{display:inline-block;font-size:0.7rem;font-weight:700;padding:0.15rem 0.45rem;border-radius:3px;letter-spacing:0.04em;text-transform:uppercase;}
+    .tag.cyan{background:rgba(0,212,255,0.12);color:var(--accent-cyan);}
+    .tag.green{background:rgba(34,197,94,0.15);color:#22c55e;}
+    .tag.amber{background:rgba(245,158,11,0.15);color:#f59e0b;}
+    .tag.red{background:rgba(239,68,68,0.15);color:#ef4444;}
+    .tag.purple{background:rgba(167,139,250,0.15);color:#a78bfa;}
+    .tag.blue{background:rgba(96,165,250,0.15);color:#60a5fa;}
+    .tag.pink{background:rgba(236,72,153,0.15);color:#ec4899;}
+    .screenshot{width:100%;border-radius:8px;border:1px solid var(--border-color);margin:1.5rem 0;display:block;}
+    .screenshot-caption{font-size:0.8rem;color:var(--text-secondary);text-align:center;margin-top:-1rem;margin-bottom:1.5rem;}
+    .feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:640px){.feature-grid{grid-template-columns:1fr;}}
+    .feature-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.1rem;}
+    .feature-card h4{margin:0 0 0.4rem;font-size:0.9rem;}
+    .feature-card p{margin:0;font-size:0.85rem;line-height:1.6;color:var(--text-secondary);}
+    .file-row{display:flex;gap:0.75rem;align-items:flex-start;padding:0.55rem 0;border-bottom:1px solid var(--border-color);font-size:0.88rem;}
+    .file-row:last-child{border-bottom:none;}
+    .file-name{font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--accent-cyan);min-width:140px;padding-top:0.1rem;}
+    .file-desc{color:var(--text-secondary);line-height:1.55;}
+    .schema-block{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:1.5rem 0;}
+    .kv-row{display:grid;grid-template-columns:220px 1fr;gap:12px;padding:0.4rem 0;border-bottom:1px solid var(--border-color);font-size:0.85rem;align-items:flex-start;}
+    .kv-row:last-child{border-bottom:none;}
+    .kv-key{font-family:'SF Mono','Consolas',monospace;font-size:0.78rem;color:var(--text-secondary);padding-top:0.1rem;}
+    .kv-val{line-height:1.5;word-break:break-all;}
+    .skill-row{display:grid;grid-template-columns:130px 110px 45px 55px 1fr;gap:10px;padding:0.45rem 0;border-bottom:1px solid var(--border-color);font-size:0.83rem;align-items:start;}
+    .skill-row:last-child{border-bottom:none;}
+    .skill-row.header{font-size:0.7rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.06em;padding-bottom:0.3rem;}
+    .skill-name{font-family:'SF Mono','Consolas',monospace;font-size:0.82rem;font-weight:600;color:var(--accent-cyan);}
+    .skill-desc{color:var(--text-secondary);line-height:1.45;}
+    .hook-chip{display:inline-block;font-size:0.72rem;padding:0.18rem 0.55rem;border-radius:12px;font-weight:600;white-space:nowrap;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">May 31, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The System View: Governance Docs, Active Configuration, and 38 Skills</span></h1>
+        <p class="subtitle">A single panel that surfaces every file the harness reads as behavioral input — from <code>AGENTS.md</code> to <code>.harness-user.toml</code> — plus a live snapshot of the active runtime configuration and a filterable registry of all 38 installed skills.</p>
+      </header>
+
+      <p>The harness is configured by a combination of environment variables, TOML settings, and Markdown governance documents that the planner and synthesizer read at runtime. Editing any of these traditionally meant opening a terminal, finding the file, editing it, and restarting the server. The System view collapses that into a file browser with an inline edit mode — three groups of files in a sidebar, a content pane that renders the selected file, and two live panels that reflect the current running state without requiring a restart to read.</p>
+
+      <img src="../assets/images/ui-system-01.png" alt="System view showing GOVERNANCE, KNOWLEDGE, and USER file groups in the left sidebar and AGENTS.md content in the main pane" class="screenshot">
+      <p class="screenshot-caption">System view with <code>AGENTS.md</code> selected. The sidebar shows all three file groups plus the two LIVE virtual entries at the bottom. The Edit button appears for all files flagged as editable.</p>
+
+      <h2>The File Sidebar</h2>
+
+      <p>The sidebar has three static groups and one live section:</p>
+
+      <div class="schema-block">
+        <div class="file-row">
+          <span class="file-name">GOVERNANCE</span>
+          <span class="file-desc"><code>AGENTS.md</code> (9.2&nbsp;KB, editable) is the developer and agent reference for the codebase — directory layout, skill quick-reference table, Wiggum dimension weights, environment variables. The harness reads this file via <code>/introspect</code> and <code>/orientation</code> skills. <code>ROADMAP.md</code> (62&nbsp;KB) is read-only — the long-form project roadmap, too large to edit in the dashboard.</span>
+        </div>
+        <div class="file-row">
+          <span class="file-name">KNOWLEDGE</span>
+          <span class="file-desc">Four wiki pages loaded by <code>/introspect</code> and <code>/contextualize</code>: <code>skills.md</code> (full skill catalog), <code>evaluation.md</code> (Wiggum dimensions and rubric anchors), <code>pipeline.md</code> (stage descriptions, env vars, run record fields), <code>cli.md</code> (CLI commands, flags, API endpoints). All four are editable in the dashboard — changes take effect on the next run that calls <code>/introspect</code>.</span>
+        </div>
+        <div class="file-row">
+          <span class="file-name">USER</span>
+          <span class="file-desc"><code>user_profile.md</code> contains the operator's background and preferences — injected into synthesis context for personalization. <code>.harness-user.toml</code> holds user-specific config overrides (sender name, company, hourly rate for leverage calculations). Both are editable inline.</span>
+        </div>
+        <div class="file-row">
+          <span class="file-name">LIVE</span>
+          <span class="file-desc">Two virtual entries that don't correspond to files. <strong>Active config</strong> reflects the running process state — environment variables and resolved runtime settings. <strong>Skills registry</strong> shows all registered skills with hook type, auto-trigger flags, and descriptions. Both are read-only snapshots of live memory.</span>
+        </div>
+      </div>
+
+      <p>Files marked with a small "edit" label in the sidebar open in read mode by default. Click <strong>Edit</strong> to switch the content pane to a textarea; <strong>Save</strong> writes the file via <code>PUT /api/system/file/{key}</code> and clears the edit state. Files larger than 80&nbsp;KB are truncated with an amber warning — the file is still readable, just not fully shown.</p>
+
+      <h2>Active Config</h2>
+
+      <p>The Active config pane is a live snapshot of the process environment and resolved settings at the moment you open it. It has three sections.</p>
+
+      <img src="../assets/images/ui-system-config.png" alt="Active config pane showing Environment non-secret section with HARNESS_ENDPOINTS and other vars, and Runtime settings below" class="screenshot">
+      <p class="screenshot-caption">Active config: environment variables in the top section, runtime settings in the middle. The <code>HARNESS_ENDPOINTS</code> JSON shows the two inference backends currently registered — qwen3-8b at port 8082 and qwen3.6-35b at port 8083, both via llama.cpp.</p>
+
+      <p><strong>Environment (non-secret)</strong> shows every env var the harness exposes that doesn't contain credentials. The current values:</p>
+
+      <div class="schema-block">
+        <div class="kv-row"><span class="kv-key">INFERENCE_BACKEND</span><span class="kv-val"><code>vllm</code> — routes inference through the vLLM-compatible API path (llama.cpp server in this case)</span></div>
+        <div class="kv-row"><span class="kv-key">HARNESS_PRODUCER_MODEL</span><span class="kv-val"><code>qwen3.6-35b</code> — default synthesis model</span></div>
+        <div class="kv-row"><span class="kv-key">HARNESS_EVALUATOR_MODEL</span><span class="kv-val"><code>qwen3-8b</code> — default Wiggum evaluation model</span></div>
+        <div class="kv-row"><span class="kv-key">HARNESS_SYNTH_CONTEXT_MAX</span><span class="kv-val"><code>12000</code> tokens — context window ceiling passed to the synthesizer; the Context Window treemap in the Runs view uses this as the denominator for fill %</span></div>
+        <div class="kv-row"><span class="kv-key">HARNESS_ENDPOINTS</span><span class="kv-val">JSON routing table for model-specific endpoints: <code>qwen3-8b</code> → <code>localhost:8082</code> (llama.cpp), <code>qwen3.6-35b</code> → <code>localhost:8083</code> (llama.cpp, Q3_S GGUF)</span></div>
+        <div class="kv-row"><span class="kv-key">WHISPER_DEVICE</span><span class="kv-val"><code>cuda</code> — Whisper transcription runs on GPU via the Voice pipeline</span></div>
+        <div class="kv-row"><span class="kv-key">VLLM_BASE_URL</span><span class="kv-val"><code>http://localhost:8000/v1</code> — fallback vLLM endpoint when <code>HARNESS_ENDPOINTS</code> has no match for the requested model</span></div>
+      </div>
+
+      <p><strong>Runtime settings</strong> shows the resolved config object after all overrides are applied:</p>
+
+      <div class="schema-block">
+        <div class="kv-row"><span class="kv-key">producer_model</span><span class="kv-val"><code>pi-qwen3.6</code> — the resolved model tag, after any alias substitution</span></div>
+        <div class="kv-row"><span class="kv-key">evaluator_model</span><span class="kv-val"><code>Qwen3-Coder:30b</code></span></div>
+        <div class="kv-row"><span class="kv-key">vision_model</span><span class="kv-val"><code>llama3.2-vision</code></span></div>
+        <div class="kv-row"><span class="kv-key">embed_model</span><span class="kv-val"><code>nomic-embed-text</code> — used by ChromaDB for memory embeddings</span></div>
+        <div class="kv-row"><span class="kv-key">pass_threshold</span><span class="kv-val"><code>8.0</code> — Wiggum score required to halt the evaluation loop and mark the run PASS</span></div>
+        <div class="kv-row"><span class="kv-key">wiggum_max_rounds</span><span class="kv-val"><code>3</code> — maximum revision attempts before the run is marked FAIL regardless of score</span></div>
+        <div class="kv-row"><span class="kv-key">subtask_max_workers</span><span class="kv-val"><code>4</code> — thread pool size for parallel sub-task execution in orchestrated runs</span></div>
+        <div class="kv-row"><span class="kv-key">research_cache</span><span class="kv-val"><code>true</code> — SQLite cache for search results; identical queries skip the network round-trip</span></div>
+        <div class="kv-row"><span class="kv-key">wiggum_panel</span><span class="kv-val"><code>false</code> — 3-persona evaluation panel disabled (enable with <code>WIGGUM_PANEL=1</code> or <code>/panel</code> skill)</span></div>
+      </div>
+
+      <p>The third section, <strong>Synthesis instructions</strong>, renders the active <code>SYNTH_INSTRUCTION</code> variants — one block per task type. This is the instruction the synthesizer reads verbatim when composing the output document, and it's what the autoresearch loop mutates during experiments.</p>
+
+      <div class="callout amber">
+        <p>The synthesis instructions shown here are the winner from autoresearch experiment&nbsp;#14 — the single KEEP out of 40 experiments, scoring 8.530. Seeing it in the Active config pane confirms the harness is actually running the optimized instruction, not an earlier draft.</p>
+      </div>
+
+      <h2>Skills Registry</h2>
+
+      <p>The Skills registry lists all 38 installed skills with five columns: SKILL (name with leading slash), HOOK (colored chip), AUTO (whether the skill fires without explicit invocation), PROMPT (whether it injects text into the synthesis prompt), and DESCRIPTION.</p>
+
+      <img src="../assets/images/ui-system-skills.png" alt="Skills registry showing hook filter chips at top and skill rows with name, hook chip, auto, prompt, and description columns" class="screenshot">
+      <p class="screenshot-caption">Skills registry filtered to all hooks. Colored chips show hook type; AUTO ✓ means the skill triggers automatically from matching task language; PROMPT ✓ means it adds text to the synthesis prompt directly.</p>
+
+      <h3>Hook taxonomy</h3>
+
+      <p>Skills are organized by where in the pipeline they attach:</p>
+
+      <div class="schema-block">
+        <div class="file-row">
+          <span class="file-name"><span class="hook-chip" style="background:rgba(99,102,241,0.2);color:#6366f1;">standalone</span></span>
+          <span class="file-desc"><strong>28 skills.</strong> Run as self-contained pipelines, bypassing the standard planner → search → synthesis loop. Examples: <code>/lit-review</code>, <code>/playwright</code>, <code>/deck</code>, <code>/email</code>, <code>/github</code>, <code>/recall</code>, <code>/debug</code>, <code>/forge:plugin</code>. Most of the skill catalog lives here.</span>
+        </div>
+        <div class="file-row">
+          <span class="file-name"><span class="hook-chip" style="background:rgba(16,185,129,0.2);color:#10b981;">pre synthesis</span></span>
+          <span class="file-desc"><strong>5 skills.</strong> Inject context or modify the prompt before the LLM synthesis call. <code>/cite</code> requires source attribution; <code>/date</code> and <code>/time</code> inject the current date/timestamp so the model knows when it is; <code>/scratchpad</code> runs Python for exact calculations; <code>/beige-book</code> prepends Federal Reserve Beige Book text for economic tasks.</span>
+        </div>
+        <div class="file-row">
+          <span class="file-name"><span class="hook-chip" style="background:rgba(14,165,233,0.2);color:#0ea5e9;">pre research</span></span>
+          <span class="file-desc"><strong>2 skills.</strong> Run before the search stage. <code>/deep</code> forces <code>MAX_SEARCH_ROUNDS</code> and disables the novelty saturation gate that would otherwise end search early. <code>/contextualize</code> injects self-knowledge (skills, pipeline, eval rubric) into the planning prompt so the model can reason about its own capabilities.</span>
+        </div>
+        <div class="file-row">
+          <span class="file-name"><span class="hook-chip" style="background:rgba(245,158,11,0.2);color:#f59e0b;">post synthesis</span></span>
+          <span class="file-desc"><strong>1 skill.</strong> <code>/knowledge-graph</code> — generates a D3.js force-directed graph from the synthesized content. Fires automatically (AUTO ✓) when the task string contains "kg" or "visualize".</span>
+        </div>
+        <div class="file-row">
+          <span class="file-name"><span class="hook-chip" style="background:rgba(236,72,153,0.2);color:#ec4899;">post wiggum</span></span>
+          <span class="file-desc"><strong>1 skill.</strong> <code>/panel</code> — runs the 3-persona evaluation panel (Domain Practitioner, Critical Reviewer, Informed Newcomer) after Wiggum scores the output. Fires automatically (AUTO ✓) on high-complexity tasks when <code>WIGGUM_PANEL=1</code>.</span>
+        </div>
+        <div class="file-row">
+          <span class="file-name"><span class="hook-chip" style="background:rgba(139,92,246,0.2);color:#8b5cf6;">modifier</span></span>
+          <span class="file-desc"><strong>1 skill.</strong> <code>/wiggum</code> — forces the evaluation/revision loop on any output, including standalone skill outputs that don't go through it by default. Useful for scoring <code>/annotate</code> results against the research rubric.</span>
+        </div>
+      </div>
+
+      <h3>AUTO and PROMPT flags</h3>
+
+      <p>The AUTO column indicates which skills fire without the user writing the slash command explicitly. The trigger is a keyword match in the task string: <code>/deep</code> fires on tasks containing "comprehensive" or "exhaustive"; <code>/contextualize</code> fires on self-referential tasks. This is what makes skills composable — a task like "exhaustively research RAG architectures and save to ~/Desktop/out.md" will automatically engage <code>/deep</code> without any explicit flag, because the planner recognizes "exhaustively" as the auto-trigger.</p>
+
+      <p>The PROMPT column marks skills that inject text directly into the synthesis prompt rather than running separate pipeline steps. <code>/cite</code> and <code>/date</code> are the main examples — they add a few lines to the synthesis instruction that the LLM reads alongside the research context, at near-zero token cost.</p>
+
+      <div class="callout">
+        <p>The hook filter chips at the top of the skills table let you isolate a specific tier of the pipeline at a glance. Selecting "pre synthesis" shows just the five skills that modify what the LLM sees right before it writes — which is the tier that has the highest leverage on output quality per added token.</p>
+      </div>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4 style="color:var(--accent-cyan);">In-dashboard editing</h4>
+          <p>Edits to <code>evaluation.md</code> or <code>skills.md</code> take effect on the next skill invocation without restarting the server — the wiki files are read from disk on each <code>/introspect</code> call.</p>
+        </div>
+        <div class="feature-card">
+          <h4 style="color:var(--accent-cyan);">AGENTS.md as agent context</h4>
+          <p><code>AGENTS.md</code> is written for the harness pipeline agents, not for Claude Code. When <code>/orientation</code> or <code>/introspect</code> fires, it loads this file as the agent's self-knowledge base — directory layout, skill table, env vars, and all.</p>
+        </div>
+        <div class="feature-card">
+          <h4 style="color:#22c55e;">Config vs. env</h4>
+          <p>Runtime settings like <code>pass_threshold</code> and <code>wiggum_max_rounds</code> can be overridden by env vars at startup. The Active config pane shows the resolved values after all overrides — it's the authoritative view of what the running process actually sees.</p>
+        </div>
+        <div class="feature-card">
+          <h4 style="color:#a78bfa;">38 skills, 6 hooks</h4>
+          <p>The registry count grows as plugins are installed via <code>/forge:plugin</code>. New plugins drop into <code>harness/plugins/</code> and auto-register on the next server start — they appear in the Skills registry immediately.</p>
+        </div>
+      </div>
+
+      <p>The System view is the operational dashboard for the parts of the harness that don't change run-to-run — the governance layer, the inference config, and the skill set. The <a href="./runs-view.html" style="color:var(--accent-cyan);">Runs view</a> covers what happened; the System view covers what the harness is.</p>
+
+      <nav style="margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <a href="../blog/submit-view.html" style="color:var(--accent-cyan);text-decoration:none;font-size:0.9rem;">&larr; The Submit View</a>
+        <a href="../blog.html" style="color:var(--accent-cyan);text-decoration:none;font-size:0.9rem;">All posts &rarr;</a>
+      </nav>
+    </article>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Nick McCarty &bull; <a href="../blog.html">Blog</a></p>
+  </footer>
+</body>
+</html>

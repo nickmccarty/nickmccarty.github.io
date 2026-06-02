@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Submit View: Queuing Tasks and Watching the Pipeline Execute in Real Time | Nick McCarty</title>
+  <meta name="description" content="A tour of the harness Submit UI: the task form, live SSE event feed, plan gate approval, expandable chain-of-thought panels, and the result card — everything needed to launch and observe a research run without leaving the dashboard.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/submit-view.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Submit View: Queuing Tasks and Watching the Pipeline Execute in Real Time">
+  <meta property="og:description" content="Task form, SSE event feed, plan gate, chain-of-thought accordion, and result card — the full lifecycle of a harness research run from one panel.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/submit-view.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-31T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Submit View: Queuing Tasks and Watching the Pipeline Execute in Real Time">
+  <meta name="twitter:description" content="Task form, SSE event feed, plan gate, chain-of-thought accordion, and result card — the full lifecycle of a harness research run from one panel.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Submit View: Queuing Tasks and Watching the Pipeline Execute in Real Time","description":"A tour of the harness Submit UI: task form, live SSE event feed, plan gate approval, expandable chain-of-thought panels, and the result card — everything needed to launch and observe a research run without leaving the dashboard.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/submit-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Submit View","item":"https://nickmccarty.me/blog/submit-view.html"}]}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout.green{border-left-color:#22c55e;}
+    .callout.purple{border-left-color:#a78bfa;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .tag{display:inline-block;font-size:0.7rem;font-weight:700;padding:0.15rem 0.45rem;border-radius:3px;letter-spacing:0.04em;text-transform:uppercase;}
+    .tag.cyan{background:rgba(0,212,255,0.12);color:var(--accent-cyan);}
+    .tag.green{background:rgba(34,197,94,0.15);color:#22c55e;}
+    .tag.amber{background:rgba(245,158,11,0.15);color:#f59e0b;}
+    .tag.red{background:rgba(239,68,68,0.15);color:#ef4444;}
+    .tag.purple{background:rgba(167,139,250,0.15);color:#a78bfa;}
+    .screenshot{width:100%;border-radius:8px;border:1px solid var(--border-color);margin:1.5rem 0;display:block;}
+    .screenshot-caption{font-size:0.8rem;color:var(--text-secondary);text-align:center;margin-top:-1rem;margin-bottom:1.5rem;}
+    .feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:640px){.feature-grid{grid-template-columns:1fr;}}
+    .feature-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.1rem;}
+    .feature-card h4{margin:0 0 0.4rem;font-size:0.9rem;}
+    .feature-card p{margin:0;font-size:0.85rem;line-height:1.6;color:var(--text-secondary);}
+    .event-row{display:flex;gap:0.75rem;align-items:flex-start;padding:0.55rem 0;border-bottom:1px solid var(--border-color);font-size:0.88rem;}
+    .event-row:last-child{border-bottom:none;}
+    .event-kind{font-family:'SF Mono','Consolas',monospace;font-size:0.78rem;min-width:100px;padding-top:0.1rem;}
+    .event-desc{color:var(--text-secondary);line-height:1.55;}
+    .schema-block{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:1.5rem 0;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">May 31, 2026 &bull; 7 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Submit View: Queuing Tasks and Watching the Pipeline Execute in Real Time</span></h1>
+        <p class="subtitle">A task form, a live SSE event feed, an optional plan gate, expandable chain-of-thought panels, and a result card — the full lifecycle of a harness research run from a single panel.</p>
+      </header>
+
+      <p>Most interaction with the harness happens from the CLI: type a task, the pipeline runs, a Markdown file lands on the desktop. The Submit view wraps that same interaction inside the dashboard — with the addition of a live event feed that surfaces every internal signal the pipeline emits as it works: memory hits, planned queries, search rounds, synthesis checkpoints, and wiggum scores. The queue and active-runs tables below the form extend this into multi-task scheduling without leaving the browser.</p>
+
+      <img src="../assets/images/ui-submit-01.png" alt="Submit view showing task textarea, producer model field, Skip wiggum and Review plan checkboxes, Run now button, and empty queue" class="screenshot">
+      <p class="screenshot-caption">The Submit view at rest: task textarea with placeholder, producer model override field, two option checkboxes, and the queue showing no pending items.</p>
+
+      <h2>The Task Form</h2>
+
+      <p>The form is intentionally minimal. The <strong>Task</strong> textarea accepts exactly what the CLI accepts: a natural-language task string, optionally prefixed with skill flags like <code>/deep</code> or <code>/cite</code>. The placeholder <code>Research best practices for prompt injection defense and save to ~/Desktop/out.md</code> shows the expected format — free text with an output path.</p>
+
+      <p>Three options sit below the textarea:</p>
+
+      <div class="schema-block">
+        <div class="event-row">
+          <span class="event-kind">Producer model</span>
+          <span class="event-desc">Override the default inference model for this run. Leave blank to use the value from <code>HARNESS_PRODUCER_MODEL</code> (currently <code>qwen3.6-35b</code>). Useful for A/B comparisons between model checkpoints without touching the config file.</span>
+        </div>
+        <div class="event-row">
+          <span class="event-kind">Skip wiggum</span>
+          <span class="event-desc">Bypass the Wiggum evaluation loop entirely. The pipeline runs to synthesis and stops — no score, no pass/fail. Useful for fast iteration on prompt changes when you just want to read the output without burning eval tokens.</span>
+        </div>
+        <div class="event-row">
+          <span class="event-kind">Review plan</span>
+          <span class="event-desc">Pause execution after the Planner generates its search queries and surface them for human approval before research begins. The plan gate card appears inline — approve to continue, reject to cancel.</span>
+        </div>
+      </div>
+
+      <p>Ctrl+Enter submits immediately from inside the textarea. The <strong>Run now</strong> button calls <code>POST /api/queue</code>, receives an <code>item_id</code>, and opens an SSE connection to <code>/api/tasks/{item_id}/stream</code> — the live event feed appears without a page reload.</p>
+
+      <h2>The Live Event Feed</h2>
+
+      <p>Once a task is submitted, the event feed replaces the empty space below the form. A pulsing dot and "Running" label stay visible until the pipeline finishes. Each pipeline signal is rendered as a typed card:</p>
+
+      <div class="schema-block">
+        <div class="event-row">
+          <span class="event-kind" style="color:#a78bfa;">memory</span>
+          <span class="event-desc">Memory retrieval result. Shows hit count and the titles of the top matching observations from the ChromaDB store. A "Memory: no history" card appears when this is the first run on a topic.</span>
+        </div>
+        <div class="event-row">
+          <span class="event-kind" style="color:#38bdf8;">plan</span>
+          <span class="event-desc">Planner output. Task type badge (<code>best_practices</code>, <code>research</code>, <code>lit-review</code>, etc.), complexity badge (<code>simple</code> / <code>complex</code> / <code>exhaustive</code>), and the list of search queries the planner generated. Optional notes field for planner reasoning.</span>
+        </div>
+        <div class="event-row">
+          <span class="event-kind" style="color:#60a5fa;">search</span>
+          <span class="event-desc">One card per search round. Shows round number, the query string (truncated), and the hit count returned. Multiple rounds appear as the search stage iterates toward the configured depth target.</span>
+        </div>
+        <div class="event-row">
+          <span class="event-kind" style="color:#22d3ee;">synth</span>
+          <span class="event-desc">Synthesis checkpoint. "Synthesis started" with input context token count, followed by "Synthesis done" when the LLM finishes generating. The token count lets you see at a glance how large the context window was going into synthesis.</span>
+        </div>
+        <div class="event-row">
+          <span class="event-kind" style="color:#e3b341;">wiggum</span>
+          <span class="event-desc">Evaluation result. PASS or FAIL badge, the numeric score (e.g. <code>8.30</code>), round number, and a proportional bar — green for pass, red for fail. If Wiggum runs multiple revision rounds, a card appears for each one.</span>
+        </div>
+        <div class="event-row">
+          <span class="event-kind" style="color:#f59e0b;">agent message</span>
+          <span class="event-desc">Sub-agent communication in orchestrated runs. Messages are typed: <code>progress</code> (cyan), <code>finding</code> (amber), <code>blocker</code> (red), <code>done</code> (green). Each card shows the sub-agent index and message type alongside the content.</span>
+        </div>
+        <div class="event-row">
+          <span class="event-kind" style="color:#a78bfa;">thinking</span>
+          <span class="event-desc">Expandable chain-of-thought accordion. One card per pipeline stage that emits reasoning traces (plan, synth, tool, eval). Collapsed by default — click to expand. The character count in the collapsed header gives a quick size proxy for how much reasoning the model produced.</span>
+        </div>
+      </div>
+
+      <p>Raw log lines that don't parse into a typed event go into a scrolling <code>&lt;pre&gt;</code> block below the cards, auto-scrolled to the bottom as new lines arrive.</p>
+
+      <div class="callout purple">
+        <p>The thinking cards are the most practically useful part of the feed for debugging. When a run scores poorly, the <strong>eval</strong> thinking trace often contains the evaluator's per-dimension reasoning verbatim — you can read exactly which criterion drove the score down without hunting through log files.</p>
+      </div>
+
+      <h2>The Plan Gate</h2>
+
+      <p>When <strong>Review plan</strong> is checked, the pipeline pauses after planning and emits a <code>plan_gate</code> event instead of proceeding to search. The dashboard intercepts this event and renders an <strong>ApprovePlanCard</strong> inline — a list of the planned queries with an Approve button. Clicking Approve unblocks the pipeline via a follow-up API call; the event feed then continues as normal.</p>
+
+      <p>This gate exists for high-stakes or expensive tasks where you want to verify the planner decomposed the problem correctly before burning search and synthesis tokens on a misframed set of queries. For routine use, leaving the checkbox unchecked means the pipeline runs end-to-end without interruption.</p>
+
+      <h2>Active Runs and the Queue</h2>
+
+      <p>Below the event feed, two sections give a view into concurrent execution. <strong>Active</strong> lists every run currently in flight across the whole harness — not just the one you just submitted. Each active run card shows a pulsing dot, the truncated run ID, the producer model, and the task string.</p>
+
+      <p>The <strong>Queue</strong> table shows all pending tasks — position, task string (truncated to 80 characters), status badge, queued-at timestamp, and a red square-icon cancel button for anything still in <code>running</code> or <code>pending</code> state. Tasks the harness is processing concurrently (when <code>subtask_max_workers</code> &gt; 1) show <code>running</code>; tasks waiting behind them show <code>pending</code>.</p>
+
+      <div class="callout amber">
+        <p>The queue is useful when running batch experiments: submit a dozen variants, watch them drain through the active and queue tables, then switch to the Runs view to compare scores across all of them at once.</p>
+      </div>
+
+      <h2>The Result Card</h2>
+
+      <p>When the pipeline finishes and the completed run appears in the recent-runs list, a <strong>Result Card</strong> replaces the event feed. The card has a left border colored by outcome — green for <span class="tag green">PASS</span>, red for <span class="tag red">FAIL</span> — and shows the final score, run duration in seconds, and the output file path. Below the metadata the full synthesized output renders as formatted Markdown via <code>MdView</code>, so you can read the research report directly in the dashboard without opening the file.</p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4 style="color:var(--accent-cyan);">No-wiggum fast path</h4>
+          <p>Skip wiggum drops synthesis-only runs to roughly half the wall-clock time. Score and pass/fail fields in the result card are blank; everything else (output path, Markdown preview) works the same.</p>
+        </div>
+        <div class="feature-card">
+          <h4 style="color:var(--accent-cyan);">Model override persistence</h4>
+          <p>The producer model field is not saved between submissions. Each task is independent — useful for running the same task string against two model checkpoints in sequence without touching the global config.</p>
+        </div>
+        <div class="feature-card">
+          <h4 style="color:#22c55e);">Ctrl+Enter shortcut</h4>
+          <p>Submit fires from inside the textarea without moving to the button. This matters in practice: during active experimentation, the keyboard loop is task text → Ctrl+Enter → read result → edit task → repeat.</p>
+        </div>
+        <div class="feature-card">
+          <h4 style="color:#a78bfa;">SSE vs. WebSocket</h4>
+          <p>The event stream uses Server-Sent Events, not WebSockets. SSE is unidirectional and stateless on the server side — reconnect behavior is handled automatically by the browser's <code>EventSource</code> API if the connection drops mid-run.</p>
+        </div>
+      </div>
+
+      <p>The Submit view is the fastest path from a research question to a scored output inside the harness. The Runs view then holds the permanent record; the Submit view is designed to be transient — write a task, watch it run, read the result, write the next one.</p>
+
+      <nav style="margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+        <a href="../blog/runs-view.html" style="color:var(--accent-cyan);text-decoration:none;font-size:0.9rem;">&larr; The Runs View</a>
+        <a href="../blog/system-view.html" style="color:var(--accent-cyan);text-decoration:none;font-size:0.9rem;">The System View &rarr;</a>
+      </nav>
+    </article>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Nick McCarty &bull; <a href="../blog.html">Blog</a></p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts | Nick McCarty</title>
+  <meta name="description" content="search_cache.py provides two-table SQLite caching: a search cache for DDGS query results (always active, 24-hour TTL, SHA-256 key) and an opt-in research context cache for full gather_research() output (autoresearch only, activated via RESEARCH_CACHE=1).">
+  <link rel="canonical" href="https://nickmccarty.me/blog/search-cache.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts">
+  <meta property="og:description" content="Two-table SQLite cache: search_cache for per-query DDGS results (always active), research_cache for full research contexts (opt-in via RESEARCH_CACHE=1 for autoresearch). SHA-256 keys, lazy expiry, schema migration.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/search-cache.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts">
+  <meta name="twitter:description" content="Two-table SQLite TTL cache for DDGS queries and research contexts. Search cache always on; research cache opt-in for autoresearch experiments to avoid redundant DDGS calls across back-to-back eval runs.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts","description":"search_cache.py provides two-table SQLite caching for DDGS results and full research contexts.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/search-cache.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .table-compare{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:640px){.table-compare{grid-template-columns:1fr;}}
+    .table-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.9rem 1rem;}
+    .table-card h4{margin:0 0 0.5rem;font-size:0.9rem;color:var(--accent-cyan);}
+    .table-card ul{margin:0;padding-left:1.1rem;font-size:0.8rem;line-height:1.7;color:var(--text-secondary);}
+    .flow-row{display:flex;align-items:center;flex-wrap:wrap;gap:0.5rem;margin:1.5rem 0;font-size:0.84rem;}
+    .flow-box{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.75rem;font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--text-primary);}
+    .flow-arrow{color:var(--text-secondary);}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts</span></h1>
+        <p class="subtitle">Two SQLite tables handle two different caching problems: per-query DDGS result caching for all runs, and whole-research-context caching for back-to-back autoresearch experiments — both with 24-hour TTL, SHA-256 keys, and lazy expiry on write.</p>
+      </header>
+
+      <p>DDGS rate-limits aggressively. During autoresearch experiments — where the same five eval tasks run dozens of times in sequence — without caching, the search loop would hit DDGS for the same queries on every experiment iteration, burning rate limit quota and adding 10–30 seconds of network latency per eval run. The search cache eliminates that latency for repeated queries and makes the eval loop reproducible: all runs within the TTL window see exactly the same search results.</p>
+
+      <h2>Two tables, two use cases</h2>
+
+      <div class="table-compare">
+        <div class="table-card">
+          <h4>search_cache</h4>
+          <ul>
+            <li>Always active — no opt-in required</li>
+            <li>Key: SHA-256 of lower-cased, whitespace-normalised query string</li>
+            <li>Value: JSON-serialized list of DDGS result dicts</li>
+            <li>TTL: 24 hours (configurable per call)</li>
+            <li>Eviction: lazy on write — expired rows deleted when a new result is stored</li>
+            <li>Scope: individual search queries</li>
+          </ul>
+        </div>
+        <div class="table-card">
+          <h4>research_cache</h4>
+          <ul>
+            <li>Opt-in: only active when <code>RESEARCH_CACHE=1</code> is set</li>
+            <li>Key: SHA-256 of task string + task_type</li>
+            <li>Value: full <code>gather_research()</code> output — merged context, search round count, novelty scores</li>
+            <li>TTL: 24 hours</li>
+            <li>Activated by <code>autoresearch.py</code> so interactive runs are unaffected</li>
+            <li>Scope: full research tasks</li>
+          </ul>
+        </div>
+      </div>
+
+      <p>The research cache is a superset of the search cache. If <code>RESEARCH_CACHE=1</code>, an autoresearch experiment that runs eval task T_A 40 times performs all DDGS calls and novelty scoring exactly once — subsequent iterations skip the entire gather step and go straight to synthesis. This makes autoresearch experiments ~50% faster when the research context hasn't changed.</p>
+
+      <h2>The cache key</h2>
+
+      <pre><code>def _cache_key(query: str) -> str:
+    normalised = " ".join(query.lower().split())
+    return hashlib.sha256(normalised.encode()).hexdigest()</code></pre>
+
+      <p>Normalisation collapses whitespace and lowercases before hashing. This means "Best practices for RAG pipelines" and "best practices for rag pipelines" produce the same cache key, and so does "best  practices  for  rag  pipelines" (extra spaces). The SHA-256 hex string is the SQLite primary key — no risk of collision in practice for a local cache with thousands of entries.</p>
+
+      <h2>Read / write path</h2>
+
+      <div class="flow-row">
+        <span class="flow-box">cached_search(query, search_fn)</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-box">get(query) → hit or None</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-box">on miss: search_fn(query, n)</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-box">put(query, results, ttl)</span>
+      </div>
+
+      <p><code>cached_search()</code> is the high-level interface used in <code>agent.py</code>. It wraps any callable search function — the DDGS call, the headed browser search, or a test stub — making the cache transparent to the caller. The underlying <code>get()</code> function checks expiry and deletes the row if expired before returning None, so expired entries don't linger indefinitely even without a background cleanup job.</p>
+
+      <h2>Lazy eviction</h2>
+
+      <p><code>put()</code> runs a single DELETE after every write:</p>
+
+      <pre><code># Upsert the new entry
+conn.execute("INSERT INTO search_cache ... ON CONFLICT DO UPDATE ...", ...)
+
+# Lazy eviction — cheap because expires_at is indexed
+conn.execute("DELETE FROM search_cache WHERE expires_at < ?", (now,))</code></pre>
+
+      <p>There's no background thread, no scheduled job, and no separate maintenance step. Every write sweeps expired entries. The <code>expires_at</code> index makes this O(log n) — fast enough to run on every write without measurable overhead. The trade-off is that entries expire precisely at TTL boundary only if a write happens to trigger eviction; a dormant cache accumulates expired rows. For a research harness with constant write activity during experiments, this is not a problem in practice.</p>
+
+      <h2>Schema migration</h2>
+
+      <p>The database was added early in the harness's development, before <code>created_at</code>, <code>expires_at</code>, <code>search_rounds</code>, and <code>novelty_scores</code> columns existed. Rather than requiring users to delete the database and lose cached results, <code>_migrate()</code> adds any missing columns on connection:</p>
+
+      <pre><code>def _migrate(conn, table, col_defs):
+    existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+    for col_def in col_defs:
+        col_name = col_def.split()[0]
+        if col_name not in existing:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {col_def}")
+    conn.commit()</code></pre>
+
+      <p>Migration runs on every connection open but is fast — <code>PRAGMA table_info</code> is a metadata query, not a table scan. The pattern handles all historical database states: fresh installs get all columns from the CREATE TABLE, existing databases with missing columns get them added silently.</p>
+
+      <h2>CLI maintenance</h2>
+
+      <pre><code># Print stats: entry count, oldest, newest, expired count (both tables)
+python search_cache.py
+
+# Delete all entries
+python search_cache.py --clear
+
+# Delete only expired entries (manual eviction)
+python search_cache.py --expired</code></pre>
+
+      <div class="callout amber">
+        <p>The research cache (<code>RESEARCH_CACHE=1</code>) makes autoresearch experiments faster, but it also means experiments that change the search queries (e.g. planner prompt changes) reuse stale research contexts from before the change. Set <code>RESEARCH_CACHE=0</code> or run <code>python search_cache.py --clear</code> when evaluating changes that affect the gather step rather than just synthesis.</p>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

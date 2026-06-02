@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Page Feedback Widget: Closing the Loop Between Browser and Agent | Nick McCarty</title>
+  <meta name="description" content="A Chrome extension that injects a floating feedback widget on every localhost and file:// page. Notes are written to localStorage and POSTed to the harness API, where agents read them from page_feedback.jsonl. A lightweight coordination layer between human reviewer and autonomous agent.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/page-feedback-widget.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Page Feedback Widget: Closing the Loop Between Browser and Agent">
+  <meta property="og:description" content="Chrome extension + FastAPI endpoint: leave notes on any local page, agents read them from page_feedback.jsonl. Shadow DOM widget with badge counter, completion checklist, and one-click clear.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/page-feedback-widget.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-02T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Page Feedback Widget: Closing the Loop Between Browser and Agent">
+  <meta name="twitter:description" content="Floating feedback widget on every localhost and file:// page. Notes go to localStorage + harness API. Agents read page_feedback.jsonl. Shadow DOM, badge counter, completion checklist.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Page Feedback Widget: Closing the Loop Between Browser and Agent","description":"A Chrome extension that injects a floating feedback widget on every localhost and file:// page. Notes land in localStorage and page_feedback.jsonl for downstream agent use.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-02","dateModified":"2026-06-02","url":"https://nickmccarty.me/blog/page-feedback-widget.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => { if (window.hljs) hljs.highlightAll(); });</script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{border:1px solid var(--border-color);border-radius:8px;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;padding:0;}
+    pre code.hljs{border-radius:8px;padding:1.25rem 1.5rem;font-size:inherit;}
+    .arch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin:1.5rem 0;}
+    @media(max-width:640px){.arch-grid{grid-template-columns:1fr;}}
+    .arch-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.85rem 1rem;}
+    .arch-card .ac-label{font-family:'SF Mono','Consolas',monospace;font-size:0.75rem;font-weight:700;color:var(--accent-cyan);margin-bottom:0.3rem;}
+    .arch-card p{margin:0;font-size:0.8rem;line-height:1.5;color:var(--text-secondary);}
+    .step-list{display:flex;flex-direction:column;gap:0.75rem;margin:1.5rem 0;}
+    .step-item{display:flex;align-items:flex-start;gap:1rem;}
+    .step-num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:rgba(87,206,242,0.15);border:1px solid var(--accent-cyan);color:var(--accent-cyan);font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;}
+    .step-body{padding-top:4px;}
+    .step-body strong{font-size:0.9rem;color:var(--text-primary);}
+    .step-body p{margin:0.2rem 0 0;font-size:0.82rem;color:var(--text-secondary);line-height:1.5;}
+    .related-section{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border-color);}
+    .related-section h2{margin-bottom:1.25rem;}
+    .related-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+    @media(max-width:700px){.related-grid{grid-template-columns:1fr;}}
+    .related-card{display:block;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:1rem 1.1rem;text-decoration:none;transition:border-color .2s,transform .15s;}
+    .related-card:hover{border-color:var(--accent-cyan);transform:translateY(-2px);}
+    .related-card .rc-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-cyan);margin-bottom:0.35rem;}
+    .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
+    .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 2, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Page Feedback Widget: Closing the Loop Between Browser and Agent</span></h1>
+        <p class="subtitle">A lightweight Chrome extension that injects a floating feedback panel on every local page. Notes are written to <code>localStorage</code> and POSTed to the harness API, where they land in <code>data/page_feedback.jsonl</code> — a structured queue that agents can read and act on directly.</p>
+      </header>
+
+      <p>The harness manages a large and growing set of web pages: blog posts, dashboard views, skill documentation. Keeping them accurate requires a feedback loop — a way to leave a note on a page while looking at it and have that note reach the agent that can fix it. The alternative is a side channel: a Slack message, a sticky note, a mental todo that evaporates. The widget replaces all of that with a chat icon that lives in the corner of every local page.</p>
+
+      <h2>Architecture</h2>
+
+      <p>The system has three components: a Chrome extension that injects the widget, a FastAPI endpoint that receives and stores notes, and the <code>page_feedback.jsonl</code> file that agents read. Each piece is independent — the extension works when the harness is offline (notes buffer in localStorage), and the harness can query notes without the browser being open.</p>
+
+      <div class="arch-grid">
+        <div class="arch-card">
+          <div class="ac-label">browser-extension/</div>
+          <p>Unpacked Chrome extension. Content script injected into every <code>localhost</code> and <code>file:///</code> page. No build step — load with "Load unpacked" in <code>chrome://extensions</code>.</p>
+        </div>
+        <div class="arch-card">
+          <div class="ac-label">POST /api/page-feedback</div>
+          <p>FastAPI endpoint in <code>harness/api/routes/feedback.py</code>. Accepts <code>{url, title, feedback}</code>, appends a JSON record to <code>data/page_feedback.jsonl</code>, returns the record.</p>
+        </div>
+        <div class="arch-card">
+          <div class="ac-label">data/page_feedback.jsonl</div>
+          <p>Newline-delimited JSON. Each record has <code>id</code>, <code>url</code>, <code>title</code>, <code>feedback</code>, and <code>created_at</code>. Agents read this file directly or query via <code>GET /api/page-feedback?url=...</code>.</p>
+        </div>
+      </div>
+
+      <h2>The extension</h2>
+
+      <p>The extension is a Manifest V3 content script with no dependencies, no build step, and no external calls except to the local harness API. Two files: <code>manifest.json</code> and <code>content.js</code>. The manifest matches <code>http://localhost/*</code>, <code>http://127.0.0.1/*</code>, and <code>file:///*</code> — the last pattern requires enabling "Allow access to file URLs" in the extension's detail page after loading.</p>
+
+      <pre><code class="language-json">{
+  "manifest_version": 3,
+  "name": "Harness Page Feedback",
+  "content_scripts": [{
+    "matches": ["http://localhost/*", "http://127.0.0.1/*", "file:///*"],
+    "js": ["content.js"],
+    "run_at": "document_idle"
+  }],
+  "host_permissions": ["http://localhost/*", "http://127.0.0.1/*"]
+}</code></pre>
+
+      <h2>Shadow DOM isolation</h2>
+
+      <p>The widget is injected into a shadow root so the host page's CSS cannot affect it and the widget's CSS cannot leak out. This matters on pages with aggressive global resets or conflicting <code>z-index</code> stacks. The host element is a <code>div</code> positioned <code>fixed</code> at the chosen corner with <code>z-index: 2147483647</code> — the maximum value — so it floats above everything.</p>
+
+      <pre><code class="language-javascript">const host = document.createElement('div');
+host.id = '__harness_fb_widget__';
+Object.assign(host.style, { position: 'fixed', zIndex: '2147483647' }, cornerCSS(pickCorner()));
+document.body.appendChild(host);
+
+const shadow = host.attachShadow({ mode: 'open' });
+shadow.innerHTML = `&lt;style&gt;...self-contained styles...&lt;/style&gt; &lt;!-- widget HTML --&gt;`;</code></pre>
+
+      <h2>Corner detection</h2>
+
+      <p>The widget picks a corner automatically by scanning all fixed-position elements on the page and choosing the least-occupied corner. Many pages have their own floating controls — a cookie banner, a chat widget, a back-to-top button. Without corner detection, the feedback button would land on top of them.</p>
+
+      <pre><code class="language-javascript">function pickCorner() {
+  const corners = ['bottom-right', 'bottom-left', 'top-right', 'top-left'];
+  const fixed = Array.from(document.querySelectorAll('*')).filter(el =>
+    window.getComputedStyle(el).position === 'fixed' && el.id !== WIDGET_ID
+  );
+  function occupied(corner) {
+    for (const el of fixed) {
+      const r = el.getBoundingClientRect();
+      const w = window.innerWidth, h = window.innerHeight;
+      if (corner === 'bottom-right' && r.right > w - 100 && r.bottom > h - 100) return true;
+      // ... other corners
+    }
+    return false;
+  }
+  return corners.find(c => !occupied(c)) || 'bottom-right';
+}</code></pre>
+
+      <p>The 100px threshold is intentionally generous — a button at <code>right: 20px; bottom: 20px</code> occupies the corner even if its bounding rect doesn't literally touch the window edge.</p>
+
+      <h2>Badge, checklist, and completion state</h2>
+
+      <p>The chat button shows a green badge with the count of notes for the current URL. Opening the panel renders existing notes as a checklist above the textarea. Each item has a circular checkbox; checking it applies a strikethrough with a CSS transition and persists the <code>completed</code> flag to localStorage. This gives a Wunderlist-style review flow: open the panel, scan what's been noted, mark things done as they're fixed, add new notes as needed.</p>
+
+      <p>The panel state is driven entirely by localStorage — the checklist re-renders from <code>harness_page_feedback</code> on every open. The completed state of each note is keyed by its <code>id</code> field, so toggling completion on one device doesn't interfere with notes from another session.</p>
+
+      <h2>Dual persistence and the file:/// CORS problem</h2>
+
+      <p>Every submission writes to localStorage first (synchronously, before the network call), then attempts a <code>POST</code> to <code>http://localhost:7860/api/page-feedback</code>. If the harness is offline, the note is saved locally and the status line says so. This means the widget is useful even during local development when the server isn't running.</p>
+
+      <p>Pages served from <code>file:///</code> URLs present a CORS problem. Browsers send a <code>null</code> origin for <code>file://</code> requests — not <code>http://localhost</code> or any real origin, just the string <code>"null"</code>. FastAPI's default <code>allow_origin_regex</code> matching against <code>http://localhost</code> patterns doesn't match it. The fix is explicit:</p>
+
+      <pre><code class="language-python">app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["null"],                                      # file:// pages
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?", # dev servers
+    allow_methods=["*"],
+    allow_headers=["*"],
+)</code></pre>
+
+      <div class="callout amber">
+        <p>The <code>"null"</code> origin allowance is intentionally scoped to the feedback endpoint's router. Any route that accepts <code>null</code> origin should be read-only or append-only — never expose mutation endpoints with privileged side effects to <code>file://</code> origins.</p>
+      </div>
+
+      <h2>The API endpoints</h2>
+
+      <p>Three endpoints in <code>harness/api/routes/feedback.py</code> handle page feedback, separate from the existing run-level feedback routes:</p>
+
+      <pre><code class="language-python">class PageFeedbackBody(BaseModel):
+    url:      str
+    title:    str = ""
+    feedback: str
+
+@router.post("/page-feedback")
+async def post_page_feedback(body: PageFeedbackBody):
+    record = {
+        "id":         uuid.uuid4().hex[:12],
+        "url":        body.url,
+        "title":      body.title,
+        "feedback":   body.feedback,
+        "created_at": datetime.now(UTC).isoformat(),
+    }
+    with open(PAGE_FEEDBACK_FILE, "a", encoding="utf-8") as f:
+        f.write(json.dumps(record) + "\n")
+    return record
+
+@router.get("/page-feedback")
+async def get_page_feedback(url: str | None = None): ...
+
+@router.delete("/page-feedback")
+async def delete_page_feedback(url: str): ...</code></pre>
+
+      <p>The <code>DELETE</code> endpoint rewrites the JSONL file in place, keeping all records whose <code>url</code> field doesn't match the query parameter. It's called by the "Clear notes for this page" button in the widget, which also clears localStorage for the same URL simultaneously.</p>
+
+      <h2>How agents read the notes</h2>
+
+      <p>The intended workflow is simple: the agent reads <code>data/page_feedback.jsonl</code> directly, or queries <code>GET /api/page-feedback?url=...</code> for notes on a specific page, makes the described changes, then calls <code>DELETE /api/page-feedback?url=...</code> to clear resolved items. The widget's "Clear notes for this page" button does the same thing from the browser side.</p>
+
+      <p>Because notes include the full page URL and title, an agent can process all outstanding feedback in one pass — read the file, group by URL, fix each page, delete as it goes. The <code>completed</code> flag in localStorage tracks human-side review status; the JSONL file tracks what the agent still needs to act on. They're complementary rather than redundant.</p>
+
+      <div class="callout">
+        <p>The harness API also exposes the Chrome DevTools MCP for reading localStorage directly when the browser is open. For <code>file:///</code> pages, the server-side JSONL is more reliable — the DevTools MCP connects to a separate Chrome profile and can't see the user's main browser localStorage.</p>
+      </div>
+
+      <h2>Dismissing the widget</h2>
+
+      <p>Hovering over the chat button reveals a small dismiss button in the top-left corner of the button. Clicking it removes the widget from the DOM entirely for that page session — no badge, no button, no panel. It reappears on the next page load. This is useful on pages where the widget obscures content you need to see, or when you've already reviewed all the notes and want it out of the way.</p>
+
+      <h2>Loading the extension</h2>
+
+      <div class="step-list">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Open Chrome and go to <code>chrome://extensions</code></strong>
+            <p>Toggle "Developer mode" on in the top-right corner.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Click "Load unpacked"</strong>
+            <p>Navigate to <code>browser-extension/</code> in the harness repo and select the folder.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Enable file URL access</strong>
+            <p>Click the extension's "Details" button and toggle "Allow access to file URLs" to reach <code>file:///</code> pages.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Open any local page</strong>
+            <p>The chat icon appears in the least-occupied corner. Click to open the feedback panel, write a note, and submit. Notes land in <code>data/page_feedback.jsonl</code> when the harness is running.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="related-section">
+        <h2>Related articles</h2>
+        <div class="related-grid">
+          <a href="server.html" class="related-card">
+            <div class="rc-label">Architecture</div>
+            <div class="rc-title">The FastAPI Backend</div>
+            <div class="rc-desc">The async API server that receives widget POSTs, stores page feedback, and exposes the full harness REST surface.</div>
+          </a>
+          <a href="memory-observability.html" class="related-card">
+            <div class="rc-label">Observability</div>
+            <div class="rc-title">Memory and Observability</div>
+            <div class="rc-desc">How the harness stores and retrieves agent memory — the same persistence pattern used by the feedback JSONL.</div>
+          </a>
+          <a href="skills-registry.html" class="related-card">
+            <div class="rc-label">Skills</div>
+            <div class="rc-title">The Skills Registry</div>
+            <div class="rc-desc">38 skills available to the agent, including the tools it uses when acting on feedback notes from this widget.</div>
+          </a>
+        </div>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

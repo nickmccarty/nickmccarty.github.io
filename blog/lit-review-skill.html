@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Lit-Review Skill: Seven Steps from ArXiv Query to Rendered Survey | Nick McCarty</title>
+  <meta name="description" content="lit_review_skill.py chains ArXiv fetch, Semantic Scholar citation enrichment, persona curation, per-paper annotation with Wiggum, LLM clustering, cross-cluster synthesis, and Jinja2 rendering into a single automated literature review pipeline.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/lit-review-skill.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Lit-Review Skill: Seven Steps from ArXiv Query to Rendered Survey">
+  <meta property="og:description" content="Seven steps: ArXiv fetch → Semantic Scholar enrichment → persona curation → per-paper annotation with Wiggum → LLM clustering → cross-cluster synthesis → Jinja2 render. Three output templates: survey, gaps, executive.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/lit-review-skill.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Lit-Review Skill: Seven Steps from ArXiv Query to Rendered Survey">
+  <meta name="twitter:description" content="Fetch → enrich → curate → annotate → cluster → synthesize → render. A fully automated literature review pipeline that writes a structured Markdown survey from an ArXiv query.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Lit-Review Skill: Seven Steps from ArXiv Query to Rendered Survey","description":"lit_review_skill.py chains ArXiv fetch, Semantic Scholar citation enrichment, persona curation, per-paper annotation with Wiggum, LLM clustering, synthesis, and Jinja2 rendering.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/lit-review-skill.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .step-list{margin:1.5rem 0;display:flex;flex-direction:column;gap:0.75rem;}
+    .step-item{display:flex;gap:1rem;align-items:flex-start;}
+    .step-num{min-width:32px;height:32px;border-radius:50%;background:var(--accent-cyan);color:#000;font-size:0.8rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:0.1rem;}
+    .step-body h4{margin:0 0 0.3rem;font-size:0.9rem;}
+    .step-body p{margin:0;font-size:0.84rem;line-height:1.65;color:var(--text-secondary);}
+    .template-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin:1.5rem 0;}
+    @media(max-width:640px){.template-grid{grid-template-columns:1fr;}}
+    .template-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.9rem 1rem;}
+    .template-card h4{margin:0 0 0.35rem;font-size:0.85rem;font-family:'SF Mono','Consolas',monospace;color:var(--accent-cyan);}
+    .template-card p{margin:0;font-size:0.82rem;line-height:1.6;color:var(--text-secondary);}
+    .bypass-row{display:flex;flex-wrap:wrap;gap:0.5rem;margin:1rem 0;}
+    .bypass-badge{font-family:'SF Mono','Consolas',monospace;font-size:0.78rem;background:rgba(255,255,255,0.07);color:var(--text-secondary);padding:0.2rem 0.6rem;border-radius:4px;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 1, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Lit-Review Skill: Seven Steps from ArXiv Query to Rendered Survey</span></h1>
+        <p class="subtitle">A single slash command chains ArXiv fetch, Semantic Scholar citation enrichment, five-persona curation, per-paper Wiggum annotation, LLM clustering, cross-cluster synthesis, and Jinja2 rendering into a complete structured literature review.</p>
+      </header>
+
+      <p>The harness accumulates ArXiv papers as part of its research corpus — but raw PDFs and abstracts aren't immediately useful as training signal or reference material. <code>lit_review_skill.py</code> closes the loop: it takes a query string and produces a structured Markdown survey, handling every step automatically from fetch through final render. The skill is invoked as <code>/lit-review &lt;topic&gt;</code> from the agent pipeline, or run standalone from the CLI.</p>
+
+      <h2>Seven steps</h2>
+
+      <div class="step-list">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>Fetch from ArXiv</h4>
+            <p>Calls <code>arxiv_fetch.py</code> to pull up to 100 papers for the query, newest first. Supports <code>--after</code> and <code>--before</code> date filters. Skippable with <code>--csv</code> if an existing annotated CSV is available.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>Enrich via Semantic Scholar</h4>
+            <p>Builds a citation graph via <code>semantic_scholar.py</code>, computing <code>hub_score</code> (how many in-corpus papers cite this one) and <code>ref_count</code> for each paper. Hub scores are used in Step 3 to prioritize annotation of the most-cited papers first. Skippable with <code>--no-s2</code>.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>Persona curation</h4>
+            <p>Calls <code>curator.py</code>'s <code>score_paper()</code> for each paper. Passes only papers that clear the mean ≥ 3.5 + veto floor > 2 gate. Surviving papers are sorted by <code>hub_score</code> descending before annotation — ensuring the most-referenced papers in the corpus are annotated first. Skippable with <code>--no-curate</code>.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h4>Annotate with Wiggum</h4>
+            <p>Runs each paper through <code>run_annotate_standalone()</code> to produce an 8-section structured annotation (Topic, Motivation, Contribution, Detail/Nuance, Evidence, Weaker Result, Narrow Impact, Broad Impact). Optionally runs the Wiggum revision loop on each annotation. Results are checkpointed per paper in <code>.lit_review_cache/</code> — a crash mid-run resumes from the last completed paper.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <h4>Cluster into themes</h4>
+            <p>An LLM groups papers into 3–5 thematic clusters based on title and Contribution sentences. Outputs cluster names (5–7 words each) with their paper ID lists as JSON. Falls back to a single "All Papers" cluster if JSON parsing fails.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <h4>Synthesize</h4>
+            <p>Two synthesis passes: (a) a 2–3 sentence paragraph per cluster naming specific techniques and how papers relate; (b) a 3–4 sentence cross-cluster overview plus 3–5 open research questions the literature hasn't fully answered. The open-questions list is a distinct output field used by the <code>gaps</code> template.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">7</div>
+          <div class="step-body">
+            <h4>Render via Jinja2</h4>
+            <p>Assembles a template context with clusters, per-paper annotations, hub-paper highlights, synthesis paragraphs, open questions, and citation gap candidates. Renders to <code>.md</code> using a named Jinja2 template from the <code>templates/</code> directory.</p>
+          </div>
+        </div>
+      </div>
+
+      <h2>Three output templates</h2>
+
+      <div class="template-grid">
+        <div class="template-card">
+          <h4>survey</h4>
+          <p>Full academic survey format: per-cluster summaries, hub paper highlighted per cluster, all annotated papers with 8-section breakdowns, cross-cluster synthesis, open questions, and gap candidates.</p>
+        </div>
+        <div class="template-card">
+          <h4>gaps</h4>
+          <p>Research gap focus: clusters condensed, open questions promoted to the top section, citation gaps (papers cited by the corpus but not in it) surfaced prominently. Useful for identifying where to extend the literature.</p>
+        </div>
+        <div class="template-card">
+          <h4>executive</h4>
+          <p>One-page summary format: synthesis overview only, top 3 papers from each cluster, open questions as bullet points. Designed for a reader who needs the landscape without the full annotation detail.</p>
+        </div>
+      </div>
+
+      <h2>Bypass flags</h2>
+
+      <p>Each step can be skipped independently. Common combinations:</p>
+
+      <pre><code># Use an existing annotated CSV, skip fetch and curation, run with executive template
+python lit_review_skill.py --csv papers.csv --no-fetch --no-curate --template executive --out exec.md
+
+# Full run with date filter
+python lit_review_skill.py "prompt injection" --after 2024-06-01 --max-fetch 200 --max-annotate 30 --out review.md
+
+# Fast annotation check — skip Wiggum eval per paper
+python lit_review_skill.py "agentic LLM" --no-wiggum --out quick.md</code></pre>
+
+      <div class="bypass-row">
+        <span class="bypass-badge">--no-fetch</span>
+        <span class="bypass-badge">--no-curate</span>
+        <span class="bypass-badge">--no-wiggum</span>
+        <span class="bypass-badge">--no-s2</span>
+        <span class="bypass-badge">--csv FILE</span>
+        <span class="bypass-badge">--checkpoint DIR</span>
+      </div>
+
+      <h2>Checkpointing and idempotency</h2>
+
+      <p>Step 4 is the most expensive: each paper requires a full annotation LLM call, optionally followed by the Wiggum revision loop. A 20-paper run with Wiggum enabled can take 20–40 minutes. To make interruptions recoverable, each paper's annotation is checkpointed to <code>.lit_review_cache/{arxiv_id}.json</code> immediately after completion. Re-running the same skill invocation skips already-annotated papers and resumes from where it left off.</p>
+
+      <p>The checkpoint file stores the 8-section annotation dict, the raw annotation text, and the Wiggum score (if run). The same checkpoint directory is used across different review invocations for the same paper corpus — so a paper annotated for one review is immediately available for another.</p>
+
+      <h2>Hub-score prioritization</h2>
+
+      <p>After curation, surviving papers are sorted by <code>hub_score</code> descending before annotation begins. This means the most-cited papers in the in-corpus citation graph get annotated first, and if <code>max_annotate</code> truncates the list, the highest-influence papers are always included. A paper with hub_score = 0 (no in-corpus citations) ranks below any paper with at least one, and is the most likely to be dropped when the budget is tight.</p>
+
+      <p>The hub paper per cluster (the highest hub_score paper in that cluster) is surfaced as a highlighted entry in the rendered output — the implicit "most important paper to read" signal within that thematic group.</p>
+
+      <div class="callout">
+        <p>The <code>/lit-review</code> skill is the automated backend for the literature review posts in the blog's <a href="tool-use-planning.html" style="color:var(--accent-cyan);">Literature Reviews series</a>. Those posts were generated from this pipeline against specific ArXiv queries for tool use, security, evaluation, and fine-tuning topics.</p>
+      </div>
+
+      <h2>Integration with the fine-tuning pipeline</h2>
+
+      <p>The lit-review pipeline is the upstream source for the DPO training dataset. The flow is: <code>lit_review_skill.py</code> produces <code>arxiv_*_annotated.csv</code> → <code>curator.py</code> filters to <code>arxiv_*_curated.csv</code> → <code>build_finetune_from_annotations.py</code> constructs preference pairs for DPO training. A literature review that scores well on Wiggum annotation quality feeds stronger training signal into the evaluator model. For the full downstream pipeline, see <a href="curator.html" style="color:var(--accent-cyan);">Five Personas, One Veto</a> and <a href="fine-tune-view.html" style="color:var(--accent-cyan);">The Fine-tune View</a>.</p>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

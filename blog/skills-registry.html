@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Skills Registry: Hook Points, Auto-Activation, and 38 Skills | Nick McCarty</title>
+  <meta name="description" content="skills.py defines the harness skill registry: six pipeline hook points (pre_research, pre_synthesis, post_synthesis, post_wiggum, modifier, standalone) plus auto-activation predicates, and 38 skills from deep search and citation injection to Playwright navigation, knowledge graphs, trading validation, and site generation.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/skills-registry.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Skills Registry: Hook Points, Auto-Activation, and 38 Skills">
+  <meta property="og:description" content="Six hook points, seven auto-activation predicates, lazy loading, and 38 skills: deep, cite, panel, knowledge-graph, annotate, recall, queue, orientation, introspect, contextualize, sync-wiki, playwright, re-orient, debug, suggest, troubleshoot, transcribe, design, build-page, deck, and more.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/skills-registry.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Skills Registry: Hook Points, Auto-Activation, and 38 Skills">
+  <meta name="twitter:description" content="skills.py: six hook points, seven auto-activation predicates, lazy loading, 38 skills. The registry that controls what the harness can do and when it does it automatically.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Skills Registry: Hook Points, Auto-Activation, and 19 Skills","description":"skills.py defines the harness skill registry with four pipeline hook points, auto-activation predicates, and 19 skills.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/skills-registry.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.hljs) hljs.highlightAll();
+      if (window.marked) {
+        document.querySelectorAll('[data-md]').forEach(el => {
+          el.innerHTML = marked.parse(el.textContent);
+        });
+      }
+    });
+  </script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{border:1px solid var(--border-color);border-radius:8px;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;padding:0;}
+    pre code.hljs{border-radius:8px;padding:1.25rem 1.5rem;font-size:inherit;}
+    .hook-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;margin:1.5rem 0;}
+    @media(max-width:680px){.hook-grid{grid-template-columns:1fr 1fr;}}
+    .hook-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.7rem 0.85rem;}
+    .hook-card .hook-name{font-family:'SF Mono','Consolas',monospace;font-size:0.78rem;font-weight:700;color:var(--accent-cyan);margin-bottom:0.2rem;}
+    .hook-card p{margin:0;font-size:0.78rem;line-height:1.5;color:var(--text-secondary);}
+    .skills-table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:0.81rem;}
+    .skills-table th{text-align:left;padding:0.45rem 0.75rem;border-bottom:1px solid var(--border-color);color:var(--text-secondary);font-weight:600;}
+    .skills-table td{padding:0.45rem 0.75rem;border-bottom:1px solid var(--border-color);vertical-align:top;}
+    .skills-table code{font-size:0.78em;}
+    .auto-badge{display:inline-block;font-size:0.68rem;font-weight:700;padding:0.1em 0.45em;border-radius:3px;background:rgba(34,197,94,0.15);color:#22c55e;margin-left:0.3rem;}
+    .related-section{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border-color);}
+    .related-section h2{margin-bottom:1.25rem;}
+    .related-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+    @media(max-width:700px){.related-grid{grid-template-columns:1fr;}}
+    .related-card{display:block;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:1rem 1.1rem;text-decoration:none;transition:border-color .2s,transform .15s;}
+    .related-card:hover{border-color:var(--accent-cyan);transform:translateY(-2px);}
+    .related-card .rc-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-cyan);margin-bottom:0.35rem;}
+    .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
+    .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Skills Registry: Hook Points, Auto-Activation, and 38 Skills</span></h1>
+        <p class="subtitle"><code>skills.py</code> is the single source of truth for what the harness can do. Every skill is registered with a hook point that determines where in the pipeline it runs, and an optional auto-activation predicate that fires the skill without an explicit slash command.</p>
+      </header>
+
+      <p>The pipeline in <code>agent.py</code> doesn't import skill implementations directly — it asks <code>skills.py</code> which skills are active for a given task, then calls them at the appropriate stage. This indirection means adding a new skill is a two-step operation: register it in the REGISTRY dict, then implement it. The pipeline never needs to change.</p>
+
+      <h2>Six hook points</h2>
+
+      <div class="hook-grid">
+        <div class="hook-card">
+          <div class="hook-name">standalone</div>
+          <p>Bypasses the research pipeline entirely — the skill handles the full task and returns</p>
+        </div>
+        <div class="hook-card">
+          <div class="hook-name">pre_research</div>
+          <p>Runs before any web searches — can modify search behaviour or inject file context</p>
+        </div>
+        <div class="hook-card">
+          <div class="hook-name">pre_synthesis</div>
+          <p>Injects additional instructions into the synthesis prompt via the <code>prompt</code> field</p>
+        </div>
+        <div class="hook-card">
+          <div class="hook-name">post_synthesis</div>
+          <p>Transforms or augments the synthesized output after it's written to disk</p>
+        </div>
+        <div class="hook-card">
+          <div class="hook-name">post_wiggum</div>
+          <p>Runs additional evaluation after the Wiggum loop — used by the 3-persona panel</p>
+        </div>
+        <div class="hook-card">
+          <div class="hook-name">modifier</div>
+          <p>Changes pipeline behaviour (e.g. <code>/wiggum</code> forces the evaluation loop on)</p>
+        </div>
+      </div>
+
+      <h2>The full registry</h2>
+
+      <table class="skills-table">
+        <thead><tr><th>Skill</th><th>Hook</th><th>Auto-activation</th></tr></thead>
+        <tbody>
+          <tr><td><code>/deep</code></td><td>pre_research</td><td><span class="auto-badge">auto</span> task contains "comprehensive", "thorough", "exhaustive", "in-depth", "deep-dive"</td></tr>
+          <tr><td><code>/contextualize</code></td><td>pre_research</td><td><span class="auto-badge">auto</span> task is self-referential ("what can you", "describe the agent", "about the harness")</td></tr>
+          <tr><td><code>/cite</code></td><td>pre_synthesis</td><td>explicit only — too broad to auto-trigger</td></tr>
+          <tr><td><code>/date</code></td><td>pre_synthesis</td><td><span class="auto-badge">auto</span> task mentions current date context ("today", "latest", "recent", "this year", "as of")</td></tr>
+          <tr><td><code>/time</code></td><td>pre_synthesis</td><td>explicit only</td></tr>
+          <tr><td><code>/scratchpad</code></td><td>pre_synthesis</td><td>explicit only — opt-in when output requires exact computed values</td></tr>
+          <tr><td><code>/beige-book</code></td><td>pre_synthesis</td><td><span class="auto-badge">auto</span> task mentions Fed, FOMC, inflation, labor market, GDP, or other macroeconomic terms</td></tr>
+          <tr><td><code>/knowledge-graph</code></td><td>post_synthesis</td><td><span class="auto-badge">auto</span> task mentions "knowledge graph", "kg", or "visualize"</td></tr>
+          <tr><td><code>/panel</code></td><td>post_wiggum</td><td><span class="auto-badge">auto</span> planner classifies task as complexity="high"</td></tr>
+          <tr><td><code>/validate-trades</code></td><td>post_wiggum</td><td><span class="auto-badge">auto</span> task contains trading thesis keywords ("long thesis", "trade setup", "alpaca")</td></tr>
+          <tr><td><code>/wiggum</code></td><td>modifier</td><td>explicit only</td></tr>
+          <tr><td><code>/annotate</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/annotated-abstract</code></td><td>standalone</td><td>alias for /annotate</td></tr>
+          <tr><td><code>/email</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/github</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/review</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/lit-review</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/recall</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/queue</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/orientation</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/introspect</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/sync-wiki</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/playwright</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/sitemap</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/crawl</code></td><td>standalone</td><td>alias for /sitemap</td></tr>
+          <tr><td><code>/re-orient</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/debug</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/suggest</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/troubleshoot</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/transcribe</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/design</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/build-page</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/site</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/deck</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/forge:plugin</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/forge:list</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/test-harness</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/onboarding</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/grill-me</code></td><td>standalone</td><td>explicit only</td></tr>
+          <tr><td><code>/execute-trades</code></td><td>standalone</td><td>explicit only — never auto-executes</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Auto-activation in practice</h2>
+
+      <p>Five skills activate without a slash command. Each has an <code>auto</code> lambda that receives the task string and the planner's <code>Plan</code> object:</p>
+
+      <pre><code class="language-python"># /deep: force max search rounds when task implies thoroughness
+"auto": lambda task, plan: bool(re.search(
+    r"\bcomprehensive\b|\bthorough\b|\bexhaustive\b|\bin.depth\b|\bdeep.dive\b",
+    task, re.IGNORECASE
+)),
+
+# /panel: run 3-persona evaluation when planner sees a complex task
+"auto": lambda task, plan: plan.complexity == "high",
+
+# /contextualize: inject self-knowledge when task is self-referential
+"auto": lambda task, plan: bool(re.search(
+    r"\byour(?:self)?\b|\bwhat (?:can|are) you\b|\bthe harness\b",
+    task, re.IGNORECASE,
+)),</code></pre>
+
+      <p>The panel's auto-activation is the most interesting case: it depends on the planner's output, which means the pipeline runs two LLM calls (planner) before it knows whether a third post-synthesis call (panel) will be needed. This is by design — the planner's complexity classification is more reliable than keyword matching for detecting tasks that warrant multi-perspective evaluation.</p>
+
+      <h2>Lazy loading</h2>
+
+      <p>Importing <code>skills.py</code> does not import any skill implementation. The REGISTRY is pure data — strings, lambdas, and None. When <code>agent.py</code> needs to actually run a skill, it calls <code>skills.run_post_synthesis()</code>, <code>skills.run_annotate_standalone()</code>, etc., which import the relevant module at call time. This keeps startup fast and avoids circular imports between agent.py and the skill modules that call back into inference.py.</p>
+
+      <div class="callout">
+        <p>Adding a new skill: register an entry in REGISTRY with a hook, description, and optional auto predicate. The <code>prompt</code> field only applies to <code>pre_synthesis</code> hooks — it's the text appended to the synthesis prompt when the skill is active. All other hooks set <code>prompt: None</code> and implement their behavior through the corresponding hook function in agent.py.</p>
+      </div>
+
+      <div class="related-section">
+        <h2>Related articles</h2>
+        <div class="related-grid">
+          <a href="lit-review-skill.html" class="related-card">
+            <div class="rc-label">Skill deep-dive</div>
+            <div class="rc-title">The Lit-Review Skill</div>
+            <div class="rc-desc">arXiv fetch, Semantic Scholar citation enrichment, clustering, and Jinja2 rendering in a single pipeline.</div>
+          </a>
+          <a href="playwright-skill.html" class="related-card">
+            <div class="rc-label">Skill deep-dive</div>
+            <div class="rc-title">The Playwright Skill</div>
+            <div class="rc-desc">LLM-guided Chromium navigation for JS-rendered pages and multi-hop research the fetch layer can't reach.</div>
+          </a>
+          <a href="github-skill.html" class="related-card">
+            <div class="rc-label">Skill deep-dive</div>
+            <div class="rc-title">The GitHub Skill</div>
+            <div class="rc-desc">gh CLI integration for push, PR creation, issue management, and repo ops from inside the agent loop.</div>
+          </a>
+          <a href="email-skill.html" class="related-card">
+            <div class="rc-label">Skill deep-dive</div>
+            <div class="rc-title">The Email Skill</div>
+            <div class="rc-desc">Single and batch personalized email generation from URLs, PDFs, or inline text — with CSV contact support.</div>
+          </a>
+          <a href="agent-pipeline.html" class="related-card">
+            <div class="rc-label">Architecture</div>
+            <div class="rc-title">The Agent Pipeline</div>
+            <div class="rc-desc">How agent.py orchestrates planner, researcher, synthesizer, and Wiggum — and where skill hooks plug in.</div>
+          </a>
+          <a href="orchestration-patterns.html" class="related-card">
+            <div class="rc-label">Architecture</div>
+            <div class="rc-title">Orchestration Patterns</div>
+            <div class="rc-desc">Task routing, subtask parallelism, and queue management across the multi-agent swarm.</div>
+          </a>
+        </div>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

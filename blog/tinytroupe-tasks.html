@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Synthetic Eval Task Generation with TinyTroupe Personas | Nick McCarty</title>
+  <meta name="description" content="tinytroupe_tasks.py extends the eval suite beyond its five fixed tasks by simulating eight practitioner archetypes — DevOps, data scientist, PM, security engineer, and others — each generating a research task request grounded in their role, with criteria auto-built from the generated task text.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/tinytroupe-tasks.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Synthetic Eval Task Generation with TinyTroupe Personas">
+  <meta property="og:description" content="Eight practitioner personas generate diverse research tasks via Microsoft TinyTroupe (or raw Ollama fallback). Criteria are auto-derived from the task text — count detection, structural requirements, no placeholder checks.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/tinytroupe-tasks.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Synthetic Eval Task Generation with TinyTroupe Personas">
+  <meta name="twitter:description" content="TinyTroupe persona simulation + Ollama fallback generates diverse research tasks beyond the fixed eval suite. Criteria auto-built from count extraction and structural analysis of the generated task text.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Synthetic Eval Task Generation with TinyTroupe Personas","description":"tinytroupe_tasks.py extends the eval suite with persona-generated research tasks and auto-built criteria.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/tinytroupe-tasks.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .persona-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.6rem;margin:1.5rem 0;}
+    @media(max-width:680px){.persona-grid{grid-template-columns:1fr 1fr;}}
+    .persona-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.7rem 0.85rem;}
+    .persona-card .p-id{font-family:'SF Mono','Consolas',monospace;font-size:0.75rem;font-weight:700;color:var(--accent-cyan);margin-bottom:0.15rem;}
+    .persona-card .p-name{font-size:0.82rem;font-weight:600;margin-bottom:0.1rem;}
+    .persona-card .p-role{font-size:0.76rem;color:var(--text-secondary);line-height:1.4;}
+    .criteria-table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:0.83rem;}
+    .criteria-table th{text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);color:var(--text-secondary);font-weight:600;}
+    .criteria-table td{padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);vertical-align:top;}
+    .criteria-table code{font-size:0.8em;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">Synthetic Eval Task Generation with TinyTroupe Personas</span></h1>
+        <p class="subtitle">Eight practitioner archetypes — each with a defined role and perspective — generate diverse research task requests. TinyTroupe runs the simulation when available; raw Ollama handles the fallback. Evaluation criteria are auto-derived from the generated task text, not hand-authored.</p>
+      </header>
+
+      <p>The five fixed eval tasks in <code>eval_suite.py</code> (T_A through T_E) measure consistent dimensions of harness performance, but they're frozen. The autoresearch loop can overfit to them: an instruction change that improves all five may still fail on tasks with different structural requirements or audience expectations. <code>tinytroupe_tasks.py</code> extends the eval surface by generating tasks from role-grounded personas, covering needs the fixed suite wasn't designed to test.</p>
+
+      <h2>Eight personas</h2>
+
+      <div class="persona-grid">
+        <div class="persona-card">
+          <div class="p-id">P_devops</div>
+          <div class="p-name">Jordan</div>
+          <div class="p-role">Senior DevOps Engineer — CI/CD, Kubernetes, reliability, cost control</div>
+        </div>
+        <div class="persona-card">
+          <div class="p-id">P_datasci</div>
+          <div class="p-name">Priya</div>
+          <div class="p-role">Staff Data Scientist — ML pipelines, reproducibility, explainability</div>
+        </div>
+        <div class="persona-card">
+          <div class="p-id">P_backend</div>
+          <div class="p-name">Marcus</div>
+          <div class="p-role">Backend Engineer — high-throughput APIs, latency, fault tolerance</div>
+        </div>
+        <div class="persona-card">
+          <div class="p-id">P_pm</div>
+          <div class="p-name">Sofia</div>
+          <div class="p-role">Product Manager — AI product roadmap, trade-offs, risk management</div>
+        </div>
+        <div class="persona-card">
+          <div class="p-id">P_security</div>
+          <div class="p-name">Alex</div>
+          <div class="p-role">Security Engineer — threat modelling, attack surface, compliance</div>
+        </div>
+        <div class="persona-card">
+          <div class="p-id">P_mleng</div>
+          <div class="p-name">Tanaka</div>
+          <div class="p-role">ML Infra Engineer — serving, batching, quantization, GPU utilization</div>
+        </div>
+        <div class="persona-card">
+          <div class="p-id">P_founder</div>
+          <div class="p-name">Elena</div>
+          <div class="p-role">Technical Founder — cost efficiency, time-to-market, differentiation</div>
+        </div>
+        <div class="persona-card">
+          <div class="p-id">P_techlead</div>
+          <div class="p-name">Kwame</div>
+          <div class="p-role">Tech Lead — architecture decisions, maintainability, team velocity</div>
+        </div>
+      </div>
+
+      <p>Each persona definition includes a name, a role title, and a context paragraph that establishes the professional perspective. The prompt asks: "What would you most want an AI research agent to investigate and write up for you right now?" — eliciting tasks grounded in real practitioner concerns rather than abstract capability tests.</p>
+
+      <h2>Two generation backends</h2>
+
+      <p>The script tries TinyTroupe first and falls back to raw Ollama on import failure or runtime error. Both receive the same prompt; the difference is that TinyTroupe runs the response through a full persona simulation step before returning.</p>
+
+      <pre><code># TinyTroupe path (if installed)
+from tinytroupe.agent import TinyPerson
+person = TinyPerson(persona["name"])
+person.define("role", persona["role"])
+person.define("personality_traits", [persona["context"]])
+person.listen_and_act("A colleague asks: 'What would you most want...'")
+actions = person.pop_actions_and_get_contents_for("TALK")
+
+# Ollama fallback (always available)
+response = ollama.chat(model=MODEL, messages=[{"role": "user", "content": prompt}],
+                       options={"temperature": 0.8})</code></pre>
+
+      <p>TinyTroupe is not on PyPI — it must be installed from GitHub (<code>pip install git+https://github.com/microsoft/TinyTroupe.git@main</code>). The script checks for availability at import time and prints which backend it's using at startup. The Ollama path with temperature 0.8 produces similar diversity to TinyTroupe for this task, so the fallback is a practical substitute for most use cases.</p>
+
+      <h2>Criteria auto-derivation</h2>
+
+      <p>The fixed eval tasks have hand-authored criteria. Generated tasks don't — so <code>build_criteria()</code> derives them from the task text at generation time. The derivation uses two signals:</p>
+
+      <p><strong>Count detection</strong> — if the task asks for "top 5", "best 3", or "N most", <code>_extract_count()</code> extracts N via regex. A count in the 2–7 range triggers <code>exact_sections(N)</code> — the output must have exactly that many non-structural H2 sections. Tasks without a count get <code>min_sections(3)</code> instead.</p>
+
+      <p>Structural and quality criteria are applied regardless:</p>
+
+      <table class="criteria-table">
+        <thead>
+          <tr><th>Criterion</th><th>What it checks</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>min_bytes(800)</code> or <code>min_bytes(600)</code></td><td>Minimum output length in UTF-8 bytes; lower threshold for counted-section tasks</td></tr>
+          <tr><td><code>min_lines(15)</code> or <code>min_lines(10)</code></td><td>Minimum line count; lower threshold for counted-section tasks</td></tr>
+          <tr><td><code>no_placeholders()</code></td><td>Rejects outputs containing "TODO", "[placeholder]", "add example here", etc.</td></tr>
+          <tr><td><code>has_impl_notes()</code></td><td>Requires at least one of: code block, "implementation note:", "example:" — signals concrete content</td></tr>
+          <tr><td><code>no_file_path_refs()</code></td><td>Rejects outputs that echo the save path back — "saved to ~/Desktop/..." is a producer artifact, not content</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Output format</h2>
+
+      <p>Generated tasks are saved as JSON in <code>eval_suite.py</code>'s SUITE format — each task dict has the same keys as the hand-authored tasks, plus a <code>criteria_specs</code> field (serializable criterion specs) and a <code>raw_response</code> field for debugging. The <code>eval_suite.py</code> loader converts <code>criteria_specs</code> back to callable criterion functions at run time.</p>
+
+      <pre><code>{
+  "id": "P_devops_1",
+  "desc": "generated: Senior DevOps Engineer",
+  "task": "Search for the top 5 Kubernetes cost optimization strategies and save to .../eval-k8s-cost.md",
+  "output": "~/Desktop/harness-engineering/eval-k8s-cost.md",
+  "criteria_specs": [
+    {"type": "exact_sections", "n": 5},
+    {"type": "min_bytes", "n": 600},
+    {"type": "min_lines", "n": 10},
+    {"type": "no_placeholders"},
+    {"type": "has_impl_notes"},
+    {"type": "no_file_path_refs"}
+  ],
+  "persona": "Jordan",
+  "raw_response": "TASK: Search for the top 5 ..."
+}</code></pre>
+
+      <h2>Usage</h2>
+
+      <pre><code># Generate one task per persona (default), save to generated_tasks.json
+python tinytroupe_tasks.py
+
+# Two tasks per persona
+python tinytroupe_tasks.py --count 2
+
+# Custom output path
+python tinytroupe_tasks.py --out eval_generated.json
+
+# Preview without saving
+python tinytroupe_tasks.py --dry-run</code></pre>
+
+      <div class="callout">
+        <p>The criteria functions in <code>tinytroupe_tasks.py</code> are local copies of the same factories in <code>eval_suite.py</code>, kept separate to avoid a circular import. If you add a new criterion type to <code>eval_suite.py</code>, add it here too — and to <code>criteria_to_functions()</code> — for the generated task runner to recognize it.</p>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

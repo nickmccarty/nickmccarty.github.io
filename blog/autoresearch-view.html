@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate | Nick McCarty</title>
+  <meta name="description" content="A tour of the harness Autoresearch UI: real-time supervision of the SYNTH_INSTRUCTION optimizer. 40 experiments run, 1 kept, 39 discarded, best score 8.530, average delta -1.038.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/autoresearch-view.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate">
+  <meta property="og:description" content="Real-time supervision of the SYNTH_INSTRUCTION optimizer: 40 experiments, 1 keep, 3% keep rate, best score 8.530, avg delta -1.038. The experiment table reveals what the optimizer actually tried.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/autoresearch-view.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-31T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate">
+  <meta name="twitter:description" content="40 SYNTH_INSTRUCTION experiments, 1 kept at 8.530, 39 discarded. The autoresearch loop polls every 5s and surfaces the full mutation log in a live dashboard.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate","description":"A tour of the harness Autoresearch UI — real-time supervision of the SYNTH_INSTRUCTION optimizer, 40 experiments, 1 keep, best score 8.530, avg delta -1.038.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/autoresearch-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout.green{border-left-color:#22c55e;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    .tag{display:inline-block;font-size:0.7rem;font-weight:700;padding:0.15rem 0.45rem;border-radius:3px;letter-spacing:0.04em;text-transform:uppercase;}
+    .tag.cyan{background:rgba(0,212,255,0.12);color:var(--accent-cyan);}
+    .tag.green{background:rgba(34,197,94,0.15);color:#22c55e;}
+    .tag.amber{background:rgba(245,158,11,0.15);color:#f59e0b;}
+    .tag.red{background:rgba(239,68,68,0.15);color:#ef4444;}
+    .screenshot{width:100%;border-radius:8px;border:1px solid var(--border-color);margin:1.5rem 0;display:block;}
+    .screenshot-caption{font-size:0.8rem;color:var(--text-secondary);text-align:center;margin-top:-1rem;margin-bottom:1.5rem;}
+    .feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:640px){.feature-grid{grid-template-columns:1fr;}}
+    .feature-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.1rem;}
+    .feature-card h4{margin:0 0 0.4rem;font-size:0.9rem;color:var(--accent-cyan);}
+    .feature-card p{margin:0;font-size:0.85rem;line-height:1.6;color:var(--text-secondary);}
+    .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin:1.5rem 0;}
+    @media(max-width:640px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+    .stat-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.75rem 1rem;text-align:center;}
+    .stat-card .val{font-size:1.6rem;font-weight:700;color:var(--text-primary);line-height:1.1;}
+    .stat-card .val.green{color:#22c55e;}
+    .stat-card .val.red{color:#ef4444;}
+    .stat-card .lbl{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-secondary);margin-top:0.3rem;}
+    .exp-row{display:grid;grid-template-columns:2.5rem 5rem 3.5rem 3.5rem 1fr;gap:0.5rem;align-items:start;padding:0.6rem 0;border-bottom:1px solid var(--border-color);font-size:0.82rem;}
+    .exp-row:last-child{border-bottom:none;}
+    .exp-num{color:var(--text-secondary);font-family:'SF Mono','Consolas',monospace;}
+    .exp-keep{color:#22c55e;font-weight:700;}
+    .exp-discard{color:#ef4444;}
+    .exp-score{font-family:'SF Mono','Consolas',monospace;color:var(--text-primary);}
+    .exp-delta-pos{font-family:'SF Mono','Consolas',monospace;color:#22c55e;}
+    .exp-delta-neg{font-family:'SF Mono','Consolas',monospace;color:#ef4444;}
+    .exp-desc{color:var(--text-secondary);line-height:1.5;}
+    .schema-block{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:1.5rem 0;}
+  </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Autoresearch View","item":"https://nickmccarty.me/blog/autoresearch-view.html"}]}</script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">May 31, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate</span></h1>
+        <p class="subtitle">Real-time supervision of the synthesis instruction optimizer. 40 experiments run, 1 kept, 39 discarded. Best score: 8.530. Average delta: &minus;1.038. The dashboard surfaces every mutation and its outcome.</p>
+      </header>
+
+      <p>The autoresearch loop is the harness's self-improvement mechanism. Every few minutes it proposes a change to <code>SYNTH_INSTRUCTION</code> — the core prompt that governs how the synthesis stage condenses papers into a research output — runs a set of evaluation tasks against the new instruction, scores the results with the Wiggum evaluator, and decides whether to keep or discard the change. The Autoresearch view is the live console for watching this process.</p>
+
+      <img src="../assets/images/ui-autoresearch-01.png" alt="Autoresearch view header showing 40 experiments, 1 keep, 39 discards, 3% keep rate, 8.530 best score, -1.038 avg delta, and score trend sparkline" class="screenshot">
+      <p class="screenshot-caption">Header stats panel: 40 experiments evaluated, 1 kept, 39 discarded, 3% keep rate. Best score achieved: 8.530. Average score delta per experiment: &minus;1.038 — meaning the median mutation makes things worse. Score trend sparkline shows the range: min 2.500 to max 8.530.</p>
+
+      <h2>Header Stats</h2>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="val">40</div><div class="lbl">Experiments</div></div>
+        <div class="stat-card"><div class="val green">1</div><div class="lbl">Keeps</div></div>
+        <div class="stat-card"><div class="val red">39</div><div class="lbl">Discards</div></div>
+        <div class="stat-card"><div class="val">3%</div><div class="lbl">Keep Rate</div></div>
+        <div class="stat-card"><div class="val green">8.530</div><div class="lbl">Best Score</div></div>
+        <div class="stat-card"><div class="val red">-1.038</div><div class="lbl">Avg &Delta;</div></div>
+        <div class="stat-card"><div class="val">0</div><div class="lbl">Kimi Fires</div></div>
+        <div class="stat-card"><div class="val">2</div><div class="lbl">Max Consec. Disc.</div></div>
+      </div>
+
+      <p>The headline numbers tell a sparse-signal story: out of 40 attempts to improve synthesis quality, only 1 produced a measurable gain. An average delta of &minus;1.038 means the typical experiment actually makes outputs worse — the optimizer is exploring a landscape where most directions are downhill. This is expected for a prompt optimizer working on a already-decent baseline: the gains are real but rare.</p>
+
+      <p><strong>Kimi Fires: 0</strong> records how many times the harness escalated to Kimi (a more capable model) for a second-opinion evaluation pass. Zero fires means the local Wiggum evaluator was sufficient to resolve all experiment decisions without escalation — the local scoring signal was clear enough on its own.</p>
+
+      <h2>Score Trend Sparkline</h2>
+
+      <p>Below the stat cards, a compact sparkline charts score across all experiments. The range annotation (<code>min 2.500 &nbsp; max 8.530</code>) immediately shows the optimizer encountered both near-failure outputs and its single best result within the same 40-experiment window. The sparkline shape — jagged, with occasional deep drops — is the visual signature of a hill-climbing search on a noisy landscape: most steps are flat or downward, with infrequent jumps upward.</p>
+
+      <h2>The Experiment Table</h2>
+
+      <p>The main body of the view is a table listing every experiment with its full metadata:</p>
+
+      <div class="schema-block">
+        <div class="exp-row" style="font-size:0.75rem;font-weight:700;color:var(--text-secondary);border-bottom:2px solid var(--border-color);">
+          <span>#</span><span>STATUS</span><span>SCORE</span><span>&Delta; SCORE</span><span>DESCRIPTION</span>
+        </div>
+        <div class="exp-row">
+          <span class="exp-num">#41</span>
+          <span class="exp-discard">DISCARD</span>
+          <span class="exp-score">8.030</span>
+          <span class="exp-delta-neg">-0.500</span>
+          <span class="exp-desc">Changed SYNTH_INSTRUCTION_PROSE to require a narrative format that emphasizes logical flow and integration of findings.</span>
+        </div>
+        <div class="exp-row">
+          <span class="exp-num">#40</span>
+          <span class="exp-discard">DISCARD</span>
+          <span class="exp-score">7.530</span>
+          <span class="exp-delta-neg">-1.000</span>
+          <span class="exp-desc">Changed synth_count to require exactly 5 practices and synth_prose to focus on sequential reasoning.</span>
+        </div>
+        <div class="exp-row">
+          <span class="exp-num">#39</span>
+          <span class="exp-discard">DISCARD</span>
+          <span class="exp-score">7.995</span>
+          <span class="exp-delta-neg">-0.535</span>
+          <span class="exp-desc">Changed synth_count to require exactly 5 practices for more structured output, updated synth_prose.</span>
+        </div>
+        <div class="exp-row" style="opacity:0.5;font-size:0.78rem;text-align:center;padding:0.3rem 0;border-bottom:1px solid var(--border-color);">
+          &hellip; 24 experiments &hellip;
+        </div>
+        <div class="exp-row" style="background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.3);border-radius:4px;margin:0.25rem 0;">
+          <span class="exp-num">#14</span>
+          <span class="exp-keep">KEEP</span>
+          <span class="exp-score" style="color:#22c55e;">8.530</span>
+          <span class="exp-delta-pos">+0.000</span>
+          <span class="exp-desc">Changed SYNTH_INSTRUCTION to require a concrete example per practice for better grounding.</span>
+        </div>
+      </div>
+
+      <img src="../assets/images/ui-autoresearch-keep.png" alt="Autoresearch experiment table scrolled to show experiment #14 as the only KEEP at score 8.530" class="screenshot">
+      <p class="screenshot-caption">The full experiment table scrolled to experiment #14 — the only KEEP in 40 attempts, at score 8.530. All other rows are red DISCARD. The description column shows the exact SYNTH_INSTRUCTION change that was tested.</p>
+
+      <h2>What the Optimizer Actually Tried</h2>
+
+      <p>The description column is the most informative part of the table. It reveals what the optimizer's mutation strategy actually looks like in practice — not abstract "prompt optimization" but specific, readable changes to the synthesis instruction:</p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>Count constraints</h4>
+          <p>"Require exactly 5 practices" — experiments that add or change the required count of output items. Most scored lower than free-form outputs, suggesting over-constraining the count hurts synthesis diversity.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Format mutations</h4>
+          <p>"Narrative format emphasizing logical flow" vs. list format — experiments that switch between prose and structured output. Narrative mutations consistently degraded scores; the evaluator favors structure.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Reasoning requirements</h4>
+          <p>"Sequential reasoning" and "chain-of-thought that shows cause-and-effect" — adding explicit reasoning chains. Mixed results; some improved depth scores but reduced overall quality.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Concrete grounding</h4>
+          <p>Experiment #14 (the KEEP): "require a concrete example per practice for better grounding." This is the only mutation that produced a measurable improvement — specificity over abstraction.</p>
+        </div>
+      </div>
+
+      <h2>The Keep Decision</h2>
+
+      <p>A KEEP is issued when the experiment's score exceeds the current best score by a statistically meaningful margin. Experiment #14 achieved 8.530 against a baseline that was already tracking around 8.0–8.1 — a 0.5-point gain that cleared the threshold. The instruction change was specific: adding "require a concrete example per practice" pushed the evaluator's depth and specificity rubric dimensions up without introducing the formatting rigidity that killed other experiments.</p>
+
+      <div class="callout green">
+        <p>Experiment #14's SYNTH_INSTRUCTION variant became the new baseline. Subsequent experiments (#15–#41) are all measured against it — which explains why their &Delta; values look small even though their absolute scores are similar. They're not failing to beat the original baseline; they're failing to beat the improved one.</p>
+      </div>
+
+      <h2>The Loop Mechanics</h2>
+
+      <p>The autoresearch loop runs as a background process that polls every 5 seconds for new evaluation results. When a new experiment completes, the view updates in real time — the stat counters increment, the sparkline extends, and the new row appears at the top of the table. DISCARD/KEEP decisions are immediate; there's no human in the loop unless you intervene manually by pausing the process.</p>
+
+      <p>The DISCARD count (39 out of 40) might look like failure, but it's the expected behavior of a search process that explores a high-dimensional instruction space with a relatively smooth but hard-to-improve objective. Most directions are wrong. The one that was right produced a permanent baseline improvement that every subsequent run inherits.</p>
+
+      <p>The scores produced by KEEP and DISCARD experiments, along with their instruction pairs, feed directly into the <a href="fine-tune-view.html">Fine-tune pipeline</a> as DPO preference pairs — making the autoresearch loop the upstream data source for model improvement, not just prompt improvement.</p>
+    </article>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Nick McCarty. Built with care.</p>
+  </footer>
+</body>
+</html>

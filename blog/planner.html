@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Planner: Two-Pass Pre-Research Analysis | Nick McCarty</title>
+  <meta name="description" content="planner.py runs before every research task: a prior knowledge pass identifies what the model already knows and what gaps need search, then a main plan pass produces targeted queries, task classification, section count, and planner notes injected into synthesis.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/planner.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Planner: Two-Pass Pre-Research Analysis">
+  <meta property="og:description" content="Two LLM calls before research starts: a prior knowledge pass (what do I already know? what gaps need search?) and a main plan pass (task_type, complexity, expected_sections, targeted queries). Plan output is injected into synthesis as context.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/planner.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Planner: Two-Pass Pre-Research Analysis">
+  <meta name="twitter:description" content="Prior knowledge pass + main plan pass — two fast glm4:9b calls that identify knowledge gaps, generate targeted search queries, and inject planner notes into synthesis before a single web search runs.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Planner: Two-Pass Pre-Research Analysis","description":"planner.py runs two fast LLM calls before research: prior knowledge assessment and structured plan generation.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/planner.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .flow-row{display:flex;align-items:center;flex-wrap:wrap;gap:0.5rem;margin:1.5rem 0;font-size:0.84rem;}
+    .flow-box{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.75rem;font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--text-primary);}
+    .flow-arrow{color:var(--text-secondary);}
+    .field-table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:0.83rem;}
+    .field-table th{text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);color:var(--text-secondary);font-weight:600;}
+    .field-table td{padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);vertical-align:top;}
+    .field-table code{font-size:0.8em;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Planner: Two-Pass Pre-Research Analysis</span></h1>
+        <p class="subtitle">Before a single web search runs, <code>planner.py</code> makes two fast <code>glm4:9b</code> calls — a prior knowledge assessment and a structured plan — to ensure searches target actual gaps and synthesis has context about what was already known.</p>
+      </header>
+
+      <p>Naive research agents generate search queries directly from the task string. The planner takes a different approach: ask the model what it already knows before searching, identify specific gaps that web search would fill, then generate queries that target those gaps. Two small LLM calls before any expensive search or synthesis work begins.</p>
+
+      <h2>Pass 1: prior knowledge assessment</h2>
+
+      <div class="flow-row">
+        <span class="flow-box">task + memory context</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-box">glm4:9b (temp 0.1)</span>
+        <span class="flow-arrow">&rarr;</span>
+        <span class="flow-box">known_facts[]</span>
+        <span class="flow-arrow">+</span>
+        <span class="flow-box">gaps[]</span>
+      </div>
+
+      <p>The prior knowledge prompt asks two questions:</p>
+      <ol>
+        <li>What specific facts are you <em>confident</em> about, including anything from the memory context?</li>
+        <li>What specific aspects would you <em>need to look up</em> to answer authoritatively? (If memory already covers the task well, gaps should be empty.)</li>
+      </ol>
+
+      <p>The model responds with exactly two JSON arrays. The gaps array is what matters most — it directly seeds the search queries in Pass 2. If the memory store already has a strong match (a prior run on the same topic), the model is instructed to return an empty gaps array, and the pipeline can synthesize from memory without any new searches. This is the mechanism that makes repeated similar tasks fast: the planner detects redundancy before any DDGS calls are made.</p>
+
+      <p>This pass is skippable via <code>HARNESS_SKIP_PRIOR_KNOWLEDGE=1</code> — useful for controlled autoresearch experiments where you want to eliminate the variable of prior knowledge conditioning.</p>
+
+      <h2>Pass 2: structured plan</h2>
+
+      <p>The main plan prompt receives the task, any memory context, and the <code>known_facts</code>/<code>gaps</code> from Pass 1. It produces a JSON plan with seven fields:</p>
+
+      <table class="field-table">
+        <thead><tr><th>Field</th><th>Values</th><th>How it's used downstream</th></tr></thead>
+        <tbody>
+          <tr><td><code>task_type</code></td><td><code>enumerated</code> | <code>best_practices</code> | <code>research</code></td><td>Selects <code>SYNTH_INSTRUCTION</code> variant (count vs technical vs prose)</td></tr>
+          <tr><td><code>complexity</code></td><td><code>low</code> | <code>medium</code> | <code>high</code></td><td>Logged to run trace; potentially used by future routing logic</td></tr>
+          <tr><td><code>expected_sections</code></td><td>integer or null</td><td>Used in count-check fallback when the regex doesn't find a number in the task</td></tr>
+          <tr><td><code>search_queries</code></td><td>list of 2 strings</td><td>Replaces auto-generated queries in <code>gather_research()</code></td></tr>
+          <tr><td><code>prior_work_summary</code></td><td>one sentence or empty</td><td>Injected into synthesis prompt via <code>synthesis_context()</code></td></tr>
+          <tr><td><code>notes</code></td><td>one actionable sentence</td><td>Injected into synthesis prompt — e.g. "specificity was weak last time — include concrete tool names"</td></tr>
+          <tr><td><code>subtasks</code></td><td>list of research directives</td><td>Triggers multi-step orchestration; filtered to remove assembly steps</td></tr>
+        </tbody>
+      </table>
+
+      <h2>The subtask filter</h2>
+
+      <p>Subtasks are only populated for tasks that explicitly require synthesizing across multiple distinct domains. The planner is instructed to list 2–3 self-contained web research directives and nothing else — no "synthesize", "assemble", "combine", or "write" steps, because those are the orchestrator's job.</p>
+
+      <p>Despite this instruction, models sometimes include assembly steps anyway. <code>_parse_plan()</code> applies a post-hoc filter against a set of assembly verbs before returning the plan:</p>
+
+      <pre><code>_ASSEMBLY_WORDS = re.compile(
+    r'\b(synthesize|synthesise|assemble|combine|integrate|unify|merge|compile|write|create)\b',
+    re.IGNORECASE,
+)
+subtasks = [
+    s for s in raw_subtasks
+    if not _ASSEMBLY_WORDS.search(s)
+]</code></pre>
+
+      <p>This prevents the orchestrator from recursively delegating its own synthesis step back to the planner.</p>
+
+      <h2>Synthesis context injection</h2>
+
+      <p>The <code>Plan.synthesis_context()</code> method builds a formatted block that gets prepended to the synthesis prompt alongside the memory context:</p>
+
+      <pre><code>**Prior work:** (one sentence summary of relevant past runs)
+**Planner note:** specificity was weak last time — include concrete tool names and version numbers
+**Verified facts (no search needed):**
+- Python's asyncio event loop uses a single thread by default
+- The GIL is released during I/O-bound operations</code></pre>
+
+      <p>The planner note is particularly valuable for autoresearch experiments: if the evaluator consistently flags a specific weakness (depth, specificity, examples), the planner can carry that feedback forward as a synthesis instruction that supplements <code>SYNTH_INSTRUCTION</code>. This is a second channel for improving output quality alongside the instruction-level mutation that autoresearch performs on <code>SYNTH_INSTRUCTION</code> itself.</p>
+
+      <h2>Robustness</h2>
+
+      <p>Both passes use <code>temperature: 0.1</code> to get deterministic, structured JSON. Both use <code>dirtyjson</code> as a fallback parser for common model-output defects (unescaped quotes, trailing commas). If both parsers fail, <code>_extract_string_list()</code> tries regex extraction of just the array values. If everything fails, the planner returns a <code>Plan()</code> with safe defaults — the pipeline continues with empty queries (auto-generated instead) and no injected context. The planner never raises.</p>
+
+      <div class="callout amber">
+        <p>The planner uses <code>glm4:9b</code> regardless of which producer model is configured. This is intentional: planning is a structured JSON generation task where a 9B model is fast (2–5 seconds) and adequate. Using the full 32B producer for planning would add ~30 seconds of latency with no meaningful improvement in plan quality.</p>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>

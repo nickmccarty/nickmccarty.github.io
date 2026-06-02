@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Analytics View: Score Trends, Token Spend, and Run Distribution | Nick McCarty</title>
+  <meta name="description" content="A tour of the harness Analytics UI: score trend over all 1,442 runs, daily volume and pass-rate charts, token spend, score distribution histogram, and lifetime totals of 15.8M input tokens.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/analytics-view.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Analytics View: Score Trends, Token Spend, and Run Distribution">
+  <meta property="og:description" content="Score trend over all 1,442 runs, daily volume and pass-rate charts, daily token spend with input/output split, score distribution histogram, task types, and 15.8M lifetime input tokens.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/analytics-view.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-31T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Analytics View: Score Trends, Token Spend, and Run Distribution">
+  <meta name="twitter:description" content="Score trend, daily token spend, score distribution histogram, and 15.8M/3.7M lifetime input/output token totals across 1,442 harness runs.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Analytics View: Score Trends, Token Spend, and Run Distribution","description":"A tour of the harness Analytics UI — score trend over all runs, daily volume and pass-rate charts, token spend, score distribution histogram, and lifetime token totals.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/analytics-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout.green{border-left-color:#22c55e;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    .tag{display:inline-block;font-size:0.7rem;font-weight:700;padding:0.15rem 0.45rem;border-radius:3px;letter-spacing:0.04em;text-transform:uppercase;}
+    .tag.cyan{background:rgba(0,212,255,0.12);color:var(--accent-cyan);}
+    .tag.green{background:rgba(34,197,94,0.15);color:#22c55e;}
+    .tag.amber{background:rgba(245,158,11,0.15);color:#f59e0b;}
+    .tag.red{background:rgba(239,68,68,0.15);color:#ef4444;}
+    .screenshot{width:100%;border-radius:8px;border:1px solid var(--border-color);margin:1.5rem 0;display:block;}
+    .screenshot-caption{font-size:0.8rem;color:var(--text-secondary);text-align:center;margin-top:-1rem;margin-bottom:1.5rem;}
+    .feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:640px){.feature-grid{grid-template-columns:1fr;}}
+    .feature-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.1rem;}
+    .feature-card h4{margin:0 0 0.4rem;font-size:0.9rem;color:var(--accent-cyan);}
+    .feature-card p{margin:0;font-size:0.85rem;line-height:1.6;color:var(--text-secondary);}
+    .stat-row{display:flex;justify-content:space-between;align-items:baseline;padding:0.5rem 0;border-bottom:1px solid var(--border-color);}
+    .stat-row:last-child{border-bottom:none;}
+    .stat-label{font-size:0.8rem;color:var(--text-secondary);font-family:'SF Mono','Consolas',monospace;text-transform:uppercase;letter-spacing:0.05em;}
+    .stat-value{font-size:1.1rem;font-weight:700;color:var(--text-primary);}
+    .schema-block{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:1.5rem 0;}
+  </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Analytics View","item":"https://nickmccarty.me/blog/analytics-view.html"}]}</script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">May 31, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Analytics View: Score Trends, Token Spend, and Run Distribution</span></h1>
+        <p class="subtitle">Score trend across all 1,442 runs, daily volume and pass-rate charts, token spend with input/output split, a score distribution histogram, task type breakdown, and 15,855,026 lifetime input tokens.</p>
+      </header>
+
+      <p>Individual run metrics answer "did this run work." The Analytics view answers "is the system working." It aggregates every run the harness has ever executed into a set of time-series charts and lifetime counters that surface trends a single-run view can't show — score regression after a prompt change, token spend spikes from a batch job, or the distribution shift that tells you the pass threshold is too easy or too tight.</p>
+
+      <img src="../assets/images/ui-analytics-01.png" alt="Analytics view showing score trend chart for all runs with pass threshold line and partial daily volume/pass-rate charts" class="screenshot">
+      <p class="screenshot-caption">Score Trend &ndash; All Runs. Each point is one run scored 0&ndash;10. The dashed red line marks the 8.0 pass threshold. The cluster of drops toward the middle corresponds to early autoresearch experiments with aggressive SYNTH_INSTRUCTION mutations.</p>
+
+      <h2>Score Trend</h2>
+
+      <p>The primary chart plots every run's Wiggum evaluator score in chronological order. The y-axis runs 0–10; the dashed threshold line sits at 8.0. A few structural patterns are immediately readable:</p>
+
+      <ul>
+        <li><strong>Baseline cluster:</strong> The early runs track tightly around 8.0–8.5, reflecting the hand-tuned initial SYNTH_INSTRUCTION before autoresearch began.</li>
+        <li><strong>Mutation dip:</strong> The cluster of deep drops (some reaching score 1–2) corresponds to autoresearch experiments that aggressively changed the synthesis format — switching to narrative-only, removing structure, or over-constraining output length.</li>
+        <li><strong>Recovery:</strong> Later runs return to the 8.0 band, reflecting the autoresearch loop reverting bad mutations and the fine-tuned model integrating the best-scoring SYNTH_INSTRUCTION variant.</li>
+      </ul>
+
+      <h2>Daily Charts</h2>
+
+      <img src="../assets/images/ui-analytics-02.png" alt="Analytics view lower section showing daily token spend, score distribution histogram, task types, and lifetime token totals" class="screenshot">
+      <p class="screenshot-caption">Bottom half of Analytics: daily token spend (input green, output blue), score distribution heavily concentrated at score 8, task type counts, and lifetime totals.</p>
+
+      <p>Below the score trend, three 30-day charts give a time-windowed view of system health:</p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>Daily Run Volume</h4>
+          <p>Bar chart segmented by pass (green) / fail (orange) / error (amber). Spikes correlate with batch lit-review runs; quiet days reflect targeted single-task experiments.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Daily Pass Rate %</h4>
+          <p>The fraction of runs on each day that scored &ge; 8.0. A sustained drop in pass rate is the earliest signal that a prompt change or model update degraded synthesis quality.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Daily Token Spend (K)</h4>
+          <p>Input (green) and output (blue) token counts per day in thousands. The chart shows twin peaks around May 28 and May 31, each reaching ~285k input tokens — batch lit-review days.</p>
+        </div>
+      </div>
+
+      <h2>Score Distribution</h2>
+
+      <p>The score distribution histogram bins all runs by their integer score bucket. The shape is immediately telling: a dominant column at score 8, small counts at 6 and 7, and essentially nothing below 5 outside of the autoresearch mutation experiments.</p>
+
+      <p>This distribution shape is by design. The Wiggum evaluator calibrates its rubric so that a well-executed synthesis lands at 8.0 — the pass threshold — and genuinely exceptional outputs reach 8.5–9.0. Scores below 6 indicate structural failures (synthesis loop error, empty output, or a SYNTH_INSTRUCTION so constrained the model produced boilerplate). The concentration at exactly 8 reflects both rubric calibration and the fact that most production runs are lit-review tasks with a consistent quality floor.</p>
+
+      <div class="callout">
+        <p>The single-bucket spike at score 8 is a calibration signal, not a ceiling. It means the evaluator is consistent, not that outputs are all identical. Per-run detail panels show the variance within that bucket: some 8.0 runs fetch 275 papers and produce 14 KB reports; others fetch 40 and produce 6 KB. The score captures synthesis quality, not volume.</p>
+      </div>
+
+      <h2>Task Types</h2>
+
+      <p>The task type panel breaks down all runs by skill route:</p>
+
+      <div class="schema-block">
+        <div class="stat-row"><span class="stat-label">BEST_PRACTICES</span><span class="stat-value">18</span></div>
+        <div class="stat-row"><span class="stat-label">LIT_REVIEW</span><span class="stat-value">7</span></div>
+        <div class="stat-row"><span class="stat-label">RESEARCH</span><span class="stat-value">2</span></div>
+        <div class="stat-row"><span class="stat-label">OSINT</span><span class="stat-value">1</span></div>
+      </div>
+
+      <p>The numbers here reflect only the most recent session; the full 1,442-run history includes many more lit-review and best-practices runs. BEST_PRACTICES tasks generate the RLHF preference pairs that feed the fine-tune pipeline — so the 18:7 ratio between best-practices and lit-review is partly a reflection of how much preference data generation was prioritized in this window.</p>
+
+      <h2>Lifetime Token Totals</h2>
+
+      <p>At the bottom of the Analytics view, two counters show the cumulative token spend across every run the harness has ever executed:</p>
+
+      <div class="schema-block">
+        <div class="stat-row"><span class="stat-label">Total Input</span><span class="stat-value">15,855,026</span></div>
+        <div class="stat-row"><span class="stat-label">Total Output</span><span class="stat-value">3,671,661</span></div>
+      </div>
+
+      <p>The ~4.3:1 input-to-output ratio is characteristic of research synthesis workloads: the harness reads far more (paper abstracts, retrieved memory, search results, planning context) than it writes. A lit-review run that fetches 80 papers and produces a 14 KB synthesis might consume 110k input tokens to generate 12k output tokens — a similar ratio at the individual run level.</p>
+
+      <p>At 15.8M total input tokens, the harness has consumed the equivalent of roughly 12,000 pages of dense academic text across its lifetime. All of it runs locally on a consumer GPU — no cloud API calls, no per-token billing. The token counters are a reminder of why local inference matters for iterative research workflows: this volume would represent a non-trivial cost at cloud API rates.</p>
+
+      <div class="callout green">
+        <p>The Analytics view updates in real time as new runs complete. Leaving it open during a batch job gives you a live view of pass rate and token spend — useful for spotting early whether a new SYNTH_INSTRUCTION variant is regressing quality before the full batch finishes.</p>
+      </div>
+
+      <p>The next layer of the self-improvement story is the <a href="autoresearch-view.html">Autoresearch view</a>, which shows the experiment log behind the score trend's mutation dip — 40 experiments, 1 keep, and a 3% signal rate.</p>
+    </article>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Nick McCarty. Built with care.</p>
+  </footer>
+</body>
+</html>

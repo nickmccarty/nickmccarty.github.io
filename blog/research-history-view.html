@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Research History View: A Unified Activity Log | Nick McCarty</title>
+  <meta name="description" content="A tour of the harness Research History view: a unified, searchable timeline of every web search, browser visit, and research output the harness has performed, filterable by type and time window, with direct links into the Memory store.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/research-history-view.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Research History View: A Unified Activity Log">
+  <meta property="og:description" content="Every search query, browser visit, and research output in one timeline. Filterable by type (search / browser / research) and time window, with score bars and direct links to the Memory store.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/research-history-view.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Research History View: A Unified Activity Log">
+  <meta name="twitter:description" content="Every search query, browser visit, and research output in one timeline. Filterable by type and time window, with links into the Memory store.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Research History View: A Unified Activity Log","description":"A tour of the harness Research History view — a unified, searchable timeline of every search query, browser visit, and research output, with type filters, time windows, and memory links.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/research-history-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout.green{border-left-color:#22c55e;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    .tag{display:inline-block;font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:3px;letter-spacing:0.04em;text-transform:uppercase;font-family:'SF Mono','Consolas',monospace;}
+    .tag.browser{background:rgba(0,212,255,0.12);color:var(--accent-cyan);}
+    .tag.search{background:rgba(245,158,11,0.15);color:#f59e0b;}
+    .tag.research{background:rgba(34,197,94,0.15);color:#22c55e;}
+    .screenshot{width:100%;border-radius:8px;border:1px solid var(--border-color);margin:1.5rem 0;display:block;}
+    .screenshot-caption{font-size:0.8rem;color:var(--text-secondary);text-align:center;margin-top:-1rem;margin-bottom:1.5rem;}
+    .feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:640px){.feature-grid{grid-template-columns:1fr;}}
+    .feature-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.1rem;}
+    .feature-card h4{margin:0 0 0.4rem;font-size:0.9rem;color:var(--accent-cyan);}
+    .feature-card p{margin:0;font-size:0.85rem;line-height:1.6;color:var(--text-secondary);}
+    .entry-anatomy{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:1.5rem 0;font-size:0.86rem;}
+    .entry-row{display:flex;gap:0.75rem;align-items:baseline;padding:0.45rem 0;border-bottom:1px solid var(--border-color);}
+    .entry-row:last-child{border-bottom:none;}
+    .entry-field{font-family:'SF Mono','Consolas',monospace;font-size:0.78rem;color:var(--accent-cyan);min-width:110px;flex-shrink:0;}
+    .entry-desc{color:var(--text-secondary);line-height:1.55;}
+  </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Research History View","item":"https://nickmccarty.me/blog/research-history-view.html"}]}</script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Research History View: A Unified Activity Log</span></h1>
+        <p class="subtitle" style="font-size:1.1rem;line-height:1.7;margin-top:1rem;">
+          Every search query the harness fires, every URL the browser skill visits, every research output it produces &mdash; all land in a single reverse-chronological feed. The Research History view makes that feed navigable: filtered by activity type, scoped to any time window, searchable by content, and linked directly into the Memory store where observations persist.
+        </p>
+      </header>
+
+      <p>
+        Agentic systems are opaque by default. You submit a task, something happens across several tool calls, and you get an output. What searched where, what URLs were fetched, which queries were reformulated &mdash; none of that is visible unless you instrument for it. The Research History view is that instrumentation surfaced as a UI: a complete, unified record of every action the harness takes during research.
+      </p>
+
+      <div class="callout">
+        <p><strong>View search hint:</strong> <em>"Search across searches, research, and browser history&hellip;"</em> &mdash; three distinct activity streams, one box.</p>
+      </div>
+
+      <h2>The Unified Timeline</h2>
+
+      <img src="../assets/images/ui-research-history-01.png" alt="Research History view showing the unified timeline with BROWSER entries, in-memory link, filter buttons, and time window selectors" class="screenshot">
+      <p class="screenshot-caption">The default view: all activity types in reverse-chronological order. Each entry carries a type badge, title, visit count (for browser entries), a score bar, and timestamp. The green "in memory" pill links directly to the corresponding Memory store entry.</p>
+
+      <p>
+        The feed is chronological by default, newest first. Three types of entries appear inline:
+      </p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4><span class="tag browser">browser</span></h4>
+          <p>Every URL the browser skill visited: page title, full URL link, visit count (how many times across all runs), a score bar, and timestamp. The checkbox enables batch export or deletion.</p>
+        </div>
+        <div class="feature-card">
+          <h4><span class="tag search">search</span></h4>
+          <p>Every web search query the harness executed. The full query string is shown verbatim &mdash; no truncation unless the query is very long. No URL, because searches are queries not destinations.</p>
+        </div>
+        <div class="feature-card">
+          <h4><span class="tag research">research</span></h4>
+          <p>Research task outputs that produced a memory entry. These represent completed synthesis runs, linked to the observation in the Memory store via the "in memory" pill.</p>
+        </div>
+      </div>
+
+      <h2>Anatomy of an Entry</h2>
+
+      <div class="entry-anatomy">
+        <div class="entry-row">
+          <span class="entry-field">type badge</span>
+          <span class="entry-desc"><span class="tag browser">browser</span> / <span class="tag search">search</span> / <span class="tag research">research</span> — color-coded for fast scanning.</span>
+        </div>
+        <div class="entry-row">
+          <span class="entry-field">title / query</span>
+          <span class="entry-desc">Page title for browser entries, verbatim query string for search, task summary for research.</span>
+        </div>
+        <div class="entry-row">
+          <span class="entry-field">in memory</span>
+          <span class="entry-desc">Green pill shown only when the entry has a corresponding Memory store observation. Clicking navigates directly to the memory detail panel.</span>
+        </div>
+        <div class="entry-row">
+          <span class="entry-field">URL link</span>
+          <span class="entry-desc">External link icon for browser entries. Opens the original URL in a new tab.</span>
+        </div>
+        <div class="entry-row">
+          <span class="entry-field">visits</span>
+          <span class="entry-desc">For browser entries: how many times this URL has been visited across all harness runs. High visit counts surface frequently-referenced resources.</span>
+        </div>
+        <div class="entry-row">
+          <span class="entry-field">score bar</span>
+          <span class="entry-desc">A teal progress bar proportional to the entry's relevance or quality score. All entries in the current view show 100, reflecting that these are full-relevance observations from completed runs.</span>
+        </div>
+        <div class="entry-row">
+          <span class="entry-field">timestamp</span>
+          <span class="entry-desc">ISO datetime of the activity, to the minute. Precise enough to reconstruct the order of tool calls within a run.</span>
+        </div>
+      </div>
+
+      <h2>Filtering by Type</h2>
+
+      <p>
+        The filter bar at the top narrows the feed to a single activity type. The <strong>search</strong> filter is particularly revealing &mdash; it shows every query the harness generated during retrieval, in the order they were executed.
+      </p>
+
+      <img src="../assets/images/ui-research-history-search.png" alt="Research History filtered to search type, showing a sequence of Beige Book inflation queries from the perplexity vs harness experiment" class="screenshot">
+      <p class="screenshot-caption">Filtered to <span class="tag search">search</span> only. The sequence of Beige Book queries from the perplexity-vs-harness experiment is visible in full: each reformulation of the task string as the retrieval strategy evolved across eight iterations.</p>
+
+      <p>
+        The query sequence visible here is the exact retrieval trace from the <a href="perplexity-vs-harness.html" style="color:var(--accent-cyan);">perplexity-vs-harness experiment</a>: starting from the full task string, narrowing to district-specific Beige Book queries, then reformulating for price-specific sub-queries as the multi-query retrieval strategy was introduced in v6. The history makes the evolution of the retrieval approach legible without reading code.
+      </p>
+
+      <img src="../assets/images/ui-research-history-browser.png" alt="Research History filtered to browser type, showing page titles, visit counts, and the in-memory pill" class="screenshot">
+      <p class="screenshot-caption">Filtered to <span class="tag browser">browser</span> only. Visit counts accumulate across all runs &mdash; the harness dashboard itself has 203 visits; Perplexity.ai has 94; GitHub has 90. The "in memory" pill on the <code>openclaw/mcporter</code> entry indicates this browse produced a persistent memory observation.</p>
+
+      <h2>Time Window Filters</h2>
+
+      <p>
+        Four time scopes sit alongside the type filters: <strong>Today</strong>, <strong>Yesterday</strong>, <strong>7 days</strong>, and <strong>All</strong>. These are the most useful for operational use: switching to Today before a new experiment run shows exactly what context already exists from earlier that day, so you don't duplicate searches the harness has already performed.
+      </p>
+
+      <div class="callout amber">
+        <p><strong>Practical pattern:</strong> Before starting a long research run, filter to Today + search. If the harness already queried the same domain earlier in the day, the results are already in context &mdash; submit a more specific follow-up task instead of repeating the same retrieval sweep.</p>
+      </div>
+
+      <h2>The "In Memory" Link</h2>
+
+      <p>
+        The green <strong>in memory</strong> pill that appears on select entries is the connective tissue between the activity log and the persistent knowledge store. When the harness completes a research task that produces a memory observation, both records are created: the activity log entry (ephemeral timeline) and the Memory store entry (persistent, RLHF-rated). The pill links the two.
+      </p>
+
+      <p>
+        This matters because the activity log and the memory store serve different purposes. The activity log answers "what did the harness do and when?" The memory store answers "what did the harness learn, and is it reliable?" The "in memory" link lets you start from a specific browse or research event in the timeline and immediately inspect the quality-rated observation that came out of it.
+      </p>
+
+      <h2>The Mixed View</h2>
+
+      <img src="../assets/images/ui-research-history-02.png" alt="Research History mixed view showing SEARCH and BROWSER entries interleaved, including Beige Book queries and a Perplexity browser visit" class="screenshot">
+      <p class="screenshot-caption">The mixed All view with both <span class="tag search">search</span> and <span class="tag browser">browser</span> entries interleaved. The Perplexity browser visits appear adjacent to the Beige Book queries they preceded &mdash; the timeline reconstructs the actual sequence of actions during the experiment session.</p>
+
+      <p>
+        The mixed view is the most informative for post-run review. Because browser visits and search queries are timestamped to the minute and displayed together, the timeline reconstructs what actually happened during a run: the query that opened a research thread, the URLs that were fetched to answer it, and the queries that followed as the model reformulated based on what it found. That sequence is not visible anywhere else in the dashboard.
+      </p>
+
+      <h2>What It Enables</h2>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>Retrieval archaeology</h4>
+          <p>Filter to search, set time to All, and search a domain keyword. The full query history for that domain surfaces &mdash; every reformulation, every sub-query variant, in chronological order.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Source verification</h4>
+          <p>When a synthesis output cites a claim, find the corresponding browser entry in the timeline to confirm the URL was actually fetched and when. The visit count shows if it was revisited.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Deduplication</h4>
+          <p>High visit counts on browser entries flag URLs the harness returns to repeatedly. These are strong candidates for RAG indexing &mdash; if the model fetches a page 90+ times, embed it once and retrieve locally.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Memory triage</h4>
+          <p>Research entries with the "in memory" pill that haven't been upvoted or downvoted are easy to spot and triage. Click the pill, vote, done &mdash; the RLHF queue stays current.</p>
+        </div>
+      </div>
+
+      <div class="callout green">
+        <p>The Research History view turns the harness from a black box into a legible actor. Every tool call leaves a trace. The feed is the trace.</p>
+      </div>
+    </article>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Nick McCarty. Built with care.</p>
+  </footer>
+</body>
+</html>

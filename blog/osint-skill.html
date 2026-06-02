@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The OSINT Skill: 11-Layer Target Enrichment for Research Tasks | Nick McCarty</title>
+  <meta name="description" content="A taxonomy of the harness OSINT skill: target detection by regex, 11 parallel enrichment layers (DNS, RDAP, crt.sh, Wayback, Shodan, urlscan, OTX, HIBP, Semantic Scholar, ipinfo), dork generation, and citation-tagged output injected into the synthesis context.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/osint-skill.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The OSINT Skill: 11-Layer Target Enrichment for Research Tasks">
+  <meta property="og:description" content="Target detection from task strings, 11 parallel enrichment layers (DNS through HIBP), LLM-generated dork queries, citation-tagged markdown output, and a graceful-degradation architecture that works zero-config or with API keys.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/osint-skill.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-31T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The OSINT Skill: 11-Layer Target Enrichment for Research Tasks">
+  <meta name="twitter:description" content="11 parallel enrichment layers, zero-config graceful degradation, LLM dork generation, and citation-tagged output injected directly into the synthesis context window.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The OSINT Skill: 11-Layer Target Enrichment for Research Tasks","description":"A taxonomy of the harness OSINT skill — target detection, 11 parallel enrichment layers, dork generation, and citation-tagged output injected into the synthesis context window.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/osint-skill.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout.green{border-left-color:#22c55e;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .tag{display:inline-block;font-size:0.7rem;font-weight:700;padding:0.15rem 0.45rem;border-radius:3px;letter-spacing:0.04em;text-transform:uppercase;}
+    .tag.cyan{background:rgba(0,212,255,0.12);color:var(--accent-cyan);}
+    .tag.green{background:rgba(34,197,94,0.15);color:#22c55e;}
+    .tag.amber{background:rgba(245,158,11,0.15);color:#f59e0b;}
+    .tag.key{background:rgba(139,92,246,0.12);color:#a78bfa;}
+    .screenshot{width:100%;border-radius:8px;border:1px solid var(--border-color);margin:1.5rem 0;display:block;}
+    .screenshot-caption{font-size:0.8rem;color:var(--text-secondary);text-align:center;margin-top:-1rem;margin-bottom:1.5rem;}
+    .feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:640px){.feature-grid{grid-template-columns:1fr;}}
+    .feature-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.1rem;}
+    .feature-card h4{margin:0 0 0.4rem;font-size:0.9rem;color:var(--accent-cyan);}
+    .feature-card p{margin:0;font-size:0.85rem;line-height:1.6;color:var(--text-secondary);}
+    .layer-row{display:grid;grid-template-columns:1.8rem 7rem 1fr;gap:0.5rem;align-items:start;padding:0.55rem 0;border-bottom:1px solid var(--border-color);font-size:0.85rem;}
+    .layer-row:last-child{border-bottom:none;}
+    .layer-num{font-family:'SF Mono','Consolas',monospace;font-size:0.75rem;color:var(--text-secondary);}
+    .layer-name{font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--accent-cyan);}
+    .layer-desc{color:var(--text-secondary);line-height:1.5;}
+    .schema-block{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:1.5rem 0;}
+    .cite-box{background:var(--bg-secondary);border:1px solid var(--border-color);border-left:3px solid var(--accent-cyan);border-radius:0 8px 8px 0;padding:0.75rem 1rem;margin:1.5rem 0;font-family:'SF Mono','Consolas',monospace;font-size:0.82rem;color:var(--accent-cyan);}
+  </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The OSINT Skill","item":"https://nickmccarty.me/blog/osint-skill.html"}]}</script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">May 31, 2026 &bull; 9 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The OSINT Skill: 11-Layer Target Enrichment for Research Tasks</span></h1>
+        <p class="subtitle">Automatic target detection from task strings, 11 parallel enrichment layers from DNS to breach databases, LLM-generated dork queries, and citation-tagged markdown injected directly into the synthesis context window.</p>
+      </header>
+
+      <p>Most research tasks the harness handles are about ideas — papers, practices, market dynamics. But occasionally a task contains something concrete: a domain name, an IP address, an email address, or a person's name. When that happens, the OSINT skill activates automatically, runs up to 11 enrichment layers in parallel against the target, and injects a structured brief into the synthesis context before the model writes its output.</p>
+
+      <p>The skill lives in <code>harness/osint_tool.py</code> and is purely additive: it enriches rather than replaces the normal research pipeline. The synthesis stage receives a richer context window; the output document gains a sourced OSINT section with traceable citations. No separate invocation is required — the skill fires or doesn't based on what the task string contains.</p>
+
+      <h2>Target Detection</h2>
+
+      <p>The first step is extracting what to enrich. Four regex patterns run against the task string:</p>
+
+      <div class="schema-block">
+        <div class="layer-row">
+          <span class="layer-num">1</span>
+          <span class="layer-name">IP address</span>
+          <span class="layer-desc">Standard IPv4 dotted-quad pattern. Matched IPs go directly to the IP enrichment path (ipinfo.io + Shodan).</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">2</span>
+          <span class="layer-name">Email</span>
+          <span class="layer-desc">RFC-ish email pattern. The domain part is extracted and added to the domain enrichment queue automatically.</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">3</span>
+          <span class="layer-name">Domain</span>
+          <span class="layer-desc">Hostname-with-TLD pattern covering ~25 common TLDs plus modern ones (<code>.ai</code>, <code>.dev</code>, <code>.cloud</code>). IPs that match the domain regex are excluded.</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">4</span>
+          <span class="layer-name">Person name</span>
+          <span class="layer-desc">Title-case bigrams (<code>[A-Z][a-z]+</code> pairs) with a stop-word filter excluding org suffixes like Inc, Ltd, University. Matched names go to the Semantic Scholar author search layer.</span>
+        </div>
+      </div>
+
+      <p>The skill fires only when at least one domain or IP is detected. Person names and emails are enriched as secondary signals alongside their associated domain, not as standalone trigger types. Up to 2 domains, 2 IPs, 3 names, and 5 emails are extracted per task; duplicates are deduplicated before enrichment begins.</p>
+
+      <h2>Intent Gating</h2>
+
+      <p>A secondary gate, <code>_osint_themes()</code>, checks for OSINT-adjacent keywords in the task string — terms like <code>domain</code>, <code>whois</code>, <code>subdomain</code>, <code>breach</code>, <code>infrastructure</code>, <code>vulnerability</code>, <code>certificate</code>. This signal is surfaced to the planning stage so the model can adjust its search strategy, but the actual enrichment is controlled by target detection alone: a task with a domain in it will trigger enrichment regardless of whether any OSINT keywords appear.</p>
+
+      <h2>The 11 Enrichment Layers</h2>
+
+      <p>All layers that apply to a given target run in parallel via a <code>ThreadPoolExecutor</code> with a 25-second per-layer timeout. Layers are grouped into two paths — domain and IP — with the domain path running first and then enriching the resolved A-record IP as well.</p>
+
+      <h3>Zero-Config Layers (No API Key Required)</h3>
+
+      <div class="schema-block">
+        <div class="layer-row">
+          <span class="layer-num">1</span>
+          <span class="layer-name">DNS</span>
+          <span class="layer-desc">A records via stdlib <code>socket.getaddrinfo</code>. MX, NS, and TXT records via <code>dnspython</code> if installed. TXT records parsed for SPF and DMARC presence.</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">2</span>
+          <span class="layer-name">HTTP meta</span>
+          <span class="layer-desc">HEAD request for <code>Server</code>, <code>X-Powered-By</code>, HSTS, and CSP headers. <code>robots.txt</code> parsed for disallowed paths. <code>/.well-known/security.txt</code> checked for contact information.</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">3</span>
+          <span class="layer-name">RDAP</span>
+          <span class="layer-desc">Modern JSON WHOIS replacement via <code>rdap.org</code>. Returns registrant name/org, registrar, registration date, expiration, last-changed, and name servers — all structured, no screen-scraping.</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">4</span>
+          <span class="layer-name">crt.sh</span>
+          <span class="layer-desc">Certificate Transparency log query for <code>%.domain</code>. Returns total cert count, unique subdomains (up to 20), issuing CAs, first cert date, latest cert date, and organization names from subject fields.</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">5</span>
+          <span class="layer-name">Wayback CDX</span>
+          <span class="layer-desc">Wayback Machine CDX API for first-indexed date and total snapshot count. No key, no rate limit under normal use. First-seen date establishes domain age independently of RDAP.</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">6</span>
+          <span class="layer-name">ipinfo.io</span>
+          <span class="layer-desc">IP geolocation, ASN, and hostname. Free tier requires no key; <code>IPINFO_TOKEN</code> unlocks richer fields. Runs against the first A record resolved from the domain's DNS.</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">7</span>
+          <span class="layer-name">Shodan free</span>
+          <span class="layer-desc">Shodan's <code>internetdb.shodan.io/{ip}</code> endpoint — completely free, no key. Returns open ports, known CVEs, hostnames, and Shodan tags (e.g. <code>self-signed</code>, <code>honeypot</code>).</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">10</span>
+          <span class="layer-name">Semantic Scholar</span>
+          <span class="layer-desc">Author search for any person names detected in the task string. Returns paper count, citation count, affiliations, and the 5 most recent publications. No key required.</span>
+        </div>
+      </div>
+
+      <h3>Key-Gated Layers</h3>
+
+      <div class="schema-block">
+        <div class="layer-row">
+          <span class="layer-num">8</span>
+          <span class="layer-name">urlscan.io</span>
+          <span class="layer-desc"><span class="tag key">URLSCAN_API_KEY</span> — Wappalyzer tech stack fingerprinting, ASN, server country, and a screenshot URL from the most recent scan.</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">9</span>
+          <span class="layer-name">OTX AlienVault</span>
+          <span class="layer-desc"><span class="tag key">OTX_API_KEY</span> — Passive DNS history (last 5 resolutions), threat pulse count, industry classification, and Alexa rank. Pulse count &gt; 0 surfaces a ⚠ flag in the output.</span>
+        </div>
+        <div class="layer-row">
+          <span class="layer-num">11</span>
+          <span class="layer-name">HIBP</span>
+          <span class="layer-desc"><span class="tag key">HIBP_API_KEY</span> — HaveIBeenPwned domain breach check. Returns breach count and up to 5 named breaches with sample email addresses. HTTP 404 is treated as a clean result.</span>
+        </div>
+      </div>
+
+      <div class="callout">
+        <p>All key-gated layers degrade gracefully: if the key is absent the layer returns an empty dict and is silently skipped in the formatter. A zero-config run still produces DNS, RDAP, crt.sh, Wayback, ipinfo, Shodan, and Semantic Scholar data — the most structurally informative layers — without any configuration.</p>
+      </div>
+
+      <h2>Dork Query Generation</h2>
+
+      <p>Alongside the parallel enrichment fetch, the skill can generate advanced search queries tailored to the task using the producer model. The <code>generate_dork_queries()</code> function makes a single low-temperature LLM call asking for targeted queries with advanced operators:</p>
+
+      <pre><code>site:example.com filetype:pdf annual report 2025
+intitle:"example.com" security disclosure
+"example.com" breach OR leak inurl:pastebin</code></pre>
+
+      <p>The prompt explicitly requests <code>site:</code>, <code>filetype:</code>, <code>intitle:</code>, <code>inurl:</code>, and exact-phrase operators, directing the model toward primary sources, official documentation, and datasets rather than summarized secondary content. The generated queries are returned to the caller (the research pipeline) to augment the normal web search step — they appear as SEARCH nodes in the Pipeline DAG alongside the OSINT enrichment node.</p>
+
+      <h2>Output Format</h2>
+
+      <p>The formatter assembles a structured markdown brief with one section per target. Each section is headed with the target identifier and contains labeled subsections for each layer that returned data:</p>
+
+      <pre><code>## OSINT Enrichment  *(retrieved 2026-05-28)*
+
+### OSINT Brief: `example.com`
+
+**Registration** [OSINT:RDAP:example.com:2026-05-28]
+Registrant: **Example Org LLC**
+Registrar: Namecheap, Inc.
+Registered: 2018-03-14  Expires: 2027-03-14
+
+**DNS** [OSINT:DNS:example.com:2026-05-28]
+A: 104.21.44.123, 172.67.180.234
+MX: alt1.aspmx.l.google.com
+Email auth: SPF ✓  DMARC ✓
+
+**Certificates (crt.sh)** [OSINT:CRTS:example.com:2026-05-28]
+312 certs issued  first: 2018-04-02
+Subdomains found (14): api, app, docs, mail, ...
+
+**Threat Intel (OTX)** [OSINT:OTX:example.com:2026-05-28]
+Threat pulses: 0 (clean)</code></pre>
+
+      <p>Each subsection carries a citation tag in the format <code>[OSINT:{SOURCE}:{target}:{YYYY-MM-DD}]</code>. These tags are preserved through the synthesis stage and appear in the final output document, making every OSINT claim traceable to its source and retrieval date.</p>
+
+      <div class="cite-box">[OSINT:RDAP:example.com:2026-05-28] &nbsp;·&nbsp; [OSINT:SHODAN:203.0.113.42:2026-05-28]</div>
+
+      <h2>Pipeline Integration</h2>
+
+      <img src="../assets/images/ui-osint-dag.png" alt="Pipeline DAG for an OSINT run showing TASK → MEMORY (4 hits) → PLAN (2 queries) → parallel SEARCH nodes (web_search) and OSINT enrichment node → SYNTHESIS (2.8 KB)" class="screenshot">
+      <p class="screenshot-caption">Pipeline DAG for an OSINT investigation run. The OSINT enrichment appears as a dedicated SEARCH-type node (bottom, labeled <code>osint · 0.9k</code>) running in parallel with web-search queries. All results converge at SYNTHESIS.</p>
+
+      <p>In the pipeline, the OSINT enrichment block is treated as a special search result — it flows into the synthesis context window alongside web search results, memory context, and the planning output. The Pipeline DAG shows it as a node with type <code>osint</code> and a token count reflecting the size of the enrichment brief injected into the prompt.</p>
+
+      <img src="../assets/images/ui-osint-context.png" alt="Context Window treemap for an OSINT run showing EVAL 20.6%, SYNTHESIS 10%, PLANNER 5.6%, COMPRESS 5.3%, RESEARCH CTX 5.1%, REVISE 4.2%, SEARCH 4%, MEMORY CTX 3.7%, fill 16,852/32,768 at 51.4%" class="screenshot">
+      <p class="screenshot-caption">Context Window fill for the OSINT run: 16,852 / 32,768 tokens at 51.4%. EVAL (20.6%) and SYNTHESIS (10%) are the largest consumers. The OSINT brief contributes to the RESEARCH CTX and SEARCH segments rather than appearing as a dedicated block.</p>
+
+      <h2>The Layered Architecture in Practice</h2>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>Domain profile</h4>
+          <p>RDAP + DNS + crt.sh + Wayback together answer: who registered it, when, what infrastructure it resolves to, what subdomains exist, and how long it has been live. Four independent sources, no single point of failure.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Security posture</h4>
+          <p>HTTP headers (HSTS, CSP, security.txt), Shodan open ports and CVEs, OTX threat pulse count, and HIBP breach exposure together give a surface-level security profile without active scanning.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Tech stack</h4>
+          <p>urlscan.io via Wappalyzer identifies frameworks, CDNs, analytics, and CMS platforms from a passive scan result. Combined with HTTP headers and DNS nameservers, the hosting picture is usually complete.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Person enrichment</h4>
+          <p>Semantic Scholar author search activates whenever a title-case bigram is detected. For academic or technical contacts, it surfaces publication record, citation count, affiliations, and recent paper titles — context that web search alone often buries.</p>
+        </div>
+      </div>
+
+      <h2>Wiggum Evaluation of OSINT Runs</h2>
+
+      <p>OSINT runs are evaluated by the same Wiggum rubric as other task types, with the scoring dimensions weighted toward the characteristics that matter for enrichment tasks: Relevance, Specificity, Completeness, Grounded, Structure, and Depth. The two OSINT runs in the system scored 8.1 and 6.9 — the lower score driven by the "Depth" dimension, where the evaluator noted that the academic contributions section lacked specific DOIs or URLs to cited publications.</p>
+
+      <p>This is a structural limitation of the Semantic Scholar layer: it returns paper titles and years but not persistent identifiers unless the papers appear in the API response's <code>externalIds</code> field. A future improvement would be to resolve DOIs for the top-cited papers before injecting them into the brief.</p>
+
+      <div class="callout amber">
+        <p>The OSINT skill enriches based on what is detectable in the task string. A task that mentions a domain incidentally — "research cloud security practices for AWS.com deployments" — will trigger domain enrichment on <code>aws.com</code>. The enrichment is usually harmless but adds latency and context tokens. The intent gate's keyword matching provides some protection, but is not a strict filter.</p>
+      </div>
+
+      <h2>Running the Skill</h2>
+
+      <p>The skill can be smoke-tested directly from the command line without invoking the full harness pipeline:</p>
+
+      <pre><code># Domain enrichment (zero-config)
+python -m harness.osint_tool example.com
+
+# IP enrichment
+python -m harness.osint_tool 1.1.1.1
+
+# Dork query generation
+python -m harness.osint_tool --dorks "open source LLM security benchmarks"</code></pre>
+
+      <p>The CLI smoke-test runs the full enrichment stack, prints the formatted brief, and reports elapsed time — useful for verifying that API keys are loaded correctly and that each layer is returning data before running a full research task.</p>
+    </article>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Nick McCarty. Built with care.</p>
+  </footer>
+</body>
+</html>

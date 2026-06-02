@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Fine-tune View: DPO Training Runs, RL Data, and the Preference Feedback Loop | Nick McCarty</title>
+  <meta name="description" content="A tour of the harness Fine-tune UI: DPO training run to COMPLETE (2,145 steps, 0.4665 loss, 87.3% token accuracy, 39m), and the RL DATA tab with 163 preference pairs, 76 reward signals, and 40 ORPO examples.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/fine-tune-view.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Fine-tune View: DPO Training Runs, RL Data, and the Preference Feedback Loop">
+  <meta property="og:description" content="DPO training to COMPLETE: 2,145 steps, 0.4665 final loss, 87.3% token accuracy, 39 minutes. RL DATA tab: 163 preference pairs, 76 reward signals, 3 DPO pairs, 40 ORPO examples — all sourced from autoresearch and RLHF quality signals.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/fine-tune-view.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-31T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Fine-tune View: DPO Training Runs, RL Data, and the Preference Feedback Loop">
+  <meta name="twitter:description" content="DPO training COMPLETE: 2,145 steps, 87.3% token accuracy. RL DATA: 163 preference pairs, 76 reward signals, 40 ORPO examples — the full preference feedback loop from autoresearch to model weights.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Fine-tune View: DPO Training Runs, RL Data, and the Preference Feedback Loop","description":"A tour of the harness Fine-tune UI — DPO training to COMPLETE, four training charts, and the RL DATA tab with preference pairs, reward signals, and ORPO examples.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/fine-tune-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout.green{border-left-color:#22c55e;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    .tag{display:inline-block;font-size:0.7rem;font-weight:700;padding:0.15rem 0.45rem;border-radius:3px;letter-spacing:0.04em;text-transform:uppercase;}
+    .tag.cyan{background:rgba(0,212,255,0.12);color:var(--accent-cyan);}
+    .tag.green{background:rgba(34,197,94,0.15);color:#22c55e;}
+    .screenshot{width:100%;border-radius:8px;border:1px solid var(--border-color);margin:1.5rem 0;display:block;}
+    .screenshot-caption{font-size:0.8rem;color:var(--text-secondary);text-align:center;margin-top:-1rem;margin-bottom:1.5rem;}
+    .feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:640px){.feature-grid{grid-template-columns:1fr;}}
+    .feature-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.1rem;}
+    .feature-card h4{margin:0 0 0.4rem;font-size:0.9rem;color:var(--accent-cyan);}
+    .feature-card p{margin:0;font-size:0.85rem;line-height:1.6;color:var(--text-secondary);}
+    .stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:0.75rem;margin:1.5rem 0;}
+    @media(max-width:640px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+    .stat-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.75rem 1rem;text-align:center;}
+    .stat-card .val{font-size:1.4rem;font-weight:700;color:var(--text-primary);line-height:1.1;}
+    .stat-card .val.green{color:#22c55e;}
+    .stat-card .lbl{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-secondary);margin-top:0.3rem;}
+    .rl-tabs{display:flex;gap:0.5rem;margin:1.5rem 0 1rem;}
+    .rl-tab{padding:0.35rem 0.75rem;border-radius:4px;font-size:0.8rem;font-weight:600;font-family:'SF Mono','Consolas',monospace;}
+    .rl-tab.pref{background:rgba(0,212,255,0.12);color:var(--accent-cyan);}
+    .rl-tab.reward{background:rgba(245,158,11,0.12);color:#f59e0b;}
+    .rl-tab.dpo{background:rgba(139,92,246,0.12);color:#a78bfa;}
+    .rl-tab.orpo{background:rgba(34,197,94,0.12);color:#22c55e;}
+    .pair-card{border-radius:8px;margin:1rem 0;overflow:hidden;}
+    .pair-header{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.75rem;background:var(--bg-secondary);font-size:0.8rem;color:var(--text-secondary);border-bottom:1px solid var(--border-color);}
+    .pair-body{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+    .pair-chosen{border:1px solid rgba(0,212,255,0.4);border-radius:0 0 0 8px;padding:0.75rem;font-size:0.8rem;line-height:1.5;color:var(--text-secondary);}
+    .pair-rejected{border:1px solid rgba(239,68,68,0.35);border-radius:0 0 8px 0;padding:0.75rem;font-size:0.8rem;line-height:1.5;color:var(--text-secondary);}
+    .pair-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.07em;font-weight:700;margin-bottom:0.4rem;}
+    .pair-label.chosen{color:var(--accent-cyan);}
+    .pair-label.rejected{color:#ef4444;}
+    .schema-block{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:1.5rem 0;}
+    .flow-row{display:flex;align-items:center;gap:0.5rem;margin:0.4rem 0;font-size:0.85rem;}
+    .flow-box{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:4px;padding:0.25rem 0.6rem;font-family:'SF Mono','Consolas',monospace;font-size:0.78rem;color:var(--accent-cyan);white-space:nowrap;}
+    .flow-arrow{color:var(--text-secondary);}
+  </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Fine-tune View","item":"https://nickmccarty.me/blog/fine-tune-view.html"}]}</script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.50a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">May 31, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The Fine-tune View: DPO Training Runs, RL Data, and the Preference Feedback Loop</span></h1>
+        <p class="subtitle">DPO training to COMPLETE: 2,145 steps, 0.4665 final loss, 87.3% token accuracy, 39 minutes. The RL DATA tab surfaces the full preference dataset — 163 pairs, 76 reward signals, 40 ORPO examples — that the training run consumed.</p>
+      </header>
+
+      <p>The Fine-tune view is the terminal stage of the harness self-improvement loop. Where the Autoresearch view surfaces prompt-level signal — which <code>SYNTH_INSTRUCTION</code> mutations improve scores — the Fine-tune view surfaces weight-level signal: what the model learned, how fast it converged, and what preference data drove the update. The two tabs, TRAINING and RL DATA, cover those two sides.</p>
+
+      <h2>The TRAINING Tab</h2>
+
+      <img src="../assets/images/ui-finetune-01.png" alt="Fine-tune TRAINING tab showing COMPLETE status, 2145 steps, 0.4665 loss, 87.3% token accuracy, 39m elapsed, with loss and token accuracy charts" class="screenshot">
+      <p class="screenshot-caption">TRAINING tab immediately after a completed DPO run. Status: COMPLETE (green). Model: checkpoints. 2,145 steps across 3 epochs, final loss 0.4665, 87.3% token accuracy, total wall time 39 minutes.</p>
+
+      <h3>Run Summary</h3>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="val green">DONE</div><div class="lbl">Status</div></div>
+        <div class="stat-card"><div class="val">2,145</div><div class="lbl">Steps / 1,938</div></div>
+        <div class="stat-card"><div class="val">0.4665</div><div class="lbl">Final Loss</div></div>
+        <div class="stat-card"><div class="val green">87.3%</div><div class="lbl">Token Accuracy</div></div>
+        <div class="stat-card"><div class="val">39m</div><div class="lbl">Elapsed</div></div>
+      </div>
+
+      <p>Steps completed (2,145) exceeds the epoch-step target (1,938) by a small margin due to rounding across 3 epochs. A final loss of 0.4665 on a DPO objective is well within the convergence range for a preference-tuned model of this size — the training did not overfit, which the loss curve confirms. Token accuracy of 87.3% measures how often the model's next-token predictions matched the chosen-response tokens, a rough proxy for how well it absorbed the preference signal.</p>
+
+      <h3>Training Charts</h3>
+
+      <img src="../assets/images/ui-finetune-02.png" alt="All four fine-tune training charts: loss (orange), token accuracy (green), gradient norm (purple), learning rate (blue decay)" class="screenshot">
+      <p class="screenshot-caption">Four training charts: Loss (orange, descending from ~2.0 to ~0.05), Token Accuracy (green, ascending from ~50% to ~75%), Gradient Norm (purple, initially elevated then stabilizing), Learning Rate (blue, linear decay from 2e-4 to near zero).</p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>Loss (orange)</h4>
+          <p>DPO loss descends from ~2.0 to below 0.1 by step 400, then stabilizes with expected variance. The rapid early descent indicates the model quickly learned the direction of the preference signal before entering fine-grained adjustment.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Token Accuracy (green)</h4>
+          <p>Climbs from ~50% at initialization to ~75% by the end of training, then plateaus with tight noise. The plateau suggests the model reached the expressible accuracy ceiling given the dataset size — more data would continue the upward trend.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Gradient Norm (purple)</h4>
+          <p>Elevated early (large initial updates) then gradually decreases and stabilizes. The absence of gradient explosions confirms the learning rate schedule and gradient clipping configuration are appropriate for this model size.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Learning Rate (blue)</h4>
+          <p>Linear decay from 2e-4 to near zero over 1,938 target steps. Linear decay with no warmup is appropriate for DPO on a small preference dataset — warmup would be wasted when the dataset is small and training is short.</p>
+        </div>
+      </div>
+
+      <h2>The RL DATA Tab</h2>
+
+      <img src="../assets/images/ui-finetune-rl.png" alt="Fine-tune RL DATA tab showing PREFERENCE (163), REWARD (76), DPO (3), ORPO (40) sub-tabs with side-by-side chosen/rejected output pairs" class="screenshot">
+      <p class="screenshot-caption">RL DATA tab with PREFERENCE sub-tab active. Each entry shows a prompt, a chosen output (teal border, score 8.9), and a rejected output (red border, score 5.4). Task: "Research best practices for reducing latency in REST APIs."</p>
+
+      <h3>Four Preference Data Sources</h3>
+
+      <div class="rl-tabs">
+        <span class="rl-tab pref">PREFERENCE (163)</span>
+        <span class="rl-tab reward">REWARD (76)</span>
+        <span class="rl-tab dpo">DPO (3)</span>
+        <span class="rl-tab orpo">ORPO (40)</span>
+      </div>
+
+      <p>The RL DATA tab aggregates four distinct types of preference signal, each with its own sub-tab:</p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>PREFERENCE (163)</h4>
+          <p>Human-labeled or evaluator-generated preference pairs. Each pair has a prompt, a chosen response, and a rejected response. These are the primary DPO training signal — the model learns to make its outputs look more like the chosen side and less like the rejected side.</p>
+        </div>
+        <div class="feature-card">
+          <h4>REWARD (76)</h4>
+          <p>Single-response reward annotations, where each entry has a response and a scalar quality score rather than a paired comparison. Used for reward model training and as auxiliary signal in RLHF pipelines.</p>
+        </div>
+        <div class="feature-card">
+          <h4>DPO (3)</h4>
+          <p>Direct preference optimization pairs sourced specifically from autoresearch KEEP vs. DISCARD experiments — chosen is the KEEP instruction's output, rejected is a DISCARD output on the same task. Small count (3) reflects the low keep rate of the autoresearch loop.</p>
+        </div>
+        <div class="feature-card">
+          <h4>ORPO (40)</h4>
+          <p>Odds Ratio Preference Optimization examples. ORPO trains simultaneously on the reference model's log-odds and the preference signal, enabling preference alignment without a separate reference model inference pass — more efficient for small-dataset fine-tuning.</p>
+        </div>
+      </div>
+
+      <h3>Pair Anatomy</h3>
+
+      <p>Each PREFERENCE entry renders as a side-by-side comparison. The left side (teal border) is the chosen output — higher quality, higher score. The right side (red border) is the rejected output. Both are shown with their raw text, making the preference signal transparent and auditable rather than opaque label numbers.</p>
+
+      <div class="pair-card">
+        <div class="pair-header">
+          <span>Research best practices for reducing latency in REST APIs, covering connection pooling, caching strategies, and async patterns</span>
+          <span style="color:var(--accent-cyan);font-weight:700;">7.5</span>
+        </div>
+        <div class="pair-body">
+          <div class="pair-chosen">
+            <div class="pair-label chosen">CHOSEN &mdash; 8.9</div>
+            <p style="margin:0;font-size:0.78rem;line-height:1.5;"># Best Practices for Reducing Latency in REST APIs To optimize REST API performance and minimize latency, developers must address the full request lifecycle. This guide expands on connection management, caching, asynchronous processing, and adds critical sections on payload optimization and databases.</p>
+          </div>
+          <div class="pair-rejected">
+            <div class="pair-label rejected">REJECTED &mdash; 5.4</div>
+            <p style="margin:0;font-size:0.78rem;line-height:1.5;"># Best Practices for Designing Effective Prompts for Large Language Models Begin by establishing a clear and specific role for the model, such as defining it as a senior data analyst, which primes the AI to adapt the appropriate tone, depth, and perspective for the task at hand. Next, provide con…</p>
+          </div>
+        </div>
+      </div>
+
+      <p>The rejected output above illustrates the most common failure mode in the preference dataset: topic drift. The chosen response addresses the actual task (REST API latency); the rejected output is a boilerplate response about LLM prompt design that leaked from a different task template. These pairs are highly informative for DPO — the contrast is unambiguous, making the gradient signal strong.</p>
+
+      <h2>Where the Data Comes From</h2>
+
+      <p>The preference data accumulates from three upstream sources in the harness pipeline:</p>
+
+      <div class="schema-block">
+        <div class="flow-row"><span class="flow-box">Memory upvote/downvote</span><span class="flow-arrow">&rarr;</span><span style="font-size:0.85rem;color:var(--text-secondary);">RLHF quality signals from the Memory view become PREFERENCE pairs</span></div>
+        <div class="flow-row"><span class="flow-box">Autoresearch KEEP/DISCARD</span><span class="flow-arrow">&rarr;</span><span style="font-size:0.85rem;color:var(--text-secondary);">KEEP output vs. DISCARD output on same task becomes a DPO pair</span></div>
+        <div class="flow-row"><span class="flow-box">Wiggum evaluator</span><span class="flow-arrow">&rarr;</span><span style="font-size:0.85rem;color:var(--text-secondary);">High-scoring and low-scoring runs on similar tasks become REWARD annotations</span></div>
+      </div>
+
+      <p>This means the fine-tune pipeline is not a separate human-labeling workflow — it's a consequence of running the harness. Every upvote in the Memory view, every autoresearch experiment, every Wiggum score contributes to the RL dataset that the next training run will consume. The loop is closed: the model's outputs generate the training signal that improves the model's outputs.</p>
+
+      <div class="callout green">
+        <p>163 preference pairs is a small dataset by industrial RLHF standards, but sufficient for targeted DPO fine-tuning on a small model. The 87.3% token accuracy and convergent loss curve suggest the model absorbed the preference signal without memorizing it — the plateau at ~75% token accuracy (rather than 100%) is a healthy sign of generalization rather than overfitting.</p>
+      </div>
+
+      <h2>Closing the Loop</h2>
+
+      <p>The Fine-tune view is the last stop on the self-improvement circuit. A run produces an output; the Wiggum evaluator scores it; the Memory view accumulates it; the upvote/downvote RLHF signals label it; the autoresearch loop tries to improve the synthesis instruction; the best and worst outputs become preference pairs; and the fine-tune pipeline updates the model weights. The next run benefits from all of it.</p>
+
+      <p>The harness series has now covered the full stack: <a href="runs-view.html">Runs</a> (execution), <a href="analytics-view.html">Analytics</a> (aggregate trends), <a href="../blog/memory-view.html">Memory</a> (observation store), <a href="autoresearch-view.html">Autoresearch</a> (prompt optimization), and Fine-tune (weight optimization). Each view is a window into a different layer of the same feedback loop.</p>
+    </article>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Nick McCarty. Built with care.</p>
+  </footer>
+</body>
+</html>

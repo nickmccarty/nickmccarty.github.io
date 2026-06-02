@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Harness vs. Perplexity: Eight Iterations to Parity | Nick McCarty</title>
+  <meta name="description" content="Eight harness iterations against a frozen Perplexity output on a current-conditions Fed district inflation task. Best stable result: tied 7.7/7.7. The story is bugs, a rubric built for code, an extraction pass that traded grounded for depth, and a Beige Book chunking root cause.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/perplexity-vs-harness.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Harness vs. Perplexity: Eight Iterations to Parity">
+  <meta property="og:description" content="FRED throttling, BEA crashes, Alpaca false positives, a code-oriented rubric, three Beige Book retrieval strategies, and a two-pass extraction experiment. Best stable result: 7.7/7.7 tied.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/perplexity-vs-harness.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-31T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Harness vs. Perplexity: Eight Iterations to Parity">
+  <meta name="twitter:description" content="Eight iterations, four bugs, a two-pass extraction experiment, and a Beige Book chunking root cause. Best stable result: 7.7/7.7 tied.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Harness vs. Perplexity: Four Iterations to a Tie","description":"A four-iteration experiment comparing the harness pipeline against a frozen Perplexity output on a current-conditions Fed district inflation task. Final delta: -0.1.","keywords":"RAG, FRED API, Perplexity, economic data, context enrichment, agentic systems, synthesis quality, evaluator rubric, Beige Book","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/perplexity-vs-harness.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/perplexity-vs-harness.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og-default.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.pink{border-left-color:var(--accent-pink);}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout.green{border-left-color:#22c55e;}
+    .callout.red{border-left-color:#ef4444;}
+    .callout p{margin:0;font-size:1.05rem;}
+    .series-nav{display:flex;gap:0.5rem;flex-wrap:wrap;margin:1rem 0 2rem;}
+    .series-badge{font-size:0.72rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;padding:0.25rem 0.6rem;border-radius:4px;background:var(--bg-tertiary);color:var(--text-secondary);border:1px solid var(--border-color);text-decoration:none;}
+    .series-badge.active{background:var(--accent-cyan);color:var(--bg-primary);border-color:var(--accent-cyan);}
+    .series-badge:hover:not(.active){border-color:var(--accent-cyan);color:var(--accent-cyan);}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .data-table{width:100%;border-collapse:collapse;font-size:0.82rem;margin:1rem 0 1.5rem;}
+    .data-table th{text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);color:var(--text-secondary);font-weight:600;font-size:0.75rem;letter-spacing:0.04em;text-transform:uppercase;}
+    .data-table td{padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);vertical-align:top;}
+    .data-table tr:last-child td{border-bottom:none;}
+    .data-table tr:hover td{background:var(--bg-secondary);}
+    .tag{display:inline-block;font-size:0.7rem;font-weight:700;padding:0.15rem 0.45rem;border-radius:3px;letter-spacing:0.04em;text-transform:uppercase;}
+    .tag.pass{background:rgba(34,197,94,0.15);color:#22c55e;}
+    .tag.pos{background:rgba(34,197,94,0.15);color:#22c55e;}
+    .tag.neg{background:rgba(239,68,68,0.15);color:#ef4444;}
+    .tag.flat{background:rgba(107,114,128,0.15);color:#9ca3af;}
+    .tag.cyan{background:rgba(0,212,255,0.12);color:var(--accent-cyan);}
+    .finding{background:var(--bg-tertiary);border-radius:8px;padding:0.9rem 1.1rem;margin:1rem 0;font-size:0.9rem;line-height:1.65;}
+    .finding strong{color:var(--accent-cyan);}
+    .context-diagram{font-family:'SF Mono','Consolas',monospace;font-size:0.82rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;margin:1.5rem 0;line-height:1.8;}
+    .cond-label{font-size:0.68rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-secondary);margin-bottom:0.25rem;}
+    .score-bar-row{display:flex;align-items:center;gap:0.75rem;margin:0.35rem 0;font-size:0.84rem;}
+    .score-bar-label{width:100px;text-align:right;color:var(--text-secondary);font-size:0.78rem;}
+    .score-bar-track{flex:1;height:8px;background:var(--bg-tertiary);border-radius:4px;overflow:hidden;}
+    .score-bar-fill{height:100%;border-radius:4px;background:var(--accent-cyan);}
+    .score-bar-fill.amber{background:#f59e0b;}
+    .score-bar-fill.red{background:#ef4444;}
+    .score-bar-fill.green{background:#22c55e;}
+    .score-bar-val{width:36px;font-size:0.78rem;font-weight:600;}
+    .dim-bar-row{display:flex;align-items:center;gap:0.75rem;margin:0.4rem 0;}
+    .dim-bar-label{width:120px;text-align:right;color:var(--text-secondary);font-size:0.78rem;}
+    .dim-bar-track{flex:1;height:6px;background:var(--bg-tertiary);border-radius:3px;overflow:hidden;}
+    .dim-bar-fill{height:100%;border-radius:3px;}
+    .dim-bar-delta{width:60px;font-size:0.78rem;font-weight:600;}
+    .iteration-box{border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:1rem 0;}
+    .iteration-box h4{margin:0 0 0.5rem;font-size:0.9rem;color:var(--text-primary);}
+    .iteration-label{display:inline-block;font-size:0.68rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:0.15rem 0.5rem;border-radius:3px;margin-bottom:0.5rem;}
+    .iteration-label.v1{background:rgba(107,114,128,0.15);color:#9ca3af;}
+    .iteration-label.v2{background:rgba(239,68,68,0.12);color:#ef4444;}
+    .iteration-label.v3{background:rgba(245,158,11,0.12);color:#f59e0b;}
+    .iteration-label.v4{background:rgba(34,197,94,0.12);color:#22c55e;}
+    .iteration-label.v5{background:rgba(107,114,128,0.15);color:#9ca3af;}
+    .iteration-label.v6{background:rgba(34,197,94,0.12);color:#22c55e;}
+    .iteration-label.v7{background:rgba(245,158,11,0.12);color:#f59e0b;}
+    .iteration-label.v8{background:rgba(107,114,128,0.15);color:#9ca3af;}
+  </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"Harness vs. Perplexity: Four Iterations to a Tie","item":"https://nickmccarty.me/blog/perplexity-vs-harness.html"}]}</script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">May 31, 2026 &bull; 14 min read &bull; Agentic Harness Engineering Series</div>
+        <h1><span class="gradient-text">Harness vs. Perplexity: Eight Iterations to Parity</span></h1>
+        <p class="subtitle" style="font-size:1.1rem;line-height:1.7;margin-top:1rem;">
+          The hypothesis was simple: a pipeline with live FRED data, Beige Book RAG, and BEA enrichment should outperform Perplexity on a current-conditions task where freshness is the key differentiator. Eight iterations later, the harness reached a tie. The story is four bugs, a rubric built for code, a two-pass extraction experiment that exposed a Beige Book chunking root cause, and a depth-vs-grounded tradeoff that proved resistant to instruction alone.
+        </p>
+      </header>
+
+      <div class="series-nav">
+        <a href="experimental-methodology.html" class="series-badge">Experimental Methodology</a>
+        <a href="beige-book-rag-dpo.html" class="series-badge">Beige Book RAG + DPO</a>
+        <a href="fred-rag-results.html" class="series-badge">FRED RAG Results</a>
+        <span class="series-badge active">Perplexity vs Harness</span>
+      </div>
+
+      <p>
+        Previous experiments in this series used a controlled within-pipeline design: same model, same evaluator, same research context, with one variable changed at a time. The <code>perplexity_vs_harness</code> experiment is different. It uses a frozen external output &mdash; a real response from Perplexity AI &mdash; as the comparison condition, evaluated through the same Wiggum scorer as every harness output. The isolation is tight: same task string, same <code>evaluate()</code> call, document source is the only variable.
+      </p>
+      <p>
+        The specific task was chosen to favor the harness: current-conditions Fed district inflation analysis as of early 2025, where live FRED series and fresh Beige Book retrieval should provide genuine information advantage. The initial assumption was that Perplexity would be working from training data with a recency ceiling. That assumption turned out to be wrong, and it changes what the experiment actually measured.
+      </p>
+
+      <div class="callout amber">
+        <p><strong>Hypothesis:</strong> The harness pipeline (FRED data + Beige Book RAG + BEA enrichment + structured synthesis) produces a higher composite Wiggum score than Perplexity on a current-conditions Fed district inflation task. <strong>Falsified if:</strong> harness composite score &le; perplexity composite score.</p>
+      </div>
+
+      <h2>Experiment Design</h2>
+
+      <p>
+        The task asks about a domain where the harness has a designed advantage &mdash; live quantitative data, district-level qualitative retrieval, and structured synthesis instructions all exist specifically to answer questions like this one:
+      </p>
+
+      <div class="context-diagram">
+        <div style="color:var(--text-secondary);font-style:italic;font-size:0.78rem;margin-bottom:0.75rem;">task string (identical for both conditions)</div>
+        <div style="margin-bottom:0.5rem;">"Assess current inflation dynamics across Federal Reserve districts as of early 2025,</div>
+        <div style="margin-bottom:0.75rem;"> identifying which regions show the most persistent price pressures, what the latest</div>
+        <div> Beige Book reports signal about near-term conditions, and how regional variation</div>
+        <div style="margin-bottom:1.25rem;"> compares to the national trend."</div>
+        <div style="margin-bottom:1rem;">
+          <div class="cond-label">perplexity condition</div>
+          frozen Perplexity output (captured 2026-05-31)  →  wiggum.evaluate()
+        </div>
+        <div>
+          <div class="cond-label">harness condition</div>
+          gather_research() + beige_book_rag() + synthesize()  →  wiggum.evaluate()
+        </div>
+      </div>
+
+      <p>
+        The Perplexity output was captured from a live session, copied verbatim, and stored as a frozen constant in the run script. This ensures the perplexity condition never changes across re-runs, and that any delta movement is attributable to changes on the harness side.
+      </p>
+
+      <h2>The Eight Iterations</h2>
+
+      <p>
+        The experiment ran eight times across two phases. The first four fixed infrastructure failures; the next four chased the depth score. Here is what each one found.
+      </p>
+
+      <div class="iteration-box">
+        <span class="iteration-label v1">v1 &mdash; 2022 historical task</span>
+        <h4>Result: tie (delta 0.0 &mdash; Perplexity 7.7, Harness 7.7)</h4>
+        <p style="font-size:0.9rem;line-height:1.65;margin:0.5rem 0 0;">The original task asked about 2022 inflation dynamics. The harness tied instead of winning. The reason: FRED <code>obs_limit=24</code> covers approximately mid-2024 to the present, so the 2022 time window falls entirely outside the live data range. Meanwhile, Perplexity's training data covers 2022 thoroughly. The harness had no information advantage. The task was redesigned to early 2025 current-conditions, where recency is the differentiator.</p>
+      </div>
+
+      <div class="iteration-box">
+        <span class="iteration-label v2">v2 &mdash; bugs cascade</span>
+        <h4>Result: delta &minus;0.3 (Perplexity wins)</h4>
+        <p style="font-size:0.9rem;line-height:1.65;margin:0.5rem 0 0;">With the task redesigned to early 2025, three separate bugs fired in sequence: FRED returned HTTP 429 (too many requests) mid-run; the BEA tool crashed with <code>'list' object has no attribute 'get'</code>; and &mdash; most damaging &mdash; the Alpaca intent detector fired on the word "signal" in the task string ("what the latest Beige Book reports <em>signal</em> about near-term conditions"), injecting TSLA/GOOG/NVDA portfolio context into a macro inflation analysis. The harness ran on a partially corrupt research context.</p>
+      </div>
+
+      <div class="iteration-box">
+        <span class="iteration-label v3">v3 &mdash; bugs fixed, rubric problem</span>
+        <h4>Result: delta &minus;0.3 (still)</h4>
+        <p style="font-size:0.9rem;line-height:1.65;margin:0.5rem 0 0;">All three bugs were fixed. The harness now ran cleanly. But the delta didn't move. The evaluator was still penalizing the harness output for missing "implementation notes," "named tools," and "worked examples with parameters" &mdash; evaluation criteria from a rubric designed for software engineering best-practices tasks, applied verbatim to an economic research synthesis. The <code>TASK_CRITERIA["research"]</code> override existed in Wiggum but its depth and grounded anchors were being overridden by the base <code>EVAL_PROMPT</code>. The rubric needed a rewrite.</p>
+      </div>
+
+      <div class="iteration-box">
+        <span class="iteration-label v4">v4 &mdash; rubric fixed, RAG added</span>
+        <h4>Result: delta &minus;0.1 (depth=6, grounded=7)</h4>
+        <p style="font-size:0.9rem;line-height:1.65;margin:0.5rem 0 0;"><code>TASK_CRITERIA["research"]</code> was rewritten with explicit research-appropriate definitions for depth and grounded, and explicit instructions not to penalize for missing code/implementation/API content. <code>SYNTH_INSTRUCTION_RESEARCH</code> was added to require inline citations (<code>[FRED:...]</code>, <code>[BEA:...]</code>, <code>Beige Book (Month Year, District)</code>). An explicit Beige Book RAG retrieval step was added to <code>run_harness()</code>. The delta compressed from &minus;0.3 to &minus;0.1. Inspecting Perplexity's source panel revealed it retrieved 19 live sources, not training-data recall.</p>
+      </div>
+
+      <div class="iteration-box">
+        <span class="iteration-label v5">v5 &mdash; synthesis quote requirement</span>
+        <h4>Result: delta &minus;0.1 (no change)</h4>
+        <p style="font-size:0.9rem;line-height:1.65;margin:0.5rem 0 0;"><code>SYNTH_INSTRUCTION_RESEARCH</code> was updated to add explicit district attribution and direct quote requirements: "for each major finding, include at least one direct quote &hellip; format as <code>&gt; "exact quote" — Beige Book (Month Year, District)</code>." The score did not change. Inspecting the output showed zero blockquotes and district references still using vague regional groupings. The instruction was not being followed &mdash; root-causing revealed the Beige Book chunks themselves were the problem: the top-scoring chunks were about real estate (Boston housing inventory) and LNG (Atlanta energy), not price sections.</p>
+      </div>
+
+      <div class="iteration-box">
+        <span class="iteration-label v6">v6 &mdash; multi-query Beige Book retrieval</span>
+        <h4>Result: delta 0.0 &mdash; tied 7.7/7.7 (structure=9, grounded=7)</h4>
+        <p style="font-size:0.9rem;line-height:1.65;margin:0.5rem 0 0;">The single full-task query was replaced with three targeted sub-queries: "selling prices input costs inflation by district early 2025," "district price pressures tariffs cost pass-through persistent 2025," and "beige book near-term price outlook regional variation national trend 2025." Combined and deduplicated across 17 passage blocks. The evaluator's structure score rose from 8 to 9; depth stayed at 6. Composite reached 7.7 &mdash; tied with Perplexity. <strong>Best stable result.</strong></p>
+      </div>
+
+      <div class="iteration-box">
+        <span class="iteration-label v7">v7 &mdash; extraction pass (Beige only)</span>
+        <h4>Result: delta &minus;0.2 (depth=7, but grounded=6, specificity=7)</h4>
+        <p style="font-size:0.9rem;line-height:1.65;margin:0.5rem 0 0;">A two-pass approach: a fast <code>qwen3-8b</code> extraction call over the raw Beige Book chunks produced structured "District — Date / Observation / Quote / Cite as:" entries, which were fed to synthesis instead of the raw passages. Depth moved to 7 &mdash; the target. But grounded dropped from 7 to 6 and specificity dropped from 8 to 7. The extracted observations stripped the <code>[FRED:...]</code> citation anchors from the research context, and the synthesis model lost the inline citation discipline that grounded had depended on.</p>
+      </div>
+
+      <div class="iteration-box">
+        <span class="iteration-label v8">v8 &mdash; raw + extraction (both)</span>
+        <h4>Result: delta &minus;0.1 (depth=6, grounded=7 &mdash; reverted)</h4>
+        <p style="font-size:0.9rem;line-height:1.65;margin:0.5rem 0 0;">Both raw Beige Book context (for citation anchors and verbatim text) and extracted observations (as a structured guide) were appended to the synthesis context. The hypothesis was that the model would use the extraction as a guide while preserving citation discipline from the raw context. It did not &mdash; the raw context dominated and the model reverted to its v6 summarization behavior, ignoring the extraction entirely. Depth returned to 6, grounded to 7.</p>
+      </div>
+
+      <h2>Bug Deep-Dives</h2>
+
+      <h3>FRED HTTP 429 &mdash; Rate Limiting Architecture</h3>
+
+      <p>
+        The FRED API allows approximately 2 requests per second. The original <code>fred_tool.py</code> added a <code>_SERIES_DELAY = 0.6s</code> sleep between series calls, but <code>get_series()</code> makes two <code>_get()</code> calls internally (one for metadata, one for observations). With 5 series and 2 calls each, that's 10 HTTP requests with only 4 inter-series sleeps &mdash; bursts that reliably exceeded the rate limit.
+      </p>
+      <p>
+        The fix moved the throttle from between-series to per-request, using a module-level timestamp:
+      </p>
+
+      <pre><code>_MIN_INTERVAL = 0.7  # ~1.4 req/s — safely under FRED's 2 req/s limit
+_last_req_t: float = 0.0
+
+def _get(endpoint, params):
+    global _last_req_t
+    elapsed = time.monotonic() - _last_req_t
+    if elapsed < _MIN_INTERVAL:
+        time.sleep(_MIN_INTERVAL - elapsed)
+    for attempt in range(_MAX_RETRIES):
+        try:
+            with urllib.request.urlopen(url, timeout=_TIMEOUT) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+            _last_req_t = time.monotonic()
+            return result
+        except urllib.error.HTTPError as e:
+            if e.code == 429 and attempt < _MAX_RETRIES - 1:
+                wait = _RETRY_BASE * (2 ** attempt)
+                time.sleep(wait)
+                _last_req_t = time.monotonic()
+                continue
+            raise</code></pre>
+
+      <p>
+        With <code>_MIN_INTERVAL = 0.7s</code>, every individual HTTP call is rate-throttled regardless of which function calls it. The inter-series sleep was removed entirely since the per-request throttle makes it redundant. <code>_MAX_RETRIES = 4</code> and exponential backoff starting at 3s handle transient overload.
+      </p>
+
+      <h3>BEA <code>'list' object has no attribute 'get'</code></h3>
+
+      <p>
+        The BEA API returns <code>BEAAPI.Results</code> as either a dict or a list depending on the dataset. <code>GDPbyIndustry</code> returns a list. It also nests data inside <code>results["GDPbyIndustry"][n]["Data"]</code> rather than the flat <code>results["Data"]</code> path that all other datasets use. Two code paths needed fixing:
+      </p>
+
+      <pre><code># Fix 1: normalize list Results at parse time
+results = raw.get("BEAAPI", {}).get("Results", {})
+if isinstance(results, list):
+    results = results[0] if results else {}
+
+# Fix 2: GDPbyIndustry-specific data extraction
+if dataset == "GDPbyIndustry":
+    gdpi_list = results.get("GDPbyIndustry", [])
+    data = []
+    for item in (gdpi_list if isinstance(gdpi_list, list) else []):
+        if isinstance(item, dict):
+            data.extend(item.get("Data", []))
+    if not data:
+        data = results.get("Data", [])
+else:
+    data = results.get("Data", [])</code></pre>
+
+      <h3>Alpaca False Positive on "signal"</h3>
+
+      <p>
+        The task string contains the phrase "what the latest Beige Book reports <em>signal</em> about near-term conditions." The original <code>_has_trading_intent()</code> function used a token-level set membership check. The word "signal" was in <code>_TRADING_KEYWORDS</code>. So was "short," "long," "position," and several other words that appear naturally in economic analysis prose.
+      </p>
+      <p>
+        When Alpaca fired, it injected a prompt preamble about the user's paper trading portfolio (TSLA, GOOG, NVDA holdings, stop-loss levels, position sizing rules) into the front of the research context. The synthesis model then spent part of its output addressing portfolio implications of Fed district inflation &mdash; a coherent but completely off-task tangent that hurt depth and specificity on the actual task.
+      </p>
+      <p>
+        The fix replaced token matching with phrase matching, requiring unambiguous multi-word trading phrases that cannot appear in economic research prose:
+      </p>
+
+      <pre><code>_TRADING_PHRASES = frozenset({
+    "paper trade", "paper trading", "alpaca",
+    "buy signal", "sell signal", "long thesis", "short thesis",
+    "trading thesis", "trade thesis", "entry point", "exit point",
+    "position size", "portfolio allocation", "place order", "limit order",
+    "market order", "trade idea", "trade setup", "trade recommendation",
+    "actionable trade", "open position", "long position", "short position",
+})
+
+def _has_trading_intent(query: str) -> bool:
+    q = query.lower()
+    return any(phrase in q for phrase in _TRADING_PHRASES)</code></pre>
+
+      <h3>Evaluator Rubric Mismatch</h3>
+
+      <p>
+        This was the most subtle failure mode. The Wiggum evaluator's <code>EVAL_PROMPT</code> defines depth partly as: "Does the response include implementation notes, named tools, worked examples with parameters?" That language is appropriate for a software engineering best-practices task. It is not appropriate for an economic research synthesis.
+      </p>
+      <p>
+        <code>TASK_CRITERIA["research"]</code> existed to override this, but its formulation wasn't strong enough to suppress the base rubric's anchoring effect. The harness output scored depth=6 when the evaluator's feedback explicitly cited "missing implementation notes" &mdash; a criterion that has no meaningful interpretation for inflation analysis.
+      </p>
+      <p>
+        The fix added explicit negative constraints alongside research-appropriate positive definitions:
+      </p>
+
+      <pre><code>"research": (
+    "This is a research synthesis task — NOT a software engineering or coding task.\n"
+    "DO NOT penalize for missing 'implementation notes', 'code examples', or "
+    "'named tools/APIs' — those criteria do not apply here.\n\n"
+    "Reinterpret depth and grounded as follows for this task type:\n"
+    "- depth: Does each section provide specific supporting evidence — data points, "
+    "statistics, named regions/sectors/entities, direct quotes from sources, or "
+    "mechanisms that explain the 'why'? A section that names a region but gives no "
+    "figures, dates, or causal explanation is depth=6. A section with specific "
+    "numbers, named actors, and causal reasoning is depth=8.\n"
+    "- grounded: Are empirical claims traceable to named real-world sources — "
+    "specific reports, datasets, agencies, or publications a reader could look up? "
+    "Vague references to 'the Beige Book' without district or date are grounded=6. "
+    "Named reports with period and district are grounded=8.\n"
+)</code></pre>
+
+      <p>
+        After this fix, the perplexity output's grounded score dropped from 7 to 6 (its Beige Book references had no specific report dates or districts), while the harness output's specificity rose from 7 to 8 (its <code>[FRED:...]</code> inline citations are exactly the kind of traceable sourcing the corrected rubric rewards).
+      </p>
+
+      <h2>Final Results</h2>
+
+      <div class="callout red">
+        <p><strong>Hypothesis verdict: FALSIFIED.</strong> The harness never strictly outperformed Perplexity. Best stable result (v6): Perplexity 7.7 &nbsp;|&nbsp; Harness 7.7 &nbsp;|&nbsp; Delta: <strong>0.0</strong>. Practical parity achieved; hypothesis not met.</p>
+      </div>
+
+      <p>Best stable result (v6 &mdash; multi-query retrieval, no extraction):</p>
+
+      <div style="margin:1.5rem 0;">
+        <div class="score-bar-row">
+          <div class="score-bar-label">perplexity</div>
+          <div class="score-bar-track"><div class="score-bar-fill green" style="width:77%"></div></div>
+          <div class="score-bar-val">7.7</div>
+          <span class="tag flat">reference</span>
+        </div>
+        <div class="score-bar-row">
+          <div class="score-bar-label">harness v6</div>
+          <div class="score-bar-track"><div class="score-bar-fill green" style="width:77%"></div></div>
+          <div class="score-bar-val">7.7</div>
+          <span class="tag flat">0.0</span>
+        </div>
+      </div>
+
+      <p>Per-dimension breakdown at v6:</p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Dimension</th><th>Weight</th><th>Perplexity</th><th>Harness v6</th><th>&Delta; (H&minus;P)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>relevance</td><td>0.20</td><td>9</td><td>9</td><td><span class="tag flat">0.0</span></td></tr>
+          <tr><td>completeness</td><td>0.20</td><td>8</td><td>8</td><td><span class="tag flat">0.0</span></td></tr>
+          <tr><td>depth</td><td>0.25</td><td>7</td><td>6</td><td><span class="tag neg">&minus;1.0</span></td></tr>
+          <tr><td>grounded</td><td>0.15</td><td>6</td><td>7</td><td><span class="tag pos">+1.0</span></td></tr>
+          <tr><td>specificity</td><td>0.10</td><td>8</td><td>8</td><td><span class="tag flat">0.0</span></td></tr>
+          <tr><td>structure</td><td>0.10</td><td>8</td><td>9</td><td><span class="tag pos">+1.0</span></td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        The harness reaches parity through an explicit trade: it loses depth (&minus;1.0, synthesis summarizes rather than quotes district-level specifics) but gains grounded (+1.0, structured inline citations) and structure (+1.0, better-organized output from more targeted retrieval). Perplexity's depth advantage comes from retrieving and synthesizing district-specific cost categories directly from primary source PDFs. The harness groundedness advantage comes from citation discipline enforced by <code>SYNTH_INSTRUCTION_RESEARCH</code>.
+      </p>
+
+      <h2>A Corrected Premise: Perplexity Is Also a Retrieval System</h2>
+
+      <p>
+        After the experiment completed, Perplexity's source panel was inspected. It listed 19 sources, retrieved live at query time. This is not training-data recall &mdash; it is web retrieval, and the source quality is high:
+      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr><th>Source</th><th>Document</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>federalreserve.gov</td><td>[PDF] Beige Book &mdash; Federal Reserve (primary)</td></tr>
+          <tr><td>bostonfed.org</td><td>The Beige Book &ndash; First District (Boston)</td></tr>
+          <tr><td>philadelphiafed.org</td><td>[PDF] Federal Reserve Bank of Philadelphia</td></tr>
+          <tr><td>minneapolisfed.org</td><td>Philadelphia: March 2025 | Federal Reserve Bank of Minneapolis</td></tr>
+          <tr><td>newyorkfed.org</td><td>Summer of &lsquo;25: The Data &mdash; FEDERAL RESERVE BANK OF NEW YORK</td></tr>
+          <tr><td>chicagofed.org</td><td>What is driving the differences in inflation across U.S. regions?</td></tr>
+          <tr><td>scribd.com</td><td>BeigeBook_20250305 [PDF] (February 2025 full report)</td></tr>
+          <tr><td>metaintelligence</td><td>Beige Book &mdash; August 2025</td></tr>
+          <tr><td>economics.td</td><td>U.S. Federal Reserve Beige Book (January 2026)</td></tr>
+          <tr><td>ainvest (×2)</td><td>March 2025 Review; Fed Policy and Inflation Dynamics 2025</td></tr>
+          <tr><td>binance / mexc</td><td>Beige Book March 5, 2025 coverage</td></tr>
+          <tr><td>suerf.org</td><td>[PDF] Consumer Inflation Expectations and Regional Price Changes</td></tr>
+          <tr><td>YouTube (×2)</td><td>February 2025 Beige Book summaries</td></tr>
+          <tr><td>cmegroup.com</td><td>US: Beige Book &mdash; CME Group</td></tr>
+          <tr><td>en.econostrum</td><td>Persistent Inflation Pressures Test Federal Reserve&rsquo;s Resilience in 2025</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        Several things are notable about this source list. First, it includes actual PDF downloads from district Fed websites &mdash; the Boston and Philadelphia Beige Book PDFs, the full March 5 2025 report, and the primary federalreserve.gov PDF. These are the primary sources, not summaries of them. Second, the temporal range is wider than the task strictly requires: sources include an August 2025 Beige Book summary and a January 2026 Beige Book, even though the task asks about early 2025. Perplexity pulled more temporal context than requested. Third, the Chicago Fed research paper on regional inflation differences (&ldquo;housing sector is the main driver of regional inflation differences&rdquo;) directly supports the causal language in the response.
+      </p>
+
+      <h2>Why the Depth Gap Persists</h2>
+
+      <p>
+        Both systems were retrieving from the same underlying corpus &mdash; the Beige Book PDFs are public documents, and the harness has indexed them in ChromaDB. If the same information is available to both, the depth gap cannot be explained by information access. It has to be downstream: how each system extracts and presents what it retrieved.
+      </p>
+      <p>
+        There is a retrieval fidelity distinction worth noting: embedding-search over <code>top_k=6</code> chunks returns what cosine similarity ranks highest against the query embedding. It may not surface the specific passage "New York: selling price increases picked up; firms flagged coffee, eggs, freight, tariff risk" if that passage wasn't among the top-6 ranked chunks. Perplexity retrieving the full Boston and Philadelphia PDFs can scan every sentence. Same corpus, different recall coverage on specific district-level details.
+      </p>
+      <p>
+        But the larger factor is synthesis behavior. Given whatever district-level passages the harness context contained, the synthesis model summarized them (&ldquo;regions with high exposure to trade-sensitive industries&rdquo;) rather than quoting them with the district names and cost categories attached. The evaluator cited exactly this: "it could mention which Federal Reserve districts are experiencing the most persistent price pressures and provide concrete data points or quotes." The information may have been in the context; the synthesis model didn't extract it at the specificity level that scores well on depth.
+      </p>
+
+      <div class="finding">
+        <strong>The real asymmetry is synthesis, not information.</strong> Both systems retrieved from the same public corpus. The depth gap reflects that the harness synthesis model, given that context, produces structurally organized summaries rather than district-attributed quotes. Perplexity's synthesis layer commits to specific figures and named cost categories (&ldquo;coffee, chocolate, eggs, freight, insurance, utilities&rdquo;); the harness synthesis hedges to generalizations. That is a synthesis quality gap, not a data access gap.
+      </div>
+
+      <p>
+        The extraction experiment (v7) confirmed this. When the raw Beige Book chunks were replaced with pre-digested district/quote pairs, depth rose to 7 &mdash; the synthesis model used the structured material. But grounded fell from 7 to 6 and specificity from 8 to 7 because the extracted observations didn't carry the <code>[FRED:...]</code> citation anchors the synthesis model had been using from the research context. Appending both raw and extracted context (v8) didn't help: the raw context dominated and the model reverted to summarization, depth back to 6.
+      </p>
+      <p>
+        The tradeoff exposed by v7 vs. v8 points to the Beige Book index as the actual root cause. The price sections of district reports are chunked together with real estate, agricultural, and banking sections. Embedding similarity for "inflation" and "price pressures" returns whatever scored highest in those mixed chunks &mdash; which happened to be home sales inventory (Boston) and LNG pipeline development (Atlanta). If the Beige Book index were re-chunked to isolate each report's "Prices" subsection, the raw context itself would contain the district-level cost-category language needed for depth=7, with no extraction pass required and no citation discipline lost.
+      </p>
+
+      <h2>What the Experiment Validated</h2>
+
+      <p>
+        A falsified hypothesis is still an informative result. Several things were confirmed or clarified:
+      </p>
+
+      <div class="finding">
+        <strong>The rubric matters as much as the pipeline.</strong> The delta was &minus;0.3 before the evaluator fix and &minus;0.1 after. Half of the improvement in this experiment came from correcting the evaluation criterion, not from improving the harness output. An evaluator that applies software engineering rubrics to economic research will systematically undercount the harness's real output quality.
+      </div>
+
+      <div class="finding">
+        <strong>Intent detection false positives are silent failures.</strong> The Alpaca false positive injected irrelevant content that degraded synthesis quality without any obvious error signal in the run logs. It only became apparent when inspecting the research context and noticing equity ticker references in a macro inflation task. Phrase-level matching is strictly necessary for any intent detector covering vocabulary that overlaps with general analytical language.
+      </div>
+
+      <div class="finding">
+        <strong>API throttle architecture matters at the per-call level.</strong> A between-series sleep cannot handle a tool that makes multiple HTTP calls per series. The throttle has to be inside the HTTP call function itself, tied to the last successful request timestamp, not to the outer loop iteration.
+      </div>
+
+      <div class="finding">
+        <strong>Task design for evaluating freshness.</strong> A valid comparison between a retrieval-augmented pipeline and a pre-trained model requires a task that genuinely falls outside the model's training data or near its recency boundary. Tasks with rich historical coverage in training data are effectively measuring synthesis quality against training-data recall, which the harness does not win.
+      </div>
+
+      <h2>What Remains</h2>
+
+      <p>
+        The depth gap is a Beige Book index problem, not a synthesis instruction problem. Eight iterations of instruction tuning, retrieval sub-query design, and two-pass extraction confirmed that the synthesis model can produce depth=7 when given the right material, but cannot reliably extract district-specific cost-category language from chunks that are mostly about real estate and agriculture. Re-chunking the Beige Book index to isolate the "Prices" subsection of each district report would let the retrieval system surface the relevant material without needing the extraction pass &mdash; and without the grounded/specificity tradeoff.
+      </p>
+      <p>
+        The groundedness and structure advantages are real and durable: inline citations with <code>[FRED:{series_id}:{date}]</code> and <code>Beige Book (Month Year, District)</code> make claims traceable in a way that a conversational AI response is not. Perplexity produces better depth; the harness produces better attribution. For use cases where sourcing matters &mdash; compliance, audit, downstream fact-checking &mdash; the harness advantage on grounded persists regardless of the composite delta.
+      </p>
+
+    </article>
+  </main>
+
+  <footer>
+    <div class="footer-links">
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="https://nickmccarty.me/blog.html">Blog</a>
+    </div>
+    <p style="color:var(--text-secondary);font-size:0.8rem;margin-top:0.5rem;">&copy; 2026 Nick McCarty</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The GitHub View: Repo Health at a Glance | Nick McCarty</title>
+  <meta name="description" content="A tour of the harness GitHub view: live repo health including branch status, a year-long commit heatmap, searchable commit log, open PRs and issues, and a full CI run history with pass/fail status.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/github-view.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The GitHub View: Repo Health at a Glance">
+  <meta property="og:description" content="Branch status, dirty-file count, a year-long commit heatmap, searchable commit log, PRs, issues, and CI run history — all live in the harness dashboard.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/github-view.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-05-31T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The GitHub View: Repo Health at a Glance">
+  <meta name="twitter:description" content="Branch status, commit heatmap, searchable log, PRs, issues, and CI history — live in the harness dashboard.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The GitHub View: Repo Health at a Glance","description":"A tour of the harness GitHub dashboard panel: branch status, commit heatmap, searchable commit log, PRs, issues, and CI run history.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/github-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout.green{border-left-color:#22c55e;}
+    .callout.red{border-left-color:#ef4444;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    .tag{display:inline-block;font-size:0.7rem;font-weight:700;padding:0.15rem 0.45rem;border-radius:3px;letter-spacing:0.04em;text-transform:uppercase;}
+    .tag.green{background:rgba(34,197,94,0.15);color:#22c55e;}
+    .tag.red{background:rgba(239,68,68,0.15);color:#ef4444;}
+    .tag.amber{background:rgba(245,158,11,0.15);color:#f59e0b;}
+    .tag.cyan{background:rgba(0,212,255,0.12);color:var(--accent-cyan);}
+    .screenshot{width:100%;border-radius:8px;border:1px solid var(--border-color);margin:1.5rem 0;display:block;}
+    .screenshot-caption{font-size:0.8rem;color:var(--text-secondary);text-align:center;margin-top:-1rem;margin-bottom:1.5rem;}
+    .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin:1.5rem 0;}
+    @media(max-width:640px){.stat-grid{grid-template-columns:1fr 1fr;}}
+    .stat-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.85rem 1rem;text-align:center;}
+    .stat-card .value{font-size:1.5rem;font-weight:700;color:var(--accent-cyan);line-height:1;}
+    .stat-card .label{font-size:0.72rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-top:0.3rem;}
+    .feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
+    @media(max-width:640px){.feature-grid{grid-template-columns:1fr;}}
+    .feature-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.1rem;}
+    .feature-card h4{margin:0 0 0.4rem;font-size:0.9rem;color:var(--accent-cyan);}
+    .feature-card p{margin:0;font-size:0.85rem;line-height:1.6;color:var(--text-secondary);}
+    .ci-row{display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid var(--border-color);font-size:0.86rem;}
+    .ci-row:last-child{border-bottom:none;}
+    .ci-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+    .ci-dot.green{background:#22c55e;}
+    .ci-dot.red{background:#ef4444;}
+  </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The GitHub View","item":"https://nickmccarty.me/blog/github-view.html"}]}</script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">May 31, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">The GitHub View: Repo Health at a Glance</span></h1>
+        <p class="subtitle" style="font-size:1.1rem;line-height:1.7;margin-top:1rem;">
+          The harness dashboard includes a GitHub panel that pulls live repo telemetry: branch status, ahead/dirty counts, a full-year commit heatmap, a searchable commit log, open PRs and issues, and a CI run history with pass/fail status. The goal is to answer "is the repo healthy right now?" without leaving the dashboard.
+        </p>
+      </header>
+
+      <p>
+        When you're running experiments, reviewing outputs, and iterating on synthesis instructions, context-switching to GitHub to check CI status or scan the commit log breaks flow. The GitHub view brings the repo surface into the same environment as everything else &mdash; the same dark-mode dashboard, the same monospace aesthetic, updated on demand with a Refresh button.
+      </p>
+
+      <div class="callout">
+        <p><strong>View subtitle:</strong> <em>Repo health at a glance &mdash; PRs, issues, CI, commits.</em></p>
+      </div>
+
+      <h2>The Repo Header</h2>
+
+      <img src="../assets/images/ui-github-top.png" alt="GitHub view showing repo header with branch status, commit heatmap, and commit list" class="screenshot">
+      <p class="screenshot-caption">The GitHub view: repo header with branch/ahead/dirty counts, a 107-commit year-long heatmap, and the searchable commit log.</p>
+
+      <p>
+        The top of the view is a compact repo header with five pieces of live state displayed inline:
+      </p>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="value">main</div>
+          <div class="label">Current branch</div>
+        </div>
+        <div class="stat-card">
+          <div class="value" style="color:#f59e0b;">↑5</div>
+          <div class="label">Commits ahead of remote</div>
+        </div>
+        <div class="stat-card">
+          <div class="value" style="color:#ef4444;">258</div>
+          <div class="label">Dirty files</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">★ 0</div>
+          <div class="label">Stars &nbsp;/&nbsp; ⑂ 0 forks</div>
+        </div>
+      </div>
+
+      <p>
+        The "ahead" count and dirty count are the two most actionable signals. Five commits ahead means there's unpushed work; 258 dirty files is expected for an active research repo where model weights, experiment outputs, and generated data accumulate in the working tree. These numbers update each time you hit Refresh.
+      </p>
+
+      <h2>The Commit Heatmap</h2>
+
+      <p>
+        Below the header is a GitHub-style contribution heatmap spanning the past year. The cells are colored by commit density: darker teal for heavy days, faint for sparse days, blank for zero. The label reads <strong>107 commits &middot; past year</strong>.
+      </p>
+
+      <p>
+        Reading the heatmap: the left two-thirds (Jun 2025 &ndash; Feb 2026) shows low but steady activity. The right third (Mar&ndash;May 2026) shows a sharp acceleration &mdash; the teal cluster on the far right represents the most recent sprint. This maps directly to when the autoresearch loop, the RAG enrichment experiments, and the dashboard itself were built out.
+      </p>
+
+      <h2>The Commit Log</h2>
+
+      <p>
+        The commit list below the heatmap shows all 107 commits from the past year in reverse-chronological order, with SHA, message, author, and relative timestamp. A search box at the top of the list filters by message text, author, SHA, or date &mdash; useful for locating when a specific change landed without leaving the dashboard.
+      </p>
+
+      <p>
+        The commit messages visible in the screenshot give a representative sample of what the autoresearch loop produces as its primary artifact: one commit per experiment iteration, each message encoding exactly what changed and why. Examples from the top of the log:
+      </p>
+
+      <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.25rem;margin:1.5rem 0;font-size:0.83rem;line-height:1.9;font-family:'SF Mono','Consolas',monospace;">
+        <div style="color:var(--accent-cyan);">c923ddf</div>
+        <div style="color:var(--text-primary);margin-bottom:0.75rem;">fix(lint): ruff auto-fixes &mdash; unused imports, import ordering, Optional&rarr;X|None</div>
+        <div style="color:var(--accent-cyan);">cca7913</div>
+        <div style="color:var(--text-primary);margin-bottom:0.75rem;">feat(0.3.7): Memory panel, Security/System views, Wiggum fixes, test suite, CI hardening</div>
+        <div style="color:var(--accent-cyan);">b65880d</div>
+        <div style="color:var(--text-primary);margin-bottom:0.75rem;">docs(roadmap): mark evaluator rotation, global gate banner, memory event ✓</div>
+        <div style="color:var(--accent-cyan);">acbf4d3</div>
+        <div style="color:var(--text-primary);">feat(agent+dashboard): memory events, plan-gate global banner, evaluator rotation</div>
+      </div>
+
+      <h2>Pull Requests and Issues</h2>
+
+      <img src="../assets/images/ui-github-02.png" alt="GitHub view mid-section showing PRs (0 open), Issues (0 open), and CI runs with success status" class="screenshot">
+      <p class="screenshot-caption">PRs and Issues panels (both clear) and the beginning of the CI run history.</p>
+
+      <p>
+        Below the commit log, the view splits into two side-by-side panels: <strong>Pull Requests</strong> and <strong>Issues</strong>. Both currently read zero open. This is a solo research repo where changes go directly to main &mdash; PRs are reserved for cases where a change needs isolation before merging (model weight changes, breaking API changes, major refactors). The zero-issue count reflects the same: tracking is done in experiment notes and the autoresearch log rather than GitHub issues.
+      </p>
+
+      <p>
+        For team deployments, these panels would surface open review work and outstanding bugs without navigating away from the experiment dashboard. The panels are live &mdash; they update each time the Refresh button is pressed.
+      </p>
+
+      <h2>CI Run History</h2>
+
+      <img src="../assets/images/ui-github-03.png" alt="CI run history showing a sequence of success and failure statuses" class="screenshot">
+      <p class="screenshot-caption">The CI run history: green dots for passing runs, red for failures. Branch, trigger type, and relative time are shown per entry.</p>
+
+      <p>
+        The bottom section of the view is the CI run list. Each entry shows the workflow name, branch, trigger event (<code>push</code>), relative timestamp, and a colored status dot: <span class="tag green">success</span> or <span class="tag red">failure</span>.
+      </p>
+
+      <p>
+        The history visible in the screenshot shows a characteristic pattern: a run of green success entries from recent pushes, then a cluster of red failures from ~16 days ago. That failure cluster corresponds to the period when the dashboard was being wired up &mdash; the CI pipeline runs the test suite, and the test suite was breaking as new views were added. Once the suite was updated to cover the new endpoints, CI went green and has stayed there.
+      </p>
+
+      <div class="callout green">
+        <p>The CI panel turns the GitHub view into a lightweight incident surface. If a push breaks the suite, the red dot appears here within minutes &mdash; without opening a separate tab.</p>
+      </div>
+
+      <h2>What It's For</h2>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h4>Pre-experiment check</h4>
+          <p>Before starting a long run, glance at the CI panel to confirm the last push is green. A red dot means there's a broken state that might affect the run's output or logging.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Commit archaeology</h4>
+          <p>Search the commit log by keyword to locate when a specific instruction change or tool fix landed. Faster than <code>git log --grep</code> when you don't remember the exact phrasing.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Unpushed work awareness</h4>
+          <p>The "ahead" counter in the repo header is a persistent reminder of commits that haven't been pushed. At five commits ahead, a push is overdue.</p>
+        </div>
+        <div class="feature-card">
+          <h4>Velocity signal</h4>
+          <p>The heatmap's density pattern shows whether the repo has been active or dormant. At a glance it answers: "was this week a real sprint or did we coast?"</p>
+        </div>
+      </div>
+
+      <p>
+        The GitHub view doesn't replace GitHub. It removes the context switch for the subset of repo information that matters while running experiments: is CI green, what was the last commit, is there anything open that needs attention? For everything else &mdash; reviewing diffs, writing PR descriptions, managing branches &mdash; the full GitHub interface is still the right tool.
+      </p>
+    </article>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Nick McCarty. Built with care.</p>
+  </footer>
+</body>
+</html>

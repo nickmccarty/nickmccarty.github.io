@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>inference.py: The Unified LLM Backend Shim | Nick McCarty</title>
+  <meta name="description" content="inference.py is a drop-in replacement for `import ollama` that transparently routes calls to Ollama, vLLM, llama-server, or any OpenAI-compatible endpoint — with a 14-model name translation table, HARNESS_ENDPOINTS per-model registry, and response adapters that make vLLM output look identical to Ollama throughout the codebase.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/inference-shim.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="inference.py: The Unified LLM Backend Shim">
+  <meta property="og:description" content="Drop-in `import inference as ollama` replacement that routes to Ollama, vLLM, llama-server, or any OpenAI-compatible endpoint. 14-model name translation map, per-model HARNESS_ENDPOINTS registry, OllamaLike adapter, real wall-clock TTFT timing.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/inference-shim.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-01T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="inference.py: The Unified LLM Backend Shim">
+  <meta name="twitter:description" content="One import replaces Ollama throughout the codebase and adds transparent vLLM/llama.cpp routing, Ollama-tag-to-HF-model-ID translation, and real TTFT timing from the streaming loop.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"inference.py: The Unified LLM Backend Shim","description":"Drop-in Ollama replacement that routes to vLLM, llama-server, or any OpenAI-compatible endpoint with model name translation and per-model endpoint registry.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/inference-shim.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.amber{border-left-color:#f59e0b;}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
+    pre code{background:none;padding:0;font-size:inherit;}
+    .routing-table{width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:0.82rem;}
+    .routing-table th{text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);color:var(--text-secondary);font-weight:600;}
+    .routing-table td{padding:0.45rem 0.75rem;border-bottom:1px solid var(--border-color);vertical-align:top;}
+    .routing-table code{font-size:0.78em;}
+    .priority-stack{display:flex;flex-direction:column;gap:0.5rem;margin:1.5rem 0;}
+    .priority-row{display:flex;align-items:center;gap:0.75rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.6rem 1rem;}
+    .priority-num{font-family:'SF Mono','Consolas',monospace;font-size:0.78rem;font-weight:700;color:var(--accent-cyan);min-width:1.5rem;}
+    .priority-label{font-size:0.83rem;}
+    .priority-desc{font-size:0.78rem;color:var(--text-secondary);margin-left:auto;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+      </button>
+    </div>
+  </nav>
+  <main>
+    <article>
+      <header style="margin-bottom:2rem;">
+        <div class="meta" style="margin-bottom:0.75rem;">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <h1><span class="gradient-text">inference.py: The Unified LLM Backend Shim</span></h1>
+        <p class="subtitle">A drop-in replacement for <code>import ollama</code> that transparently routes calls to Ollama, vLLM, llama-server, or any OpenAI-compatible endpoint &mdash; with no changes required anywhere else in the codebase.</p>
+      </header>
+
+      <p>When the harness started, every file imported Ollama directly. Switching to vLLM for larger models meant touching every call site. <code>inference.py</code> resolves this: one module that speaks Ollama's API on the outside and translates to whatever backend is configured. Add vLLM, llama.cpp, or a remote API by setting an environment variable — the rest of the codebase never knows.</p>
+
+      <h2>Three-level routing priority</h2>
+
+      <div class="priority-stack">
+        <div class="priority-row">
+          <span class="priority-num">1</span>
+          <span class="priority-label"><code>HARNESS_ENDPOINTS</code> per-model registry</span>
+          <span class="priority-desc">Highest priority — explicit URL + backend per model tag</span>
+        </div>
+        <div class="priority-row">
+          <span class="priority-num">2</span>
+          <span class="priority-label"><code>VLLM_MODEL_MAP</code> hybrid routing</span>
+          <span class="priority-desc">Listed models → vLLM; everything else → Ollama</span>
+        </div>
+        <div class="priority-row">
+          <span class="priority-num">3</span>
+          <span class="priority-label"><code>INFERENCE_BACKEND</code> global switch</span>
+          <span class="priority-desc"><code>ollama</code> (default) or <code>vllm</code> — applies to all models</span>
+        </div>
+      </div>
+
+      <p><strong><code>HARNESS_ENDPOINTS</code></strong> is a JSON dict mapping model tags to endpoint configs. It enables scenarios like running vLLM on GPU 0 for the 14B producer and llama.cpp on GPU 1 for a 7B utility model simultaneously — each gets its own URL, served model name, and backend type:</p>
+
+      <pre><code>HARNESS_ENDPOINTS='{
+  "qwen3-14b": {"url": "http://localhost:8000/v1", "model_id": "qwen3-14b", "backend": "vllm"},
+  "phi4-mini":  {"url": "http://localhost:8001/v1", "model_id": "phi-4-mini-q8", "backend": "llamacpp"}
+}'</code></pre>
+
+      <p><strong><code>VLLM_MODEL_MAP</code></strong> is a lighter hybrid routing mechanism: list only the models that should go to vLLM. Any model tag not in the map falls back to Ollama. This is the typical production setup — the 32B producer via vLLM, <code>glm4:9b</code> and <code>llama3.2:3b</code> via Ollama for planning and utility tasks.</p>
+
+      <h2>Ollama tag → HuggingFace model ID translation</h2>
+
+      <p>Ollama uses short tags (<code>pi-qwen-32b</code>, <code>glm4:9b</code>). vLLM serves models by their HuggingFace repo ID or <code>--served-model-name</code>. <code>_MODEL_MAP</code> translates between them:</p>
+
+      <table class="routing-table">
+        <thead><tr><th>Ollama tag</th><th>vLLM model ID</th></tr></thead>
+        <tbody>
+          <tr><td><code>pi-qwen-32b</code></td><td><code>Qwen/Qwen2.5-32B-Instruct</code></td></tr>
+          <tr><td><code>pi-qwen3-32b</code></td><td><code>pi-qwen3-32b</code> (--served-model-name)</td></tr>
+          <tr><td><code>glm4:9b</code></td><td><code>THUDM/glm-4-9b-chat</code></td></tr>
+          <tr><td><code>llama3.2:3b</code></td><td><code>meta-llama/Llama-3.2-3B-Instruct</code></td></tr>
+          <tr><td><code>nomic-embed-text</code></td><td><code>nomic-ai/nomic-embed-text-v1.5</code></td></tr>
+          <tr><td><code>phi4:14b</code></td><td><code>microsoft/phi-4</code></td></tr>
+          <tr><td colspan="2" style="color:var(--text-secondary);font-size:0.78em;">…14 entries total; VLLM_MODEL_MAP merges additional overrides at runtime</td></tr>
+        </tbody>
+      </table>
+
+      <p>If a tag isn't in the map, it passes through unchanged — useful for models served with <code>--served-model-name</code> set to the same string as the Ollama tag.</p>
+
+      <h2>Response adapters</h2>
+
+      <p>The rest of the codebase accesses LLM responses two ways: attribute access (<code>response.message.content</code>) and dict-style access (<code>response["message"]["content"]</code>). Both patterns were established when Ollama was the only backend. Two adapter classes make vLLM responses look identical:</p>
+
+      <p><strong><code>_OllamaMessage</code></strong> wraps an OpenAI <code>ChatCompletionMessage</code>. It handles <code>&lt;think&gt;...&lt;/think&gt;</code> tag extraction — some vLLM setups strip thinking content into <code>reasoning_content</code>, others leave tags inline. The adapter handles both cases, exposing a <code>.thinking</code> attribute that <code>logger.py</code> reads for the thinking-chars metric.</p>
+
+      <p><strong><code>_OllamaResponse</code></strong> wraps the accumulated streaming output with real wall-clock timing:</p>
+
+      <ul>
+        <li><code>prompt_eval_duration</code> — time from request start to first content token (TTFT / prefill latency)</li>
+        <li><code>eval_duration</code> — time from first token to stream end (pure generation)</li>
+        <li><code>total_duration</code> — end-to-end wall time</li>
+      </ul>
+
+      <p>These are actual measurements taken during the streaming loop, not approximations or estimates. They feed directly into <code>runs.jsonl</code>, the dashboard tok/s charts, and benchmark comparisons — so the latency numbers in the analytics view reflect real hardware behavior rather than vLLM's self-reported internal counters.</p>
+
+      <h2>Migration pattern</h2>
+
+      <p>Three import patterns cover the full codebase:</p>
+
+      <pre><code># Most files (skills, utilities) — full Ollama compatibility at module level
+import inference as ollama
+response = ollama.chat(model="glm4:9b", messages=[...])
+
+# Files that need keep_alive per-instance (agent.py, wiggum.py, autoresearch.py)
+from inference import OllamaLike
+ollama = OllamaLike(keep_alive=_KEEP_ALIVE)
+
+# Files calling with keyword args only (email_skill, lit_review, etc.)
+from inference import chat as _llm_chat
+_llm_chat(model="pi-qwen-32b", messages=[...], options={...})</code></pre>
+
+      <p>The <code>OllamaLike</code> wrapper attaches a fixed <code>keep_alive</code> value to every call, which is how <code>agent.py</code>'s per-run keep_alive estimation (described in <a href="agent-pipeline.html" style="color:var(--accent-cyan);">Inside agent.py</a>) propagates through to the actual API call without threading it through every function signature.</p>
+
+      <div class="callout amber">
+        <p>When <code>VLLM_MODEL_MAP</code> is set, only the listed model tags route to vLLM. Any call with a tag not in the map falls back to Ollama silently. This means adding a new model to the harness without updating the map will use Ollama — which is usually the right default, but can surprise you if you expect vLLM throughput for a new model tag.</p>
+      </div>
+    </article>
+  </main>
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+  </footer>
+</body>
+</html>
