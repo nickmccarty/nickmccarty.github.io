@@ -14,13 +14,13 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
-  <meta property="article:published_time" content="2026-06-01T00:00:00Z">
+  <meta property="article:published_time" content="2026-05-29T00:00:00Z">
   <meta property="article:author" content="Nick McCarty">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="inference.py: The Unified LLM Backend Shim">
   <meta name="twitter:description" content="One import replaces Ollama throughout the codebase and adds transparent vLLM/llama.cpp routing, Ollama-tag-to-HF-model-ID translation, and real TTFT timing from the streaming loop.">
   <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"inference.py: The Unified LLM Backend Shim","description":"Drop-in Ollama replacement that routes to vLLM, llama-server, or any OpenAI-compatible endpoint with model name translation and per-model endpoint registry.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/inference-shim.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"inference.py: The Unified LLM Backend Shim","description":"Drop-in Ollama replacement that routes to vLLM, llama-server, or any OpenAI-compatible endpoint with model name translation and per-model endpoint registry.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-29","dateModified":"2026-05-29","url":"https://nickmccarty.me/blog/inference-shim.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -65,7 +65,7 @@
   <main>
     <article>
       <header style="margin-bottom:2rem;">
-        <div class="meta" style="margin-bottom:0.75rem;">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <div class="meta" style="margin-bottom:0.75rem;">May 29, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
         <h1><span class="gradient-text">inference.py: The Unified LLM Backend Shim</span></h1>
         <p class="subtitle">A drop-in replacement for <code>import ollama</code> that transparently routes calls to Ollama, vLLM, llama-server, or any OpenAI-compatible endpoint &mdash; with no changes required anywhere else in the codebase.</p>
       </header>

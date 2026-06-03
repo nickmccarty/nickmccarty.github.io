@@ -14,13 +14,13 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
-  <meta property="article:published_time" content="2026-06-02T00:00:00Z">
+  <meta property="article:published_time" content="2026-05-30T00:00:00Z">
   <meta property="article:author" content="Nick McCarty">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Explorer View: Per-Run Pipeline DAG Inspector">
   <meta name="twitter:description" content="Click any stage in a run's DAG — task metadata, memory context, planned queries, search tool calls, synthesis tokens, Wiggum dim bars, evaluator reasoning, RLHF feedback.">
   <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Explorer View: Per-Run Pipeline DAG Inspector","description":"The Explorer view renders every completed run as a clickable DAG with a node inspector for token counts, Wiggum dimension scores, evaluator reasoning, and RLHF feedback.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-02","dateModified":"2026-06-02","url":"https://nickmccarty.me/blog/explorer-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Explorer View: Per-Run Pipeline DAG Inspector","description":"The Explorer view renders every completed run as a clickable DAG with a node inspector for token counts, Wiggum dimension scores, evaluator reasoning, and RLHF feedback.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-30","dateModified":"2026-05-30","url":"https://nickmccarty.me/blog/explorer-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -70,7 +70,7 @@
   <main>
     <article>
       <header style="margin-bottom:2rem;">
-        <div class="meta" style="margin-bottom:0.75rem;">June 2, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <div class="meta" style="margin-bottom:0.75rem;">May 30, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
         <h1><span class="gradient-text">The Explorer View: Per-Run Pipeline DAG Inspector</span></h1>
         <p class="subtitle">The Explorer renders every completed run as a clickable directed acyclic graph — Task, Memory, Plan, Search, Synthesis, Eval, Output. Clicking any node opens a detail inspector with token counts, Wiggum dimension scores, evaluator reasoning, and an inline RLHF feedback panel.</p>
       </header>
@@ -143,6 +143,18 @@
 
       <div class="callout">
         <p>The Explorer defaults to the most recent run that has tool calls or Wiggum scores — blank runs and stub records are skipped. Runs that completed before the <code>wiggum_eval_log</code> field was added fall back to the scalar <code>wiggum_scores</code> array, which still renders Eval nodes but without dimension bars or issue text.</p>
+      </div>
+
+      <h2>Subtask trees: orchestrated runs</h2>
+
+      <p>When the orchestrator decomposes a complex task into parallel subtasks, each subtask is a separate run written to <code>runs.jsonl</code> with a <code>parent_run_id</code> field pointing to the parent run. The Explorer surfaces this relationship via <code>GET /api/runs/{run_id}/children</code>, which returns all runs whose <code>parent_run_id</code> matches the requested ID.</p>
+
+      <p>In practice: select a run in the Explorer, and if it has children (identifiable by a non-null <code>parent_run_id</code> on sibling rows), the inspector panel shows a &ldquo;Subtasks&rdquo; row listing each child run&rsquo;s task string, final status, and Wiggum score. This makes it possible to diagnose orchestrator decompositions at a glance &mdash; if a parent PASS contains a child FAIL, the failing subtask narrows the problem immediately.</p>
+
+      <p>The children endpoint scans the same <code>runs.jsonl</code> file used by all other endpoints and applies the same stub-record filter. Children are returned newest-first. The parent run itself is not included in the response &mdash; only its direct children.</p>
+
+      <div class="callout">
+        <p>The <code>parent_run_id</code> field is set by <code>orchestrator.py</code> when it dispatches subtasks. Runs produced by the main agent pipeline (non-orchestrated) have no <code>parent_run_id</code> and will return an empty array from the children endpoint. Autoresearch eval runs use a separate <code>run_id</code> scheme and are also not linked via this field.</p>
       </div>
 
       <section class="related-posts">

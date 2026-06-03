@@ -348,6 +348,14 @@ SECTION_PRIORITY = [
         The 12,000-character budget was chosen empirically: it leaves room for the task string (~500 chars), memory context (~3,000 chars), synthesis instructions (~1,500 chars), and the extracted document content within a 32K context window, with a safety margin of ~15K characters for the model's output. The budget is configurable via <code>HARNESS_CHUNK_BUDGET</code>.
       </p>
 
+      <p>
+        Every assembled block &mdash; whether from section extraction or chunk retrieval &mdash; carries an inline provenance tag in the format <code>[source:file.pdf | url:https://... | p.3 | &para;12 | &sect;Abstract | @4,567]</code>. These tags are embedded as header lines before each extracted block so the synthesis model can cite specific passages rather than paraphrasing the document as a whole. The tag includes the source filename, web URL (if applicable), estimated page number, paragraph index, section label (structured mode only), and character offset in the original document.
+      </p>
+
+      <p>
+        The unstructured retrieval path uses a <code>chromadb.EphemeralClient()</code> &mdash; an in-memory ChromaDB instance created per document and discarded after extraction. This avoids polluting the persistent memory store with document chunks that are relevant only to a single retrieval operation. If ChromaDB is unavailable (not installed or import error), the chunker falls back to a head-plus-tail truncation: 60% of the budget from the document start and 40% from the end, which preserves the introduction and conclusion at the cost of the middle.
+      </p>
+
       <h2>B5 &mdash; The Vision Bridge</h2>
 
       <p>

@@ -1223,10 +1223,18 @@ footer .social-links a:hover {
 
 /* ─── Global mobile fixes ─── */
 
+/* Blog grid: single column by default (mobile-first) */
+.blog-grid {
+  grid-template-columns: 1fr;
+}
+
 /* Blog grid: 2 columns on medium screens */
 @media (min-width: 640px) {
   .blog-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .cluster-card {
+    grid-column: span 2;
   }
 }
 

@@ -14,13 +14,13 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
-  <meta property="article:published_time" content="2026-05-31T00:00:00Z">
+  <meta property="article:published_time" content="2026-05-19T00:00:00Z">
   <meta property="article:author" content="Nick McCarty">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Harness vs. Perplexity: Eight Iterations to Parity">
   <meta name="twitter:description" content="Eight iterations, four bugs, a two-pass extraction experiment, and a Beige Book chunking root cause. Best stable result: 7.7/7.7 tied.">
   <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Harness vs. Perplexity: Four Iterations to a Tie","description":"A four-iteration experiment comparing the harness pipeline against a frozen Perplexity output on a current-conditions Fed district inflation task. Final delta: -0.1.","keywords":"RAG, FRED API, Perplexity, economic data, context enrichment, agentic systems, synthesis quality, evaluator rubric, Beige Book","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/perplexity-vs-harness.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/perplexity-vs-harness.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og-default.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Harness vs. Perplexity: Four Iterations to a Tie","description":"A four-iteration experiment comparing the harness pipeline against a frozen Perplexity output on a current-conditions Fed district inflation task. Final delta: -0.1.","keywords":"RAG, FRED API, Perplexity, economic data, context enrichment, agentic systems, synthesis quality, evaluator rubric, Beige Book","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-05-19","dateModified":"2026-05-19","url":"https://nickmccarty.me/blog/perplexity-vs-harness.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/perplexity-vs-harness.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og-default.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -104,7 +104,7 @@
   <main>
     <article>
       <header style="margin-bottom:2rem;">
-        <div class="meta" style="margin-bottom:0.75rem;">May 31, 2026 &bull; 14 min read &bull; Agentic Harness Engineering Series</div>
+        <div class="meta" style="margin-bottom:0.75rem;">May 19, 2026 &bull; 14 min read &bull; Agentic Harness Engineering Series</div>
         <h1><span class="gradient-text">Harness vs. Perplexity: Eight Iterations to Parity</span></h1>
         <p class="subtitle" style="font-size:1.1rem;line-height:1.7;margin-top:1rem;">
           The hypothesis was simple: a pipeline with live FRED data, Beige Book RAG, and BEA enrichment should outperform Perplexity on a current-conditions task where freshness is the key differentiator. Eight iterations later, the harness reached a tie. The story is four bugs, a rubric built for code, a two-pass extraction experiment that exposed a Beige Book chunking root cause, and a depth-vs-grounded tradeoff that proved resistant to instruction alone.

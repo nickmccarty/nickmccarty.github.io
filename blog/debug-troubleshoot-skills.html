@@ -14,13 +14,13 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
-  <meta property="article:published_time" content="2026-06-02T00:00:00Z">
+  <meta property="article:published_time" content="2026-05-31T00:00:00Z">
   <meta property="article:author" content="Nick McCarty">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Diagnostic Skills: /debug and /troubleshoot">
   <meta name="twitter:description" content="Two skills for diagnosing harness failures: /debug pinpoints the root cause of a specific ERROR or FAIL run; /troubleshoot combines diagnosis with a next-step recommendation in one call.">
   <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Diagnostic Skills: /debug and /troubleshoot","description":"/debug loads recent ERROR/FAIL runs, trace events, and source anchors to produce a structured diagnosis. /troubleshoot combines that with project state to deliver a four-part report in one call.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-02","dateModified":"2026-06-02","url":"https://nickmccarty.me/blog/debug-troubleshoot-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Diagnostic Skills: /debug and /troubleshoot","description":"/debug loads recent ERROR/FAIL runs, trace events, and source anchors to produce a structured diagnosis. /troubleshoot combines that with project state to deliver a four-part report in one call.","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/debug-troubleshoot-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -74,7 +74,7 @@
   <main>
     <article>
       <header style="margin-bottom:2rem;">
-        <div class="meta" style="margin-bottom:0.75rem;">June 2, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
+        <div class="meta" style="margin-bottom:0.75rem;">May 31, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
         <h1><span class="gradient-text">The Diagnostic Skills: /debug and /troubleshoot</span></h1>
         <p class="subtitle">Two skills for diagnosing harness failures without manually reading run logs. <code>/debug</code> loads the last matching ERROR or FAIL runs, reads their trace event sequences, maps <code>task_type</code> to relevant source anchors, and returns a structured Diagnosis / Evidence / Fix. <code>/troubleshoot</code> combines that diagnosis with project state and delivers a four-part report — Issue, Root cause, Fix, Next task — in a single LLM call.</p>
       </header>
@@ -181,6 +181,25 @@ python agent.py "/troubleshoot annotate"</code></pre>
 
       <div class="callout amber">
         <p>Both skills skip meta-runs (debug, suggest, orientation, re-orient) when scanning for failures. Without this guard, a failed <code>/debug</code> run would recursively diagnose itself — a degenerate loop with no useful output. The filter is applied before candidate selection, not after.</p>
+      </div>
+
+      <h2>The live task indicator: <code>LIVE_TASK_FILE</code></h2>
+
+      <p>Two files in <code>data/</code> track what is currently executing. <code>live_run.json</code> is written by <code>RunTrace.set_stage()</code> on every pipeline stage transition and holds a snapshot of the in-progress run. <code>live_task.json</code> is written by the task queue executor and holds only one thing: the <code>item_id</code> of the queue item currently executing.</p>
+
+<pre><code class="language-python"># tasks.py, inside the task thread
+LIVE_TASK_FILE.write_text(json.dumps({"item_id": item.item_id}), encoding="utf-8")
+try:
+    run_agent(item.task, ...)
+finally:
+    LIVE_TASK_FILE.unlink(missing_ok=True)  # always cleaned up on exit</code></pre>
+
+      <p><code>GET /api/runs/live</code> merges both files: it reads the stage snapshot from <code>live_run.json</code> and, if <code>live_task.json</code> exists, attaches the <code>item_id</code> to the response. This lets the dashboard correlate a live run snapshot (which has stage and token data but no queue identity) with the queue item that launched it (which has a user-visible task string but no run data yet).</p>
+
+      <p>For <code>/debug</code> specifically, the <code>LIVE_TASK_FILE</code> presence is a signal to skip the currently-running item when scanning for FAIL candidates &mdash; diagnosing a still-running task would read incomplete trace data. The file&rsquo;s write/unlink lifecycle is atomic enough for this purpose: absence of the file means no task is executing, presence means one is.</p>
+
+      <div class="callout">
+        <p>If the process is killed mid-task without reaching the <code>finally</code> block, <code>live_task.json</code> will persist as a stale file. On next startup the file is not automatically cleaned &mdash; the runs endpoint will attempt to merge a stale <code>item_id</code> into the live snapshot. The safe fix is to <code>rm data/live_task.json</code> before restarting after a crash.</p>
       </div>
 
       <div class="related-section">
