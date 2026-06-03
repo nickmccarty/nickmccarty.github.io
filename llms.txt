@@ -1,245 +1,158 @@
-# Nick McCarty — Personal Website
+# Nick McCarty
 
-> Technical blog and portfolio covering agentic systems engineering, LLM evaluation, computer vision, and geospatial AI.
+> Technical blog covering agentic systems engineering, local LLM inference on consumer hardware,
+> self-improving prompt optimization loops, multi-agent orchestration, computer vision,
+> and ML research. All harness work runs on a local RTX 5000 Ada with llama.cpp / vLLM backends.
 
-## Author
+## Main pages
 
-Nick McCarty is a machine learning engineer, consultant, and technical instructor. He works at Upskilled Consulting on ML/AI projects spanning computer vision, photogrammetry, and agentic system design. He is the author of the 23-post Agentic Harness Engineering series, a comprehensive treatment of production agentic pipeline architecture grounded in empirical experiment and a structured literature review of over 60 papers.
+- [Blog index](https://nickmccarty.me/blog.html): Full post listing with category filter and full-text search
+- [About](https://nickmccarty.me/about.html): Background, current work, and contact
 
-- Email: nick@upskilled.consulting
-- LinkedIn: https://linkedin.com/in/nicholasmccarty
-- GitHub: https://github.com/nickmccarty
+## Key posts — Agentic Harness Engineering
 
-## Recent Publication
+- [The Harness Thesis: Why Scaffolding Beats Model Selection](https://nickmccarty.me/blog/harness-thesis.html): The central claim of agentic harness engineering: for a fixed task domain, the quality of the scaffolding surrounding a language model matters more than the choice of model
+- [The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision](https://nickmccarty.me/blog/the-wiggum-loop.html): The producer-evaluator separation pattern: how two loops—Ralph (outer) and Wiggum (inner)—compose to produce reliably high-quality agentic output
+- [Inside agent.py: The Three-Turn Research Pipeline](https://nickmccarty.me/blog/agent-pipeline.html): agent
+- [inference.py: The Unified LLM Backend Shim](https://nickmccarty.me/blog/inference-shim.html): inference
+- [The Memory View: 2,173 Observations, Quality Signals, and an Ontology Graph](https://nickmccarty.me/blog/memory-view.html): A tour of the harness Memory UI: a semantic observation store that accumulates every run as a structured fact, filterable by quality signal, searchable by task, and visualized as a force-directed ontology graph
+- [The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate](https://nickmccarty.me/blog/autoresearch-view.html): A tour of the harness Autoresearch UI: real-time supervision of the SYNTH_INSTRUCTION optimizer
+- [The Regression Harness: Eval Suite, Criterion Functions, and Experimental Infrastructure](https://nickmccarty.me/blog/eval-suite.html): How the harness's three-layer measurement stack works: the task registry and criterion function library in eval_suite
+- [The Lit-Review Skill: Seven Steps from ArXiv Query to Rendered Survey](https://nickmccarty.me/blog/lit-review-skill.html): lit_review_skill
+- [The OSINT Skill: 11-Layer Target Enrichment for Research Tasks](https://nickmccarty.me/blog/osint-skill.html): A taxonomy of the harness OSINT skill: target detection by regex, 11 parallel enrichment layers (DNS, RDAP, crt
+- [Agentic System Design Patterns](https://nickmccarty.me/blog/agentic-design-patterns.html): A catalog of 27 named design patterns for agentic LLM systems, organized into eight categories: substrate, context, verification, orchestration, security, observability, and self-improvement
+- [The Wiggum Panel: Three-Persona Parallel Evaluation](https://nickmccarty.me/blog/panel.html): WIGGUM_PANEL=1 runs Domain Practitioner, Critical Reviewer, and Informed Newcomer in parallel threads and merges their issue lists into the Wiggum revision loop before the first rewrite
+- [Closing the SkillOpt Gaps: What Actually Shipped](https://nickmccarty.me/blog/skillopt-shipped.html): A previous post identified three gaps between the harness autoresearch loop and SkillOpt: proactive validation gating, fast/slow epoch structure, and a persistent skill artifact
+- [Building the Detectors: What Actually Shipped After 107 Experiments](https://nickmccarty.me/blog/convergence-detectors-shipped.html): The four convergence detectors proposed after 90 failed experiments were implemented — but not as designed
+- [From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop](https://nickmccarty.me/blog/gepa-autoresearch.html): DSPy's GEPA optimizer formalizes exactly what autoresearch
+- [Security Patterns: Constraining the Agent](https://nickmccarty.me/blog/security-patterns.html): Four patterns that constrain what the agent can do to the host system and what external content can do to the agent's memory: AST Guard, Path Sandbox, Injection Scanner, and CDP Guard
+- [Context Engineering: What Reaches the Model](https://nickmccarty.me/blog/context-engineering.html): Five patterns governing what information reaches the synthesis model — the Planner-First, Novelty Gate, Dual-Backend Memory Store, Semantic Chunker, and Vision Bridge
+- [harness-data-model](https://nickmccarty.me/blog/harness-data-model.html): Five JSONL files, one entity hierarchy, and everything tokens_by_stage is actually measuring
+- [The Economic Data Tools: FRED and BEA](https://nickmccarty.me/blog/fred-bea-tools.html): fred_tool
+- [Harness vs. Perplexity: Four Iterations to a Tie](https://nickmccarty.me/blog/perplexity-vs-harness.html): Eight harness iterations against a frozen Perplexity output on a current-conditions Fed district inflation task
+- [The Alt-Data Pipeline: From Beige Book to Paper Trading Thesis](https://nickmccarty.me/blog/alt-data-pipeline.html): Five new enrichment layers — BEA, market signals, yfinance, Alpaca portfolio context, and a structured thesis synthesis template — close the loop from macro narrative to actionable paper trading theses
 
-"Performing Object Detection on Drone Orthomosaics with Meta's SAM" — SciPy 2025
+## All posts by section
 
-## Speaking
+### Agentic Harness Engineering
 
-- **Upcoming**: NextUp SoCal — "Machine Learning Using Open Source Tools" (virtual, August 2026, $10 admission; registration details TBD)
-- **Past**: Geo Week 2026 — "Reimagining Mapping with AI and Scalable Technologies" (February 17, 2026, Denver CO)
+- [The Economic Data Tools: FRED and BEA](https://nickmccarty.me/blog/fred-bea-tools.html)
+- [The Wiggum Panel: Three-Persona Parallel Evaluation](https://nickmccarty.me/blog/panel.html)
+- [Closing the SkillOpt Gaps: What Actually Shipped](https://nickmccarty.me/blog/skillopt-shipped.html)
+- [The Plugin System: /forge:plugin and /forge:list](https://nickmccarty.me/blog/forge-plugin-skills.html)
+- [The Interview Skills: /grill-me and /onboarding](https://nickmccarty.me/blog/onboarding-grill-me-skills.html)
+- [The Developer Utility Skills: /scratchpad and /test-harness](https://nickmccarty.me/blog/scratchpad-test-harness-skills.html)
+- [The Trading Skills: /validate-trades and /execute-trades](https://nickmccarty.me/blog/trade-execution-skills.html)
+- [The Diagnostic Skills: /debug and /troubleshoot](https://nickmccarty.me/blog/debug-troubleshoot-skills.html)
+- [The Site Generation Skills: /design and /build-page](https://nickmccarty.me/blog/design-build-page-skills.html)
+- [The Site Generation Skills: /site and /deck](https://nickmccarty.me/blog/site-deck-skills.html)
+- [The Navigation Skills: /suggest and /re-orient](https://nickmccarty.me/blog/suggest-reorient-skills.html)
+- [The Explorer View: Per-Run Pipeline DAG Inspector](https://nickmccarty.me/blog/explorer-view.html)
+- [The Page Feedback Widget: Closing the Loop Between Browser and Agent](https://nickmccarty.me/blog/page-feedback-widget.html)
+- [The Pipeline View: Data Enrichment DAG](https://nickmccarty.me/blog/pipeline-view.html)
+- [The Research History View: A Unified Activity Log](https://nickmccarty.me/blog/research-history-view.html)
+- [inference.py: The Unified LLM Backend Shim](https://nickmccarty.me/blog/inference-shim.html)
+- [harness/api: The FastAPI Backend and Dashboard Server](https://nickmccarty.me/blog/server.html)
+- [The Skills Registry: Hook Points, Auto-Activation, and 38 Skills](https://nickmccarty.me/blog/skills-registry.html)
+- [Inside agent.py: The Three-Turn Research Pipeline](https://nickmccarty.me/blog/agent-pipeline.html)
+- [The Position Swap: Beige Book RAG Results and the DPO Cold-Start Problem](https://nickmccarty.me/blog/beige-book-rag-dpo.html)
+- [Building the Detectors: What Actually Shipped After 107 Experiments](https://nickmccarty.me/blog/convergence-detectors-shipped.html)
+- [Live Data Beats Narrative: FRED RAG Experiment Results](https://nickmccarty.me/blog/fred-rag-results.html)
+- [Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph](https://nickmccarty.me/blog/memory-observability.html)
+- [OSINT Enrichment: Nine Layers of Passive Reconnaissance](https://nickmccarty.me/blog/osint-enrichment.html)
+- [The Planner: Two-Pass Pre-Research Analysis](https://nickmccarty.me/blog/planner.html)
+- [The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts](https://nickmccarty.me/blog/search-cache.html)
+- [Deploying the Harness with Docker: CPU, GPU, and Compose Variants](https://nickmccarty.me/blog/docker-deployment.html)
+- [The GitHub Skill: LLM-Assisted Git Operations from the Agent Loop](https://nickmccarty.me/blog/github-skill.html)
+- [The Subagent Demo Suite: Orchestrating Multi-Task Research Portfolios](https://nickmccarty.me/blog/subagent-demo.html)
+- [Synthetic Eval Task Generation with TinyTroupe Personas](https://nickmccarty.me/blog/tinytroupe-tasks.html)
+- [The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs](https://nickmccarty.me/blog/email-skill.html)
+- [The Lit-Review Skill: Seven Steps from ArXiv Query to Rendered Survey](https://nickmccarty.me/blog/lit-review-skill.html)
+- [Mining a Ground-Truth Knowledge Base for the Eval Suite](https://nickmccarty.me/blog/mine-knowledge.html)
+- [The Wiki Sync Skill: Deterministic Source Extraction and Gap-Targeted Code Injection](https://nickmccarty.me/blog/wiki-sync.html)
+- [Agentic System Design Patterns](https://nickmccarty.me/blog/agentic-design-patterns.html)
+- [Agentic Threat Hardening: The OWASP Top 10, Applied](https://nickmccarty.me/blog/agentic-threat-hardening.html)
+- [When the Loop Defeats Itself: Convergence Failures in Autonomous Prompt Optimization](https://nickmccarty.me/blog/autoresearch-convergence.html)
+- [The Regression Harness: Eval Suite, Criterion Functions, and Experimental Infrastructure](https://nickmccarty.me/blog/eval-suite.html)
+- [The Playwright Skill: LLM-Guided Navigation via ARIA Snapshots](https://nickmccarty.me/blog/playwright-skill.html)
+- [SBOM and AIBOM for Agentic Systems](https://nickmccarty.me/blog/sbom-aibom.html)
+- [What SkillOpt Gets Right](https://nickmccarty.me/blog/skillopt-gaps.html)
+- [YouTube and Media Transcription: Two Paths, One Research Input](https://nickmccarty.me/blog/youtube-transcribe.html)
+- [Five Personas, One Veto: Consensus Filtering for Fine-Tuning Data](https://nickmccarty.me/blog/curator.html)
+- [The op CLI: A Rich REPL for the Research Harness](https://nickmccarty.me/blog/op-cli.html)
+- [The Supervisor: Four Convergence Signals and Advisory Interventions](https://nickmccarty.me/blog/supervisor.html)
+- [The Audio Data Flywheel](https://nickmccarty.me/blog/audio-data-flywheel.html)
+- [Experimental Methodology: Four Experiments, One Pipeline](https://nickmccarty.me/blog/experimental-methodology.html)
+- [From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop](https://nickmccarty.me/blog/gepa-autoresearch.html)
+- [The MCP View: Exposing the Harness as a Tool Server](https://nickmccarty.me/blog/mcp-view.html)
+- [Multi-Objective Alignment: Beyond Scalar Rewards](https://nickmccarty.me/blog/multi-objective-alignment.html)
+- [The Security View: 36 Events, 28 Blocks, and Live Injection Intercepts](https://nickmccarty.me/blog/security-view.html)
+- [The Telemetry Router: Mining runs.jsonl for Self-Directed Improvement](https://nickmccarty.me/blog/telemetry-router.html)
+- [The Voice View: Push-to-Talk Notes, Task Dictation, and the Audio Data Flywheel](https://nickmccarty.me/blog/voice-view.html)
+- [Context Engineering: What Reaches the Model](https://nickmccarty.me/blog/context-engineering.html)
+- [A Failure Taxonomy for Agentic Systems](https://nickmccarty.me/blog/failure-taxonomy.html)
+- [The Harness Thesis: Why Scaffolding Beats Model Selection](https://nickmccarty.me/blog/harness-thesis.html)
+- [Inference Patterns: The Substrate Layer](https://nickmccarty.me/blog/inference-patterns.html)
+- [Observability and the Data Flywheel](https://nickmccarty.me/blog/observability-flywheel.html)
+- [Orchestration Patterns: Scaling to Multi-Agent Execution](https://nickmccarty.me/blog/orchestration-patterns.html)
+- [Parallel Inference: Hardware Substrates for LLM Workloads](https://nickmccarty.me/blog/parallel-inference.html)
+- [The Pipeline in Motion: Tracing a Task Through All Eleven Subsystems](https://nickmccarty.me/blog/pipeline-in-motion.html)
+- [Security Patterns: Constraining the Agent](https://nickmccarty.me/blog/security-patterns.html)
+- [Sessions and Artifacts: The Harness Output Registry](https://nickmccarty.me/blog/sessions-artifacts-view.html)
+- [The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision](https://nickmccarty.me/blog/the-wiggum-loop.html)
+- [Verification Patterns: Measuring and Improving Output Quality](https://nickmccarty.me/blog/verification-patterns.html)
+- [The Fine-tune View: DPO Training Runs, RL Data, and the Preference Feedback Loop](https://nickmccarty.me/blog/fine-tune-view.html)
+- [The OSINT Skill: 11-Layer Target Enrichment for Research Tasks](https://nickmccarty.me/blog/osint-skill.html)
+- [The Submit View: Queuing Tasks and Watching the Pipeline Execute in Real Time](https://nickmccarty.me/blog/submit-view.html)
+- [The System View: Governance Docs, Active Configuration, and 38 Skills](https://nickmccarty.me/blog/system-view.html)
+- [The Analytics View: Score Trends, Token Spend, and Run Distribution](https://nickmccarty.me/blog/analytics-view.html)
+- [The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate](https://nickmccarty.me/blog/autoresearch-view.html)
+- [The Runs View: Pipeline Stage Visualization and Live Run Monitoring](https://nickmccarty.me/blog/runs-view.html)
+- [The GitHub View: Repo Health at a Glance](https://nickmccarty.me/blog/github-view.html)
+- [The Memory View: 2,173 Observations, Quality Signals, and an Ontology Graph](https://nickmccarty.me/blog/memory-view.html)
+- [Harness vs. Perplexity: Four Iterations to a Tie](https://nickmccarty.me/blog/perplexity-vs-harness.html)
+- [The Alt-Data Pipeline: From Beige Book to Paper Trading Thesis](https://nickmccarty.me/blog/alt-data-pipeline.html)
+- [Small Language Models and the Efficiency-Accuracy Frontier](https://nickmccarty.me/blog/slm-efficiency.html)
+- [Fine-Tuning and Alignment Deep Cuts: Synthetic Data, Poisoning, and Safety Recovery](https://nickmccarty.me/blog/alignment-fine-tuning.html)
+- [Knowledge Graphs and Structured Extraction: Beyond the Vector Store](https://nickmccarty.me/blog/knowledge-graphs-extraction.html)
+- [Prompt Injection and Agentic Security: What the Attack Literature Says](https://nickmccarty.me/blog/prompt-injection-security.html)
+- [Agentic Tool Use and Planning: What the Literature Says](https://nickmccarty.me/blog/tool-use-planning.html)
+- [Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity](https://nickmccarty.me/blog/evaluation-robustness.html)
+- [Evaluation Uncertainty, Calibration, and Harness Reliability](https://nickmccarty.me/blog/evaluation-uncertainty.html)
+- [Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't](https://nickmccarty.me/blog/judge-benchmarks-scaling.html)
+- [Judging the Judges: Benchmark Contamination and Evaluation Reliability](https://nickmccarty.me/blog/judge-reliability.html)
+- [Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification](https://nickmccarty.me/blog/structured-knowledge-queries.html)
 
-## Site Structure
+### Analysis
 
-- / — Home page
-- /about.html — Background, experience, publications, and speaking
-- /blog.html — Blog index (series cards + individual posts)
-- /contact.html — Contact form
+- [Leverage: What the Metric Measures, What It Doesn't, and Why the Replacement Framing Gets the Math Wrong](https://nickmccarty.me/blog/leverage.html)
 
----
+### Computer Vision
 
-## Agentic Harness Engineering Series (Posts 1–23)
+- [Circuit Extraction for Pot Detection](https://nickmccarty.me/blog/circuit-extraction-pot-detection.html)
+- [Sparse Linear Probing for Efficient Detection](https://nickmccarty.me/blog/sparse-probing-pot-detection.html)
+- [Extracting Features from Vision Model Backbones](https://nickmccarty.me/blog/extracting-vision-features.html)
+- [Mechanistic Interpretability for Agricultural AI](https://nickmccarty.me/blog/mechanistic-interpretability.html)
+- [SAM vs Faster R-CNN: A Practical Comparison](https://nickmccarty.me/blog/sam-vs-fasterrcnn-comparison.html)
+- [Fine-Tuning Vision Foundation Models](https://nickmccarty.me/blog/fine-tuning-vision-models.html)
 
-A 23-post series on the design, empirics, and literature behind production agentic pipelines. The series covers eleven subsystem patterns, four production experiments, and structured reviews of 60+ papers on LLM evaluation, planning, alignment, security, and knowledge retrieval.
+### Geospatial AI
 
-### Architecture and Patterns (Posts 1–11, May 22, 2026)
+- [Object Detection on Drone Orthomosaics with SAM](https://nickmccarty.me/blog/sam-object-detection.html)
+- [Building a GeoTIFF Object Detection Web App](https://nickmccarty.me/blog/fastapi-web-app.html)
+- [Training Faster R-CNN for Geospatial Object Detection](https://nickmccarty.me/blog/training-faster-rcnn-geospatial.html)
 
-URL: /blog/the-wiggum-loop.html
-Title: The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision
-Topics: LLM evaluation, producer-evaluator separation, self-preference bias, dimensional rubric, cross-model scoring
-Summary: The two-loop architecture — Ralph (outer revision) and Wiggum (inner evaluation) — that produces reliably high-quality agentic output. Includes D3.js diagrams and score trajectory data from 1,500 production runs.
+### Other
 
-URL: /blog/harness-thesis.html
-Title: The Harness Thesis: Why Scaffolding Beats Model Selection
-Topics: agentic scaffolding, pipeline architecture, model selection, quality engineering
-Summary: The empirical case that scaffolding quality matters more than model choice for a fixed task domain. Covers the five-stage pipeline and the silent overwrite failure that motivated the project.
+- [circuit-extraction-notebook](https://nickmccarty.me/blog/circuit-extraction-notebook.html)
+- [harness-data-model](https://nickmccarty.me/blog/harness-data-model.html)
+- [layer4-circuit-diagram](https://nickmccarty.me/blog/layer4-circuit-diagram.html)
+- [Seven Principles and a Moving Frontier: The Harness Roadmap](https://nickmccarty.me/blog/harness-roadmap.html)
 
-URL: /blog/pipeline-in-motion.html
-Title: The Pipeline in Motion: Tracing a Task Through All Eleven Subsystems
-Topics: pipeline architecture, task decomposition, retrieval, synthesis, JSONL, agentic systems
-Summary: A single research query traced end-to-end through all eleven subsystems, with D3.js architecture diagrams at each hop.
+## Site notes
 
-URL: /blog/failure-taxonomy.html
-Title: A Failure Taxonomy for Agentic Systems
-Topics: failure analysis, agentic systems, retrieval failures, synthesis failures, evaluation failures
-Summary: Six failure classes ranked by frequency and cost, with real data from 1,500 production runs and the diagnostic patterns that catch them early.
-
-URL: /blog/inference-patterns.html
-Title: Inference Patterns: The Substrate Layer
-Topics: inference optimization, model routing, keep-alive, evaluator pool, LLM infrastructure
-Summary: Four patterns governing how LLM calls are issued, routed, and kept warm: the Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget.
-
-URL: /blog/context-engineering.html
-Title: Context Engineering: What Reaches the Model
-Topics: context management, RAG, Planner-First, Novelty Gate, semantic chunking, memory store
-Summary: Five patterns governing the research half of the pipeline: Planner-First, Novelty Gate, Dual-Backend Memory Store, Semantic Chunker, and Dynamic Context Injection.
-
-URL: /blog/verification-patterns.html
-Title: Verification Patterns: Measuring and Improving Output Quality
-Topics: output verification, dimensional rubric, surgical compression, ReAct, evaluation strategy
-Summary: Three patterns completing the verification layer: Dimensional Rubric, Surgical Compressor, and ReAct Comparator.
-
-URL: /blog/orchestration-patterns.html
-Title: Orchestration Patterns: Scaling to Multi-Agent Execution
-Topics: multi-agent systems, DAG orchestration, worktree isolation, MCP, skill registry
-Summary: Four patterns for coordinating multiple agents: DAG Orchestrator, Worktree Context, MCP Dispatch Router, and Skill Registry.
-
-URL: /blog/security-patterns.html
-Title: Security Patterns: Constraining the Agent
-Topics: agentic security, AST analysis, path sandboxing, prompt injection defense, CDP guard
-Summary: Four security patterns implemented with Python stdlib: AST Guard, Path Sandbox, Injection Scanner, and CDP Guard.
-
-URL: /blog/observability-flywheel.html
-Title: Observability and the Data Flywheel
-Topics: observability, tracing, JSONL logging, data flywheel, RL rollout, self-improvement
-Summary: Six patterns closing the feedback loop: RunTrace, JSONL Audit Log, Chrome Trace Exporter, Data Flywheel, RL Rollout, and Literature Review Pipeline.
-
-URL: /blog/parallel-inference.html
-Title: Parallel Inference: Hardware Substrates for LLM Workloads
-Topics: GPU architecture, llama.cpp, vLLM, GGUF, quantization, KV cache, parallel processing
-Summary: GPU memory hierarchy, SM architecture, llama.cpp, vLLM, GGUF quantization, and KV cache pressure — the hardware realities that determine whether an agentic pipeline is fast or broken.
-
-### Experiments and Alignment (Posts 12 & 14, May 23, 2026)
-
-URL: /blog/experimental-methodology.html
-Title: Experimental Methodology: Four Experiments, One Pipeline
-Topics: experimental design, CRD, evaluator ceiling, producer ceiling, synthesis instructions, ablation
-Summary: Four completely randomized designs that exposed the evaluator ceiling, the producer ceiling, and the synthesis instruction bottleneck that neither model upgrade could fix.
-
-URL: /blog/multi-objective-alignment.html
-Title: Multi-Objective Alignment: Beyond Scalar Rewards
-Topics: RLHF, multi-objective optimization, DPA, MO-ODPO, MGDA, safety fine-tuning, reward modeling
-Summary: DPA, MO-ODPO, MGDA-Decoupled, and the safety fine-tuning hazard: high dataset similarity degrades safety by 10.33%.
-
-### Small Language Models (Post 15, May 8, 2026)
-
-URL: /blog/slm-efficiency.html
-Title: Small Language Models and the Efficiency-Accuracy Frontier
-Topics: SLM, small language models, efficiency, benchmarking, energy, model selection, multi-model architecture
-Summary: SLM-Bench across 15 models, 9 tasks, 4 hardware configs. Accuracy and energy efficiency don't co-optimize — model selection is a portfolio problem, not a ranking problem.
-
-### Literature Reviews — Tools, Knowledge Graphs, Security, Fine-Tuning (Posts 16, 18, 20–21, May 1, 2026)
-
-URL: /blog/tool-use-planning.html
-Title: Agentic Tool Use and Planning: What the Literature Says
-Topics: tool use, LLM planning, NL2Plan, PEARL, ToolTree, ToolRet, safety bypass, multi-LLM
-Summary: NL2Plan, PEARL, ToolTree, ToolRet, Memory-as-a-Tool, and a 92% safety bypass rate — fifteen papers on LLM planning and tool use.
-
-URL: /blog/knowledge-graphs-extraction.html
-Title: Knowledge Graphs and Structured Extraction: Beyond the Vector Store
-Topics: knowledge graphs, structured extraction, semantic graphs, MeXtract, RAG, graph retrieval
-Summary: Document semantic graphs outperform flat-list retrieval. MeXtract achieves SOTA metadata extraction with 0.5B parameters.
-
-URL: /blog/prompt-injection-security.html
-Title: Prompt Injection and Agentic Security: What the Attack Literature Says
-Topics: prompt injection, adversarial attacks, HouYi, gradient-based injection, Prompt Infection, multi-agent security
-Summary: HouYi compromises 86% of real LLM applications. Gradient-based injections bypass pattern-matching by design. Prompt Infection replicates virally through multi-agent DAGs.
-
-URL: /blog/alignment-fine-tuning.html
-Title: Fine-Tuning and Alignment Deep Cuts: Synthetic Data, Poisoning, and Safety Recovery
-Topics: fine-tuning, RLHF, synthetic data, data poisoning, safety recovery, FLR, SFT, perplexity
-Summary: FLR matches GPT-4-annotated reward models without human annotation. Label-flipping poisoning as convex optimization. Harmful rate drops 33.25% to 1.74% via weight restoration.
-
-### Literature Reviews — Evaluation, Judges, and Knowledge Queries (Posts 13, 17, 19, 22–23, April 29, 2026)
-
-URL: /blog/judge-reliability.html
-Title: Judging the Judges: Benchmark Contamination and Evaluation Reliability
-Topics: LLM-as-a-judge, evaluation reliability, position bias, benchmark contamination, self-preference
-Summary: Best judges lag human agreement by 5 points. Eight of nine judges show always-A position bias. What the reliability literature means for harness design.
-
-URL: /blog/evaluation-uncertainty.html
-Title: Evaluation Uncertainty, Calibration, and Harness Reliability
-Topics: uncertainty quantification, conformal prediction, calibration, ConFix, Agent-as-a-Judge, hallucination
-Summary: Conformal prediction turns point scores into calibrated intervals. Fact-level ConFix reduces hallucinations without retrieval. Agent-as-a-Judge outperforms LLM-as-a-Judge.
-
-URL: /blog/evaluation-robustness.html
-Title: Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity
-Topics: metamorphic testing, LLMORPH, scoring bias, prompt sensitivity, rubric design, LLM evaluation
-Summary: LLMORPH finds evaluator inconsistencies across 561,000 test executions. Three novel scoring biases — rubric order, score ID, reference answer — originate in prompt design.
-
-URL: /blog/structured-knowledge-queries.html
-Title: Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification
-Topics: SPARQL, ontology, knowledge graphs, ODA, GRASP, ETLCH, chain of verification, Wikidata
-Summary: ODA improves LLM+KG accuracy by 12.87% via recursive observation-action-reflection. GRASP achieves zero-shot SPARQL SOTA on Wikidata without fine-tuning.
-
-URL: /blog/judge-benchmarks-scaling.html
-Title: Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't
-Topics: JETTS, Omni-MATH, M-JudgeBench, IF-RewardBench, test-time scaling, process reward models, reranking
-Summary: JETTS: judges match outcome reward models for reranking but lose to process reward models in beam search. Omni-Judge is wrong in 96.4% of expert disagreements.
-
----
-
-## Earlier Blog Posts
-
-### Circuit Extraction: Interpreting Object Detectors
-URL: /blog/circuit-extraction-pot-detection.html
-Date: January 13, 2026
-Topics: mechanistic interpretability, activation patching, co-activation analysis, neural circuits, Faster R-CNN
-Summary: Using activation patching and co-activation analysis to extract the minimal computational circuit for pot detection in Faster R-CNN.
-
-### Object Detection on Drone Orthomosaics with SAM
-URL: /blog/sam-object-detection.html
-Date: January 10, 2026
-Topics: Segment Anything Model, SAM, drone imagery, orthomosaics, zero-shot learning, foundation models
-Summary: Overview of using Meta's Segment Anything Model for automated object detection in high-resolution aerial imagery, with applications in precision agriculture.
-
-### Sparse Linear Probing for Efficient Detection
-URL: /blog/sparse-probing-pot-detection.html
-Date: January 9, 2026
-Topics: linear probing, L1 regularization, sparse features, interpretability, feature analysis
-Summary: Using L1-regularized linear probes to identify minimal feature subsets from SAM and Faster R-CNN sufficient for pot detection. ~50 channels capture 95% of detection performance.
-
-### Extracting Features from Vision Model Backbones
-URL: /blog/extracting-vision-features.html
-Date: January 7, 2026
-Topics: feature extraction, PyTorch hooks, PCA visualization, ResNet, ViT, GeoTIFF
-Summary: Technical guide to extracting and visualizing internal representations from SAM and Faster R-CNN. Covers forward hooks, tiled extraction, channel selectivity, and GeoTIFF output.
-
-### Mechanistic Interpretability for Agricultural AI
-URL: /blog/mechanistic-interpretability.html
-Date: January 5, 2026
-Topics: mechanistic interpretability, neural network analysis, monosemantic features, polysemantic features, AI safety
-Summary: How mechanistic interpretability techniques help understand what vision models learn about agricultural environments. Covers feature visualization, activation patching, and trustworthy AI.
-
-### SAM vs Faster R-CNN: A Practical Comparison
-URL: /blog/sam-vs-fasterrcnn-comparison.html
-Date: January 3, 2026
-Topics: SAM, Faster R-CNN, object detection, architecture comparison, aerial imagery
-Summary: Comparing Segment Anything Model and Faster R-CNN for aerial object detection — architecture, fine-tuning approaches, speed benchmarks, and when to use each.
-
-### Fine-Tuning Vision Foundation Models
-URL: /blog/fine-tuning-vision-models.html
-Date: December 28, 2025
-Topics: fine-tuning, transfer learning, LoRA, PEFT, active learning, data augmentation
-Summary: Practical guide to fine-tuning strategies for vision models like SAM and Faster R-CNN. Covers full fine-tuning, decoder-only training, parameter-efficient methods, and data efficiency.
-
-### Building a GeoTIFF Object Detection Web App
-URL: /blog/fastapi-web-app.html
-Date: December 28, 2025
-Topics: FastAPI, WebSockets, GeoTIFF, Leaflet, coordinate systems, web development
-Summary: Walkthrough of building a web application for running Faster R-CNN inference on geospatial imagery. Covers tiled inference, CRS reprojection, real-time progress streaming, and interactive result editing.
-
-### Training Faster R-CNN for Geospatial Object Detection
-URL: /blog/training-faster-rcnn-geospatial.html
-Date: December 20, 2025
-Topics: Faster R-CNN, object detection training, hard negative mining, transfer learning, geospatial
-Summary: Training object detection models on aerial imagery — bootstrapping training data from SAM, hard negative mining, tiled training, and georeferenced inference.
-
----
-
-## Key Topics
-
-- **Agentic Systems**: Harness engineering, multi-agent orchestration, producer-evaluator loops, DAG execution, MCP
-- **LLM Evaluation**: Judge reliability, position bias, calibration, conformal prediction, metamorphic testing, benchmark design
-- **Alignment and Fine-Tuning**: RLHF, multi-objective optimization, synthetic data, data poisoning, safety recovery
-- **Security**: Prompt injection attacks, agentic sandboxing, adversarial inputs, multi-agent attack propagation
-- **Knowledge Retrieval**: RAG, knowledge graphs, SPARQL, ontology, structured extraction, grounded verification
-- **Computer Vision**: Object detection, image segmentation, feature extraction, mechanistic interpretability
-- **Foundation Models**: SAM, vision transformers, Faster R-CNN, LoRA, PEFT
-- **Geospatial AI**: Drone imagery, orthomosaics, GeoTIFF processing, coordinate systems, photogrammetry
-- **Hardware and Inference**: GPU architecture, llama.cpp, vLLM, quantization, KV cache optimization
-- **Small Language Models**: Efficiency frontiers, multi-model architectures, energy benchmarking
-
-## Technical Stack
-
-- Python, PyTorch for deep learning and pipeline engineering
-- Faster R-CNN, SAM for object detection and segmentation
-- llama.cpp, vLLM for local LLM inference
-- rasterio for geospatial data processing
-- FastAPI for web services
-- D3.js for interactive data visualization
-- Leaflet for web mapping
-
-## Contact
-
-nick@upskilled.consulting
+- All inference runs locally (no cloud API for the core harness pipeline)
+- Posts are generated by the harness itself via /lit-review and research skills,
+  then edited and published manually
+- Search index at /search-index.json (100 posts, ~740 KB)
+- Sitemap at /sitemap.xml
