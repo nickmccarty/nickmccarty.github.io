@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Wiggum Panel: Three-Persona Parallel Evaluation | Nick McCarty</title>
+  <meta name="description" content="WIGGUM_PANEL=1 runs Domain Practitioner, Critical Reviewer, and Informed Newcomer in parallel threads and merges their issue lists into the Wiggum revision loop before the first rewrite.">
+  <link rel="canonical" href="https://nickmccarty.me/blog/panel.html">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="The Wiggum Panel: Three-Persona Parallel Evaluation">
+  <meta property="og:description" content="Three evaluator personas running in parallel threads, each reviewing from a distinct angle. Their issues are deduplicated and merged into Wiggum's revision context before the first rewrite.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/panel.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-02T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Wiggum Panel: Three-Persona Parallel Evaluation">
+  <meta name="twitter:description" content="Domain Practitioner, Critical Reviewer, and Informed Newcomer run concurrently. Their deduplicated issues augment Wiggum's revision context before the first rewrite attempt.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Wiggum Panel: Three-Persona Parallel Evaluation","description":"WIGGUM_PANEL=1 runs three evaluator personas in parallel threads and merges their issue lists into the Wiggum revision loop before the first rewrite.","keywords":"LLM evaluation, multi-persona review, parallel evaluation, Wiggum panel, agentic systems, quality control, producer-evaluator","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-06-02","dateModified":"2026-06-02","url":"https://nickmccarty.me/blog/panel.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/panel.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og-default.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => { if (window.hljs) hljs.highlightAll(); });</script>
+  <style>
+    .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
+    .callout.warning{border-left-color:var(--accent-pink);}
+    .callout p{margin:0;font-size:1.05rem;}
+    code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
+    pre{border:1px solid var(--border-color);border-radius:8px;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;padding:0;}
+    .persona-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1.5rem 0;}
+    @media(max-width:700px){.persona-grid{grid-template-columns:1fr;}}
+    .persona-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:1.25rem;}
+    .persona-card.practitioner{border-top:3px solid var(--accent-cyan);}
+    .persona-card.critic{border-top:3px solid var(--accent-pink);}
+    .persona-card.newcomer{border-top:3px solid #a78bfa;}
+    .persona-card h4{margin:0 0 0.4rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.04em;}
+    .persona-card.practitioner h4{color:var(--accent-cyan);}
+    .persona-card.critic h4{color:var(--accent-pink);}
+    .persona-card.newcomer h4{color:#a78bfa;}
+    .persona-card p{margin:0.4rem 0 0;font-size:0.87rem;color:var(--text-secondary);line-height:1.6;}
+    .flow-diagram{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:1.5rem;margin:1.5rem 0;font-family:'SF Mono','Consolas',monospace;font-size:0.82rem;line-height:1.9;color:var(--text-secondary);}
+    .flow-diagram .hi{color:var(--accent-cyan);}
+    .flow-diagram .hi2{color:var(--accent-pink);}
+    table.prop-table{width:100%;border-collapse:collapse;font-size:0.87rem;margin:1rem 0;}
+    table.prop-table th,table.prop-table td{padding:0.55rem 0.8rem;border:1px solid var(--border-color);text-align:left;vertical-align:top;}
+    table.prop-table th{background:var(--bg-secondary);font-weight:600;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);}
+    table.prop-table td:first-child{font-family:'SF Mono','Consolas',monospace;color:var(--accent-cyan);font-size:0.83rem;}
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <a href="../blog.html" class="back-link">&larr; Back to Blog</a>
+
+    <article>
+      <h1><span class="gradient-text">The Wiggum Panel: Three-Persona Parallel Evaluation</span></h1>
+      <div class="post-meta">June 2, 2026 &bull; 8 min read</div>
+
+      <p>
+        The Wiggum loop uses a single evaluator model scoring output across six dimensions. That works well for most runs. But a single evaluator&mdash;even a capable one at low temperature&mdash;brings a single perspective: it cannot simultaneously optimize for technical depth, coverage completeness, <em>and</em> newcomer accessibility. A document can pass the dimensional rubric with a high score while still being impenetrable to a developer encountering the topic for the first time, or thin in the places a domain practitioner would notice first.
+      </p>
+
+      <p>
+        The Panel addresses this by running three reviewers concurrently after the initial Wiggum evaluation. Each comes with a distinct system prompt that anchors its perspective. Their issues are merged into the revision context alongside Wiggum&rsquo;s own issues, giving the producer a richer signal before it rewrites.
+      </p>
+
+      <h2>The three personas</h2>
+
+      <div class="persona-grid">
+        <div class="persona-card practitioner">
+          <h4>Domain Practitioner</h4>
+          <p>Senior engineer with 10+ years in production systems. Focuses on whether the content is actionable and production-ready. Flags toy-level examples, vague claims, and missing implementation details. Core question: <em>could a practitioner act on this today?</em></p>
+        </div>
+        <div class="persona-card critic">
+          <h4>Critical Reviewer</h4>
+          <p>Technical editor reviewing for completeness and intellectual rigor. Identifies gaps&mdash;what an expert would expect to see but is absent. Flags unsupported claims, missing caveats, and one-sided coverage. Reads for what is <em>not</em> there.</p>
+        </div>
+        <div class="persona-card newcomer">
+          <h4>Informed Newcomer</h4>
+          <p>Developer with general programming knowledge learning this specific topic for the first time. Tests whether a document is comprehensible without prior domain knowledge. Flags unexplained jargon and concepts assumed without introduction.</p>
+        </div>
+      </div>
+
+      <p>
+        The split is deliberate. The Practitioner and Critic tend to find complementary issues: the Practitioner flags what&rsquo;s missing in depth, the Critic flags what&rsquo;s missing in breadth. The Newcomer catches problems neither would notice&mdash;because both already know the domain. A document can have sufficient technical depth and complete coverage while still being inaccessible to the person most likely to read it.
+      </p>
+
+      <h2>Execution: parallel threads, single content excerpt</h2>
+
+      <p>
+        All three personas receive the same content excerpt (capped at 5,000 characters) and the same task description. They run concurrently via <code>ThreadPoolExecutor</code> with one thread per persona. Wall-clock time is approximately 1x a single LLM call, not 3x&mdash;the only serial bottleneck is the slowest persona to respond.
+      </p>
+
+<pre><code class="language-python">def run_panel(task: str, content: str, model: str, trace=None) -> list[dict]:
+    content_excerpt = content[:5000]
+
+    with ThreadPoolExecutor(max_workers=len(PANEL_PERSONAS)) as pool:
+        futures = {pool.submit(_run_persona, p): p["name"] for p in PANEL_PERSONAS}
+        for future in as_completed(futures):
+            result = future.result()
+            if result is not None:
+                reviews.append(result)</code></pre>
+
+      <p>
+        Each persona returns a structured JSON object: <code>score</code> (0&ndash;10), <code>issues</code> (list of specific observations), and <code>strengths</code> (list of things done well). A regex fallback parses the response if JSON decoding fails.
+      </p>
+
+      <h2>Integration with the Wiggum loop</h2>
+
+      <p>
+        The panel runs after Wiggum&rsquo;s evaluate step and before the revision step. When <code>WIGGUM_PANEL=1</code>, <code>wiggum.py</code> calls <code>run_panel()</code> and then <code>panel_issues()</code> to flatten and deduplicate the issue lists across personas:
+      </p>
+
+<pre><code class="language-python"># wiggum.py, inside the evaluate() round
+if _PANEL_ENABLED:
+    panel_reviews = run_panel(task, content, evaluator_model, trace=parent_trace)
+    panel_issue_list = panel_issues(panel_reviews)
+    new_panel_issues = [i for i in panel_issue_list if i.lower() not in existing]
+    issues = issues + new_panel_issues  # augment Wiggum's issue list</code></pre>
+
+      <p>
+        <code>panel_issues()</code> prefixes each issue with the originating persona name&mdash;<code>[Domain Practitioner] entry price field missing concrete example</code>&mdash;so the producer knows the evaluative lens behind each critique. Issues already present in Wiggum&rsquo;s own list are deduplicated before appending.
+      </p>
+
+      <div class="flow-diagram">
+        <span class="hi">evaluate()</span> &rarr; Wiggum scores + issues<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+        <span class="hi">run_panel()</span> &rarr; 3 threads in parallel<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+        <span class="hi">panel_issues()</span> &rarr; deduplicated, persona-prefixed<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+        issues = wiggum_issues + new_panel_issues<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+        <span class="hi2">revise()</span> receives enriched issue list
+      </div>
+
+      <p>
+        The panel does not independently gate the revision decision&mdash;the pass/fail threshold is still Wiggum&rsquo;s dimensional score. The panel&rsquo;s contribution is <em>richer revision context</em>, not a separate gating signal. If Wiggum scores the output above <code>PASS_THRESHOLD</code>, the run completes even if panel reviewers found issues.
+      </p>
+
+      <h2>Logging and downstream use</h2>
+
+      <p>
+        Each Wiggum evaluation round record in <code>runs.jsonl</code> includes a <code>panel_reviews</code> field when the panel ran. This stores the full per-persona output&mdash;score, issues, strengths, and raw model response&mdash;for every round. The structured per-persona scores are useful for preference learning: a document where the Newcomer scores 4/10 but the Practitioner scores 8/10 is a different training signal than one where both score 6/10.
+      </p>
+
+      <h2>Configuration and tradeoffs</h2>
+
+      <table class="prop-table">
+        <thead>
+          <tr><th>Setting</th><th>Default</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>WIGGUM_PANEL</td><td>0 (off)</td><td>Set to <code>1</code> to enable. Off by default because it adds 3 LLM calls per Wiggum round.</td></tr>
+          <tr><td>Content excerpt</td><td>5,000 chars</td><td>Each persona sees the first 5,000 characters. Hardcoded in <code>panel.py</code>.</td></tr>
+          <tr><td>Temperature</td><td>0.3</td><td>Slightly higher than Wiggum&rsquo;s evaluator (0.1) to allow more varied perspectives across personas.</td></tr>
+          <tr><td>Model</td><td>Inherits evaluator model</td><td>All three personas use the same model. Can be overridden via the standalone CLI.</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        The main tradeoff is cost: three extra LLM calls per evaluation round. At <code>MAX_ROUNDS=3</code>, a run that revises twice could generate up to 9 panel calls. In practice the panel fires most usefully on the first round&mdash;subsequent revisions are responding to known issues, and the panel adds diminishing signal. A common configuration is to enable the panel only for long-form outputs (literature reviews, design documents) where the multi-perspective coverage is most valuable.
+      </p>
+
+      <h2>Standalone CLI</h2>
+
+      <p>
+        The panel can be run independently of the full harness pipeline on any existing document:
+      </p>
+
+<pre><code class="language-bash">python -m harness.panel "design a distributed rate limiter" output.md
+python -m harness.panel "summarize RLHF literature" review.md Qwen3-Coder:30b</code></pre>
+
+      <p>
+        Output prints per-persona scores, issues, and strengths to stdout, followed by the merged issue list. Useful for one-shot quality audits on documents produced outside the harness pipeline.
+      </p>
+
+      <div class="callout warning">
+        <p>The 5,000-character content excerpt means the panel only sees the beginning of long documents. For literature reviews that open with an abstract and methodology before the synthesis, the Practitioner may flag &ldquo;no concrete findings&rdquo; based on incomplete context. If the document structure front-loads boilerplate, consider shuffling the excerpt or running the panel on a summarized version.</p>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+          <a href="./the-wiggum-loop.html" class="related-post-card">
+            <div class="related-post-num">Core</div>
+            <div class="related-post-title">The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision</div>
+            <div class="related-post-desc">The producer-evaluator separation pattern; the six dimensions; how the panel augments rather than replaces the dimensional score.</div>
+          </a>
+          <a href="./verification-patterns.html" class="related-post-card">
+            <div class="related-post-num">Patterns</div>
+            <div class="related-post-title">Verification Patterns: Measuring and Improving Output Quality</div>
+            <div class="related-post-desc">Dimensional Rubric, Surgical Compressor, and ReAct Comparator&mdash;the three patterns the panel extends.</div>
+          </a>
+          <a href="./harness-data-model.html" class="related-post-card">
+            <div class="related-post-num">Data</div>
+            <div class="related-post-title">The Harness Data Model</div>
+            <div class="related-post-desc">The runs.jsonl schema that stores panel_reviews alongside Wiggum eval logs for downstream preference learning.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
+  </footer>
+</body>
+</html>
