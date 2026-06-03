@@ -29,18 +29,23 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
   <script src="../assets/js/analytics.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => { if (window.hljs) hljs.highlightAll(); });</script>
   <style>
     .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
     .callout.amber{border-left-color:#f59e0b;}
     .callout p{margin:0;font-size:1.05rem;}
     code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
-    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
-    pre code{background:none;padding:0;font-size:inherit;}
+    pre{border:1px solid var(--border-color);border-radius:8px;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;padding:0;}
+    pre code.hljs{border-radius:8px;padding:1.25rem 1.5rem;font-size:inherit;}
     .task-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin:1.5rem 0;}
     @media(max-width:640px){.task-grid{grid-template-columns:1fr;}}
-    .task-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.9rem 1rem;}
-    .task-card .task-id{font-family:'SF Mono','Consolas',monospace;font-size:0.78rem;font-weight:700;color:var(--accent-cyan);margin-bottom:0.25rem;}
-    .task-card h4{margin:0 0 0.3rem;font-size:0.85rem;}
+    .task-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.9rem 1rem;display:flex;flex-direction:column;gap:0.4rem;}
+    .task-card-header{display:flex;align-items:center;gap:0.6rem;}
+    .task-icon{flex-shrink:0;opacity:0.85;}
+    .task-card .task-id{font-family:'SF Mono','Consolas',monospace;font-size:0.78rem;font-weight:700;color:var(--accent-cyan);}
+    .task-card h4{margin:0;font-size:0.85rem;}
     .task-card p{margin:0;font-size:0.8rem;line-height:1.6;color:var(--text-secondary);}
     .flow-row{display:flex;align-items:center;flex-wrap:wrap;gap:0.5rem;margin:1.5rem 0;font-size:0.84rem;}
     .flow-box{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.75rem;font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--text-primary);}
@@ -76,29 +81,44 @@
 
       <div class="task-grid">
         <div class="task-card">
-          <div class="task-id">T_A</div>
+          <div class="task-card-header">
+            <svg class="task-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#57cef2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="5" rx="1"/><rect x="2" y="10" width="20" height="5" rx="1"/><rect x="2" y="17" width="20" height="5" rx="1"/></svg>
+            <div class="task-id">T_A</div>
+          </div>
           <h4>Context engineering techniques</h4>
-          <p>Top 5 context engineering techniques in production LLM agents. Real library names, API signatures, working code examples, concrete production trade-offs.</p>
+          <p>Top 5 techniques in production LLM agents. Real library names, API signatures, working code examples, concrete production trade-offs.</p>
         </div>
         <div class="task-card">
-          <div class="task-id">T_B</div>
+          <div class="task-card-header">
+            <svg class="task-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <div class="task-id">T_B</div>
+          </div>
           <h4>Cost envelope management</h4>
-          <p>Best practices for token budget management. Real token pricing, caching APIs, model routing patterns, budget enforcement code, monitoring tools.</p>
+          <p>Best practices for token budget management. Real pricing, caching APIs, model routing patterns, budget enforcement code, and monitoring tooling.</p>
         </div>
         <div class="task-card">
-          <div class="task-id">T_C</div>
+          <div class="task-card-header">
+            <svg class="task-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="task-id">T_C</div>
+          </div>
           <h4>Multi-agent failure modes</h4>
-          <p>Three most common failure modes in multi-agent systems. Real incident examples, detection patterns, mitigation code, specific framework behaviors in LangGraph, AutoGen, CrewAI.</p>
+          <p>The three most common failure modes. Real incident examples, detection patterns, mitigation code, specific framework behaviors in LangGraph, AutoGen, and CrewAI.</p>
         </div>
         <div class="task-card">
-          <div class="task-id">T_D</div>
+          <div class="task-card-header">
+            <svg class="task-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            <div class="task-id">T_D</div>
+          </div>
           <h4>Context window management</h4>
-          <p>Top 3 context window management strategies. Chunking library APIs, working RAG code, summarization with actual models, benchmarked trade-offs.</p>
+          <p>Top 3 strategies with benchmarked trade-offs. Chunking library APIs, working RAG code, and summarization examples using real models.</p>
         </div>
         <div class="task-card" style="grid-column:1/-1;max-width:calc(50% - 0.375rem);">
-          <div class="task-id">T_E</div>
+          <div class="task-card-header">
+            <svg class="task-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <div class="task-id">T_E</div>
+          </div>
           <h4>Prompt injection defense</h4>
-          <p>Best practices for prompt injection defense. Real defense tools (Rebuff, Guardrails AI), working code examples, OWASP LLM Top 10 references, production detection patterns.</p>
+          <p>Best practices with working code. Covers Rebuff, Guardrails AI, OWASP LLM Top 10 references, and production detection patterns.</p>
         </div>
       </div>
 
@@ -130,19 +150,19 @@
 
       <h2>Status and maintenance</h2>
 
-      <pre><code># Show which KB files exist and their age
-python mine_knowledge.py --status
+      <pre><code class="language-bash"># Show which KB files exist and their age
+python mine_knowledge.py --status</code></pre>
 
-T_A    T_A.md             18432  2026-05-31 14:22
+      <pre><code class="language-plaintext">T_A    T_A.md             18432  2026-05-31 14:22
 T_B    T_B.md             21104  2026-05-31 14:38
 T_C    T_C.md             19856  2026-05-31 15:01
 T_D    T_D.md             17280  2026-05-31 15:19
-T_E    (not mined)            —
+T_E    (not mined)            --</code></pre>
 
-# Mine a specific task
+      <pre><code class="language-bash"># Mine a single task (T_E is missing above)
 python mine_knowledge.py T_E
 
-# Re-mine all tasks (refresh stale KB files)
+# Re-mine everything — refresh stale KB files
 python mine_knowledge.py</code></pre>
 
       <p>KB files have a natural staleness: API signatures change, libraries release new versions, frameworks add features. The <code>--status</code> display shows file age so you can spot KB files that are months old and might be citing deprecated APIs. There's no automated staleness check — the decision to re-mine is manual, based on how much the topic landscape has shifted.</p>
@@ -154,6 +174,27 @@ python mine_knowledge.py</code></pre>
       <h2>Relation to the eval suite</h2>
 
       <p>The knowledge base is one of three context enrichment paths the eval suite can use. The others are the memory store (observations from past runs on similar topics) and live research (DDGS calls during the eval run itself). When all three are available, the producer's context window contains verified reference material, historical observations, and fresh search results — a significantly richer grounding than search alone. For the full eval suite design, see <a href="eval-suite.html" style="color:var(--accent-cyan);">The Regression Harness</a>.</p>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+      <a href="./tinytroupe-tasks.html" class="related-post-card">
+        <div class="related-post-num">Eval</div>
+        <div class="related-post-title">Synthetic Eval Task Generation with TinyTroupe</div>
+        <div class="related-post-desc">Eight practitioner archetypes generate role-grounded research tasks via TinyTroupe with auto-derived evaluation criteria.</div>
+      </a>
+      <a href="./harness-data-model.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">The Harness Data Model</div>
+        <div class="related-post-desc">Five JSONL files, one entity hierarchy, and everything tokens_by_stage is actually measuring.</div>
+      </a>
+      <a href="./eval-suite.html" class="related-post-card">
+        <div class="related-post-num">Eval</div>
+        <div class="related-post-title">The Eval Suite</div>
+        <div class="related-post-desc">Five task types, three wiggum dimensions, and ground-truth knowledge base injection for reproducible pipeline evaluation.</div>
+      </a>
+        </div>
+      </section>
     </article>
   </main>
   <footer>
@@ -162,7 +203,7 @@ python mine_knowledge.py</code></pre>
       <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
       <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
     </div>
-    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
   </footer>
 </body>
 </html>

@@ -163,10 +163,26 @@
         </div>
       </div>
 
-      <nav style="margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
-        <a href="../blog/security-view.html" style="color:var(--accent-cyan);text-decoration:none;font-size:0.9rem;">&larr; The Security View</a>
-        <a href="../blog/mcp-view.html" style="color:var(--accent-cyan);text-decoration:none;font-size:0.9rem;">The MCP View &rarr;</a>
-      </nav>
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+      <a href="./submit-view.html" class="related-post-card">
+        <div class="related-post-num">View</div>
+        <div class="related-post-title">The Submit View: Queuing Tasks in Real Time</div>
+        <div class="related-post-desc">Task form, live event feed, plan gate, expandable chain-of-thought accordions, and a result card with rendered Markdown output.</div>
+      </a>
+      <a href="./op-cli.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">The op CLI: A Rich REPL for the Research Harness</div>
+        <div class="related-post-desc">Two invocation modes, eight slash commands, four browser flags, and persistent ~/.op_history for up-arrow recall.</div>
+      </a>
+      <a href="./agent-pipeline.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">Inside agent.py: The Three-Turn Research Pipeline</div>
+        <div class="related-post-desc">Turn 1 searches, Turn 2 synthesizes, Turn 3 runs the Wiggum revision loop. Plus keep_alive estimation and thinking-model detection.</div>
+      </a>
+        </div>
+      </section>
     </article>
   </main>
   <footer><p>&copy; 2026 Nick McCarty &bull; <a href="../blog.html">Blog</a></p></footer>

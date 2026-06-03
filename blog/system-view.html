@@ -233,10 +233,26 @@
 
       <p>The System view is the operational dashboard for the parts of the harness that don't change run-to-run — the governance layer, the inference config, and the skill set. The <a href="./runs-view.html" style="color:var(--accent-cyan);">Runs view</a> covers what happened; the System view covers what the harness is.</p>
 
-      <nav style="margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
-        <a href="../blog/submit-view.html" style="color:var(--accent-cyan);text-decoration:none;font-size:0.9rem;">&larr; The Submit View</a>
-        <a href="../blog.html" style="color:var(--accent-cyan);text-decoration:none;font-size:0.9rem;">All posts &rarr;</a>
-      </nav>
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+      <a href="./server.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">harness/api: The FastAPI Backend</div>
+        <div class="related-post-desc">Async-native FastAPI with modular routers, WebSocket live streaming, and auto OpenAPI docs.</div>
+      </a>
+      <a href="./skills-registry.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">The Skills Registry: Hook Points and 38 Built-In Skills</div>
+        <div class="related-post-desc">38 capabilities wired into six hook points; seven activate automatically via predicate lambdas. Lazy loading keeps import time zero.</div>
+      </a>
+      <a href="./harness-data-model.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">The Harness Data Model</div>
+        <div class="related-post-desc">Five JSONL files, one entity hierarchy, and everything tokens_by_stage is actually measuring.</div>
+      </a>
+        </div>
+      </section>
     </article>
   </main>
 

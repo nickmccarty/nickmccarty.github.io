@@ -88,31 +88,31 @@
       <div class="node-grid">
         <div class="node-card" style="border-color:#4f8ef7;">
           <div class="nc-label" style="color:#4f8ef7;">Task</div>
-          <p>Task text, model, evaluator, task type, duration, total tokens, orchestration flag</p>
+          <p>The entry point. Shows what was asked, which model ran it, total wall-clock time, and whether it was part of an orchestrated multi-task sequence.</p>
         </div>
         <div class="node-card" style="border-color:#a78bfa;">
           <div class="nc-label" style="color:#a78bfa;">Memory</div>
-          <p>Hit count and titles of injected memory observations</p>
+          <p>What the pipeline already knew before searching. Lists the injected ChromaDB observations by title — a non-empty Memory node means this run was faster and cheaper than a cold start.</p>
         </div>
         <div class="node-card" style="border-color:#38bdf8;">
           <div class="nc-label" style="color:#38bdf8;">Plan</div>
-          <p>Search queries, planner notes, known facts, knowledge gaps, planner token usage</p>
+          <p>The two planner queries that seeded search, plus any notes injected into synthesis. A "gaps: []" entry here means the memory store covered the task fully and no searches ran.</p>
         </div>
         <div class="node-card" style="border-color:#fb923c;">
           <div class="nc-label" style="color:#fb923c;">Search</div>
-          <p>Tool name, query text, result size in chars, search-stage token usage</p>
+          <p>One node per web search round. Shows the exact query, how many characters of results it returned, and how many tokens it consumed — useful for spotting wide or redundant search rounds.</p>
         </div>
         <div class="node-card" style="border-color:#22d3ee;">
           <div class="nc-label" style="color:#22d3ee;">Synthesis</div>
-          <p>Output tokens, input tokens, wall-clock time, output file size, full token breakdown by stage, chain-of-thought steps, inline output preview</p>
+          <p>The production pass. Token counts, wall-clock time, output file size, and an inline preview of the generated report — expandable on click without leaving the Explorer.</p>
         </div>
         <div class="node-card" style="border-color:#e3b341;">
           <div class="nc-label" style="color:#e3b341;">Eval</div>
-          <p>Round number, composite score, dimension bars (relevance, completeness, depth, specificity, structure, grounded), issues list, evaluator feedback text, evaluator reasoning block</p>
+          <p>One node per Wiggum revision round. Six colored dimension bars (relevance, completeness, depth, specificity, structure, grounded) make score breakdown instantly readable. Issues and evaluator reasoning are in the inspector panel.</p>
         </div>
         <div class="node-card" style="border-color:#3fb950;">
           <div class="nc-label" style="color:#3fb950;">Output</div>
-          <p>Final status (PASS/FAIL/ERROR), output path, file size, score progression, leverage, TAC hours, inline output preview</p>
+          <p>The terminal node. PASS/FAIL/ERROR badge, the output file path, final composite score, leverage ratio, and a second inline preview — so you can compare synthesis input and final output side by side.</p>
         </div>
       </div>
 
@@ -145,26 +145,26 @@
         <p>The Explorer defaults to the most recent run that has tool calls or Wiggum scores — blank runs and stub records are skipped. Runs that completed before the <code>wiggum_eval_log</code> field was added fall back to the scalar <code>wiggum_scores</code> array, which still renders Eval nodes but without dimension bars or issue text.</p>
       </div>
 
-      <div class="related-section">
-        <h2>Related articles</h2>
-        <div class="related-grid">
-          <a href="runs-view.html" class="related-card">
-            <div class="rc-label">Dashboard</div>
-            <div class="rc-title">The Runs View</div>
-            <div class="rc-desc">Table-level run history — filter, sort, score distribution, and the run detail panel that feeds the Explorer's underlying data.</div>
-          </a>
-          <a href="agent-pipeline.html" class="related-card">
-            <div class="rc-label">Architecture</div>
-            <div class="rc-title">The Agent Pipeline</div>
-            <div class="rc-desc">The three-turn pipeline whose stages the Explorer visualizes — planner, search loop, synthesis, and Wiggum verification.</div>
-          </a>
-          <a href="the-wiggum-loop.html" class="related-card">
-            <div class="rc-label">Verification</div>
-            <div class="rc-title">The Wiggum Loop</div>
-            <div class="rc-desc">The evaluate-revise-verify loop whose rounds, dimension scores, and evaluator reasoning appear in the Explorer's Eval nodes.</div>
-          </a>
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+      <a href="./agent-pipeline.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">Inside agent.py: The Three-Turn Research Pipeline</div>
+        <div class="related-post-desc">Turn 1 searches, Turn 2 synthesizes, Turn 3 runs the Wiggum revision loop. Plus keep_alive estimation and thinking-model detection.</div>
+      </a>
+      <a href="./runs-view.html" class="related-post-card">
+        <div class="related-post-num">View</div>
+        <div class="related-post-title">The Runs View: Pipeline Stage Visualization</div>
+        <div class="related-post-desc">1,442 runs filterable by outcome, a real-time pipeline stage map, per-stage COMPUTE table, and a Context Window treemap.</div>
+      </a>
+      <a href="./harness-data-model.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">The Harness Data Model</div>
+        <div class="related-post-desc">Five JSONL files, one entity hierarchy, and everything tokens_by_stage is actually measuring.</div>
+      </a>
         </div>
-      </div>
+      </section>
     </article>
   </main>
   <footer>
@@ -173,7 +173,7 @@
       <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
       <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
     </div>
-    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
   </footer>
 </body>
 </html>

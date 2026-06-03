@@ -218,11 +218,32 @@
       <p>The Fine-tune view is the last stop on the self-improvement circuit. A run produces an output; the Wiggum evaluator scores it; the Memory view accumulates it; the upvote/downvote RLHF signals label it; the autoresearch loop tries to improve the synthesis instruction; the best and worst outputs become preference pairs; and the fine-tune pipeline updates the model weights. The next run benefits from all of it.</p>
 
       <p>The harness series has now covered the full stack: <a href="runs-view.html">Runs</a> (execution), <a href="analytics-view.html">Analytics</a> (aggregate trends), <a href="../blog/memory-view.html">Memory</a> (observation store), <a href="autoresearch-view.html">Autoresearch</a> (prompt optimization), and Fine-tune (weight optimization). Each view is a window into a different layer of the same feedback loop.</p>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+      <a href="./curator.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">Five Personas, One Veto: Consensus Filtering</div>
+        <div class="related-post-desc">Five LLM personas each score annotated papers; a paper reaches fine-tuning data only if mean >= 3.5 with no veto.</div>
+      </a>
+      <a href="./harness-data-model.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">The Harness Data Model</div>
+        <div class="related-post-desc">Five JSONL files, one entity hierarchy, and everything tokens_by_stage is actually measuring.</div>
+      </a>
+      <a href="./analytics-view.html" class="related-post-card">
+        <div class="related-post-num">View</div>
+        <div class="related-post-title">The Analytics View: Score Trends and Token Spend</div>
+        <div class="related-post-desc">Score trend across 1,442 runs, daily volume and pass-rate charts, token spend with input/output split, and a score distribution histogram.</div>
+      </a>
+        </div>
+      </section>
     </article>
   </main>
 
   <footer>
-    <p>&copy; 2026 Nick McCarty. Built with care.</p>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
   </footer>
 </body>
 </html>

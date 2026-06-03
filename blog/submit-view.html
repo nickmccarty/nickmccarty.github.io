@@ -193,10 +193,26 @@
 
       <p>The Submit view is the fastest path from a research question to a scored output inside the harness. The Runs view then holds the permanent record; the Submit view is designed to be transient — write a task, watch it run, read the result, write the next one.</p>
 
-      <nav style="margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
-        <a href="../blog/runs-view.html" style="color:var(--accent-cyan);text-decoration:none;font-size:0.9rem;">&larr; The Runs View</a>
-        <a href="../blog/system-view.html" style="color:var(--accent-cyan);text-decoration:none;font-size:0.9rem;">The System View &rarr;</a>
-      </nav>
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+      <a href="./runs-view.html" class="related-post-card">
+        <div class="related-post-num">View</div>
+        <div class="related-post-title">The Runs View: Pipeline Stage Visualization</div>
+        <div class="related-post-desc">1,442 runs filterable by outcome, a real-time pipeline stage map, per-stage COMPUTE table, and a Context Window treemap.</div>
+      </a>
+      <a href="./agent-pipeline.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">Inside agent.py: The Three-Turn Research Pipeline</div>
+        <div class="related-post-desc">Turn 1 searches, Turn 2 synthesizes, Turn 3 runs the Wiggum revision loop. Plus keep_alive estimation and thinking-model detection.</div>
+      </a>
+      <a href="./server.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">harness/api: The FastAPI Backend</div>
+        <div class="related-post-desc">Async-native FastAPI with modular routers, WebSocket live streaming, and auto OpenAPI docs.</div>
+      </a>
+        </div>
+      </section>
     </article>
   </main>
 

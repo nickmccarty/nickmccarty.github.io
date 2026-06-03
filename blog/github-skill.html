@@ -29,18 +29,40 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
   <script src="../assets/js/analytics.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => { if (window.hljs) hljs.highlightAll(); });</script>
   <style>
     .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
     .callout.amber{border-left-color:#f59e0b;}
     .callout p{margin:0;font-size:1.05rem;}
     code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
-    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
-    pre code{background:none;padding:0;font-size:inherit;}
+    pre{border:1px solid var(--border-color);border-radius:8px;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;padding:0;}
+    pre code.hljs{border-radius:8px;padding:1.25rem 1.5rem;font-size:inherit;}
     .ops-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;margin:1.5rem 0;}
     @media(max-width:640px){.ops-grid{grid-template-columns:1fr 1fr;}}
-    .op-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:0.7rem 0.85rem;}
-    .op-card .op-name{font-family:'SF Mono','Consolas',monospace;font-size:0.78rem;font-weight:700;color:var(--accent-cyan);margin-bottom:0.2rem;}
+    .op-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-left-width:3px;border-radius:8px;padding:0.7rem 0.85rem;}
+    .op-card.llm{border-left-color:var(--accent-pink);}
+    .op-card.readonly{border-left-color:var(--border-color);}
+    .op-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.25rem;}
+    .op-card .op-name{font-family:'SF Mono','Consolas',monospace;font-size:0.78rem;font-weight:700;color:var(--accent-cyan);}
+    .op-badge{font-size:0.62rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;padding:0.1rem 0.35rem;border-radius:3px;}
+    .op-badge.llm{background:rgba(237,70,195,0.12);color:var(--accent-pink);}
+    .op-badge.ro{background:var(--bg-tertiary);color:var(--text-secondary);}
     .op-card p{margin:0;font-size:0.78rem;line-height:1.5;color:var(--text-secondary);}
+    /* animated push flow */
+    .push-flow{display:flex;align-items:center;flex-wrap:wrap;gap:0;margin:1.5rem 0;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:1.1rem 1.25rem;overflow-x:auto;}
+    .pf-step{display:flex;flex-direction:column;align-items:center;gap:0.25rem;}
+    .pf-box{background:var(--bg-tertiary);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.65rem;font-family:'SF Mono','Consolas',monospace;font-size:0.75rem;color:var(--text-primary);white-space:nowrap;animation:pf-pulse 2.4s ease-in-out infinite;}
+    .pf-box.llm-step{border-color:var(--accent-pink);color:var(--accent-pink);background:rgba(237,70,195,0.07);}
+    .pf-label{font-size:0.62rem;color:var(--text-secondary);letter-spacing:0.03em;}
+    .pf-arrow{color:var(--accent-cyan);font-size:1rem;padding:0 0.4rem;opacity:0.6;align-self:center;padding-bottom:1rem;}
+    @keyframes pf-pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+    .pf-step:nth-child(1) .pf-box{animation-delay:0s;}
+    .pf-step:nth-child(3) .pf-box{animation-delay:0.3s;}
+    .pf-step:nth-child(5) .pf-box{animation-delay:0.6s;}
+    .pf-step:nth-child(7) .pf-box{animation-delay:0.9s;}
+    .pf-step:nth-child(9) .pf-box{animation-delay:1.2s;}
     .flow-row{display:flex;align-items:center;flex-wrap:wrap;gap:0.5rem;margin:1.5rem 0;font-size:0.84rem;}
     .flow-box{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.75rem;font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--text-primary);}
     .flow-arrow{color:var(--text-secondary);}
@@ -76,53 +98,53 @@
       <p>The skill auto-detects the operation from the leading words of the task string — no flags required. A two-word prefix check runs before a one-word check, so <code>pr create</code> routes differently from a bare <code>pr</code>.</p>
 
       <div class="ops-grid">
-        <div class="op-card">
-          <div class="op-name">push</div>
-          <p>Stage all, LLM commit message from diff, commit, push to current branch</p>
+        <div class="op-card llm">
+          <div class="op-card-header"><div class="op-name">push</div><span class="op-badge llm">LLM</span></div>
+          <p>Stages all changes, generates a commit message from the diff, commits, and pushes to the current branch.</p>
         </div>
-        <div class="op-card">
-          <div class="op-name">status</div>
-          <p>Branch name, last 10 commits, working tree status — no LLM call</p>
+        <div class="op-card readonly">
+          <div class="op-card-header"><div class="op-name">status</div><span class="op-badge ro">read-only</span></div>
+          <p>Branch name, last 10 commits, and working tree status. No LLM call.</p>
         </div>
-        <div class="op-card">
-          <div class="op-name">pr create</div>
-          <p>LLM title + body from commit log and diff, then <code>gh pr create</code></p>
+        <div class="op-card llm">
+          <div class="op-card-header"><div class="op-name">pr create</div><span class="op-badge llm">LLM</span></div>
+          <p>LLM-generated title and body from the commit log and diff, then <code>gh pr create</code>.</p>
         </div>
-        <div class="op-card">
-          <div class="op-name">pr list</div>
-          <p>List open PRs via <code>gh pr list</code> — no LLM call</p>
+        <div class="op-card readonly">
+          <div class="op-card-header"><div class="op-name">pr list</div><span class="op-badge ro">read-only</span></div>
+          <p>Lists open PRs. No LLM call.</p>
         </div>
-        <div class="op-card">
-          <div class="op-name">pr view</div>
-          <p>View a specific PR by number, or the current branch's PR</p>
+        <div class="op-card readonly">
+          <div class="op-card-header"><div class="op-name">pr view</div><span class="op-badge ro">read-only</span></div>
+          <p>View a specific PR by number, or the current branch's open PR.</p>
         </div>
-        <div class="op-card">
-          <div class="op-name">pr merge</div>
-          <p>Merge a PR by number using <code>gh pr merge --merge</code></p>
+        <div class="op-card readonly">
+          <div class="op-card-header"><div class="op-name">pr merge</div><span class="op-badge ro">read-only</span></div>
+          <p>Merges a PR by number using <code>gh pr merge --merge</code>.</p>
         </div>
-        <div class="op-card">
-          <div class="op-name">pr review</div>
-          <p>Add a review comment to a PR; PR number is optional if on the right branch</p>
+        <div class="op-card llm">
+          <div class="op-card-header"><div class="op-name">pr review</div><span class="op-badge llm">LLM</span></div>
+          <p>Adds a review comment to a PR. PR number is optional when already on the feature branch.</p>
         </div>
-        <div class="op-card">
-          <div class="op-name">issue create</div>
-          <p>LLM title + body from plain-text problem description, then <code>gh issue create</code></p>
+        <div class="op-card llm">
+          <div class="op-card-header"><div class="op-name">issue create</div><span class="op-badge llm">LLM</span></div>
+          <p>LLM-generated title and body from a plain-text problem description, then <code>gh issue create</code>.</p>
         </div>
-        <div class="op-card">
-          <div class="op-name">issue list</div>
-          <p>List open issues — no LLM call</p>
+        <div class="op-card readonly">
+          <div class="op-card-header"><div class="op-name">issue list</div><span class="op-badge ro">read-only</span></div>
+          <p>Lists open issues. No LLM call.</p>
         </div>
-        <div class="op-card">
-          <div class="op-name">issue view</div>
-          <p>View a specific issue by number</p>
+        <div class="op-card readonly">
+          <div class="op-card-header"><div class="op-name">issue view</div><span class="op-badge ro">read-only</span></div>
+          <p>View a specific issue by number.</p>
         </div>
-        <div class="op-card">
-          <div class="op-name">repo view</div>
-          <p>Show repo info for the current repo or a named <code>owner/repo</code></p>
+        <div class="op-card readonly">
+          <div class="op-card-header"><div class="op-name">repo view</div><span class="op-badge ro">read-only</span></div>
+          <p>Repo info for the current directory or a named <code>owner/repo</code>.</p>
         </div>
-        <div class="op-card">
-          <div class="op-name">repo clone</div>
-          <p>Clone a repo by <code>owner/name</code> via <code>gh repo clone</code></p>
+        <div class="op-card readonly">
+          <div class="op-card-header"><div class="op-name">repo clone</div><span class="op-badge ro">read-only</span></div>
+          <p>Clone a repo by <code>owner/name</code> via <code>gh repo clone</code>.</p>
         </div>
       </div>
 
@@ -132,8 +154,8 @@
 
       <p><strong>Commit messages</strong> — single line, ≤72 characters, imperative mood. The model receives a task hint, a <code>git diff --stat</code> summary, and the first 2,000 characters of the actual diff. The stat summary carries the structural signal (which files changed, how many lines); the diff excerpt grounds the most-changed file. The raw response is stripped of surrounding quotes and truncated at the first newline before committing.</p>
 
-      <pre><code>COMMIT_SYSTEM: "One line only, ≤72 characters. Imperative mood.
-Be specific — name the file or function when it fits.
+      <pre><code class="language-plaintext">COMMIT_SYSTEM: "One line only, <=72 characters. Imperative mood.
+Be specific -- name the file or function when it fits.
 Output ONLY the commit message text. Nothing else."</code></pre>
 
       <p><strong>PR titles and bodies</strong> — the <code>TITLE: / BODY:</code> format. The model receives the branch's commit log and up to 6,000 characters of the diff against <code>origin/main</code>. A regex parser splits the response into title and body; if parsing fails, the first line becomes the title and the full text becomes the body.</p>
@@ -142,23 +164,38 @@ Output ONLY the commit message text. Nothing else."</code></pre>
 
       <h2>The push flow</h2>
 
-      <div class="flow-row">
-        <span class="flow-box">git add -A</span>
-        <span class="flow-arrow">&rarr;</span>
-        <span class="flow-box">diff --cached</span>
-        <span class="flow-arrow">&rarr;</span>
-        <span class="flow-box">LLM commit msg</span>
-        <span class="flow-arrow">&rarr;</span>
-        <span class="flow-box">git commit</span>
-        <span class="flow-arrow">&rarr;</span>
-        <span class="flow-box">git push --set-upstream origin &lt;branch&gt;</span>
+      <div class="push-flow">
+        <div class="pf-step">
+          <div class="pf-box">git add -A</div>
+          <div class="pf-label">stage all</div>
+        </div>
+        <div class="pf-arrow">&rarr;</div>
+        <div class="pf-step">
+          <div class="pf-box">diff --cached</div>
+          <div class="pf-label">read changes</div>
+        </div>
+        <div class="pf-arrow">&rarr;</div>
+        <div class="pf-step">
+          <div class="pf-box llm-step">LLM &mdash; commit msg</div>
+          <div class="pf-label">generate message</div>
+        </div>
+        <div class="pf-arrow">&rarr;</div>
+        <div class="pf-step">
+          <div class="pf-box">git commit -m &ldquo;&hellip;&rdquo;</div>
+          <div class="pf-label">commit</div>
+        </div>
+        <div class="pf-arrow">&rarr;</div>
+        <div class="pf-step">
+          <div class="pf-box">git push --set-upstream</div>
+          <div class="pf-label">push to remote</div>
+        </div>
       </div>
 
       <p>The push operation stages everything, checks whether the cached diff is empty (and returns early if so), then asks the LLM to write the commit message. The model gets the file-change summary and a diff excerpt — not the full diff — to keep the prompt compact and prevent the model from writing commit messages that read like changelogs.</p>
 
       <h2>Invocation examples</h2>
 
-      <pre><code># Push with LLM-generated commit message
+      <pre><code class="language-bash"># Push with LLM-generated commit message
 python agent.py "/github push add lit-review output rendering"
 
 # Create a PR (LLM writes title + body from the branch diff)
@@ -186,6 +223,27 @@ python agent.py "/github repo view nickmccarty/harness-engineering"</code></pre>
       <p>Two pre-flight checks run before any <code>gh</code> operation: <code>gh --version</code> to confirm the CLI is installed, and <code>git rev-parse --git-dir</code> to confirm the working directory is a git repository. Both checks exit with a descriptive error message rather than propagating a subprocess failure — the error message includes the install command for <code>gh</code> if it's missing.</p>
 
       <p>The GitHub skill is registered in <code>skills.py</code> as the <code>/github</code> slash command and is available from both the <code>op.py</code> REPL and <code>agent.py</code> direct invocation. For the full skill registry see <a href="op-cli.html" style="color:var(--accent-cyan);">The op.py CLI</a>.</p>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+      <a href="./wiki-sync.html" class="related-post-card">
+        <div class="related-post-num">Skill</div>
+        <div class="related-post-title">The Wiki Sync Skill: Deterministic Source Extraction</div>
+        <div class="related-post-desc">No LLM required -- regex reads six source files and writes an idempotent Implementation Reference into wiki/pipeline.md.</div>
+      </a>
+      <a href="./skills-registry.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">The Skills Registry: Hook Points and 38 Built-In Skills</div>
+        <div class="related-post-desc">38 capabilities wired into six hook points; seven activate automatically via predicate lambdas. Lazy loading keeps import time zero.</div>
+      </a>
+      <a href="./agent-pipeline.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">Inside agent.py: The Three-Turn Research Pipeline</div>
+        <div class="related-post-desc">Turn 1 searches, Turn 2 synthesizes, Turn 3 runs the Wiggum revision loop. Plus keep_alive estimation and thinking-model detection.</div>
+      </a>
+        </div>
+      </section>
     </article>
   </main>
   <footer>
@@ -194,7 +252,7 @@ python agent.py "/github repo view nickmccarty/harness-engineering"</code></pre>
       <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
       <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
     </div>
-    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
   </footer>
 </body>
 </html>

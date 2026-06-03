@@ -92,13 +92,6 @@
         </p>
       </header>
 
-      <div class="series-nav">
-        <a href="beige-book-rag-dpo.html" class="series-badge">Beige Book RAG</a>
-        <a href="fred-rag-results.html" class="series-badge">FRED RAG Results</a>
-        <a href="osint-enrichment.html" class="series-badge">OSINT Enrichment</a>
-        <span class="series-badge active">Alt-Data Pipeline</span>
-      </div>
-
       <p>
         The <a href="fred-rag-results.html">FRED RAG experiment</a> established that live quantitative series data produces a +0.40 composite score lift over web-search-only control &mdash; three times the effect of Beige Book prose. The mechanism is straightforward: numeric observations are harder to hallucinate around than qualitative summaries, and the evaluator's specificity and grounded dimensions reward the difference.
       </p>
@@ -404,6 +397,27 @@ python -m harness.alpaca_tool cancel-all         # pull all pending orders</code
         The thesis generation experiment is the most immediately actionable: it closes the design loop, produces a Wiggum-scorable artifact, and requires no new infrastructure. Running it against the same six tasks used in the FRED and Beige Book RAG experiments would produce a direct comparison of how much the additional four layers move the needle on composite score.
       </p>
 
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+      <a href="./fred-rag-results.html" class="related-post-card">
+        <div class="related-post-num">Analysis</div>
+        <div class="related-post-title">FRED RAG Results</div>
+        <div class="related-post-desc">+0.40 composite score lift from live quantitative series data -- three times the effect of Beige Book prose.</div>
+      </a>
+      <a href="./harness-data-model.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">The Harness Data Model</div>
+        <div class="related-post-desc">Five JSONL files, one entity hierarchy, and everything tokens_by_stage is actually measuring.</div>
+      </a>
+      <a href="./agent-pipeline.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">Inside agent.py: The Three-Turn Research Pipeline</div>
+        <div class="related-post-desc">Turn 1 searches, Turn 2 synthesizes, Turn 3 runs the Wiggum revision loop. Plus keep_alive estimation and thinking-model detection.</div>
+      </a>
+        </div>
+      </section>
     </article>
   </main>
 

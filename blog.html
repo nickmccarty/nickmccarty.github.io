@@ -86,14 +86,24 @@
   </nav>
 
   <main>
-    <div class="hero" style="padding-bottom: 2rem;">
+    <div class="hero" style="padding-bottom: 1.25rem;">
       <h1><span class="gradient-text">Blog</span></h1>
-      <p class="subtitle">Thoughts on ML, computer vision, and AI research</p>
+      <p class="subtitle">Agentic systems, ML, computer vision, and AI research</p>
+    </div>
+
+    <div class="filter-chips" role="toolbar" aria-label="Filter posts">
+      <button class="chip active" data-filter="all">All</button>
+      <button class="chip" data-filter="dashboard">Dashboard</button>
+      <button class="chip" data-filter="skill">Skills</button>
+      <button class="chip" data-filter="core">Infrastructure</button>
+      <button class="chip" data-filter="analysis">Analysis</button>
+      <button class="chip" data-filter="series">Series</button>
+      <button class="chip" data-filter="cv">Computer Vision</button>
     </div>
 
     <section>
       <div class="blog-grid">
-        <a href="./blog/scratchpad-test-harness-skills.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/scratchpad-test-harness-skills.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The Developer Utility Skills: /scratchpad and /test-harness</h3>
             <div class="meta">June 2, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
@@ -101,7 +111,7 @@
           </div>
         </a>
 
-        <a href="./blog/trade-execution-skills.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/trade-execution-skills.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The Trading Skills: /validate-trades and /execute-trades</h3>
             <div class="meta">June 2, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -109,7 +119,7 @@
           </div>
         </a>
 
-        <a href="./blog/forge-plugin-skills.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/forge-plugin-skills.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The Plugin System: /forge:plugin and /forge:list</h3>
             <div class="meta">June 2, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
@@ -117,7 +127,7 @@
           </div>
         </a>
 
-        <a href="./blog/onboarding-grill-me-skills.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/onboarding-grill-me-skills.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The Interview Skills: /grill-me and /onboarding</h3>
             <div class="meta">June 2, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -125,7 +135,7 @@
           </div>
         </a>
 
-        <a href="./blog/design-build-page-skills.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/design-build-page-skills.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The Site Generation Skills: /design and /build-page</h3>
             <div class="meta">June 2, 2026 &bull; 7 min read &bull; Agentic Harness Engineering</div>
@@ -133,7 +143,7 @@
           </div>
         </a>
 
-        <a href="./blog/site-deck-skills.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/site-deck-skills.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The Site Generation Skills: /site and /deck</h3>
             <div class="meta">June 2, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
@@ -141,7 +151,7 @@
           </div>
         </a>
 
-        <a href="./blog/debug-troubleshoot-skills.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/debug-troubleshoot-skills.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The Diagnostic Skills: /debug and /troubleshoot</h3>
             <div class="meta">June 2, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -149,7 +159,7 @@
           </div>
         </a>
 
-        <a href="./blog/suggest-reorient-skills.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/suggest-reorient-skills.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The Navigation Skills: /suggest and /re-orient</h3>
             <div class="meta">June 2, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
@@ -157,7 +167,7 @@
           </div>
         </a>
 
-        <a href="./blog/explorer-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/explorer-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The Explorer View: Per-Run Pipeline DAG Inspector</h3>
             <div class="meta">June 2, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -165,7 +175,7 @@
           </div>
         </a>
 
-        <a href="./blog/pipeline-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/pipeline-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The Pipeline View: Data Enrichment DAG</h3>
             <div class="meta">June 2, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
@@ -173,7 +183,7 @@
           </div>
         </a>
 
-        <a href="./blog/page-feedback-widget.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/page-feedback-widget.html" style="text-decoration: none; color: inherit;" data-cat="core">
           <div class="card">
             <h3>The Page Feedback Widget: Closing the Loop Between Browser and Agent</h3>
             <div class="meta">June 2, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -181,7 +191,7 @@
           </div>
         </a>
 
-        <a href="./blog/skills-registry.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/skills-registry.html" style="text-decoration: none; color: inherit;" data-cat="core">
           <div class="card">
             <h3>The Skills Registry: Hook Points, Auto-Activation, and 38 Built-In Skills</h3>
             <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -189,7 +199,7 @@
           </div>
         </a>
 
-        <a href="./blog/server.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/server.html" style="text-decoration: none; color: inherit;" data-cat="core">
           <div class="card">
             <h3>harness/api: The FastAPI Backend and Dashboard Server</h3>
             <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -197,7 +207,7 @@
           </div>
         </a>
 
-        <a href="./blog/inference-shim.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/inference-shim.html" style="text-decoration: none; color: inherit;" data-cat="core">
           <div class="card">
             <h3>inference.py: The Unified LLM Backend Shim</h3>
             <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -205,7 +215,7 @@
           </div>
         </a>
 
-        <a href="./blog/search-cache.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/search-cache.html" style="text-decoration: none; color: inherit;" data-cat="core">
           <div class="card">
             <h3>The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts</h3>
             <div class="meta">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
@@ -213,7 +223,7 @@
           </div>
         </a>
 
-        <a href="./blog/planner.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/planner.html" style="text-decoration: none; color: inherit;" data-cat="core">
           <div class="card">
             <h3>The Planner: Two-Pass Pre-Research Analysis</h3>
             <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -221,7 +231,7 @@
           </div>
         </a>
 
-        <a href="./blog/agent-pipeline.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/agent-pipeline.html" style="text-decoration: none; color: inherit;" data-cat="core">
           <div class="card">
             <h3>Inside agent.py: The Three-Turn Research Pipeline</h3>
             <div class="meta">June 1, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
@@ -229,7 +239,7 @@
           </div>
         </a>
 
-        <a href="./blog/docker-deployment.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/docker-deployment.html" style="text-decoration: none; color: inherit;" data-cat="core">
           <div class="card">
             <h3>Deploying the Harness with Docker: CPU, GPU, and Compose Variants</h3>
             <div class="meta">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
@@ -237,7 +247,7 @@
           </div>
         </a>
 
-        <a href="./blog/tinytroupe-tasks.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/tinytroupe-tasks.html" style="text-decoration: none; color: inherit;" data-cat="analysis">
           <div class="card">
             <h3>Synthetic Eval Task Generation with TinyTroupe Personas</h3>
             <div class="meta">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
@@ -245,7 +255,7 @@
           </div>
         </a>
 
-        <a href="./blog/subagent-demo.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/subagent-demo.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The Subagent Demo Suite: Orchestrating Multi-Task Research Portfolios</h3>
             <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -253,7 +263,7 @@
           </div>
         </a>
 
-        <a href="./blog/github-skill.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/github-skill.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The GitHub Skill: LLM-Assisted Git Operations from the Agent Loop</h3>
             <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -261,7 +271,7 @@
           </div>
         </a>
 
-        <a href="./blog/mine-knowledge.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/mine-knowledge.html" style="text-decoration: none; color: inherit;" data-cat="analysis">
           <div class="card">
             <h3>Mining a Ground-Truth Knowledge Base for the Eval Suite</h3>
             <div class="meta">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
@@ -269,7 +279,7 @@
           </div>
         </a>
 
-        <a href="./blog/wiki-sync.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/wiki-sync.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The Wiki Sync Skill: Deterministic Source Extraction and Gap-Targeted Code Injection</h3>
             <div class="meta">June 1, 2026 &bull; 7 min read &bull; Agentic Harness Engineering</div>
@@ -277,7 +287,7 @@
           </div>
         </a>
 
-        <a href="./blog/email-skill.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/email-skill.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs</h3>
             <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -285,7 +295,7 @@
           </div>
         </a>
 
-        <a href="./blog/lit-review-skill.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/lit-review-skill.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The Lit-Review Skill: Seven Steps from ArXiv Query to Rendered Survey</h3>
             <div class="meta">June 1, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
@@ -293,7 +303,7 @@
           </div>
         </a>
 
-        <a href="./blog/playwright-skill.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/playwright-skill.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The Playwright Skill: LLM-Guided Navigation via ARIA Snapshots</h3>
             <div class="meta">June 1, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
@@ -301,7 +311,7 @@
           </div>
         </a>
 
-        <a href="./blog/youtube-transcribe.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/youtube-transcribe.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>YouTube and Media Transcription: Two Paths, One Research Input</h3>
             <div class="meta">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
@@ -309,7 +319,7 @@
           </div>
         </a>
 
-        <a href="./blog/supervisor.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/supervisor.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The Supervisor: Four Convergence Signals and Advisory Interventions</h3>
             <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -317,7 +327,7 @@
           </div>
         </a>
 
-        <a href="./blog/curator.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/curator.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>Five Personas, One Veto: Consensus Filtering for Fine-Tuning Data</h3>
             <div class="meta">June 1, 2026 &bull; 7 min read &bull; Agentic Harness Engineering</div>
@@ -325,7 +335,7 @@
           </div>
         </a>
 
-        <a href="./blog/op-cli.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/op-cli.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The op CLI: A Rich REPL for the Research Harness</h3>
             <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -333,7 +343,7 @@
           </div>
         </a>
 
-        <a href="./blog/mcp-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/mcp-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The MCP View: Exposing the Harness as a Tool Server</h3>
             <div class="meta">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
@@ -341,7 +351,7 @@
           </div>
         </a>
 
-        <a href="./blog/voice-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/voice-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The Voice View: Push-to-Talk, Waveform Capture, and an ASR Training Flywheel</h3>
             <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -349,7 +359,7 @@
           </div>
         </a>
 
-        <a href="./blog/security-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/security-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The Security View: 36 Events, Six Layers, and Real Injection Payloads</h3>
             <div class="meta">June 1, 2026 &bull; 7 min read &bull; Agentic Harness Engineering</div>
@@ -357,7 +367,7 @@
           </div>
         </a>
 
-        <a href="./blog/sessions-artifacts-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/sessions-artifacts-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The Sessions and Artifacts Views: CLI Audit Log and 1,053 Output Files</h3>
             <div class="meta">June 1, 2026 &bull; 5 min read &bull; Agentic Harness Engineering</div>
@@ -365,7 +375,7 @@
           </div>
         </a>
 
-        <a href="./blog/system-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/system-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The System View: Governance Docs, Active Configuration, and 38 Skills</h3>
             <div class="meta">May 31, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
@@ -373,7 +383,7 @@
           </div>
         </a>
 
-        <a href="./blog/submit-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/submit-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The Submit View: Queuing Tasks and Watching the Pipeline Execute in Real Time</h3>
             <div class="meta">May 31, 2026 &bull; 7 min read &bull; Agentic Harness Engineering</div>
@@ -381,7 +391,7 @@
           </div>
         </a>
 
-        <a href="./blog/osint-skill.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/osint-skill.html" style="text-decoration: none; color: inherit;" data-cat="skill">
           <div class="card">
             <h3>The OSINT Skill: 11-Layer Target Enrichment for Research Tasks</h3>
             <div class="meta">May 31, 2026 &bull; 9 min read &bull; Agentic Harness Engineering</div>
@@ -389,7 +399,7 @@
           </div>
         </a>
 
-        <a href="./blog/fine-tune-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/fine-tune-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The Fine-tune View: DPO Training Runs, RL Data, and the Preference Feedback Loop</h3>
             <div class="meta">May 31, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
@@ -397,7 +407,7 @@
           </div>
         </a>
 
-        <a href="./blog/autoresearch-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/autoresearch-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate</h3>
             <div class="meta">May 31, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
@@ -405,7 +415,7 @@
           </div>
         </a>
 
-        <a href="./blog/analytics-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/analytics-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The Analytics View: Score Trends, Token Spend, and Run Distribution</h3>
             <div class="meta">May 31, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -413,7 +423,7 @@
           </div>
         </a>
 
-        <a href="./blog/runs-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/runs-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The Runs View: Pipeline Stage Visualization and Live Run Monitoring</h3>
             <div class="meta">May 31, 2026 &bull; 7 min read &bull; Agentic Harness Engineering</div>
@@ -421,7 +431,7 @@
           </div>
         </a>
 
-        <a href="./blog/research-history-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/research-history-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The Research History View: A Unified Activity Log</h3>
             <div class="meta">June 1, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -429,7 +439,7 @@
           </div>
         </a>
 
-        <a href="./blog/memory-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/memory-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The Memory View: 2,173 Observations, Quality Signals, and an Ontology Graph</h3>
             <div class="meta">May 31, 2026 &bull; 8 min read &bull; Agentic Harness Engineering</div>
@@ -437,7 +447,7 @@
           </div>
         </a>
 
-        <a href="./blog/github-view.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/github-view.html" style="text-decoration: none; color: inherit;" data-cat="dashboard">
           <div class="card">
             <h3>The GitHub View: Repo Health at a Glance</h3>
             <div class="meta">May 31, 2026 &bull; 6 min read &bull; Agentic Harness Engineering</div>
@@ -445,7 +455,7 @@
           </div>
         </a>
 
-        <a href="./blog/perplexity-vs-harness.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/perplexity-vs-harness.html" style="text-decoration: none; color: inherit;" data-cat="analysis">
           <div class="card">
             <h3>Harness vs. Perplexity: Eight Iterations to Parity</h3>
             <div class="meta">May 31, 2026 &bull; 18 min read &bull; Agentic Harness Engineering</div>
@@ -453,7 +463,7 @@
           </div>
         </a>
 
-        <a href="./blog/alt-data-pipeline.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/alt-data-pipeline.html" style="text-decoration: none; color: inherit;" data-cat="analysis">
           <div class="card">
             <h3>The Alt-Data Pipeline: From Beige Book to Paper Trading Thesis</h3>
             <div class="meta">May 31, 2026 &bull; 15 min read &bull; Agentic Harness Engineering</div>
@@ -461,7 +471,7 @@
           </div>
         </a>
 
-        <a href="./blog/sbom-aibom.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/sbom-aibom.html" style="text-decoration: none; color: inherit;" data-cat="analysis">
           <div class="card">
             <h3>SBOM and AIBOM for Agentic Systems</h3>
             <div class="meta">May 25, 2026 &bull; 12 min read &bull; Agentic Harness Engineering</div>
@@ -469,7 +479,7 @@
           </div>
         </a>
 
-        <a href="./blog/agentic-threat-hardening.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/agentic-threat-hardening.html" style="text-decoration: none; color: inherit;" data-cat="analysis">
           <div class="card">
             <h3>Agentic Threat Hardening: The OWASP Top 10, Applied</h3>
             <div class="meta">May 25, 2026 &bull; 25 min read &bull; Agentic Harness Engineering</div>
@@ -477,7 +487,7 @@
           </div>
         </a>
 
-        <a href="./blog/leverage.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/leverage.html" style="text-decoration: none; color: inherit;" data-cat="analysis">
           <div class="card">
             <h3>Leverage: What the Metric Measures, and Why the Replacement Framing Gets the Math Wrong</h3>
             <div class="meta">May 25, 2026 &bull; 12 min read &bull; Analysis</div>
@@ -485,7 +495,7 @@
           </div>
         </a>
 
-        <a href="./blog/agentic-design-patterns.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/agentic-design-patterns.html" style="text-decoration: none; color: inherit;" data-cat="series">
           <div class="card">
             <h3>Agentic Harness Engineering: The Architecture Series</h3>
             <div class="meta">May 25, 2026 &bull; 12 posts &bull; 27 patterns</div>
@@ -493,26 +503,26 @@
           </div>
         </a>
 
-        <div class="card">
+        <div class="card" data-cat="series" style="grid-column: span 2;">
           <h3>Closing the Loops</h3>
-          <div class="meta">May 25, 2026 &bull; 10 extensions &bull; Agentic Harness Engineering</div>
-          <p>Ten posts extending the self-improvement patterns from Section G — the regression harness, the autoresearch optimizer, the voice pipeline, operational telemetry, and RAG context enrichment experiments forming compounding feedback loops.</p>
-          <ul style="margin: 0.75rem 0 0; padding-left: 1.1rem; list-style: none; display: flex; flex-direction: column; gap: 0.35rem;">
-            <li><a href="./blog/eval-suite.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">The Regression Harness &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">9 tasks, 11 criterion functions, CRD runner, and three-persona experiment panel</span></li>
-            <li><a href="./blog/autoresearch-convergence.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">When the Loop Defeats Itself &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">90 experiments, three nested failure modes, four convergence detectors</span></li>
-            <li><a href="./blog/gepa-autoresearch.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">From Hill-Climbing to Pareto &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">GEPA's Pareto frontier explains the autoresearch oscillation</span></li>
-            <li><a href="./blog/skillopt-gaps.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">What SkillOpt Gets Right &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">Three gaps SkillOpt exposes: validation gating, fast/slow epochs, skill-as-artifact</span></li>
-            <li><a href="./blog/audio-data-flywheel.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">The Audio Data Flywheel &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">Voice requests as ASR training data; NeMo RL as the second loop</span></li>
-            <li><a href="./blog/telemetry-router.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">The Telemetry Router &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;"><code>runs.jsonl</code> simultaneously seeds autoresearch, lit-review, and DPO curation</span></li>
-            <li><a href="./blog/memory-observability.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">Memory as Infrastructure &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">Dual-store (SQLite + ChromaDB), quality-weighted ranking, RLHF feedback, UMAP ontology graph</span></li>
-            <li><a href="./blog/convergence-detectors-shipped.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">Building the Detectors &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">What the four proposed convergence detectors became after 107 experiments: regex over cosine, Kimi over hard exit</span></li>
-            <li><a href="./blog/beige-book-rag-dpo.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">Beige Book RAG + DPO Cold Start &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">Prepend: &minus;0.08. Append: +0.13. A falsified hypothesis and what the position swap generates as DPO training signal</span></li>
-            <li><a href="./blog/fred-rag-results.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">Live Data Beats Narrative: FRED RAG Results &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">fred_end: +0.40 vs control. Live FRED series 3&times; more useful than Beige Book prose. Position-swap finding replicates.</span></li>
-            <li><a href="./blog/osint-enrichment.html" style="color: var(--accent-cyan); text-decoration: none; font-size: 0.9rem;">OSINT Enrichment: Nine Layers of Passive Recon &rarr;</a> <span style="color: var(--text-secondary); font-size: 0.82rem;">DNS, RDAP, crt.sh, Wayback, Shodan, urlscan, OTX &mdash; parallel fetch, zero-config baseline, wired into gather_research()</span></li>
-          </ul>
+          <div class="meta" style="margin-bottom:0.9rem;">May 25, 2026 &bull; 11 posts &bull; Agentic Harness Engineering</div>
+          <p style="margin-bottom:1rem;">Extensions to the Architecture Series covering the full self-improvement stack: the regression harness, autoresearch optimizer, convergence detectors, voice pipeline, telemetry routing, and RAG enrichment experiments.</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.5rem;">
+            <a href="./blog/eval-suite.html" class="ext-link">The Regression Harness<span>9 tasks, 11 criteria, CRD runner</span></a>
+            <a href="./blog/autoresearch-convergence.html" class="ext-link">When the Loop Defeats Itself<span>90 experiments, 3 failure modes</span></a>
+            <a href="./blog/gepa-autoresearch.html" class="ext-link">From Hill-Climbing to Pareto<span>GEPA explains the oscillation</span></a>
+            <a href="./blog/skillopt-gaps.html" class="ext-link">What SkillOpt Gets Right<span>Validation gating, fast/slow epochs</span></a>
+            <a href="./blog/audio-data-flywheel.html" class="ext-link">The Audio Data Flywheel<span>Voice requests as ASR training data</span></a>
+            <a href="./blog/telemetry-router.html" class="ext-link">The Telemetry Router<span>runs.jsonl seeds 3 downstream loops</span></a>
+            <a href="./blog/memory-observability.html" class="ext-link">Memory as Infrastructure<span>Dual-store, RLHF, UMAP ontology</span></a>
+            <a href="./blog/convergence-detectors-shipped.html" class="ext-link">Building the Detectors<span>After 107 experiments: regex over cosine</span></a>
+            <a href="./blog/beige-book-rag-dpo.html" class="ext-link">Beige Book RAG + DPO<span>Prepend: -0.08. Append: +0.13.</span></a>
+            <a href="./blog/fred-rag-results.html" class="ext-link">FRED RAG Results<span>+0.40 lift. Live data beats narrative 3x.</span></a>
+            <a href="./blog/osint-enrichment.html" class="ext-link">OSINT Enrichment<span>9 passive recon layers in gather_research()</span></a>
+          </div>
         </div>
 
-        <a href="./blog/harness-roadmap.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/harness-roadmap.html" style="text-decoration: none; color: inherit;" data-cat="series">
           <div class="card">
             <h3>Seven Principles and a Moving Frontier: The Harness Roadmap</h3>
             <div class="meta">May 24, 2026 &bull; 14 min read &bull; Agentic Harness Engineering</div>
@@ -520,7 +530,7 @@
           </div>
         </a>
 
-        <a href="./blog/harness-data-model.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/harness-data-model.html" style="text-decoration: none; color: inherit;" data-cat="series">
           <div class="card">
             <h3>The Harness Data Model: Schemas, Entities, and Query Patterns</h3>
             <div class="meta">May 23, 2026 &bull; 7 subsections &bull; Agentic Harness Engineering</div>
@@ -528,7 +538,7 @@
           </div>
         </a>
 
-        <a href="./blog/experimental-methodology.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/experimental-methodology.html" style="text-decoration: none; color: inherit;" data-cat="series">
           <div class="card">
             <h3>Experiments and Alignment Foundations</h3>
             <div class="meta">May 23, 2026 &bull; 2 posts</div>
@@ -536,7 +546,7 @@
           </div>
         </a>
 
-        <a href="./blog/slm-efficiency.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/slm-efficiency.html" style="text-decoration: none; color: inherit;" data-cat="series">
           <div class="card">
             <h3>Small Language Models and the Efficiency-Accuracy Frontier</h3>
             <div class="meta">May 8, 2026 &bull; 16 min read</div>
@@ -544,7 +554,7 @@
           </div>
         </a>
 
-        <a href="./blog/tool-use-planning.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/tool-use-planning.html" style="text-decoration: none; color: inherit;" data-cat="series">
           <div class="card">
             <h3>Literature Reviews: Tools, Knowledge Graphs, Security, and Fine-Tuning</h3>
             <div class="meta">May 1, 2026 &bull; 4 posts</div>
@@ -552,7 +562,7 @@
           </div>
         </a>
 
-        <a href="./blog/judge-reliability.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/judge-reliability.html" style="text-decoration: none; color: inherit;" data-cat="series">
           <div class="card">
             <h3>Literature Reviews: Evaluation, Judges, and Structured Queries</h3>
             <div class="meta">April 29, 2026 &bull; 5 posts</div>
@@ -560,7 +570,7 @@
           </div>
         </a>
 
-        <a href="./blog/circuit-extraction-pot-detection.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/circuit-extraction-pot-detection.html" style="text-decoration: none; color: inherit;" data-cat="cv">
           <div class="card">
             <h3>Circuit Extraction: Interpreting Object Detectors</h3>
             <div class="meta">January 13, 2026 &bull; 14 min read</div>
@@ -568,7 +578,7 @@
           </div>
         </a>
 
-        <a href="./blog/sam-object-detection.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/sam-object-detection.html" style="text-decoration: none; color: inherit;" data-cat="cv">
           <div class="card">
             <h3>Object Detection on Drone Orthomosaics with SAM</h3>
             <div class="meta">January 10, 2026 &bull; 8 min read</div>
@@ -576,7 +586,7 @@
           </div>
         </a>
 
-        <a href="./blog/sparse-probing-pot-detection.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/sparse-probing-pot-detection.html" style="text-decoration: none; color: inherit;" data-cat="cv">
           <div class="card">
             <h3>Sparse Linear Probing for Efficient Detection</h3>
             <div class="meta">January 9, 2026 &bull; 10 min read</div>
@@ -584,7 +594,7 @@
           </div>
         </a>
 
-        <a href="./blog/extracting-vision-features.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/extracting-vision-features.html" style="text-decoration: none; color: inherit;" data-cat="cv">
           <div class="card">
             <h3>Extracting Features from Vision Model Backbones</h3>
             <div class="meta">January 7, 2026 &bull; 12 min read</div>
@@ -592,7 +602,7 @@
           </div>
         </a>
 
-        <a href="./blog/mechanistic-interpretability.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/mechanistic-interpretability.html" style="text-decoration: none; color: inherit;" data-cat="cv">
           <div class="card">
             <h3>Mechanistic Interpretability for Agricultural AI</h3>
             <div class="meta">January 5, 2026 &bull; 10 min read</div>
@@ -600,7 +610,7 @@
           </div>
         </a>
 
-        <a href="./blog/sam-vs-fasterrcnn-comparison.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/sam-vs-fasterrcnn-comparison.html" style="text-decoration: none; color: inherit;" data-cat="cv">
           <div class="card">
             <h3>SAM vs Faster R-CNN: A Practical Comparison</h3>
             <div class="meta">January 3, 2026 &bull; 10 min read</div>
@@ -608,7 +618,7 @@
           </div>
         </a>
 
-        <a href="./blog/fine-tuning-vision-models.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/fine-tuning-vision-models.html" style="text-decoration: none; color: inherit;" data-cat="cv">
           <div class="card">
             <h3>Fine-Tuning Vision Foundation Models</h3>
             <div class="meta">December 28, 2025 &bull; 12 min read</div>
@@ -616,7 +626,7 @@
           </div>
         </a>
 
-        <a href="./blog/fastapi-web-app.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/fastapi-web-app.html" style="text-decoration: none; color: inherit;" data-cat="cv">
           <div class="card">
             <h3>Building a GeoTIFF Object Detection Web App</h3>
             <div class="meta">December 28, 2025 &bull; 5 min read</div>
@@ -624,7 +634,7 @@
           </div>
         </a>
 
-        <a href="./blog/training-faster-rcnn-geospatial.html" style="text-decoration: none; color: inherit;">
+        <a href="./blog/training-faster-rcnn-geospatial.html" style="text-decoration: none; color: inherit;" data-cat="cv">
           <div class="card">
             <h3>Training Faster R-CNN for Geospatial Object Detection</h3>
             <div class="meta">December 20, 2025 &bull; 8 min read</div>
@@ -636,27 +646,57 @@
     </section>
   </main>
 
+  <style>
+    .filter-chips {
+      display: flex; flex-wrap: wrap; gap: 0.5rem;
+      margin: 0 0 1.75rem; padding: 0;
+    }
+    .chip {
+      font-size: 0.78rem; font-weight: 600; letter-spacing: 0.03em;
+      padding: 0.3rem 0.9rem; border-radius: 99px; cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary); color: var(--text-secondary);
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+    .chip:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+    .chip.active {
+      background: var(--accent-cyan); border-color: var(--accent-cyan);
+      color: var(--bg-primary);
+    }
+    .blog-grid > a[data-cat].hidden,
+    .blog-grid > div.hidden { display: none; }
+    .ext-link {
+      display: flex; flex-direction: column; gap: 0.18rem;
+      padding: 0.55rem 0.75rem; border-radius: 7px;
+      border: 1px solid var(--border-color); background: var(--bg-tertiary);
+      text-decoration: none; color: var(--accent-cyan);
+      font-size: 0.83rem; font-weight: 600; line-height: 1.35;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .ext-link:hover { border-color: var(--accent-cyan); background: rgba(87,206,242,0.06); }
+    .ext-link span { font-size: 0.74rem; font-weight: 400; color: var(--text-secondary); }
+  </style>
   <script>
-    // Pre-defined beautiful gradient combinations
-    const gradients = [
-      // 'linear-gradient(135deg, #667eea, #764ba2)',         // indigo to purple
-      // 'linear-gradient(135deg, #f093fb, #f5576c)',         // pink to coral
-      // 'linear-gradient(135deg, #4facfe, #00f2fe)',         // ocean blue
-      // 'linear-gradient(135deg, #43e97b, #38f9d7)',         // mint to teal
-      // 'linear-gradient(135deg, #fa709a, #fee140)',         // pink to gold
-      // 'linear-gradient(135deg, #a8edea, #fed6e3)',         // soft teal to blush
-      // 'linear-gradient(135deg, #5ee7df, #b490ca)',         // aqua to lavender
-      // 'linear-gradient(135deg, #d299c2, #fef9d7)',         // mauve to cream
-      // 'linear-gradient(135deg, #89f7fe, #66a6ff)',         // sky blue
-      'linear-gradient(135deg, #ed46c3, #a855f7, #57cef2)',
-    ];
-
-    // Shuffle and assign gradients to cards
+    const gradients = ['linear-gradient(135deg, #ed46c3, #a855f7, #57cef2)'];
     const shuffled = [...gradients].sort(() => Math.random() - 0.5);
     document.querySelectorAll('.card h3').forEach((h3, i) => {
       h3.style.background = shuffled[i % shuffled.length];
       h3.style.webkitBackgroundClip = 'text';
       h3.style.backgroundClip = 'text';
+    });
+
+    // Filter chip logic
+    const chips = document.querySelectorAll('.chip');
+    const grid = document.querySelector('.blog-grid');
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        const filter = chip.dataset.filter;
+        grid.querySelectorAll('[data-cat]').forEach(el => {
+          el.classList.toggle('hidden', filter !== 'all' && el.dataset.cat !== filter);
+        });
+      });
     });
   </script>
 

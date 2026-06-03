@@ -546,16 +546,6 @@ def log_invocation(skill: str, args_summary: str, outcome: str, run_id: str = ""
         <p>The most important mitigation isn't in the list above: it is logging. Every security event — blocked code execution, stripped injection candidate, budget-exceeded tool call, hash mismatch — writes a structured record to a JSONL file. Without that log, there is no way to distinguish a false positive from a real attack, and no way to know whether the controls are working. Build the audit trail first, then tune the thresholds.</p>
       </div>
 
-      <div class="post-pagination">
-        <a href="./security-patterns.html" class="pagination-card pagination-prev">
-          <span class="pagination-dir">&larr;&nbsp;Previous</span>
-          <span class="pagination-title">Security Patterns</span>
-        </a>
-        <a href="./prompt-injection-security.html" class="pagination-card pagination-next">
-          <span class="pagination-dir">Next&nbsp;&rarr;</span>
-          <span class="pagination-title">Injection Security</span>
-        </a>
-      </div>
 
       <section class="related-posts">
         <h3 class="related-posts-heading">Related in this series</h3>
@@ -808,7 +798,7 @@ def log_invocation(skill: str, args_summary: str, outcome: str, run_id: str = ""
         </svg>
       </a>
     </div>
-    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
   </footer>
 </body>
 </html>

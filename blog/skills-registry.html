@@ -59,6 +59,10 @@
     .skills-table td{padding:0.45rem 0.75rem;border-bottom:1px solid var(--border-color);vertical-align:top;}
     .skills-table code{font-size:0.78em;}
     .auto-badge{display:inline-block;font-size:0.68rem;font-weight:700;padding:0.1em 0.45em;border-radius:3px;background:rgba(34,197,94,0.15);color:#22c55e;margin-left:0.3rem;}
+    .skill-map-wrap{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:0.75rem 1rem;margin:1.5rem 0;overflow-x:auto;}
+    .skill-map-wrap svg text{font-family:'SF Mono','Consolas',monospace;}
+    .skill-map-caption{font-size:0.77rem;color:var(--text-secondary);text-align:center;margin-top:0.25rem;}
+    @keyframes skill-pulse{0%,100%{r:5}50%{r:7}}
     .related-section{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border-color);}
     .related-section h2{margin-bottom:1.25rem;}
     .related-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
@@ -125,6 +129,11 @@
       </div>
 
       <h2>The full registry</h2>
+
+      <div class="skill-map-wrap">
+        <svg id="skill-map-svg" width="100%" style="display:block;"></svg>
+        <p class="skill-map-caption">Skill map &mdash; organized by pipeline hook type. Green ring = auto-activated. Hover a node for the slash command.</p>
+      </div>
 
       <table class="skills-table">
         <thead><tr><th>Skill</th><th>Hook</th><th>Auto-activation</th></tr></thead>
@@ -201,41 +210,26 @@
         <p>Adding a new skill: register an entry in REGISTRY with a hook, description, and optional auto predicate. The <code>prompt</code> field only applies to <code>pre_synthesis</code> hooks — it's the text appended to the synthesis prompt when the skill is active. All other hooks set <code>prompt: None</code> and implement their behavior through the corresponding hook function in agent.py.</p>
       </div>
 
-      <div class="related-section">
-        <h2>Related articles</h2>
-        <div class="related-grid">
-          <a href="lit-review-skill.html" class="related-card">
-            <div class="rc-label">Skill deep-dive</div>
-            <div class="rc-title">The Lit-Review Skill</div>
-            <div class="rc-desc">arXiv fetch, Semantic Scholar citation enrichment, clustering, and Jinja2 rendering in a single pipeline.</div>
-          </a>
-          <a href="playwright-skill.html" class="related-card">
-            <div class="rc-label">Skill deep-dive</div>
-            <div class="rc-title">The Playwright Skill</div>
-            <div class="rc-desc">LLM-guided Chromium navigation for JS-rendered pages and multi-hop research the fetch layer can't reach.</div>
-          </a>
-          <a href="github-skill.html" class="related-card">
-            <div class="rc-label">Skill deep-dive</div>
-            <div class="rc-title">The GitHub Skill</div>
-            <div class="rc-desc">gh CLI integration for push, PR creation, issue management, and repo ops from inside the agent loop.</div>
-          </a>
-          <a href="email-skill.html" class="related-card">
-            <div class="rc-label">Skill deep-dive</div>
-            <div class="rc-title">The Email Skill</div>
-            <div class="rc-desc">Single and batch personalized email generation from URLs, PDFs, or inline text — with CSV contact support.</div>
-          </a>
-          <a href="agent-pipeline.html" class="related-card">
-            <div class="rc-label">Architecture</div>
-            <div class="rc-title">The Agent Pipeline</div>
-            <div class="rc-desc">How agent.py orchestrates planner, researcher, synthesizer, and Wiggum — and where skill hooks plug in.</div>
-          </a>
-          <a href="orchestration-patterns.html" class="related-card">
-            <div class="rc-label">Architecture</div>
-            <div class="rc-title">Orchestration Patterns</div>
-            <div class="rc-desc">Task routing, subtask parallelism, and queue management across the multi-agent swarm.</div>
-          </a>
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+      <a href="./agent-pipeline.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">Inside agent.py: The Three-Turn Research Pipeline</div>
+        <div class="related-post-desc">Turn 1 searches, Turn 2 synthesizes, Turn 3 runs the Wiggum revision loop. Plus keep_alive estimation and thinking-model detection.</div>
+      </a>
+      <a href="./server.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">harness/api: The FastAPI Backend</div>
+        <div class="related-post-desc">Async-native FastAPI with modular routers, WebSocket live streaming, and auto OpenAPI docs.</div>
+      </a>
+      <a href="./harness-data-model.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">The Harness Data Model</div>
+        <div class="related-post-desc">Five JSONL files, one entity hierarchy, and everything tokens_by_stage is actually measuring.</div>
+      </a>
         </div>
-      </div>
+      </section>
     </article>
   </main>
   <footer>
@@ -244,7 +238,146 @@
       <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
       <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
     </div>
-    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
   </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script>
+  (function() {
+    const data = {name:"REGISTRY",children:[
+      {name:"pre_research",col:"#3b82f6",children:[
+        {name:"/deep",auto:true},{name:"/contextualize",auto:true}
+      ]},
+      {name:"pre_synthesis",col:"#8b5cf6",children:[
+        {name:"/cite"},{name:"/date",auto:true},{name:"/time"},{name:"/scratchpad"},{name:"/beige-book",auto:true}
+      ]},
+      {name:"post_synthesis",col:"#57cef2",children:[
+        {name:"/knowledge-graph",auto:true}
+      ]},
+      {name:"post_wiggum",col:"#22c55e",children:[
+        {name:"/panel",auto:true},{name:"/validate-trades",auto:true}
+      ]},
+      {name:"modifier",col:"#f59e0b",children:[
+        {name:"/wiggum"}
+      ]},
+      {name:"standalone",col:"#ed46c3",children:[
+        {name:"Research",col:"#94a3b8",children:[
+          {name:"/recall"},{name:"/orientation"},{name:"/re-orient"},{name:"/suggest"},{name:"/introspect"}
+        ]},
+        {name:"Browser",col:"#94a3b8",children:[
+          {name:"/playwright"},{name:"/sitemap"},{name:"/crawl"},{name:"/transcribe"}
+        ]},
+        {name:"Content",col:"#94a3b8",children:[
+          {name:"/annotate"},{name:"/annotated-abstract"},{name:"/review"},{name:"/lit-review"}
+        ]},
+        {name:"Site Gen",col:"#94a3b8",children:[
+          {name:"/design"},{name:"/build-page"},{name:"/site"},{name:"/deck"}
+        ]},
+        {name:"Dev Tools",col:"#94a3b8",children:[
+          {name:"/test-harness"},{name:"/sync-wiki"},{name:"/forge:plugin"},{name:"/forge:list"},{name:"/debug"},{name:"/troubleshoot"},{name:"/queue"}
+        ]},
+        {name:"People",col:"#94a3b8",children:[
+          {name:"/email"},{name:"/github"},{name:"/grill-me"},{name:"/onboarding"}
+        ]},
+        {name:"Trading",col:"#94a3b8",children:[
+          {name:"/execute-trades"}
+        ]}
+      ]}
+    ]};
+
+    const svgEl = document.getElementById('skill-map-svg');
+    const W = Math.min(svgEl.getBoundingClientRect().width || 700, 700);
+    const H = 680;
+    svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+    const svg = d3.select(svgEl);
+    const g = svg.append('g').attr('transform', `translate(${W/2},${H/2})`);
+    const R = W / 2 - 90;
+
+    const root = d3.hierarchy(data);
+    const tree = d3.cluster()
+      .size([2 * Math.PI, R])
+      .separation((a, b) => (a.parent === b.parent ? 1 : 1.5) / a.depth);
+    tree(root);
+
+    function radialPoint(angle, r) {
+      return [(r = +r) * Math.cos(angle -= Math.PI / 2), r * Math.sin(angle)];
+    }
+
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg-secondary').trim() || '#1e1e2e';
+    const border = getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim() || '#333';
+    const text1 = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() || '#e2e8f0';
+    const text2 = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#94a3b8';
+
+    // Links
+    g.selectAll('.link')
+      .data(root.links())
+      .join('path').attr('class','link')
+      .attr('fill','none').attr('stroke', border).attr('stroke-width', 0.8)
+      .attr('opacity', 0.5)
+      .attr('d', d => {
+        const [sx, sy] = radialPoint(d.source.x, d.source.y);
+        const [tx, ty] = radialPoint(d.target.x, d.target.y);
+        return `M${sx},${sy}C${sx/2+tx/2},${sy/2+ty/2} ${sx/2+tx/2},${sy/2+ty/2} ${tx},${ty}`;
+      });
+
+    // Nodes
+    const node = g.selectAll('.node')
+      .data(root.descendants())
+      .join('g').attr('class', 'node')
+      .attr('transform', d => {
+        const [x, y] = radialPoint(d.x, d.y);
+        return `translate(${x},${y})`;
+      });
+
+    // Auto-glow ring
+    node.filter(d => d.data.auto)
+      .append('circle')
+      .attr('r', 8).attr('fill', 'none')
+      .attr('stroke', '#22c55e').attr('stroke-width', 1.5)
+      .attr('opacity', 0.6);
+
+    // Node circle
+    node.append('circle')
+      .attr('r', d => d.depth === 0 ? 10 : d.depth === 1 ? 7 : d.depth === 2 && !d.children ? 4 : 5)
+      .attr('fill', d => {
+        if (d.depth === 0) return '#ed46c3';
+        if (d.data.col) return d.data.col;
+        if (d.parent && d.parent.data.col) return d.parent.data.col;
+        if (d.parent && d.parent.parent && d.parent.parent.data.col) return d.parent.parent.data.col;
+        return border;
+      })
+      .attr('opacity', d => d.depth === 0 ? 1 : 0.85)
+      .append('title').text(d => d.data.name);
+
+    // Labels
+    node.append('text')
+      .attr('dy', '0.31em')
+      .attr('x', d => {
+        if (d.depth === 0) return 0;
+        const [x] = radialPoint(d.x, d.y);
+        return x > 0 ? 8 : -8;
+      })
+      .attr('text-anchor', d => {
+        if (d.depth === 0) return 'middle';
+        const [x] = radialPoint(d.x, d.y);
+        return x > 0 ? 'start' : 'end';
+      })
+      .attr('font-size', d => d.depth === 0 ? 11 : d.depth === 1 ? 9.5 : 8)
+      .attr('font-weight', d => d.depth <= 1 ? 700 : 400)
+      .attr('fill', d => {
+        if (d.depth === 0) return text1;
+        if (d.depth === 1) return d.data.col || text1;
+        if (d.data.auto) return '#22c55e';
+        return text2;
+      })
+      .text(d => d.data.name);
+
+    // Center label
+    g.append('text').attr('text-anchor','middle').attr('dy','0.31em')
+      .attr('font-size', 10).attr('font-weight', 700)
+      .attr('fill', text1).text('REGISTRY');
+  })();
+  </script>
 </body>
 </html>

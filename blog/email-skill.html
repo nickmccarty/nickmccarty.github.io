@@ -29,13 +29,16 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YT69KZ91W7');</script>
   <script src="../assets/js/analytics.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => { if (window.hljs) hljs.highlightAll(); });</script>
   <style>
     .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
     .callout.amber{border-left-color:#f59e0b;}
     .callout p{margin:0;font-size:1.05rem;}
     code{font-family:'SF Mono','Consolas',monospace;font-size:0.85em;background:var(--bg-tertiary);padding:0.1em 0.35em;border-radius:3px;}
-    pre{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1.25rem 1.5rem;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;}
-    pre code{background:none;padding:0;font-size:inherit;}
+    pre{border:1px solid var(--border-color);border-radius:8px;overflow-x:auto;margin:1.5rem 0;font-size:0.82rem;line-height:1.6;padding:0;}
+    pre code.hljs{border-radius:8px;padding:1.25rem 1.5rem;font-size:inherit;}
     .two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1.5rem 0;}
     @media(max-width:640px){.two-col{grid-template-columns:1fr;}}
     .info-card{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;padding:1rem 1.1rem;}
@@ -124,7 +127,7 @@
 
       <p>For a batch run, each contact produces a JSON file in the output directory:</p>
 
-      <pre><code>{
+      <pre><code class="language-json">{
   "name": "Jane Smith",
   "affiliation": "UC Berkeley BIDS",
   "to_email": "jsmith@berkeley.edu",
@@ -149,6 +152,27 @@
       <h2>Single-contact mode</h2>
 
       <p>Beyond batch CSV processing, <code>generate_single_email()</code> generates one draft for a named contact with an arbitrary source (URL, file, or inline text). This is the entry point used when the agent dispatches an <code>/email &lt;contact&gt; &lt;goal&gt;</code> slash command from the <code>op</code> CLI — the agent resolves the contact name to an email address from known contacts, assembles the source context, and calls this function directly.</p>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+      <a href="./playwright-skill.html" class="related-post-card">
+        <div class="related-post-num">Skill</div>
+        <div class="related-post-title">The Playwright Skill: LLM-Guided Navigation via ARIA</div>
+        <div class="related-post-desc">ARIA snapshots instead of raw DOM, pre-navigation sitemap planning, completeness oracle, blocked-click memory, SPA URL-change polling.</div>
+      </a>
+      <a href="./osint-skill.html" class="related-post-card">
+        <div class="related-post-num">Skill</div>
+        <div class="related-post-title">The OSINT Skill: 11-Layer Target Enrichment</div>
+        <div class="related-post-desc">Automatic target detection, 11 parallel enrichment layers (DNS through HIBP breach check), and citation-tagged markdown injected into context.</div>
+      </a>
+      <a href="./skills-registry.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">The Skills Registry: Hook Points and 38 Built-In Skills</div>
+        <div class="related-post-desc">38 capabilities wired into six hook points; seven activate automatically via predicate lambdas. Lazy loading keeps import time zero.</div>
+      </a>
+        </div>
+      </section>
     </article>
   </main>
   <footer>
@@ -157,7 +181,7 @@
       <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
       <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
     </div>
-    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
   </footer>
 </body>
 </html>

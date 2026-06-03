@@ -187,6 +187,27 @@ docker compose up
       <div class="callout amber">
         <p>The <code>VLLM_MODEL</code> default is <code>Qwen/Qwen2.5-14B-Instruct</code>, which requires ~28 GB VRAM in bfloat16. Set <code>VLLM_MODEL=Qwen/Qwen2.5-7B-Instruct</code> in <code>.env</code> for a 24 GB card, or use a quantized GGUF variant via Ollama if you don't have a second GPU to dedicate to vLLM.</p>
       </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+      <a href="./server.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">harness/api: The FastAPI Backend</div>
+        <div class="related-post-desc">Async-native FastAPI with modular routers, WebSocket live streaming, and auto OpenAPI docs.</div>
+      </a>
+      <a href="./harness-data-model.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">The Harness Data Model</div>
+        <div class="related-post-desc">Five JSONL files, one entity hierarchy, and everything tokens_by_stage is actually measuring.</div>
+      </a>
+      <a href="./inference-shim.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">inference.py: The Unified LLM Backend Shim</div>
+        <div class="related-post-desc">Routes to Ollama, vLLM, or llama-server via a three-level priority stack with normalized response shapes.</div>
+      </a>
+        </div>
+      </section>
     </article>
   </main>
   <footer>
@@ -195,7 +216,7 @@ docker compose up
       <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
       <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
     </div>
-    <p>&copy; 2026 Nick McCarty. All rights reserved.</p>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
   </footer>
 </body>
 </html>

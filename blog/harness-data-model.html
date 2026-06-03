@@ -519,17 +519,26 @@ ORDER BY tokens DESC;</code></pre>
       <strong>What the schema reveals about system design choices:</strong> The split between <code>runs.jsonl</code> (aggregated) and <code>messages.jsonl</code> (per-turn) mirrors the difference between a metrics database and an event log. <code>runs.jsonl</code> is optimised for analytics queries — pass rate, score distribution, tok/s benchmarks. <code>messages.jsonl</code> is optimised for replay and DPO pair construction — you can reconstruct exact prompt/response pairs, filter by stage, and export chosen/rejected pairs without touching the run record at all. The model is deliberately denormalised for read performance at analysis time, with <code>run_id</code> as the join key when cross-file queries are needed.
     </div>
 
-    <!-- nav -->
-    <div class="post-nav">
-      <div>
-        <div class="nav-label">← Previous</div>
-        <a href="telemetry-router.html">The Telemetry Router</a>
-      </div>
-      <div style="text-align:right">
-        <div class="nav-label">Series</div>
-        <a href="../blog.html">Agentic Harness Engineering</a>
-      </div>
-    </div>
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+      <a href="./server.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">harness/api: The FastAPI Backend</div>
+        <div class="related-post-desc">Async-native FastAPI with modular routers, WebSocket live streaming, and auto OpenAPI docs.</div>
+      </a>
+      <a href="./telemetry-router.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">The Telemetry Router</div>
+        <div class="related-post-desc">Chrome Trace events, structured JSONL logging, and the per-stage token accounting that feeds runs.jsonl.</div>
+      </a>
+      <a href="./runs-view.html" class="related-post-card">
+        <div class="related-post-num">View</div>
+        <div class="related-post-title">The Runs View: Pipeline Stage Visualization</div>
+        <div class="related-post-desc">1,442 runs filterable by outcome, a real-time pipeline stage map, per-stage COMPUTE table, and a Context Window treemap.</div>
+      </a>
+        </div>
+      </section>
   </main>
 
   <footer>

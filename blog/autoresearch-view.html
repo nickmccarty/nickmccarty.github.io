@@ -199,11 +199,32 @@
       <p>The DISCARD count (39 out of 40) might look like failure, but it's the expected behavior of a search process that explores a high-dimensional instruction space with a relatively smooth but hard-to-improve objective. Most directions are wrong. The one that was right produced a permanent baseline improvement that every subsequent run inherits.</p>
 
       <p>The scores produced by KEEP and DISCARD experiments, along with their instruction pairs, feed directly into the <a href="fine-tune-view.html">Fine-tune pipeline</a> as DPO preference pairs — making the autoresearch loop the upstream data source for model improvement, not just prompt improvement.</p>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+      <a href="./analytics-view.html" class="related-post-card">
+        <div class="related-post-num">View</div>
+        <div class="related-post-title">The Analytics View: Score Trends and Token Spend</div>
+        <div class="related-post-desc">Score trend across 1,442 runs, daily volume and pass-rate charts, token spend with input/output split, and a score distribution histogram.</div>
+      </a>
+      <a href="./harness-data-model.html" class="related-post-card">
+        <div class="related-post-num">Core</div>
+        <div class="related-post-title">The Harness Data Model</div>
+        <div class="related-post-desc">Five JSONL files, one entity hierarchy, and everything tokens_by_stage is actually measuring.</div>
+      </a>
+      <a href="./experimental-methodology.html" class="related-post-card">
+        <div class="related-post-num">Analysis</div>
+        <div class="related-post-title">Experimental Methodology: Four Experiments</div>
+        <div class="related-post-desc">Four CRDs that exposed the evaluator ceiling, the producer ceiling, and the synthesis-instruction bottleneck neither model upgrade could fix.</div>
+      </a>
+        </div>
+      </section>
     </article>
   </main>
 
   <footer>
-    <p>&copy; 2026 Nick McCarty. Built with care.</p>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
   </footer>
 </body>
 </html>
