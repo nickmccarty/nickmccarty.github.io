@@ -89,6 +89,11 @@
     <div class="hero" style="padding-bottom: 1.25rem;">
       <h1><span class="gradient-text">Blog</span></h1>
       <p class="subtitle">Agentic systems, ML, computer vision, and AI research</p>
+      <button class="search-trigger" id="searchTrigger" aria-label="Search posts">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.099zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/></svg>
+        Search posts&hellip;
+        <kbd>⌘K</kbd>
+      </button>
     </div>
 
     <div class="filter-chips" role="toolbar" aria-label="Filter posts">
@@ -661,6 +666,25 @@
     </section>
   </main>
 
+  <!-- Search modal -->
+  <div class="search-overlay" id="searchOverlay" role="dialog" aria-modal="true" aria-label="Search" hidden>
+    <div class="search-backdrop" id="searchBackdrop"></div>
+    <div class="search-panel">
+      <div class="search-input-row">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.099zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/></svg>
+        <input type="search" id="searchInput" class="search-input" placeholder="Search titles, descriptions, post content&hellip;" autocomplete="off" spellcheck="false">
+        <button class="search-close" id="searchClose" aria-label="Close search">Esc</button>
+      </div>
+      <div class="search-results" id="searchResults" role="listbox"></div>
+      <div class="search-footer" id="searchFooter">
+        <span><kbd>↑↓</kbd> navigate</span>
+        <span><kbd>↵</kbd> open</span>
+        <span><kbd>Esc</kbd> close</span>
+        <span class="search-index-status" id="searchStatus"></span>
+      </div>
+    </div>
+  </div>
+
   <style>
     .filter-chips {
       display: flex; flex-wrap: wrap; gap: 0.5rem;
@@ -680,6 +704,119 @@
     }
     .blog-grid > a[data-cat].hidden,
     .blog-grid > div.hidden { display: none; }
+
+    /* ── Search trigger ── */
+    .search-trigger {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      margin-top: 1.25rem; padding: 0.55rem 1rem;
+      background: var(--bg-secondary); border: 1px solid var(--border-color);
+      border-radius: 8px; color: var(--text-secondary); font-size: 0.88rem;
+      cursor: pointer; transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .search-trigger:hover { border-color: var(--accent-cyan); color: var(--text-primary); background: var(--bg-tertiary); }
+    .search-trigger kbd {
+      margin-left: 0.5rem; padding: 0.1rem 0.4rem;
+      border: 1px solid var(--border-color); border-radius: 4px;
+      font-size: 0.78rem; font-family: inherit; color: var(--text-secondary);
+      background: var(--bg-tertiary);
+    }
+
+    /* ── Search overlay ── */
+    .search-overlay {
+      position: fixed; inset: 0; z-index: 2000;
+      display: flex; align-items: flex-start; justify-content: center;
+      padding-top: clamp(60px, 10vh, 120px);
+    }
+    .search-overlay[hidden] { display: none; }
+    .search-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(1, 4, 9, 0.82);
+      backdrop-filter: blur(4px);
+    }
+    .search-panel {
+      position: relative; z-index: 1;
+      width: min(680px, calc(100vw - 2rem));
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+    .search-input-row {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .search-icon { color: var(--text-secondary); flex-shrink: 0; }
+    .search-input {
+      flex: 1; background: none; border: none; outline: none;
+      font-size: 1rem; color: var(--text-primary); font-family: inherit;
+    }
+    .search-input::placeholder { color: var(--text-secondary); }
+    .search-input::-webkit-search-cancel-button { display: none; }
+    .search-close {
+      background: var(--bg-tertiary); border: 1px solid var(--border-color);
+      border-radius: 4px; color: var(--text-secondary);
+      font-size: 0.75rem; padding: 0.15rem 0.45rem; cursor: pointer;
+      font-family: inherit; flex-shrink: 0;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .search-close:hover { border-color: var(--accent-cyan); color: var(--text-primary); }
+
+    .search-results { max-height: 420px; overflow-y: auto; }
+    .search-result {
+      display: flex; flex-direction: column; gap: 0.3rem;
+      padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color);
+      text-decoration: none; color: inherit; cursor: pointer;
+      transition: background 0.1s;
+    }
+    .search-result:last-child { border-bottom: none; }
+    .search-result:hover, .search-result.active {
+      background: var(--bg-tertiary);
+    }
+    .search-result.active { border-left: 2px solid var(--accent-cyan); padding-left: calc(1rem - 2px); }
+    .sr-header { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+    .sr-title { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); }
+    .sr-date { font-size: 0.75rem; color: var(--text-secondary); }
+    .sr-cat {
+      font-size: 0.66rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; padding: 0.1rem 0.45rem; border-radius: 4px;
+      border: 1px solid var(--border-color); color: var(--accent-cyan);
+      background: rgba(87,206,242,0.08);
+    }
+    .sr-snippet {
+      font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .sr-snippet mark, .sr-title mark {
+      background: rgba(87,206,242,0.25); color: var(--accent-cyan);
+      border-radius: 2px; padding: 0 1px;
+    }
+    .search-empty {
+      padding: 2rem 1rem; text-align: center;
+      color: var(--text-secondary); font-size: 0.88rem;
+    }
+    .search-loading {
+      padding: 1.5rem 1rem; text-align: center;
+      color: var(--text-secondary); font-size: 0.85rem;
+    }
+    .search-footer {
+      display: flex; gap: 1rem; align-items: center;
+      padding: 0.55rem 1rem; border-top: 1px solid var(--border-color);
+      font-size: 0.75rem; color: var(--text-secondary);
+    }
+    .search-footer kbd {
+      border: 1px solid var(--border-color); border-radius: 3px;
+      padding: 0.05rem 0.3rem; font-size: 0.7rem; font-family: inherit;
+      background: var(--bg-tertiary);
+    }
+    .search-index-status { margin-left: auto; font-size: 0.72rem; opacity: 0.6; }
+
+    @media (max-width: 480px) {
+      .search-trigger { font-size: 0.82rem; padding: 0.45rem 0.75rem; }
+      .search-panel { width: calc(100vw - 1rem); }
+      .search-footer { gap: 0.6rem; flex-wrap: wrap; }
+    }
     .ext-link {
       display: flex; flex-direction: column; gap: 0.18rem;
       padding: 0.55rem 0.75rem; border-radius: 7px;
@@ -692,17 +829,9 @@
     .ext-link span { font-size: 0.74rem; font-weight: 400; color: var(--text-secondary); }
   </style>
   <script>
-    const gradients = ['linear-gradient(135deg, #ed46c3, #a855f7, #57cef2)'];
-    const shuffled = [...gradients].sort(() => Math.random() - 0.5);
-    document.querySelectorAll('.card h3').forEach((h3, i) => {
-      h3.style.background = shuffled[i % shuffled.length];
-      h3.style.webkitBackgroundClip = 'text';
-      h3.style.backgroundClip = 'text';
-    });
-
-    // Filter chip logic
+    // ── Filter chip logic ──────────────────────────────────────────────────
     const chips = document.querySelectorAll('.chip');
-    const grid = document.querySelector('.blog-grid');
+    const grid  = document.querySelector('.blog-grid');
     chips.forEach(chip => {
       chip.addEventListener('click', () => {
         chips.forEach(c => c.classList.remove('active'));
@@ -713,6 +842,169 @@
         });
       });
     });
+
+    // ── Search ────────────────────────────────────────────────────────────
+    const overlay   = document.getElementById('searchOverlay');
+    const backdrop  = document.getElementById('searchBackdrop');
+    const input     = document.getElementById('searchInput');
+    const results   = document.getElementById('searchResults');
+    const status    = document.getElementById('searchStatus');
+    const trigger   = document.getElementById('searchTrigger');
+    const closeBtn  = document.getElementById('searchClose');
+
+    let index = null;     // search-index.json contents (lazy loaded)
+    let loading = false;
+    let activeIdx = -1;
+
+    function openSearch() {
+      overlay.hidden = false;
+      input.focus();
+      input.select();
+      if (!index && !loading) loadIndex();
+    }
+    function closeSearch() {
+      overlay.hidden = true;
+      activeIdx = -1;
+    }
+
+    trigger.addEventListener('click', openSearch);
+    backdrop.addEventListener('click', closeSearch);
+    closeBtn.addEventListener('click', closeSearch);
+    document.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
+      if (!overlay.hidden) {
+        if (e.key === 'Escape') closeSearch();
+        if (e.key === 'ArrowDown') { e.preventDefault(); moveActive(1); }
+        if (e.key === 'ArrowUp')   { e.preventDefault(); moveActive(-1); }
+        if (e.key === 'Enter')     { e.preventDefault(); openActive(); }
+      }
+    });
+
+    async function loadIndex() {
+      loading = true;
+      results.innerHTML = '<div class="search-loading">Loading index&hellip;</div>';
+      try {
+        const r = await fetch('./search-index.json');
+        index = await r.json();
+        status.textContent = index.length + ' posts indexed';
+        const q = input.value.trim();
+        if (q.length > 1) runSearch(q);
+        else results.innerHTML = '';
+      } catch(e) {
+        results.innerHTML = '<div class="search-empty">Could not load search index.</div>';
+      }
+      loading = false;
+    }
+
+    input.addEventListener('input', () => {
+      activeIdx = -1;
+      const q = input.value.trim();
+      if (!index) { if (!loading && q.length > 1) loadIndex(); return; }
+      if (q.length < 2) { results.innerHTML = ''; return; }
+      runSearch(q);
+    });
+
+    function tokenize(s) {
+      return s.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(w => w.length > 1);
+    }
+
+    function highlight(text, words) {
+      if (!words.length) return text;
+      const esc = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      const re  = new RegExp('(' + esc.join('|') + ')', 'gi');
+      return text.replace(re, '<mark>$1</mark>');
+    }
+
+    function snippet(body, words) {
+      if (!body) return '';
+      const lower = body.toLowerCase();
+      let best = -1;
+      for (const w of words) {
+        const i = lower.indexOf(w);
+        if (i !== -1 && (best === -1 || i < best)) best = i;
+      }
+      const start = Math.max(0, best === -1 ? 0 : best - 60);
+      const raw   = (start > 0 ? '&hellip;' : '') +
+                    body.slice(start, start + 200).replace(/</g, '&lt;') +
+                    (start + 200 < body.length ? '&hellip;' : '');
+      return highlight(raw, words);
+    }
+
+    function score(entry, words) {
+      let s = 0;
+      const t = (entry.t || '').toLowerCase();
+      const p = (entry.p || '').toLowerCase();
+      const b = (entry.b || '').toLowerCase();
+      for (const w of words) {
+        if (t.includes(w)) s += 5 * (t.split(w).length - 1);
+        if (p.includes(w)) s += 3 * (p.split(w).length - 1);
+        if (b.includes(w)) s += 1 * Math.min(b.split(w).length - 1, 10);
+      }
+      return s;
+    }
+
+    function runSearch(q) {
+      const words = tokenize(q);
+      if (!words.length) { results.innerHTML = ''; return; }
+
+      const scored = index
+        .map(e => ({ e, s: score(e, words) }))
+        .filter(x => x.s > 0)
+        .sort((a, b) => b.s - a.s)
+        .slice(0, 12);
+
+      if (!scored.length) {
+        results.innerHTML = '<div class="search-empty">No results for &ldquo;' + q.replace(/</g,'&lt;') + '&rdquo;</div>';
+        return;
+      }
+
+      const cat = { 'Agentic Harness Engineering': 'core', 'Computer Vision': 'cv' };
+
+      results.innerHTML = scored.map(({ e }, i) => {
+        const href    = './blog/' + e.s;
+        const title   = highlight((e.t || '').replace(/</g,'&lt;'), words);
+        const snip    = snippet(e.b, words) || highlight((e.p || '').replace(/</g,'&lt;'), words);
+        const dateStr = (e.d || '').replace(/(\d{4})-(\d{2})-(\d{2})/, (_, y, m, d) => {
+          const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+          return mo[+m-1] + ' ' + +d + ', ' + y;
+        });
+        const catLabel = (e.c || '').split(' — ')[0].replace('Agentic Harness Engineering','Harness');
+        return `<a class="search-result" href="${href}" data-idx="${i}" role="option">
+          <div class="sr-header">
+            <span class="sr-title">${title}</span>
+            ${catLabel ? `<span class="sr-cat">${catLabel}</span>` : ''}
+            ${dateStr ? `<span class="sr-date">${dateStr}</span>` : ''}
+          </div>
+          ${snip ? `<div class="sr-snippet">${snip}</div>` : ''}
+        </a>`;
+      }).join('');
+
+      results.querySelectorAll('.search-result').forEach(el => {
+        el.addEventListener('mouseenter', () => {
+          setActive(+el.dataset.idx);
+        });
+      });
+    }
+
+    function setActive(i) {
+      const items = results.querySelectorAll('.search-result');
+      items.forEach(el => el.classList.remove('active'));
+      activeIdx = i;
+      if (i >= 0 && i < items.length) {
+        items[i].classList.add('active');
+        items[i].scrollIntoView({ block: 'nearest' });
+      }
+    }
+    function moveActive(dir) {
+      const items = results.querySelectorAll('.search-result');
+      if (!items.length) return;
+      setActive(Math.max(0, Math.min(items.length - 1, activeIdx + dir)));
+    }
+    function openActive() {
+      const items = results.querySelectorAll('.search-result');
+      const target = activeIdx >= 0 ? items[activeIdx] : items[0];
+      if (target) { closeSearch(); window.location.href = target.href; }
+    }
   </script>
 
   <footer>
