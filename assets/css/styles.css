@@ -452,6 +452,14 @@ article h3 {
   -webkit-text-fill-color: transparent;
 }
 
+article h1 code, article h2 code, article h3 code, article h4 code {
+  background: none;
+  padding: 0;
+  -webkit-text-fill-color: initial;
+  color: inherit;
+  font-size: 0.9em;
+}
+
 article p {
   color: var(--text-primary);
   margin-bottom: 1.25rem;
