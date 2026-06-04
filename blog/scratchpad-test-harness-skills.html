@@ -47,6 +47,14 @@
     .related-card:hover{border-color:var(--accent-cyan);transform:translateY(-2px);}
     .related-card .rc-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-cyan);margin-bottom:0.35rem;}
     .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
+    .hook-steps{display:flex;flex-direction:column;gap:0.75rem;margin:1.5rem 0;}
+    .hook-step{display:flex;gap:1rem;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:1.1rem 1.25rem;}
+    .hook-num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--accent-cyan);color:var(--bg-primary);font-size:0.8rem;font-weight:700;display:flex;align-items:center;justify-content:center;}
+    .hook-body{flex:1;min-width:0;}
+    .hook-body strong{display:block;color:var(--text-primary);margin-bottom:0.4rem;font-size:0.92rem;}
+    .hook-body p{margin:0 0 0.75rem;font-size:0.88rem;color:var(--text-secondary);line-height:1.6;}
+    .hook-body p:last-child{margin-bottom:0;}
+    .hook-body pre{margin:0.75rem 0 0;}
     .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
   </style>
 </head>
@@ -83,21 +91,30 @@ python agent.py "/scratchpad Read autoresearch.tsv and report the score trajecto
 # Any task type — /scratchpad forces the tool loop regardless
 python agent.py "/scratchpad How many PASS runs did qwen3.6-35b produce in the last 7 days?"</code></pre>
 
-      <p><code>/scratchpad</code> is a <code>pre_synthesis</code> hook. It doesn't run code itself — it changes two things about the pipeline:</p>
+      <p><code>/scratchpad</code> is a <code>pre_synthesis</code> hook. It doesn't run code itself &mdash; it changes two things about the pipeline:</p>
 
-      <ol>
-        <li><strong>Forces the tool loop.</strong> The check <code>plan.task_type in ("research", "best_practices") and not _scratchpad_active</code> gates the Python tool loop. When <code>/scratchpad</code> is active, that gate opens regardless of task type.</li>
-        <li><strong>Injects a strict synthesis instruction.</strong> The <code>SYNTH_INSTRUCTION_SCRATCHPAD</code> prompt injection is prepended to the synthesis context:</li>
-      </ol>
-
-      <pre><code class="language-text">IMPORTANT: This task requires concrete, deterministic values.
+      <div class="hook-steps">
+        <div class="hook-step">
+          <div class="hook-num">1</div>
+          <div class="hook-body">
+            <strong>Forces the tool loop</strong>
+            <p>The check <code>plan.task_type in ("research", "best_practices") and not _scratchpad_active</code> gates the Python tool loop. When <code>/scratchpad</code> is active, that gate opens regardless of task type &mdash; every synthesis turn gets access to code execution.</p>
+          </div>
+        </div>
+        <div class="hook-step">
+          <div class="hook-num">2</div>
+          <div class="hook-body">
+            <strong>Injects a strict synthesis instruction</strong>
+            <p><code>SYNTH_INSTRUCTION_SCRATCHPAD</code> is prepended to the synthesis context, replacing the default prompt. It forbids the model from hedging or paraphrasing computed values &mdash; if a number wasn't computed, it must say so explicitly rather than approximating.</p>
+            <pre><code class="language-text">IMPORTANT: This task requires concrete, deterministic values.
 Do NOT estimate or approximate any numbers — use only exact values
 from the Code execution results block above.
 If a value was computed and saved via save_result(), treat it as ground truth.
 Reference computed values directly (e.g. 'exactly 42 runs matched' not 'approximately 40').
 If a required value was not computed, state that explicitly rather than guessing.</code></pre>
-
-      <p>The synthesis model sees the code execution output in the context window and this instruction forbids it from hedging or paraphrasing the numbers. If the code didn't compute something, the model must say so explicitly rather than approximating.</p>
+          </div>
+        </div>
+      </div>
 
       <h2>Prior result injection</h2>
 

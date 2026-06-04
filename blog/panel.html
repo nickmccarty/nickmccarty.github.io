@@ -32,6 +32,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script>document.addEventListener('DOMContentLoaded', () => { if (window.hljs) hljs.highlightAll(); });</script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
   <style>
     .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
     .callout.warning{border-left-color:var(--accent-pink);}
@@ -49,9 +50,8 @@
     .persona-card.critic h4{color:var(--accent-pink);}
     .persona-card.newcomer h4{color:#a78bfa;}
     .persona-card p{margin:0.4rem 0 0;font-size:0.87rem;color:var(--text-secondary);line-height:1.6;}
-    .flow-diagram{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:10px;padding:1.5rem;margin:1.5rem 0;font-family:'SF Mono','Consolas',monospace;font-size:0.82rem;line-height:1.9;color:var(--text-secondary);}
-    .flow-diagram .hi{color:var(--accent-cyan);}
-    .flow-diagram .hi2{color:var(--accent-pink);}
+    .diagram-container{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:12px;padding:1.5rem 1rem 1rem;margin:1.5rem 0;overflow-x:auto;}
+    #panel-flow-svg text{font-family:inherit;}
     table.prop-table{width:100%;border-collapse:collapse;font-size:0.87rem;margin:1rem 0;}
     table.prop-table th,table.prop-table td{padding:0.55rem 0.8rem;border:1px solid var(--border-color);text-align:left;vertical-align:top;}
     table.prop-table th{background:var(--bg-secondary);font-weight:600;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-secondary);}
@@ -147,16 +147,8 @@ if _PANEL_ENABLED:
         <code>panel_issues()</code> prefixes each issue with the originating persona name&mdash;<code>[Domain Practitioner] entry price field missing concrete example</code>&mdash;so the producer knows the evaluative lens behind each critique. Issues already present in Wiggum&rsquo;s own list are deduplicated before appending.
       </p>
 
-      <div class="flow-diagram">
-        <span class="hi">evaluate()</span> &rarr; Wiggum scores + issues<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
-        <span class="hi">run_panel()</span> &rarr; 3 threads in parallel<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
-        <span class="hi">panel_issues()</span> &rarr; deduplicated, persona-prefixed<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
-        issues = wiggum_issues + new_panel_issues<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
-        <span class="hi2">revise()</span> receives enriched issue list
+      <div class="diagram-container">
+        <svg id="panel-flow-svg" width="100%" viewBox="0 0 480 360" preserveAspectRatio="xMidYMid meet"></svg>
       </div>
 
       <p>
@@ -226,6 +218,77 @@ python -m harness.panel "summarize RLHF literature" review.md Qwen3-Coder:30b</c
       </section>
     </article>
   </main>
+
+  <script>
+  (function drawPanelFlow() {
+    const svg    = d3.select('#panel-flow-svg');
+    const W = 480, H = 360;
+    const cx = W / 2;
+
+    function cssVar(v) {
+      return getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+    }
+    const cyan  = cssVar('--accent-cyan');
+    const pink  = cssVar('--accent-pink');
+    const bg2   = cssVar('--bg-tertiary');
+    const tPri  = cssVar('--text-primary');
+    const tSec  = cssVar('--text-secondary');
+    const bord  = cssVar('--border-color');
+
+    const defs = svg.append('defs');
+    ['arr-cyan','arr-pink'].forEach((id,i) => {
+      defs.append('marker').attr('id', id)
+        .attr('viewBox','0 0 10 10').attr('refX',9).attr('refY',5)
+        .attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
+        .append('path').attr('d','M 0 0 L 10 5 L 0 10 z')
+        .attr('fill', i === 0 ? cyan : pink);
+    });
+
+    const nodes = [
+      { y: 36,  label: 'evaluate()',         sub: 'Wiggum scores + issues',        color: cyan  },
+      { y: 108, label: 'run_panel()',         sub: '3 personas in parallel',        color: cyan  },
+      { y: 180, label: 'panel_issues()',      sub: 'deduplicated, persona-prefixed',color: cyan  },
+      { y: 252, label: 'merge issues',        sub: 'wiggum_issues + new_panel_issues', color: bord },
+      { y: 324, label: 'revise()',            sub: 'receives enriched issue list',  color: pink  },
+    ];
+
+    const bW = 320, bH = 48;
+
+    nodes.forEach((n, i) => {
+      const isLast = i === nodes.length - 1;
+      const stroke = n.color === bord ? bord : n.color;
+      const tColor = n.color === bord ? tPri  : n.color;
+
+      svg.append('rect')
+        .attr('x', cx - bW/2).attr('y', n.y - bH/2)
+        .attr('width', bW).attr('height', bH).attr('rx', 8)
+        .attr('fill', bg2).attr('stroke', stroke).attr('stroke-width', n.color === bord ? 1 : 1.5);
+
+      svg.append('text')
+        .attr('x', cx).attr('y', n.y - 7)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill', tColor).attr('font-size', 13).attr('font-weight', '700')
+        .attr('font-family', "'SF Mono', Consolas, monospace")
+        .text(n.label);
+
+      svg.append('text')
+        .attr('x', cx).attr('y', n.y + 10)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill', tSec).attr('font-size', 10)
+        .text(n.sub);
+
+      if (!isLast) {
+        const markId = nodes[i+1].color === pink ? 'arr-pink' : 'arr-cyan';
+        svg.append('line')
+          .attr('x1', cx).attr('y1', n.y + bH/2)
+          .attr('x2', cx).attr('y2', nodes[i+1].y - bH/2 - 2)
+          .attr('stroke', markId === 'arr-pink' ? pink : cyan)
+          .attr('stroke-width', 1.5)
+          .attr('marker-end', `url(#${markId})`);
+      }
+    });
+  })();
+  </script>
 
   <footer>
     <div class="social-links">

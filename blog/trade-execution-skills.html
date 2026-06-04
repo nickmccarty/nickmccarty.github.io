@@ -31,6 +31,7 @@
   <script src="../assets/js/analytics.js" defer></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
   <script>document.addEventListener('DOMContentLoaded', () => { if (window.hljs) hljs.highlightAll(); });</script>
   <style>
     .callout{border-left:3px solid var(--accent-cyan);padding:1rem 1.25rem;background:var(--bg-secondary);border-radius:0 8px 8px 0;margin:1.5rem 0;}
@@ -44,6 +45,8 @@
     .check-table td{padding:0.45rem 0.75rem;border-bottom:1px solid var(--border-color);vertical-align:top;}
     .check-table code{font-size:0.78em;}
     .status-pass{color:#22c55e;font-weight:700;}
+    .diagram-container{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:12px;padding:1.5rem 1rem 1rem;margin:1.5rem 0;overflow-x:auto;}
+    #exec-flow-svg text{font-family:inherit;}
     .status-warn{color:#f59e0b;font-weight:700;}
     .status-flag{color:#ef4444;font-weight:700;}
     .related-section{margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border-color);}
@@ -126,17 +129,11 @@ python agent.py "/execute-trades path/to/thesis.md"
 # Live mode — submits bracket orders to Alpaca paper trading
 python agent.py "/execute-trades path/to/thesis.md --live"</code></pre>
 
-      <p>The skill calls <code>execute_from_thesis_file()</code> from <code>alpaca_orders.py</code> which uses the same parser as <code>/validate-trades</code>. It then:</p>
+      <p>The skill calls <code>execute_from_thesis_file()</code> from <code>alpaca_orders.py</code> which uses the same parser as <code>/validate-trades</code>. Each order passes through seven steps:</p>
 
-      <ol>
-        <li>Fetches account state (portfolio value, buying power) — returns early if Alpaca is unavailable</li>
-        <li>Loads existing positions to avoid doubling into held names</li>
-        <li>For each thesis, checks the validation status — theses with FLAG are skipped by default</li>
-        <li>Builds a bracket order spec: entry (limit or market), take_profit (limit), stop_loss (stop)</li>
-        <li>Validates bracket invariants: for Long, <code>take_profit &gt; stop_loss</code>; for Short, <code>take_profit &lt; stop_loss</code></li>
-        <li>In dry-run mode, prints the order params. In live mode, posts to <code>POST /v2/orders</code></li>
-        <li>Appends an <code>## Orders</code> section to the thesis file with the results</li>
-      </ol>
+      <div class="diagram-container">
+        <svg id="exec-flow-svg" width="100%" viewBox="0 0 520 430" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
 
       <p>All orders use GTC (Good Till Cancelled) time-in-force with whole-share quantities. Fractional shares are not used because Alpaca's bracket order class requires integer quantities with GTC.</p>
 
@@ -178,5 +175,83 @@ python agent.py "/execute-trades path/to/thesis.md --live"</code></pre>
     </div>
     <p class="footer-copy">&copy; 2026 Nick McCarty</p>
   </footer>
+  <script>
+  (function drawExecFlow() {
+    const svg = d3.select('#exec-flow-svg');
+    const W = 520, cx = W / 2;
+
+    function cssVar(v) {
+      return getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+    }
+    const cyan = cssVar('--accent-cyan');
+    const pink = cssVar('--accent-pink');
+    const amber = '#f59e0b';
+    const bg2  = cssVar('--bg-tertiary');
+    const tPri = cssVar('--text-primary');
+    const tSec = cssVar('--text-secondary');
+    const bord = cssVar('--border-color');
+    const green = '#22c55e';
+
+    const defs = svg.append('defs');
+    defs.append('marker').attr('id','arr-e')
+      .attr('viewBox','0 0 10 10').attr('refX',9).attr('refY',5)
+      .attr('markerWidth',5).attr('markerHeight',5).attr('orient','auto')
+      .append('path').attr('d','M 0 0 L 10 5 L 0 10 z').attr('fill', tSec);
+
+    const steps = [
+      { label:'Fetch account state',    sub:'portfolio value + buying power — abort if unavailable', color: cyan  },
+      { label:'Load existing positions', sub:'skip names already held to avoid doubling in',         color: cyan  },
+      { label:'Check validation status', sub:'FLAG theses skipped by default',                       color: amber },
+      { label:'Build bracket spec',      sub:'entry (limit/market)  ·  take_profit  ·  stop_loss',  color: cyan  },
+      { label:'Validate invariants',     sub:'Long: take_profit > stop_loss  ·  Short: reversed',    color: amber },
+      { label:'Submit or dry-run',       sub:'dry-run prints params  ·  live posts to /v2/orders',   color: pink  },
+      { label:'Append ## Orders section',sub:'results written back to the thesis file',              color: green },
+    ];
+
+    const bW = 420, bH = 44, gap = 61;
+    const startY = 28;
+
+    steps.forEach((s, i) => {
+      const y = startY + i * gap;
+      const stroke = s.color;
+      const tCol   = s.color;
+
+      if (i > 0) {
+        svg.append('line')
+          .attr('x1', cx).attr('y1', startY + (i-1)*gap + bH/2)
+          .attr('x2', cx).attr('y2', y - bH/2 - 2)
+          .attr('stroke', tSec).attr('stroke-width', 1.5)
+          .attr('marker-end', 'url(#arr-e)');
+      }
+
+      svg.append('rect')
+        .attr('x', cx - bW/2).attr('y', y - bH/2)
+        .attr('width', bW).attr('height', bH).attr('rx', 7)
+        .attr('fill', bg2).attr('stroke', stroke).attr('stroke-width', 1.5);
+
+      // step number badge
+      svg.append('circle')
+        .attr('cx', cx - bW/2 + 20).attr('cy', y)
+        .attr('r', 11).attr('fill', stroke);
+      svg.append('text')
+        .attr('x', cx - bW/2 + 20).attr('y', y)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill', bg2).attr('font-size', 10).attr('font-weight','700')
+        .text(i + 1);
+
+      svg.append('text')
+        .attr('x', cx - bW/2 + 40).attr('y', y - 7)
+        .attr('dominant-baseline','middle')
+        .attr('fill', tCol).attr('font-size', 12).attr('font-weight','700')
+        .text(s.label);
+
+      svg.append('text')
+        .attr('x', cx - bW/2 + 40).attr('y', y + 9)
+        .attr('dominant-baseline','middle')
+        .attr('fill', tSec).attr('font-size', 9.5)
+        .text(s.sub);
+    });
+  })();
+  </script>
 </body>
 </html>
