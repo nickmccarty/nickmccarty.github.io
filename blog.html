@@ -1006,6 +1006,10 @@
       const target = activeIdx >= 0 ? items[activeIdx] : items[0];
       if (target) { closeSearch(); window.location.href = target.href; }
     }
+
+    // Pre-fill search from ?q= URL param (enables SiteLinksSearchBox)
+    const _urlQ = new URLSearchParams(window.location.search).get('q');
+    if (_urlQ) { input.value = _urlQ; openSearch(); if (index) runSearch(_urlQ); }
   </script>
 
   <footer>

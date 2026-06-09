@@ -29,7 +29,15 @@
     "name": "Nick McCarty",
     "url": "https://nickmccarty.me",
     "description": "Data science, ML/AI consulting, and technical writing by Nick McCarty.",
-    "publisher": { "@id": "https://nickmccarty.me/#person" }
+    "publisher": { "@id": "https://nickmccarty.me/#person" },
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://nickmccarty.me/blog.html?q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
   }
   </script>
 
