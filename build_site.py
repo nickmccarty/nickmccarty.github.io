@@ -124,6 +124,8 @@ for path, pri, freq, mod in STATIC:
     ]
 
 for p in posts:
+    if (BLOG_DIR / p["s"]).stat().st_size > 500_000:
+        continue  # skip heavyweight notebook exports — Google can't index them
     url = f"{BASE_URL}/blog/{p['s']}"
     mod = p["_date"]
     # Higher priority for series/analysis posts
