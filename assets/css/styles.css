@@ -329,6 +329,9 @@ section p {
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
+}
+
+.highlight-card--with-image {
   display: flex;
   gap: 1.25rem;
   align-items: flex-start;
@@ -347,7 +350,7 @@ section p {
 }
 
 @media (max-width: 480px) {
-  .highlight-card { flex-direction: column; }
+  .highlight-card--with-image { flex-direction: column; }
   .highlight-card-image { width: 100%; }
 }
 
