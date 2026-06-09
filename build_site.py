@@ -87,7 +87,8 @@ def read_post(path: Path) -> dict:
 
 
 # ── Load all posts ────────────────────────────────────────────────────────────
-posts = [read_post(p) for p in sorted(BLOG_DIR.glob("*.html"))]
+posts = [read_post(p) for p in sorted(BLOG_DIR.glob("*.html"))
+         if not p.stem.endswith("-embed")]
 print(f"Loaded {len(posts)} posts")
 
 
