@@ -16,6 +16,9 @@ Thumbs.db
 # Node modules (if any)
 node_modules/
 
+# Playwright CLI artifacts
+.playwright-cli/
+
 # Environment files
 .env
 .env.local
