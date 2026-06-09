@@ -102,6 +102,22 @@ sz = Path("search-index.json").stat().st_size // 1024
 print(f"search-index.json  {len(posts)} entries  {sz} KB")
 
 
+# ── 1b. keywords.json ─────────────────────────────────────────────────────────
+kw_map = {}
+for p in posts:
+    raw = jld(p["_html"], "keywords")
+    if not raw:
+        continue
+    kws = [k.strip() for k in raw.split(",") if k.strip()][:3]
+    if kws:
+        kw_map[p["s"]] = kws
+Path("keywords.json").write_text(
+    json.dumps(kw_map, ensure_ascii=False, separators=(",", ":")),
+    encoding="utf-8",
+)
+print(f"keywords.json      {len(kw_map)} posts tagged")
+
+
 # ── 2. Sitemap ────────────────────────────────────────────────────────────────
 STATIC = [
     ("",             1.0, "monthly",  TODAY),

@@ -1012,6 +1012,25 @@
     if (_urlQ) { input.value = _urlQ; openSearch(); if (index) runSearch(_urlQ); }
   </script>
 
+  <script>
+    (async () => {
+      try {
+        const kwMap = await fetch('./keywords.json').then(r => r.json());
+        document.querySelectorAll('.blog-grid a[href]').forEach(a => {
+          const slug = a.getAttribute('href').replace('./blog/', '');
+          const kws = kwMap[slug];
+          if (!kws || !kws.length) return;
+          const card = a.querySelector('.card');
+          if (!card) return;
+          const div = document.createElement('div');
+          div.className = 'card-keywords';
+          div.innerHTML = kws.map(k => `<span class="kw-pill">${k.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span>`).join('');
+          card.appendChild(div);
+        });
+      } catch {}
+    })();
+  </script>
+
   <footer>
     <div class="social-links">
       <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn">

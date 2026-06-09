@@ -258,6 +258,25 @@ section p {
   margin-bottom: 0;
 }
 
+.card-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.kw-pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  line-height: 1;
+  padding: 0.25em 0.6em;
+  border: 1px solid var(--border-color);
+  border-radius: 99px;
+  color: var(--text-secondary);
+  pointer-events: none;
+  user-select: none;
+}
+
 /* Blog Grid */
 .blog-grid {
   display: grid;

@@ -129,6 +129,8 @@
 
 ### Computer Vision
 
+- [Layer 4 Circuit Diagram](https://nickmccarty.me/blog/layer4-circuit-diagram.html)
+- [Circuit Extraction Notebook](https://nickmccarty.me/blog/circuit-extraction-notebook.html)
 - [Circuit Extraction for Pot Detection](https://nickmccarty.me/blog/circuit-extraction-pot-detection.html)
 - [Sparse Linear Probing for Efficient Detection](https://nickmccarty.me/blog/sparse-probing-pot-detection.html)
 - [Extracting Features from Vision Model Backbones](https://nickmccarty.me/blog/extracting-vision-features.html)
@@ -144,9 +146,7 @@
 
 ### Other
 
-- [circuit-extraction-notebook](https://nickmccarty.me/blog/circuit-extraction-notebook.html)
 - [harness-data-model](https://nickmccarty.me/blog/harness-data-model.html)
-- [layer4-circuit-diagram](https://nickmccarty.me/blog/layer4-circuit-diagram.html)
 - [Seven Principles and a Moving Frontier: The Harness Roadmap](https://nickmccarty.me/blog/harness-roadmap.html)
 
 ## Site notes
