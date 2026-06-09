@@ -935,9 +935,11 @@
       let s = 0;
       const t = (entry.t || '').toLowerCase();
       const p = (entry.p || '').toLowerCase();
+      const k = (entry.k || '').toLowerCase();
       const b = (entry.b || '').toLowerCase();
       for (const w of words) {
         if (t.includes(w)) s += 5 * (t.split(w).length - 1);
+        if (k.includes(w)) s += 4 * (k.split(w).length - 1);
         if (p.includes(w)) s += 3 * (p.split(w).length - 1);
         if (b.includes(w)) s += 1 * Math.min(b.split(w).length - 1, 10);
       }

@@ -82,7 +82,9 @@ def read_post(path: Path) -> dict:
     ex = TextExtractor()
     ex.feed(html)
     body = ex.text()[:BODY_CAP]
-    return dict(s=path.name, t=title, d=date_, c=section, p=desc, b=body,
+    kw_raw = jld(html, "keywords")
+    kws = kw_raw if kw_raw else ""
+    return dict(s=path.name, t=title, d=date_, c=section, p=desc, b=body, k=kws,
                 _html=html, _date=date_ or TODAY)
 
 
