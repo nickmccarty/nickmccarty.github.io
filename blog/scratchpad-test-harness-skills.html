@@ -91,7 +91,7 @@ python agent.py "/scratchpad Read autoresearch.tsv and report the score trajecto
 # Any task type — /scratchpad forces the tool loop regardless
 python agent.py "/scratchpad How many PASS runs did qwen3.6-35b produce in the last 7 days?"</code></pre>
 
-      <p><code>/scratchpad</code> is a <code>pre_synthesis</code> hook. It doesn't run code itself &mdash; it changes two things about the pipeline:</p>
+      <p><code>/scratchpad</code> is a <code>pre_synthesis</code> hook that modifies two aspects of the pipeline rather than running code directly:</p>
 
       <div class="hook-steps">
         <div class="hook-step">
