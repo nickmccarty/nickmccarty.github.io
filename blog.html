@@ -1020,14 +1020,24 @@
         const kwMap = await fetch('./keywords.json').then(r => r.json());
         document.querySelectorAll('.blog-grid a[href]').forEach(a => {
           const slug = a.getAttribute('href').replace('./blog/', '');
-          const kws = kwMap[slug];
-          if (!kws || !kws.length) return;
           const card = a.querySelector('.card');
           if (!card) return;
+
+          // Strip " • Category" from meta line
+          const meta = card.querySelector('.meta');
+          if (meta) {
+            const last = Math.max(meta.innerHTML.lastIndexOf('•'), meta.innerHTML.lastIndexOf('&bull;'));
+            if (last !== -1) meta.innerHTML = meta.innerHTML.slice(0, last).trimEnd();
+          }
+
+          // Inject keyword pills right after meta
+          const kws = kwMap[slug];
+          if (!kws || !kws.length) return;
           const div = document.createElement('div');
           div.className = 'card-keywords';
           div.innerHTML = kws.map(k => `<span class="kw-pill">${k.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span>`).join('');
-          card.appendChild(div);
+          if (meta) meta.insertAdjacentElement('afterend', div);
+          else card.appendChild(div);
         });
       } catch {}
     })();
