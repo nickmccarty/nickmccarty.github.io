@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Voice View: Push-to-Talk Notes, Task Dictation, and the Audio Data Flywheel</title>
   <meta name="description" content="A tour of the harness Voice panel: push-to-talk recording via Space bar, Note and Task modes with LLM transcription correction, auto-transcribe to training corpus, and direct task submission from speech.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/voice-view.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="The Voice View: Push-to-Talk Notes, Task Dictation, and the Audio Data Flywheel">
   <meta property="og:description" content="Hold Space to record, release to transcribe. Note mode saves to corpus. Task mode corrects the transcript with an LLM and submits to the run queue. Three result types: task, answer, note.">
   <meta property="og:url" content="https://nickmccarty.me/blog/voice-view.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/voice-view.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Voice View: Push-to-Talk Notes, Task Dictation, and the Audio Data Flywheel">
   <meta name="twitter:description" content="Hold Space to record, release to transcribe. Note mode auto-feeds the ASR training corpus. Task mode submits to the run queue after LLM correction.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Voice View: Push-to-Talk Notes, Task Dictation, and the Audio Data Flywheel","description":"A tour of the harness Voice panel: push-to-talk recording, Note and Task modes with LLM transcription correction, auto-transcribe to training corpus, and direct task submission from speech.","keywords":"push-to-talk recording, note and task modes, audio data flywheel","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-23","dateModified":"2026-05-23","url":"https://nickmccarty.me/blog/voice-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/voice-view.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Voice View: Push-to-Talk Notes, Task Dictation, and the Audio Data Flywheel","description":"A tour of the harness Voice panel: push-to-talk recording, Note and Task modes with LLM transcription correction, auto-transcribe to training corpus, and direct task submission from speech.","keywords":"push-to-talk recording, note and task modes, audio data flywheel","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-23","dateModified":"2026-05-23","url":"https://nickmccarty.me/blog/voice-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"push-to-talk recording"},{"@type":"Thing","name":"note and task modes"},{"@type":"Thing","name":"audio data flywheel"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -51,6 +53,7 @@
     .step-num{font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--accent-cyan);min-width:28px;font-weight:700;}
     .step-text{font-size:0.88rem;color:var(--text-secondary);line-height:1.55;}
   </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Voice View: Push-to-Talk Notes, Task Dictation, and the Audio Data Flywheel","item":"https://nickmccarty.me/blog/voice-view.html"}]}</script>
 </head>
 <body>
   <nav>

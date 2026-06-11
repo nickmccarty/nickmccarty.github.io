@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Agentic Threat Hardening: The OWASP Top 10, Applied</title>
   <meta name="description" content="OWASP's new Agentic Security Initiative Top 10 maps ten attack classes that emerge when LLMs gain tools, memory, and autonomy. Here's the full audit against the harness — what we have, what we're missing, and the mitigations worth implementing.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/agentic-threat-hardening.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="Agentic Threat Hardening: The OWASP Top 10, Applied">
   <meta property="og:description" content="OWASP's ASI Top 10 maps ten attack classes that emerge when LLMs gain tools, memory, and autonomy — audited against the harness and translated into concrete mitigations.">
   <meta property="og:url" content="https://nickmccarty.me/blog/agentic-threat-hardening.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/agentic-threat-hardening.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Agentic Threat Hardening: The OWASP Top 10, Applied">
   <meta name="twitter:description" content="Ten attack classes from OWASP's new agentic security taxonomy — audited against the harness, translated into mitigations.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Agentic Threat Hardening: The OWASP Top 10, Applied","description":"OWASP's ASI Top 10 maps ten attack classes that emerge when LLMs gain tools, memory, and autonomy — audited against the harness and translated into concrete mitigations.","keywords":"OWASP ASI Top 10, LLM harness hardening, memory poisoning mitigation","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-05-25","dateModified":"2026-05-25","url":"https://nickmccarty.me/blog/agentic-threat-hardening.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/agentic-threat-hardening.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og-default.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/agentic-threat-hardening.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Agentic Threat Hardening: The OWASP Top 10, Applied","description":"OWASP's ASI Top 10 maps ten attack classes that emerge when LLMs gain tools, memory, and autonomy — audited against the harness and translated into concrete mitigations.","keywords":"OWASP ASI Top 10, LLM harness hardening, memory poisoning mitigation","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-05-25","dateModified":"2026-05-25","url":"https://nickmccarty.me/blog/agentic-threat-hardening.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/agentic-threat-hardening.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og/agentic-threat-hardening.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"OWASP ASI Top 10"},{"@type":"Thing","name":"LLM harness hardening"},{"@type":"Thing","name":"memory poisoning mitigation"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">

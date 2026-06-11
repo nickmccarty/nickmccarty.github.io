@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate</title>
   <meta name="description" content="A tour of the harness Autoresearch UI: real-time supervision of the SYNTH_INSTRUCTION optimizer. 40 experiments run, 1 kept, 39 discarded, best score 8.530, average delta -1.038.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/autoresearch-view.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate">
   <meta property="og:description" content="Real-time supervision of the SYNTH_INSTRUCTION optimizer: 40 experiments, 1 keep, 3% keep rate, best score 8.530, avg delta -1.038. The experiment table reveals what the optimizer actually tried.">
   <meta property="og:url" content="https://nickmccarty.me/blog/autoresearch-view.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/autoresearch-view.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate">
   <meta name="twitter:description" content="40 SYNTH_INSTRUCTION experiments, 1 kept at 8.530, 39 discarded. The autoresearch loop polls every 5s and surfaces the full mutation log in a live dashboard.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate","description":"A tour of the harness Autoresearch UI — real-time supervision of the SYNTH_INSTRUCTION optimizer, 40 experiments, 1 keep, best score 8.530, avg delta -1.038.","keywords":"Autoresearch UI tour, SYNTH_INSTRUCTION optimizer supervision, Agentic Harness Engineering experiments","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-20","dateModified":"2026-05-20","url":"https://nickmccarty.me/blog/autoresearch-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/autoresearch-view.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate","description":"A tour of the harness Autoresearch UI — real-time supervision of the SYNTH_INSTRUCTION optimizer, 40 experiments, 1 keep, best score 8.530, avg delta -1.038.","keywords":"Autoresearch UI tour, SYNTH_INSTRUCTION optimizer supervision, Agentic Harness Engineering experiments","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-20","dateModified":"2026-05-20","url":"https://nickmccarty.me/blog/autoresearch-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"Autoresearch UI tour"},{"@type":"Thing","name":"SYNTH_INSTRUCTION optimizer supervision"},{"@type":"Thing","name":"Agentic Harness Engineering experiments"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">

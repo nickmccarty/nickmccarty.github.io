@@ -1,17 +1,19 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification</title>
   <meta name="description" content="ODA improves LLM+KG accuracy by 12.87%. GRASP achieves zero-shot SOTA on Wikidata without fine-tuning. ETLCH extracts structured JSON/KG/NER with a billion-parameter LoRA model trained on 100–1000 samples. What the ontology and SPARQL literature means for upgrading harness memory architecture.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/structured-knowledge-queries.html">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification">
   <meta property="og:description" content="Six papers on bridging LLMs and knowledge graphs: observation-driven agents, low-resource structured extraction, SPARQL capability benchmarks, zero-shot federated query generation, and KB-grounded chain of verification for pharmaceutical auditing.">
   <meta property="og:url" content="https://nickmccarty.me/blog/structured-knowledge-queries.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/structured-knowledge-queries.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -21,9 +23,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification">
   <meta name="twitter:description" content="ODA +12.87% accuracy via observation-action-reflection. GRASP: zero-shot SPARQL SOTA on Wikidata. ETLCH: billion-param LoRA on 100–1000 samples for structured extraction. PharmGraph-Auditor: KB-grounded CoV for prescription safety.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/structured-knowledge-queries.png">
   <!-- JSON-LD -->
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification","description":"ODA improves LLM+KG accuracy by 12.87% via recursive observation-action-reflection. GRASP achieves zero-shot SPARQL SOTA on Wikidata without fine-tuning.","keywords":"grounded generation techniques, SPARQL query optimization, ontology-based knowledge graphs","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-04-29","dateModified":"2026-04-29","url":"https://nickmccarty.me/blog/structured-knowledge-queries.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/structured-knowledge-queries.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og-default.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification","description":"ODA improves LLM+KG accuracy by 12.87% via recursive observation-action-reflection. GRASP achieves zero-shot SPARQL SOTA on Wikidata without fine-tuning.","keywords":"grounded generation techniques, SPARQL query optimization, ontology-based knowledge graphs","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-04-29","dateModified":"2026-04-29","url":"https://nickmccarty.me/blog/structured-knowledge-queries.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/structured-knowledge-queries.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og/structured-knowledge-queries.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"grounded generation techniques"},{"@type":"Thing","name":"SPARQL query optimization"},{"@type":"Thing","name":"ontology-based knowledge graphs"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">

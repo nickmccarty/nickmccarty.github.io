@@ -5,3 +5,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://nickmccarty.me/sitemap.xml
+Feed: https://nickmccarty.me/feed.xml

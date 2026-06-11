@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The GitHub Skill: LLM-Assisted Git Operations from the Agent Loop</title>
   <meta name="description" content="github_skill.py wraps the gh CLI with 12 LLM-assisted operations — auto-generating commit messages from diffs, PR titles and bodies from branch history, and issue descriptions from plain-text problem statements — all invokable with a single /github command.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/github-skill.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="The GitHub Skill: LLM-Assisted Git Operations from the Agent Loop">
   <meta property="og:description" content="12 GitHub operations auto-detected from task strings, with LLM-generated commit messages, PR titles/bodies, and issue descriptions — invokable directly from the harness agent loop.">
   <meta property="og:url" content="https://nickmccarty.me/blog/github-skill.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/github-skill.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The GitHub Skill: LLM-Assisted Git Operations from the Agent Loop">
   <meta name="twitter:description" content="github_skill.py wraps gh CLI with LLM-generated commit messages, PR titles, and issue descriptions — 12 operations dispatched from a task string, no subcommand flags required.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The GitHub Skill: LLM-Assisted Git Operations from the Agent Loop","description":"github_skill.py wraps the gh CLI with 12 LLM-assisted operations invokable from the harness agent loop with a single /github command.","keywords":"github skill operations, llm assisted git commands, agent loop github integration","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-27","dateModified":"2026-05-27","url":"https://nickmccarty.me/blog/github-skill.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/github-skill.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The GitHub Skill: LLM-Assisted Git Operations from the Agent Loop","description":"github_skill.py wraps the gh CLI with 12 LLM-assisted operations invokable from the harness agent loop with a single /github command.","keywords":"github skill operations, llm assisted git commands, agent loop github integration","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-27","dateModified":"2026-05-27","url":"https://nickmccarty.me/blog/github-skill.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"github skill operations"},{"@type":"Thing","name":"llm assisted git commands"},{"@type":"Thing","name":"agent loop github integration"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -67,6 +69,7 @@
     .flow-box{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.75rem;font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--text-primary);}
     .flow-arrow{color:var(--text-secondary);}
   </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The GitHub Skill: LLM-Assisted Git Operations from the Agent Loop","item":"https://nickmccarty.me/blog/github-skill.html"}]}</script>
 </head>
 <body>
   <nav>

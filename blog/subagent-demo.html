@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Subagent Demo Suite: Orchestrating Multi-Task Research Portfolios</title>
   <meta name="description" content="Two orchestration demos show the harness working on a portfolio of related tasks: v1 submits six sequential literature-review tasks via the Flask queue; v2 adds data-grounded self-analysis tasks and a parallel execution mode through the MCP HTTP server.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/subagent-demo.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="The Subagent Demo Suite: Orchestrating Multi-Task Research Portfolios">
   <meta property="og:description" content="subagent_demo.py and subagent_demo_v2.py show sequential and parallel multi-task orchestration — Flask queue for one-at-a-time throughput, MCP HTTP server for concurrent execution up to MCP_MAX_CONCURRENCY.">
   <meta property="og:url" content="https://nickmccarty.me/blog/subagent-demo.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/subagent-demo.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Subagent Demo Suite: Orchestrating Multi-Task Research Portfolios">
   <meta name="twitter:description" content="Two orchestration demos — v1 sequential Flask queue with LLM-rendered landing page, v2 data-grounded self-analysis with optional parallel MCP execution and deterministic render_html output.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Subagent Demo Suite: Orchestrating Multi-Task Research Portfolios","description":"Two orchestration scripts show sequential and parallel multi-task research execution via the Flask queue and MCP HTTP server.","keywords":"subagent demo suite, Flask queue orchestration, MCP HTTP server multi-task","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-27","dateModified":"2026-05-27","url":"https://nickmccarty.me/blog/subagent-demo.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/subagent-demo.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Subagent Demo Suite: Orchestrating Multi-Task Research Portfolios","description":"Two orchestration scripts show sequential and parallel multi-task research execution via the Flask queue and MCP HTTP server.","keywords":"subagent demo suite, Flask queue orchestration, MCP HTTP server multi-task","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-27","dateModified":"2026-05-27","url":"https://nickmccarty.me/blog/subagent-demo.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"subagent demo suite"},{"@type":"Thing","name":"Flask queue orchestration"},{"@type":"Thing","name":"MCP HTTP server multi-task"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -45,6 +47,7 @@
     .flow-box{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.75rem;font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--text-primary);}
     .flow-arrow{color:var(--text-secondary);}
   </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Subagent Demo Suite: Orchestrating Multi-Task Research Portfolios","item":"https://nickmccarty.me/blog/subagent-demo.html"}]}</script>
 </head>
 <body>
   <nav>

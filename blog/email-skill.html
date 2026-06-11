@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs</title>
   <meta name="description" content="email_skill.py drafts personalized outreach emails from a CSV of conference speakers — two LLM calls per contact for subject line and body, slide content fetched via MarkItDown, and every draft logged to runs.jsonl for dashboard visibility.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/email-skill.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs">
   <meta property="og:description" content="Two LLM calls per contact — subject line and body — with slide content fetched via MarkItDown, per-contact JSON output, a manifest file, and every draft logged to runs.jsonl as task_type email_draft.">
   <meta property="og:url" content="https://nickmccarty.me/blog/email-skill.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/email-skill.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs">
   <meta name="twitter:description" content="Two LLM calls per contact, slide content via MarkItDown, warm-and-specific system prompt, manifest JSON — and every draft visible in the harness dashboard.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs","description":"email_skill.py drafts personalized outreach emails from a CSV of conference speakers with two LLM calls per contact and full dashboard logging.","keywords":"email skill personalized outreach, conference speaker CSV outreach, LLM email drafting tool","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-26","dateModified":"2026-05-26","url":"https://nickmccarty.me/blog/email-skill.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/email-skill.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs","description":"email_skill.py drafts personalized outreach emails from a CSV of conference speakers with two LLM calls per contact and full dashboard logging.","keywords":"email skill personalized outreach, conference speaker CSV outreach, LLM email drafting tool","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-26","dateModified":"2026-05-26","url":"https://nickmccarty.me/blog/email-skill.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"email skill personalized outreach"},{"@type":"Thing","name":"conference speaker CSV outreach"},{"@type":"Thing","name":"LLM email drafting tool"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -55,6 +57,7 @@
     .pref{background:rgba(251,191,36,0.15);color:#fbbf24;}
     .opt{background:rgba(255,255,255,0.07);color:var(--text-secondary);}
   </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs","item":"https://nickmccarty.me/blog/email-skill.html"}]}</script>
 </head>
 <body>
   <nav>

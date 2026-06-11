@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Explorer View: Per-Run Pipeline DAG Inspector</title>
   <meta name="description" content="The Explorer view renders every completed run as a clickable DAG: Task, Memory, Plan, Search nodes, Synthesis, Wiggum evaluation rounds, and Output. Click any node to open a detail inspector with token counts, dimension scores, evaluator reasoning, and an inline RLHF feedback panel.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/explorer-view.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="The Explorer View: Per-Run Pipeline DAG Inspector">
   <meta property="og:description" content="Per-run pipeline DAG with clickable node inspector — task metadata, memory hits, planned queries, search tool calls, synthesis tokens, Wiggum dimension bars, evaluator reasoning, and RLHF feedback per stage.">
   <meta property="og:url" content="https://nickmccarty.me/blog/explorer-view.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/explorer-view.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Explorer View: Per-Run Pipeline DAG Inspector">
   <meta name="twitter:description" content="Click any stage in a run's DAG — task metadata, memory context, planned queries, search tool calls, synthesis tokens, Wiggum dim bars, evaluator reasoning, RLHF feedback.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Explorer View: Per-Run Pipeline DAG Inspector","description":"The Explorer view renders every completed run as a clickable DAG with a node inspector for token counts, Wiggum dimension scores, evaluator reasoning, and RLHF feedback.","keywords":"pipeline dag inspector, run-based dag explorer, agentic harness pipeline view","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-30","dateModified":"2026-05-30","url":"https://nickmccarty.me/blog/explorer-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/explorer-view.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Explorer View: Per-Run Pipeline DAG Inspector","description":"The Explorer view renders every completed run as a clickable DAG with a node inspector for token counts, Wiggum dimension scores, evaluator reasoning, and RLHF feedback.","keywords":"pipeline dag inspector, run-based dag explorer, agentic harness pipeline view","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-30","dateModified":"2026-05-30","url":"https://nickmccarty.me/blog/explorer-view.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"pipeline dag inspector"},{"@type":"Thing","name":"run-based dag explorer"},{"@type":"Thing","name":"agentic harness pipeline view"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -51,6 +53,7 @@
     .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
     .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
   </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Explorer View: Per-Run Pipeline DAG Inspector","item":"https://nickmccarty.me/blog/explorer-view.html"}]}</script>
 </head>
 <body>
   <nav>

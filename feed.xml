@@ -1,0 +1,623 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:atom="http://www.w3.org/2005/Atom"
+     xmlns:content="http://purl.org/rss/1.0/modules/content/"
+     xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Nick McCarty</title>
+    <link>https://nickmccarty.me</link>
+    <atom:link href="https://nickmccarty.me/feed.xml" rel="self" type="application/rss+xml"/>
+    <description>Data science, ML/AI, computer vision, and agentic systems — by Nick McCarty.</description>
+    <language>en-us</language>
+    <managingEditor>nickmccarty0@gmail.com (Nick McCarty)</managingEditor>
+    <webMaster>nickmccarty0@gmail.com (Nick McCarty)</webMaster>
+    <lastBuildDate>Thu, 11 Jun 2026 00:32:49 +0000</lastBuildDate>
+    <pubDate>Wed, 03 Jun 2026 00:00:00 +0000</pubDate>
+    <ttl>1440</ttl>
+    <image>
+      <url>https://nickmccarty.me/assets/images/og-default.png</url>
+      <title>Nick McCarty</title>
+      <link>https://nickmccarty.me</link>
+    </image>
+  <item>
+    <title>Layer 4 Circuit Diagram</title>
+    <link>https://nickmccarty.me/blog/layer4-circuit-diagram.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/layer4-circuit-diagram.html</guid>
+    <pubDate>Wed, 03 Jun 2026 00:00:00 +0000</pubDate>
+    <description>Interactive visualization of the ResNet Layer 4 co-activation circuit extracted from a fine-tuned Faster R-CNN pot detector.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>ResNet Layer 4 circuit diagram</category>
+    <category>Faster R-CNN co-activation edges</category>
+    <category>2048-channel ablation study</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/layer4-circuit-diagram.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Economic Data Tools: FRED and BEA</title>
+    <link>https://nickmccarty.me/blog/fred-bea-tools.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/fred-bea-tools.html</guid>
+    <pubDate>Tue, 02 Jun 2026 00:00:00 +0000</pubDate>
+    <description>fred_tool: theme-routed FRED API with rate limiting, [FRED:SERIES:DATE] citations. bea_tool: curated query catalogue over NIPA, Regional, GDPbyIndustry, ITA with [BEA:...] citations.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>FRED tool python</category>
+    <category>BEA tool python</category>
+    <category>economic data tools</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/fred-bea-tools.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Wiggum Panel: Three-Persona Parallel Evaluation</title>
+    <link>https://nickmccarty.me/blog/panel.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/panel.html</guid>
+    <pubDate>Tue, 02 Jun 2026 00:00:00 +0000</pubDate>
+    <description>Three evaluator personas running in parallel threads, each reviewing from a distinct angle. Their issues are deduplicated and merged into Wiggum's revision context before the first rewrite.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>Wiggum panel evaluation</category>
+    <category>parallel persona review</category>
+    <category>agentic harness evaluation</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/panel.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>Closing the SkillOpt Gaps: What Actually Shipped</title>
+    <link>https://nickmccarty.me/blog/skillopt-shipped.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/skillopt-shipped.html</guid>
+    <pubDate>Tue, 02 Jun 2026 00:00:00 +0000</pubDate>
+    <description>Three gaps between the harness autoresearch loop and SkillOpt: validation gating shipped as _validate_proposal(), the global exit became Kimi unblocking, and the epoch structure and skill artifact remain open.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>SkillOpt gap implementation</category>
+    <category>agentic harness validation gating</category>
+    <category>epoch structure convergence</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/skillopt-shipped.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Plugin System: /forge:plugin and /forge:list</title>
+    <link>https://nickmccarty.me/blog/forge-plugin-skills.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/forge-plugin-skills.html</guid>
+    <pubDate>Mon, 01 Jun 2026 00:00:00 +0000</pubDate>
+    <description>/forge:plugin: LLM generates plugin JSON spec, files written to plugins/&lt;name&gt;/, hot-loaded into skills.REGISTRY. /forge:list: grouped command listing. Plugin skills auto-inject into synthesis; commands invoked as /plugin:command.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>forge plugin system</category>
+    <category>forge plugin generation</category>
+    <category>forge list commands</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/forge-plugin-skills.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Interview Skills: /grill-me and /onboarding</title>
+    <link>https://nickmccarty.me/blog/onboarding-grill-me-skills.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/onboarding-grill-me-skills.html</guid>
+    <pubDate>Mon, 01 Jun 2026 00:00:00 +0000</pubDate>
+    <description>/grill-me: saturation-gated interview loop (3-8 rounds, novelty threshold 3/10, fatigue detector) producing a structured knowledge brief. /onboarding: fixed 3-round scaffold + free-form grill-me + TOML config + ChromaDB memory seed.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>/grill-me interview loop</category>
+    <category>/onboarding question scaffold</category>
+    <category>ChromaDB memory seeding</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/onboarding-grill-me-skills.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Developer Utility Skills: /scratchpad and /test-harness</title>
+    <link>https://nickmccarty.me/blog/scratchpad-test-harness-skills.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/scratchpad-test-harness-skills.html</guid>
+    <pubDate>Mon, 01 Jun 2026 00:00:00 +0000</pubDate>
+    <description>/scratchpad: force tool loop + exact-values synthesis instruction + prior result injection. /test-harness: run fast/full pytest suite, save output, parse summary.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>/scratchpad python tool loop</category>
+    <category>/test-harness pytest results</category>
+    <category>agentic harness engineering</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/scratchpad-test-harness-skills.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Trading Skills: /validate-trades and /execute-trades</title>
+    <link>https://nickmccarty.me/blog/trade-execution-skills.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/trade-execution-skills.html</guid>
+    <pubDate>Mon, 01 Jun 2026 00:00:00 +0000</pubDate>
+    <description>/validate-trades: deterministic PASS/WARN/FLAG checks on each thesis using local TA signals. /execute-trades: bracket order construction from validated theses, dry-run by default, --live submits to Alpaca.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>/validate-trades tool</category>
+    <category>/execute-trades method</category>
+    <category>bracket orders submission</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/trade-execution-skills.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>Circuit Extraction Notebook</title>
+    <link>https://nickmccarty.me/blog/circuit-extraction-notebook.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/circuit-extraction-notebook.html</guid>
+    <pubDate>Sun, 31 May 2026 00:00:00 +0000</pubDate>
+    <description>Executable notebook for the circuit extraction pipeline: model loading, ablation over 2048 layer4 channels, co-activation graph construction, and Plotly visualization.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>circuit extraction notebook</category>
+    <category>resnet layer 4 ablation study</category>
+    <category>co-activation graph construction</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/circuit-extraction-notebook.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Diagnostic Skills: /debug and /troubleshoot</title>
+    <link>https://nickmccarty.me/blog/debug-troubleshoot-skills.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/debug-troubleshoot-skills.html</guid>
+    <pubDate>Sun, 31 May 2026 00:00:00 +0000</pubDate>
+    <description>/debug: last 2 ERROR/FAIL runs, trace events, source anchors, structured Diagnosis/Evidence/Fix. /troubleshoot: debug + suggest in one call, Issue/Root cause/Fix/Next task.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>/debug diagnostic tool</category>
+    <category>/troubleshoot report</category>
+    <category>agentic harness debugging</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/debug-troubleshoot-skills.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Site Generation Skills: /design and /build-page</title>
+    <link>https://nickmccarty.me/blog/design-build-page-skills.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/design-build-page-skills.html</guid>
+    <pubDate>Sun, 31 May 2026 00:00:00 +0000</pubDate>
+    <description>/design: Playwright CSS extraction + vision screenshot analysis + 10-section design system. /build-page: three-pass generation — cluster analysis, HTML shell, per-file card injection with optional visual refinement loop.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>/design tool</category>
+    <category>/build-page method</category>
+    <category>LLM three passes</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/design-build-page-skills.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Site Generation Skills: /site and /deck</title>
+    <link>https://nickmccarty.me/blog/site-deck-skills.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/site-deck-skills.html</guid>
+    <pubDate>Sun, 31 May 2026 00:00:00 +0000</pubDate>
+    <description>/site = /design + /build-page in one command. /deck generates a themed .pptx using python-pptx with colors and fonts extracted from the design system.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>/site command usage</category>
+    <category>/deck presentation generator</category>
+    <category>python-pptx themed deck</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/site-deck-skills.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Navigation Skills: /suggest and /re-orient</title>
+    <link>https://nickmccarty.me/blog/suggest-reorient-skills.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/suggest-reorient-skills.html</guid>
+    <pubDate>Sun, 31 May 2026 00:00:00 +0000</pubDate>
+    <description>/suggest: next-task recommendation from orientation + runs + git log + autoresearch state. /re-orient: fast project snapshot combining orientation cache with live GitHub data fetched in parallel.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>/suggest command GitHub</category>
+    <category>/re-orient command GitHub</category>
+    <category>navigation skills GitHub</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/suggest-reorient-skills.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Explorer View: Per-Run Pipeline DAG Inspector</title>
+    <link>https://nickmccarty.me/blog/explorer-view.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/explorer-view.html</guid>
+    <pubDate>Sat, 30 May 2026 00:00:00 +0000</pubDate>
+    <description>Per-run pipeline DAG with clickable node inspector — task metadata, memory hits, planned queries, search tool calls, synthesis tokens, Wiggum dimension bars, evaluator reasoning, and RLHF feedback per stage.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>pipeline dag inspector</category>
+    <category>run-based dag explorer</category>
+    <category>agentic harness pipeline view</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/explorer-view.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Page Feedback Widget: Closing the Loop Between Browser and Agent</title>
+    <link>https://nickmccarty.me/blog/page-feedback-widget.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/page-feedback-widget.html</guid>
+    <pubDate>Sat, 30 May 2026 00:00:00 +0000</pubDate>
+    <description>Chrome extension + FastAPI endpoint: leave notes on any local page, agents read them from page_feedback.jsonl. Shadow DOM widget with badge counter, completion checklist, and one-click clear.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>page feedback widget chrome extension</category>
+    <category>localhost feedback widget injection</category>
+    <category>file:// page feedback tool</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/page-feedback-widget.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Pipeline View: Data Enrichment DAG</title>
+    <link>https://nickmccarty.me/blog/pipeline-view.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/pipeline-view.html</guid>
+    <pubDate>Sat, 30 May 2026 00:00:00 +0000</pubDate>
+    <description>Static SVG DAG showing how web search, Beige Book, FRED, BEA, Market Signals, yfinance, and Alpaca feed a context merge before LLM synthesis and Wiggum evaluation. Conditional dashed edge for trading thesis Alpaca order execution.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>data enrichment DAG</category>
+    <category>financial data pipeline</category>
+    <category>harness architecture SVG</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/pipeline-view.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Research History View: A Unified Activity Log</title>
+    <link>https://nickmccarty.me/blog/research-history-view.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/research-history-view.html</guid>
+    <pubDate>Sat, 30 May 2026 00:00:00 +0000</pubDate>
+    <description>Every search query, browser visit, and research output in one timeline. Filterable by type (search / browser / research) and time window, with score bars and direct links to the Memory store.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>research history view</category>
+    <category>agentic harness timeline</category>
+    <category>search query log</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/research-history-view.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>inference.py: The Unified LLM Backend Shim</title>
+    <link>https://nickmccarty.me/blog/inference-shim.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/inference-shim.html</guid>
+    <pubDate>Fri, 29 May 2026 00:00:00 +0000</pubDate>
+    <description>Drop-in `import inference as ollama` replacement that routes to Ollama, vLLM, llama-server, or any OpenAI-compatible endpoint. 14-model name translation map, per-model HARNESS_ENDPOINTS registry, OllamaLike adapter, real wall-clock TTFT timing.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>inference.py ollama replacement</category>
+    <category>llm backend shim</category>
+    <category>vllm llama-server router</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/inference-shim.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>harness/api: The FastAPI Backend and Dashboard Server</title>
+    <link>https://nickmccarty.me/blog/server.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/server.html</guid>
+    <pubDate>Fri, 29 May 2026 00:00:00 +0000</pubDate>
+    <description>Async-native FastAPI server with modular routers, WebSocket live streaming, static dashboard serving, and auto OpenAPI docs. The async replacement for the old Flask server.py.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>FastAPI backend server</category>
+    <category>Async FastAPI dashboard</category>
+    <category>WebSocket live streaming API</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/server.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Skills Registry: Hook Points, Auto-Activation, and 38 Skills</title>
+    <link>https://nickmccarty.me/blog/skills-registry.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/skills-registry.html</guid>
+    <pubDate>Fri, 29 May 2026 00:00:00 +0000</pubDate>
+    <description>Six hook points, seven auto-activation predicates, lazy loading, and 38 skills: deep, cite, panel, knowledge-graph, annotate, recall, queue, orientation, introspect, contextualize, sync-wiki, playwright, re-orient, debug, suggest, troubleshoot, transcribe, design, build-page, deck, and more.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>skills registry hook points</category>
+    <category>auto activation predicates</category>
+    <category>38 skills pipeline</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/skills-registry.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>Inside agent.py: The Three-Turn Research Pipeline</title>
+    <link>https://nickmccarty.me/blog/agent-pipeline.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/agent-pipeline.html</guid>
+    <pubDate>Thu, 28 May 2026 00:00:00 +0000</pubDate>
+    <description>Three turns: vision preprocessing + search, synthesis written to disk, Wiggum evaluation loop. Plus novelty gating, keep_alive estimation from run history, thinking-model detection, and the SYNTH_INSTRUCTION autoresearch target.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>three-turn research pipeline</category>
+    <category>agent.py search synthesize verify</category>
+    <category>agentic harness research process</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/agent-pipeline.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Position Swap: Beige Book RAG Results and the DPO Cold-Start Problem</title>
+    <link>https://nickmccarty.me/blog/beige-book-rag-dpo.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/beige-book-rag-dpo.html</guid>
+    <pubDate>Thu, 28 May 2026 00:00:00 +0000</pubDate>
+    <description>Prepending Beige Book context hurt by 0.08; appending helped by 0.13. A falsified hypothesis and what the position swap reveals about training signal for domain-grounded synthesis.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>position swap RAG</category>
+    <category>DPO cold start problem</category>
+    <category>Beige Book context</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/beige-book-rag-dpo.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>Building the Detectors: What Actually Shipped After 107 Experiments</title>
+    <link>https://nickmccarty.me/blog/convergence-detectors-shipped.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/convergence-detectors-shipped.html</guid>
+    <pubDate>Thu, 28 May 2026 00:00:00 +0000</pubDate>
+    <description>What the four proposed convergence detectors became in actual implementation — regex over cosine similarity, Kimi unblocking over a hard stop, and a pre-proposal research phase that wasn't in the design.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>regex ban list implementation</category>
+    <category>convergence detection methods</category>
+    <category>agentic systems validation</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/convergence-detectors-shipped.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>Live Data Beats Narrative: FRED RAG Experiment Results</title>
+    <link>https://nickmccarty.me/blog/fred-rag-results.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/fred-rag-results.html</guid>
+    <pubDate>Thu, 28 May 2026 00:00:00 +0000</pubDate>
+    <description>FRED fred_end: +0.40 vs control. Beige Book rag_end was +0.13. Live quantitative series is 3× more useful than qualitative Fed prose for grounded economic synthesis.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>FRED API RAG</category>
+    <category>context enrichment techniques</category>
+    <category>position bias analysis</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/fred-rag-results.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph</title>
+    <link>https://nickmccarty.me/blog/memory-observability.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/memory-observability.html</guid>
+    <pubDate>Thu, 28 May 2026 00:00:00 +0000</pubDate>
+    <description>How the harness memory layer turns isolated run output into retrieval signal: dual-store architecture, quality-weighted ranking, RLHF feedback loops, and UMAP-based topic visualization.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>quality-weighted retrieval</category>
+    <category>UMAP topic visualization</category>
+    <category>ChromaDB dual-store</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/memory-observability.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>OSINT Enrichment: Nine Layers of Passive Reconnaissance</title>
+    <link>https://nickmccarty.me/blog/osint-enrichment.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/osint-enrichment.html</guid>
+    <pubDate>Thu, 28 May 2026 00:00:00 +0000</pubDate>
+    <description>Nine-layer OSINT pipeline wired directly into the harness research loop. Zero-config baseline covers DNS, HTTP headers, RDAP, crt.sh, Wayback, and Shodan. Two key-gated layers add tech stack and threat intel.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>OSINT pipeline layers</category>
+    <category>passive recon tools</category>
+    <category>threat intel integration</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/osint-enrichment.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Planner: Two-Pass Pre-Research Analysis</title>
+    <link>https://nickmccarty.me/blog/planner.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/planner.html</guid>
+    <pubDate>Thu, 28 May 2026 00:00:00 +0000</pubDate>
+    <description>Two LLM calls before research starts: a prior knowledge pass (what do I already know? what gaps need search?) and a main plan pass (task_type, complexity, expected_sections, targeted queries). Plan output is injected into synthesis as context.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>two-pass pre-research analysis</category>
+    <category>planner.py prior knowledge assessment</category>
+    <category>structured plan generation LLM</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/planner.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts</title>
+    <link>https://nickmccarty.me/blog/search-cache.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/search-cache.html</guid>
+    <pubDate>Thu, 28 May 2026 00:00:00 +0000</pubDate>
+    <description>Two-table SQLite cache: search_cache for per-query DDGS results (always active), research_cache for full research contexts (opt-in via RESEARCH_CACHE=1 for autoresearch). SHA-256 keys, lazy expiry, schema migration.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>SQLite TTL Caching</category>
+    <category>DDGS Results Cache</category>
+    <category>Research Context Caching</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/search-cache.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>Deploying the Harness with Docker: CPU, GPU, and Compose Variants</title>
+    <link>https://nickmccarty.me/blog/docker-deployment.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/docker-deployment.html</guid>
+    <pubDate>Wed, 27 May 2026 00:00:00 +0000</pubDate>
+    <description>CPU and GPU Dockerfiles plus a three-service Compose stack (vLLM for large models, Ollama for fast models, harness dashboard) with health checks, live code mounts, and GPU passthrough.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>Docker Harness CPU</category>
+    <category>Docker Harness GPU</category>
+    <category>Docker Compose Harness</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/docker-deployment.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The GitHub Skill: LLM-Assisted Git Operations from the Agent Loop</title>
+    <link>https://nickmccarty.me/blog/github-skill.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/github-skill.html</guid>
+    <pubDate>Wed, 27 May 2026 00:00:00 +0000</pubDate>
+    <description>12 GitHub operations auto-detected from task strings, with LLM-generated commit messages, PR titles/bodies, and issue descriptions — invokable directly from the harness agent loop.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>github skill operations</category>
+    <category>llm assisted git commands</category>
+    <category>agent loop github integration</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/github-skill.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Subagent Demo Suite: Orchestrating Multi-Task Research Portfolios</title>
+    <link>https://nickmccarty.me/blog/subagent-demo.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/subagent-demo.html</guid>
+    <pubDate>Wed, 27 May 2026 00:00:00 +0000</pubDate>
+    <description>subagent_demo.py and subagent_demo_v2.py show sequential and parallel multi-task orchestration — Flask queue for one-at-a-time throughput, MCP HTTP server for concurrent execution up to MCP_MAX_CONCURRENCY.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>subagent demo suite</category>
+    <category>Flask queue orchestration</category>
+    <category>MCP HTTP server multi-task</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/subagent-demo.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>Synthetic Eval Task Generation with TinyTroupe Personas</title>
+    <link>https://nickmccarty.me/blog/tinytroupe-tasks.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/tinytroupe-tasks.html</guid>
+    <pubDate>Wed, 27 May 2026 00:00:00 +0000</pubDate>
+    <description>Eight practitioner personas generate diverse research tasks via Microsoft TinyTroupe (or raw Ollama fallback). Criteria are auto-derived from the task text — count detection, structural requirements, no placeholder checks.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>tinytroupe tasks generation</category>
+    <category>persona-based eval tasks</category>
+    <category>agentic harness research</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/tinytroupe-tasks.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs</title>
+    <link>https://nickmccarty.me/blog/email-skill.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/email-skill.html</guid>
+    <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+    <description>Two LLM calls per contact — subject line and body — with slide content fetched via MarkItDown, per-contact JSON output, a manifest file, and every draft logged to runs.jsonl as task_type email_draft.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>email skill personalized outreach</category>
+    <category>conference speaker CSV outreach</category>
+    <category>LLM email drafting tool</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/email-skill.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Lit-Review Skill: Seven Steps from ArXiv Query to Rendered Survey</title>
+    <link>https://nickmccarty.me/blog/lit-review-skill.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/lit-review-skill.html</guid>
+    <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+    <description>Seven steps: ArXiv fetch → Semantic Scholar enrichment → persona curation → per-paper annotation with Wiggum → LLM clustering → cross-cluster synthesis → Jinja2 render. Three output templates: survey, gaps, executive.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>lit review skill arxiv</category>
+    <category>agentic harness engineering</category>
+    <category>jinja2 rendered survey</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/lit-review-skill.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>Mining a Ground-Truth Knowledge Base for the Eval Suite</title>
+    <link>https://nickmccarty.me/blog/mine-knowledge.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/mine-knowledge.html</guid>
+    <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+    <description>Five eval tasks, five deep research runs with the novelty gate disabled, authoritative documents saved to knowledge_base/ and injected as file_context when the eval suite runs those tasks.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>mine_knowledge.py eval suite</category>
+    <category>agent.py deep mode execution</category>
+    <category>file_context injection method</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/mine-knowledge.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Wiki Sync Skill: Deterministic Source Extraction and Gap-Targeted Code Injection</title>
+    <link>https://nickmccarty.me/blog/wiki-sync.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/wiki-sync.html</guid>
+    <pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate>
+    <description>Regular sync extracts constants, model names, and Wiggum weights from six source files via regex. Gap-targeted sync matches Wiggum FAIL issues to trigger keywords and injects relevant function bodies into the wiki.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>wiki sync skill</category>
+    <category>gap-targeted code injection</category>
+    <category>idempotent marker blocks</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/wiki-sync.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>Agentic System Design Patterns</title>
+    <link>https://nickmccarty.me/blog/agentic-design-patterns.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/agentic-design-patterns.html</guid>
+    <pubDate>Mon, 25 May 2026 00:00:00 +0000</pubDate>
+    <description>27 named design patterns for agentic LLM systems — from Inference Shim and Novelty Gate to DAG Orchestrator, Injection Scanner, and Data Flywheel.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>agentic system design patterns</category>
+    <category>llm agentic architecture</category>
+    <category>harness engineering patterns</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/agentic-design-patterns.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>Agentic Threat Hardening: The OWASP Top 10, Applied</title>
+    <link>https://nickmccarty.me/blog/agentic-threat-hardening.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/agentic-threat-hardening.html</guid>
+    <pubDate>Mon, 25 May 2026 00:00:00 +0000</pubDate>
+    <description>OWASP's ASI Top 10 maps ten attack classes that emerge when LLMs gain tools, memory, and autonomy — audited against the harness and translated into concrete mitigations.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>OWASP ASI Top 10</category>
+    <category>LLM harness hardening</category>
+    <category>memory poisoning mitigation</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/agentic-threat-hardening.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>When the Loop Defeats Itself: Convergence Failures in Autonomous Prompt Optimization</title>
+    <link>https://nickmccarty.me/blog/autoresearch-convergence.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/autoresearch-convergence.html</guid>
+    <pubDate>Mon, 25 May 2026 00:00:00 +0000</pubDate>
+    <description>Three nested failure modes exposed by 90 experiments that never beat their own baseline — corrupted diagnostic, baseline contamination, and a self-defeating ban list — and four convergence detectors.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>baseline contamination detection</category>
+    <category>self-defeating ban list</category>
+    <category>convergence detectors for optimization</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/autoresearch-convergence.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Regression Harness: Eval Suite, Criterion Functions, and Experimental Infrastructure</title>
+    <link>https://nickmccarty.me/blog/eval-suite.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/eval-suite.html</guid>
+    <pubDate>Mon, 25 May 2026 00:00:00 +0000</pubDate>
+    <description>Nine tasks, eleven criterion functions, one composite score, and three epistemically distinct personas — the measurement infrastructure that turns informal intuition about output quality into machine-checkable gates.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>criterion functions</category>
+    <category>regression harness</category>
+    <category>agentic harness</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/eval-suite.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>Leverage: What the Metric Measures, What It Doesn't, and Why the Replacement Framing Gets the Math Wrong</title>
+    <link>https://nickmccarty.me/blog/leverage.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/leverage.html</guid>
+    <pubDate>Mon, 25 May 2026 00:00:00 +0000</pubDate>
+    <description>A quantitative look at the harness leverage metric and why the corporate narrative of AI 'replacing lower-value human capital' misreads what the math actually shows.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>AI leverage metric analysis</category>
+    <category>corporate automation narrative</category>
+    <category>workforce productivity replacement</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/leverage.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Playwright Skill: LLM-Guided Navigation via ARIA Snapshots</title>
+    <link>https://nickmccarty.me/blog/playwright-skill.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/playwright-skill.html</guid>
+    <pubDate>Mon, 25 May 2026 00:00:00 +0000</pubDate>
+    <description>ARIA snapshots not DOM, sitemap-based pre-planning, a saturation completeness oracle, detached browser persistence, and 12 steps of LLM-driven navigation with blocked-click memory.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>playwright_skill.py ARIA navigation</category>
+    <category>ARIA snapshots web scraping</category>
+    <category>agentic harness ARIA tree</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/playwright-skill.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>SBOM and AIBOM for Agentic Systems</title>
+    <link>https://nickmccarty.me/blog/sbom-aibom.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/sbom-aibom.html</guid>
+    <pubDate>Mon, 25 May 2026 00:00:00 +0000</pubDate>
+    <description>A traditional SBOM lists Python packages. An AIBOM lists the AI models — and surfaces cloud endpoints that pip freeze will never show you.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>AI Bill of Materials</category>
+    <category>AIBOM for agentic systems</category>
+    <category>GGUF model provenance</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/sbom-aibom.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>What SkillOpt Gets Right</title>
+    <link>https://nickmccarty.me/blog/skillopt-gaps.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/skillopt-gaps.html</guid>
+    <pubDate>Mon, 25 May 2026 00:00:00 +0000</pubDate>
+    <description>Microsoft's SkillOpt formalizes three design choices our autoresearch loop lacks: proactive validation gating, a fast/slow epoch structure, and a persistent skill artifact.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>SkillOpt validation gating</category>
+    <category>SkillOpt skill persistence</category>
+    <category>SkillOpt fast slow learning</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/skillopt-gaps.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>YouTube and Media Transcription: Two Paths, One Research Input</title>
+    <link>https://nickmccarty.me/blog/youtube-transcribe.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/youtube-transcribe.html</guid>
+    <pubDate>Mon, 25 May 2026 00:00:00 +0000</pubDate>
+    <description>Auto-captions first (no download), pytubefix + Whisper fallback for YouTube; ffmpeg extraction for direct media URLs. WHISPER_MODEL and WHISPER_DEVICE env vars, imageio_ffmpeg bundled binary.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>youtube_transcribe.py</category>
+    <category>media transcription strategies</category>
+    <category>ffmpeg direct media urls</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/youtube-transcribe.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>Five Personas, One Veto: Consensus Filtering for Fine-Tuning Data</title>
+    <link>https://nickmccarty.me/blog/curator.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/curator.html</guid>
+    <pubDate>Sun, 24 May 2026 00:00:00 +0000</pubDate>
+    <description>curator.py runs each annotated paper through five LLM personas — Pragmatic Engineer, Academic Rigorist, Synthesis Thinker, Contrarian, Newcomer — gating inclusion with a dual threshold: consensus mean and individual veto floor.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>consensus filtering method</category>
+    <category>curator.py veto thresholds</category>
+    <category>fine-tuning data validation</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/curator.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>Seven Principles and a Moving Frontier: The Harness Roadmap</title>
+    <link>https://nickmccarty.me/blog/harness-roadmap.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/harness-roadmap.html</guid>
+    <pubDate>Sun, 24 May 2026 00:00:00 +0000</pubDate>
+    <description>The goals that stayed constant, the milestones that multiplied, and what three rounds of roadmap revision reveal about building self-improving systems.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>harness roadmap principles</category>
+    <category>self-improving systems development</category>
+    <category>roadmap revision process</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/harness-roadmap.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The op CLI: A Rich REPL for the Research Harness</title>
+    <link>https://nickmccarty.me/blog/op-cli.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/op-cli.html</guid>
+    <pubDate>Sun, 24 May 2026 00:00:00 +0000</pubDate>
+    <description>op is the terminal-first entry point to the harness: an interactive REPL with persistent history, eight slash commands, browser flags, and a pyfiglet splash screen rendered in isometric ASCII.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>op CLI REPL</category>
+    <category>research harness CLI</category>
+    <category>isometric ASCII splash screen</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/op-cli.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Supervisor: Four Convergence Signals and Advisory Interventions</title>
+    <link>https://nickmccarty.me/blog/supervisor.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/supervisor.html</guid>
+    <pubDate>Sun, 24 May 2026 00:00:00 +0000</pubDate>
+    <description>supervisor.py monitors the harness pipeline for convergence collapse across four signals — score variance, output size CV, search utilization, and content similarity — and recommends specific interventions when thresholds are crossed.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>supervisor convergence signals</category>
+    <category>harness pipeline monitoring</category>
+    <category>agentic convergence interventions</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/supervisor.png" type="image/png" length="0"/>
+  </item>
+  <item>
+    <title>The Audio Data Flywheel</title>
+    <link>https://nickmccarty.me/blog/audio-data-flywheel.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/audio-data-flywheel.html</guid>
+    <pubDate>Sat, 23 May 2026 00:00:00 +0000</pubDate>
+    <description>Every voice request produces a (audio, raw_transcript, corrected_transcript) triple. Accumulate enough of them and you have supervised training data for ASR fine-tuning — closing the loop with NeMo Speech and NeMo RL.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>audio data flywheel</category>
+    <category>ASR fine-tuning</category>
+    <category>NeMo Speech</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/audio-data-flywheel.png" type="image/png" length="0"/>
+  </item>
+  </channel>
+</rss>

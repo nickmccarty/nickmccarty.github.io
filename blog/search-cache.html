@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts</title>
   <meta name="description" content="search_cache.py provides two-table SQLite caching: a search cache for DDGS query results (always active, 24-hour TTL, SHA-256 key) and an opt-in research context cache for full gather_research() output (autoresearch only, activated via RESEARCH_CACHE=1).">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/search-cache.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts">
   <meta property="og:description" content="Two-table SQLite cache: search_cache for per-query DDGS results (always active), research_cache for full research contexts (opt-in via RESEARCH_CACHE=1 for autoresearch). SHA-256 keys, lazy expiry, schema migration.">
   <meta property="og:url" content="https://nickmccarty.me/blog/search-cache.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/search-cache.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts">
   <meta name="twitter:description" content="Two-table SQLite TTL cache for DDGS queries and research contexts. Search cache always on; research cache opt-in for autoresearch experiments to avoid redundant DDGS calls across back-to-back eval runs.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts","description":"search_cache.py provides two-table SQLite caching for DDGS results and full research contexts.","keywords":"SQLite TTL Caching, DDGS Results Cache, Research Context Caching","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-28","dateModified":"2026-05-28","url":"https://nickmccarty.me/blog/search-cache.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/search-cache.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts","description":"search_cache.py provides two-table SQLite caching for DDGS results and full research contexts.","keywords":"SQLite TTL Caching, DDGS Results Cache, Research Context Caching","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-28","dateModified":"2026-05-28","url":"https://nickmccarty.me/blog/search-cache.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"SQLite TTL Caching"},{"@type":"Thing","name":"DDGS Results Cache"},{"@type":"Thing","name":"Research Context Caching"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -45,6 +47,7 @@
     .flow-box{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.75rem;font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--text-primary);}
     .flow-arrow{color:var(--text-secondary);}
   </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts","item":"https://nickmccarty.me/blog/search-cache.html"}]}</script>
 </head>
 <body>
   <nav>

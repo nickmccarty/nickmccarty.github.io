@@ -1,17 +1,19 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Inference Patterns: The Substrate Layer</title>
   <meta name="description" content="Four patterns governing how LLM calls are issued, routed, and kept warm — the Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/inference-patterns.html">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="Inference Patterns: The Substrate Layer">
   <meta property="og:description" content="Four patterns governing how LLM calls are issued, routed, and kept warm — the Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget — and why getting this substrate right is prerequisite to everything else.">
   <meta property="og:url" content="https://nickmccarty.me/blog/inference-patterns.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/inference-patterns.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -21,9 +23,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Inference Patterns: The Substrate Layer">
   <meta name="twitter:description" content="Four patterns governing how LLM calls are issued, routed, and kept warm — the Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/inference-patterns.png">
   <!-- JSON-LD -->
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Inference Patterns: The Substrate Layer","description":"Four patterns governing how LLM calls are issued, routed, and kept warm: the Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget.","keywords":"inference shim pattern, model role separation, keep-alive budget","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-05-22","dateModified":"2026-05-22","url":"https://nickmccarty.me/blog/inference-patterns.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/inference-patterns.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og-default.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Inference Patterns: The Substrate Layer","description":"Four patterns governing how LLM calls are issued, routed, and kept warm: the Inference Shim, Model Role Separation, Evaluator Pool, and Keep-Alive Budget.","keywords":"inference shim pattern, model role separation, keep-alive budget","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-05-22","dateModified":"2026-05-22","url":"https://nickmccarty.me/blog/inference-patterns.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/inference-patterns.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og/inference-patterns.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"inference shim pattern"},{"@type":"Thing","name":"model role separation"},{"@type":"Thing","name":"keep-alive budget"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">

@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Synthetic Eval Task Generation with TinyTroupe Personas</title>
   <meta name="description" content="tinytroupe_tasks.py extends the eval suite beyond its five fixed tasks by simulating eight practitioner archetypes — DevOps, data scientist, PM, security engineer, and others — each generating a research task request grounded in their role, with criteria auto-built from the generated task text.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/tinytroupe-tasks.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="Synthetic Eval Task Generation with TinyTroupe Personas">
   <meta property="og:description" content="Eight practitioner personas generate diverse research tasks via Microsoft TinyTroupe (or raw Ollama fallback). Criteria are auto-derived from the task text — count detection, structural requirements, no placeholder checks.">
   <meta property="og:url" content="https://nickmccarty.me/blog/tinytroupe-tasks.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/tinytroupe-tasks.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Synthetic Eval Task Generation with TinyTroupe Personas">
   <meta name="twitter:description" content="TinyTroupe persona simulation + Ollama fallback generates diverse research tasks beyond the fixed eval suite. Criteria auto-built from count extraction and structural analysis of the generated task text.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Synthetic Eval Task Generation with TinyTroupe Personas","description":"tinytroupe_tasks.py extends the eval suite with persona-generated research tasks and auto-built criteria.","keywords":"tinytroupe tasks generation, persona-based eval tasks, agentic harness research","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-27","dateModified":"2026-05-27","url":"https://nickmccarty.me/blog/tinytroupe-tasks.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/tinytroupe-tasks.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Synthetic Eval Task Generation with TinyTroupe Personas","description":"tinytroupe_tasks.py extends the eval suite with persona-generated research tasks and auto-built criteria.","keywords":"tinytroupe tasks generation, persona-based eval tasks, agentic harness research","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-27","dateModified":"2026-05-27","url":"https://nickmccarty.me/blog/tinytroupe-tasks.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"tinytroupe tasks generation"},{"@type":"Thing","name":"persona-based eval tasks"},{"@type":"Thing","name":"agentic harness research"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -47,6 +49,7 @@
     .criteria-table td{padding:0.5rem 0.75rem;border-bottom:1px solid var(--border-color);vertical-align:top;}
     .criteria-table code{font-size:0.8em;}
   </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"Synthetic Eval Task Generation with TinyTroupe Personas","item":"https://nickmccarty.me/blog/tinytroupe-tasks.html"}]}</script>
 </head>
 <body>
   <nav>

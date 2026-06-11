@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Site Generation Skills: /design and /build-page</title>
   <meta name="description" content="/design visits a URL with Playwright, extracts CSS custom properties and computed element styles, analyzes screenshots with a vision model, and synthesizes a 10-section design system document. /build-page takes that document and a folder of markdown files and generates a self-contained HTML page in three passes: content analysis, shell generation, and per-file card injection.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/design-build-page-skills.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="The Site Generation Skills: /design and /build-page">
   <meta property="og:description" content="/design: Playwright CSS extraction + vision screenshot analysis + 10-section design system. /build-page: three-pass generation — cluster analysis, HTML shell, per-file card injection with optional visual refinement loop.">
   <meta property="og:url" content="https://nickmccarty.me/blog/design-build-page-skills.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/design-build-page-skills.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Site Generation Skills: /design and /build-page">
   <meta name="twitter:description" content="/design extracts a structured design system from any URL. /build-page turns markdown files into a themed HTML page in three LLM passes. Together they form the /site pipeline.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Site Generation Skills: /design and /build-page","description":"/design extracts CSS tokens and screenshots from a URL and synthesizes a structured design system. /build-page generates a themed HTML page from markdown content in three LLM passes.","keywords":"/design tool, /build-page method, LLM three passes","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/design-build-page-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/design-build-page-skills.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Site Generation Skills: /design and /build-page","description":"/design extracts CSS tokens and screenshots from a URL and synthesizes a structured design system. /build-page generates a themed HTML page from markdown content in three LLM passes.","keywords":"/design tool, /build-page method, LLM three passes","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/design-build-page-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"/design tool"},{"@type":"Thing","name":"/build-page method"},{"@type":"Thing","name":"LLM three passes"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -57,6 +59,7 @@
     .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
     .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
   </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Site Generation Skills: /design and /build-page","item":"https://nickmccarty.me/blog/design-build-page-skills.html"}]}</script>
 </head>
 <body>
   <nav>

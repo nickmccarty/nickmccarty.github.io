@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Page Feedback Widget: Closing the Loop Between Browser and Agent</title>
   <meta name="description" content="A Chrome extension that injects a floating feedback widget on every localhost and file:// page. Notes are written to localStorage and POSTed to the harness API, where agents read them from page_feedback.jsonl. A lightweight coordination layer between human reviewer and autonomous agent.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/page-feedback-widget.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="The Page Feedback Widget: Closing the Loop Between Browser and Agent">
   <meta property="og:description" content="Chrome extension + FastAPI endpoint: leave notes on any local page, agents read them from page_feedback.jsonl. Shadow DOM widget with badge counter, completion checklist, and one-click clear.">
   <meta property="og:url" content="https://nickmccarty.me/blog/page-feedback-widget.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/page-feedback-widget.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Page Feedback Widget: Closing the Loop Between Browser and Agent">
   <meta name="twitter:description" content="Floating feedback widget on every localhost and file:// page. Notes go to localStorage + harness API. Agents read page_feedback.jsonl. Shadow DOM, badge counter, completion checklist.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Page Feedback Widget: Closing the Loop Between Browser and Agent","description":"A Chrome extension that injects a floating feedback widget on every localhost and file:// page. Notes land in localStorage and page_feedback.jsonl for downstream agent use.","keywords":"page feedback widget chrome extension, localhost feedback widget injection, file:// page feedback tool","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-30","dateModified":"2026-05-30","url":"https://nickmccarty.me/blog/page-feedback-widget.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/page-feedback-widget.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Page Feedback Widget: Closing the Loop Between Browser and Agent","description":"A Chrome extension that injects a floating feedback widget on every localhost and file:// page. Notes land in localStorage and page_feedback.jsonl for downstream agent use.","keywords":"page feedback widget chrome extension, localhost feedback widget injection, file:// page feedback tool","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-30","dateModified":"2026-05-30","url":"https://nickmccarty.me/blog/page-feedback-widget.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"page feedback widget chrome extension"},{"@type":"Thing","name":"localhost feedback widget injection"},{"@type":"Thing","name":"file:// page feedback tool"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -60,6 +62,7 @@
     .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
     .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
   </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Page Feedback Widget: Closing the Loop Between Browser and Agent","item":"https://nickmccarty.me/blog/page-feedback-widget.html"}]}</script>
 </head>
 <body>
   <nav>

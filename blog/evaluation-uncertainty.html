@@ -1,17 +1,19 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Evaluation Uncertainty, Calibration, and Harness Reliability</title>
   <meta name="description" content="Conformal prediction for LLM judges, fact-level confidence calibration, Agent-as-a-Judge, and the externalization framework that explains why the harness architecture works.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/evaluation-uncertainty.html">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="Evaluation Uncertainty, Calibration, and Harness Reliability">
   <meta property="og:description" content="Conformal prediction turns point scores into calibrated intervals. Fact-level ConFix reduces hallucinations without retrieval. Agent-as-a-Judge outperforms LLM-as-a-Judge. And the externalization framework explains why the harness is the architecture.">
   <meta property="og:url" content="https://nickmccarty.me/blog/evaluation-uncertainty.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/evaluation-uncertainty.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -21,9 +23,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Evaluation Uncertainty, Calibration, and Harness Reliability">
   <meta name="twitter:description" content="Conformal prediction, Agent-as-a-Judge, fact-level calibration, Bayesian prompt ensembles — and the externalization framework that grounds the entire harness series in the literature.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/evaluation-uncertainty.png">
   <!-- JSON-LD -->
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Evaluation Uncertainty, Calibration, and Harness Reliability","description":"Conformal prediction turns point scores into calibrated intervals. Fact-level ConFix reduces hallucinations without retrieval. Agent-as-a-Judge outperforms LLM-as-a-Judge.","keywords":"conformal prediction calibration, agent-as-a-judge evaluation, confix hallucination reduction","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-04-29","dateModified":"2026-04-29","url":"https://nickmccarty.me/blog/evaluation-uncertainty.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/evaluation-uncertainty.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og-default.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Evaluation Uncertainty, Calibration, and Harness Reliability","description":"Conformal prediction turns point scores into calibrated intervals. Fact-level ConFix reduces hallucinations without retrieval. Agent-as-a-Judge outperforms LLM-as-a-Judge.","keywords":"conformal prediction calibration, agent-as-a-judge evaluation, confix hallucination reduction","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-04-29","dateModified":"2026-04-29","url":"https://nickmccarty.me/blog/evaluation-uncertainty.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/evaluation-uncertainty.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og/evaluation-uncertainty.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"conformal prediction calibration"},{"@type":"Thing","name":"agent-as-a-judge evaluation"},{"@type":"Thing","name":"confix hallucination reduction"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">

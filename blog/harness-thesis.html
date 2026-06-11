@@ -1,17 +1,19 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Harness Thesis: Why Scaffolding Beats Model Selection</title>
   <meta name="description" content="The central claim of agentic harness engineering: for a fixed task domain, the quality of the scaffolding surrounding a language model matters more than the choice of model.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/harness-thesis.html">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="The Harness Thesis: Why Scaffolding Beats Model Selection">
   <meta property="og:description" content="The central claim of agentic harness engineering: for a fixed task domain, the quality of the scaffolding surrounding a language model matters more than the choice of model.">
   <meta property="og:url" content="https://nickmccarty.me/blog/harness-thesis.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/harness-thesis.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -21,9 +23,9 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Harness Thesis: Why Scaffolding Beats Model Selection">
   <meta name="twitter:description" content="The central claim of agentic harness engineering: for a fixed task domain, the quality of the scaffolding surrounding a language model matters more than the choice of model.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/harness-thesis.png">
   <!-- JSON-LD -->
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Harness Thesis: Why Scaffolding Beats Model Selection","description":"For a fixed task domain, the quality of the scaffolding surrounding a language model matters more than the choice of model. The empirical case, the five-stage pipeline, and the silent overwrite failure.","keywords":"five-stage pipeline, harness engineering, scaffolding quality","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-05-22","dateModified":"2026-05-22","url":"https://nickmccarty.me/blog/harness-thesis.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/harness-thesis.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og-default.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Harness Thesis: Why Scaffolding Beats Model Selection","description":"For a fixed task domain, the quality of the scaffolding surrounding a language model matters more than the choice of model. The empirical case, the five-stage pipeline, and the silent overwrite failure.","keywords":"five-stage pipeline, harness engineering, scaffolding quality","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-05-22","dateModified":"2026-05-22","url":"https://nickmccarty.me/blog/harness-thesis.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/harness-thesis.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og/harness-thesis.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"five-stage pipeline"},{"@type":"Thing","name":"harness engineering"},{"@type":"Thing","name":"scaffolding quality"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">

@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Developer Utility Skills: /scratchpad and /test-harness</title>
   <meta name="description" content="/scratchpad forces the Python tool loop on for any task type and injects a synthesis instruction requiring exact computed values rather than LLM estimates. /test-harness runs the harness test suite via run_tests.py, saves output to agent-workspace/test-results/latest.txt, and parses the pytest summary line for structured reporting.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/scratchpad-test-harness-skills.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="The Developer Utility Skills: /scratchpad and /test-harness">
   <meta property="og:description" content="/scratchpad: force tool loop + exact-values synthesis instruction + prior result injection. /test-harness: run fast/full pytest suite, save output, parse summary.">
   <meta property="og:url" content="https://nickmccarty.me/blog/scratchpad-test-harness-skills.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/scratchpad-test-harness-skills.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Developer Utility Skills: /scratchpad and /test-harness">
   <meta name="twitter:description" content="/scratchpad forces code execution before synthesis and requires exact computed values. /test-harness runs the pytest suite and saves structured results for agent retrieval.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Developer Utility Skills: /scratchpad and /test-harness","description":"/scratchpad forces the Python tool loop and requires exact computed values. /test-harness runs pytest and saves structured results.","keywords":"/scratchpad python tool loop, /test-harness pytest results, agentic harness engineering","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/scratchpad-test-harness-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/scratchpad-test-harness-skills.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Developer Utility Skills: /scratchpad and /test-harness","description":"/scratchpad forces the Python tool loop and requires exact computed values. /test-harness runs pytest and saves structured results.","keywords":"/scratchpad python tool loop, /test-harness pytest results, agentic harness engineering","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/scratchpad-test-harness-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"/scratchpad python tool loop"},{"@type":"Thing","name":"/test-harness pytest results"},{"@type":"Thing","name":"agentic harness engineering"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -57,6 +59,7 @@
     .hook-body pre{margin:0.75rem 0 0;}
     .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
   </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Developer Utility Skills: /scratchpad and /test-harness","item":"https://nickmccarty.me/blog/scratchpad-test-harness-skills.html"}]}</script>
 </head>
 <body>
   <nav>

@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Interview Skills: /grill-me and /onboarding</title>
   <meta name="description" content="/grill-me is a saturation-driven user interview that mirrors the research loop: plan_question() generates targeted follow-ups, assess_novelty() gates rounds, compress_knowledge() accumulates state. Output is a five-section knowledge brief. /onboarding extends it with a fixed question scaffold, persistent TOML config, and ChromaDB memory seeding.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/onboarding-grill-me-skills.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="The Interview Skills: /grill-me and /onboarding">
   <meta property="og:description" content="/grill-me: saturation-gated interview loop (3-8 rounds, novelty threshold 3/10, fatigue detector) producing a structured knowledge brief. /onboarding: fixed 3-round scaffold + free-form grill-me + TOML config + ChromaDB memory seed.">
   <meta property="og:url" content="https://nickmccarty.me/blog/onboarding-grill-me-skills.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/onboarding-grill-me-skills.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Interview Skills: /grill-me and /onboarding">
   <meta name="twitter:description" content="/grill-me: saturation-gated interview, novelty gate at round 3, fatigue detector, five-section knowledge brief. /onboarding: fixed scaffold + additive TOML config + ChromaDB memory seed.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Interview Skills: /grill-me and /onboarding","description":"/grill-me runs a saturation-driven interview loop producing a structured knowledge brief. /onboarding extends it with a fixed question scaffold, persistent TOML config, and ChromaDB memory seeding.","keywords":"/grill-me interview loop, /onboarding question scaffold, ChromaDB memory seeding","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/onboarding-grill-me-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/onboarding-grill-me-skills.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Interview Skills: /grill-me and /onboarding","description":"/grill-me runs a saturation-driven interview loop producing a structured knowledge brief. /onboarding extends it with a fixed question scaffold, persistent TOML config, and ChromaDB memory seeding.","keywords":"/grill-me interview loop, /onboarding question scaffold, ChromaDB memory seeding","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-06-01","dateModified":"2026-06-01","url":"https://nickmccarty.me/blog/onboarding-grill-me-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"/grill-me interview loop"},{"@type":"Thing","name":"/onboarding question scaffold"},{"@type":"Thing","name":"ChromaDB memory seeding"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -57,6 +59,7 @@
     .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
     .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
   </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Interview Skills: /grill-me and /onboarding","item":"https://nickmccarty.me/blog/onboarding-grill-me-skills.html"}]}</script>
 </head>
 <body>
   <nav>

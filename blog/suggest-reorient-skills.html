@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Navigation Skills: /suggest and /re-orient</title>
   <meta name="description" content="/suggest synthesizes the single most valuable next task from orientation cache, last 8 runs, git log, and autoresearch state — returning a structured Suggested task / Why / Command with a whitelist-constrained runnable command. /re-orient fetches live GitHub data (commits, PRs, issues, CI runs) in parallel alongside the cached orientation doc and synthesizes a fast project state snapshot.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/suggest-reorient-skills.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="The Navigation Skills: /suggest and /re-orient">
   <meta property="og:description" content="/suggest: next-task recommendation from orientation + runs + git log + autoresearch state. /re-orient: fast project snapshot combining orientation cache with live GitHub data fetched in parallel.">
   <meta property="og:url" content="https://nickmccarty.me/blog/suggest-reorient-skills.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/suggest-reorient-skills.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Navigation Skills: /suggest and /re-orient">
   <meta name="twitter:description" content="/suggest returns one concrete next task with rationale and a ready-to-run command. /re-orient fetches commits, PRs, issues, and CI runs in parallel alongside the orientation cache for an instant project state snapshot.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Navigation Skills: /suggest and /re-orient","description":"/suggest synthesizes the single most valuable next task from project state. /re-orient combines cached orientation with live GitHub data for a fast project snapshot.","keywords":"/suggest command GitHub, /re-orient command GitHub, navigation skills GitHub","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/suggest-reorient-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/suggest-reorient-skills.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Navigation Skills: /suggest and /re-orient","description":"/suggest synthesizes the single most valuable next task from project state. /re-orient combines cached orientation with live GitHub data for a fast project snapshot.","keywords":"/suggest command GitHub, /re-orient command GitHub, navigation skills GitHub","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-31","dateModified":"2026-05-31","url":"https://nickmccarty.me/blog/suggest-reorient-skills.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"/suggest command GitHub"},{"@type":"Thing","name":"/re-orient command GitHub"},{"@type":"Thing","name":"navigation skills GitHub"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -54,6 +56,7 @@
     .related-card .rc-title{font-size:0.9rem;font-weight:600;color:var(--text-primary);line-height:1.4;margin-bottom:0.3rem;}
     .related-card .rc-desc{font-size:0.78rem;color:var(--text-secondary);line-height:1.5;}
   </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Navigation Skills: /suggest and /re-orient","item":"https://nickmccarty.me/blog/suggest-reorient-skills.html"}]}</script>
 </head>
 <body>
   <nav>

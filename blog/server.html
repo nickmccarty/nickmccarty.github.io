@@ -1,16 +1,18 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>harness/api: The FastAPI Backend and Dashboard Server</title>
   <meta name="description" content="harness/api/main.py is an async-native FastAPI server with modular routers, WebSocket live streaming, static dashboard serving, and auto OpenAPI docs. Replaces the old Flask server.py with proper async concurrency, hot-reload via uvicorn, and a router-per-concern structure.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/server.html">
   <meta property="og:type" content="article">
   <meta property="og:title" content="harness/api: The FastAPI Backend and Dashboard Server">
   <meta property="og:description" content="Async-native FastAPI server with modular routers, WebSocket live streaming, static dashboard serving, and auto OpenAPI docs. The async replacement for the old Flask server.py.">
   <meta property="og:url" content="https://nickmccarty.me/blog/server.html">
-  <meta property="og:image" content="https://nickmccarty.me/assets/images/og-default.png">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/server.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Nick McCarty">
@@ -19,8 +21,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="harness/api: The FastAPI Backend and Dashboard Server">
   <meta name="twitter:description" content="FastAPI replaces Flask: async-native routing, WebSocket streaming, modular routers per concern, uvicorn hot-reload, and OpenAPI docs at /docs. The harness API server explained.">
-  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og-default.png">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"harness/api: The FastAPI Backend and Dashboard Server","description":"Async-native FastAPI server with modular routers, WebSocket live streaming, static dashboard serving, and auto OpenAPI docs. The replacement for the old Flask server.py.","keywords":"FastAPI backend server, Async FastAPI dashboard, WebSocket live streaming API","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-29","dateModified":"2026-05-29","url":"https://nickmccarty.me/blog/server.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"}}</script>
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/server.png">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"harness/api: The FastAPI Backend and Dashboard Server","description":"Async-native FastAPI server with modular routers, WebSocket live streaming, static dashboard serving, and auto OpenAPI docs. The replacement for the old Flask server.py.","keywords":"FastAPI backend server, Async FastAPI dashboard, WebSocket live streaming API","author":{"@type":"Person","name":"Nick McCarty","url":"https://nickmccarty.me"},"publisher":{"@type":"Organization","name":"Upskilled Consulting","url":"https://upskilled.consulting"},"datePublished":"2026-05-29","dateModified":"2026-05-29","url":"https://nickmccarty.me/blog/server.html","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"FastAPI backend server"},{"@type":"Thing","name":"Async FastAPI dashboard"},{"@type":"Thing","name":"WebSocket live streaming API"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -51,6 +53,7 @@
     .flow-box{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:6px;padding:0.35rem 0.75rem;font-family:'SF Mono','Consolas',monospace;font-size:0.8rem;color:var(--text-primary);}
     .flow-arrow{color:var(--text-secondary);}
   </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"harness/api: The FastAPI Backend and Dashboard Server","item":"https://nickmccarty.me/blog/server.html"}]}</script>
 </head>
 <body>
   <nav>
