@@ -11,14 +11,28 @@
     <language>en-us</language>
     <managingEditor>nickmccarty0@gmail.com (Nick McCarty)</managingEditor>
     <webMaster>nickmccarty0@gmail.com (Nick McCarty)</webMaster>
-    <lastBuildDate>Thu, 11 Jun 2026 00:32:49 +0000</lastBuildDate>
-    <pubDate>Wed, 03 Jun 2026 00:00:00 +0000</pubDate>
+    <lastBuildDate>Fri, 12 Jun 2026 20:17:15 +0000</lastBuildDate>
+    <pubDate>Fri, 12 Jun 2026 00:00:00 +0000</pubDate>
     <ttl>1440</ttl>
     <image>
       <url>https://nickmccarty.me/assets/images/og-default.png</url>
       <title>Nick McCarty</title>
       <link>https://nickmccarty.me</link>
     </image>
+  <item>
+    <title>Cost Envelope Management for Production AI Agents</title>
+    <link>https://nickmccarty.me/blog/cost-envelope-management.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/cost-envelope-management.html</guid>
+    <pubDate>Fri, 12 Jun 2026 00:00:00 +0000</pubDate>
+    <description>Token budgets, VRAM residency, auto-throttling, and hierarchical cost attribution — what 239 logged runs reveal about where an agent's costs actually accumulate, and the envelope that contains them.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>cost envelope management</category>
+    <category>production AI agents</category>
+    <category>token budgeting</category>
+    <category>hierarchical cost attribution</category>
+    <category>auto-throttling AI agents</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/cost-envelope-management.png" type="image/png" length="0"/>
+  </item>
   <item>
     <title>Layer 4 Circuit Diagram</title>
     <link>https://nickmccarty.me/blog/layer4-circuit-diagram.html</link>
@@ -471,6 +485,8 @@
     <description>OWASP's ASI Top 10 maps ten attack classes that emerge when LLMs gain tools, memory, and autonomy — audited against the harness and translated into concrete mitigations.</description>
     <author>nickmccarty0@gmail.com (Nick McCarty)</author>
     <category>OWASP ASI Top 10</category>
+    <category>OWASP LLM Top 10</category>
+    <category>prompt injection defense</category>
     <category>LLM harness hardening</category>
     <category>memory poisoning mitigation</category>
     <enclosure url="https://nickmccarty.me/assets/images/og/agentic-threat-hardening.png" type="image/png" length="0"/>
@@ -606,18 +622,6 @@
     <category>harness pipeline monitoring</category>
     <category>agentic convergence interventions</category>
     <enclosure url="https://nickmccarty.me/assets/images/og/supervisor.png" type="image/png" length="0"/>
-  </item>
-  <item>
-    <title>The Audio Data Flywheel</title>
-    <link>https://nickmccarty.me/blog/audio-data-flywheel.html</link>
-    <guid isPermaLink="true">https://nickmccarty.me/blog/audio-data-flywheel.html</guid>
-    <pubDate>Sat, 23 May 2026 00:00:00 +0000</pubDate>
-    <description>Every voice request produces a (audio, raw_transcript, corrected_transcript) triple. Accumulate enough of them and you have supervised training data for ASR fine-tuning — closing the loop with NeMo Speech and NeMo RL.</description>
-    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
-    <category>audio data flywheel</category>
-    <category>ASR fine-tuning</category>
-    <category>NeMo Speech</category>
-    <enclosure url="https://nickmccarty.me/assets/images/og/audio-data-flywheel.png" type="image/png" length="0"/>
   </item>
   </channel>
 </rss>

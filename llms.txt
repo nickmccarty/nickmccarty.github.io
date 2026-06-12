@@ -36,6 +36,7 @@
 
 ### Agentic Harness Engineering
 
+- [Cost Envelope Management for Production AI Agents](https://nickmccarty.me/blog/cost-envelope-management.html)
 - [The Economic Data Tools: FRED and BEA](https://nickmccarty.me/blog/fred-bea-tools.html)
 - [The Wiggum Panel: Three-Persona Parallel Evaluation](https://nickmccarty.me/blog/panel.html)
 - [Closing the SkillOpt Gaps: What Actually Shipped](https://nickmccarty.me/blog/skillopt-shipped.html)

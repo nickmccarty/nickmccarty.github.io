@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="max-image-preview:large">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cost Envelope Management for Production AI Agents</title>
+  <meta name="description" content="Best practices for cost envelope management in production AI agents, grounded in 239 logged runs: token budgets, VRAM residency, auto-throttling, hierarchical cost attribution, and where Langfuse-style observability fits a local-first harness.">
+  <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
+  <link rel="canonical" href="https://nickmccarty.me/blog/cost-envelope-management.html">
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Cost Envelope Management for Production AI Agents">
+  <meta property="og:description" content="Token budgets, VRAM residency, auto-throttling, and hierarchical cost attribution — what 239 logged runs reveal about where an agent's costs actually accumulate, and the envelope that contains them.">
+  <meta property="og:url" content="https://nickmccarty.me/blog/cost-envelope-management.html">
+  <meta property="og:image" content="https://nickmccarty.me/assets/images/og/cost-envelope-management.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:site_name" content="Nick McCarty">
+  <meta property="article:published_time" content="2026-06-12T00:00:00Z">
+  <meta property="article:author" content="Nick McCarty">
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Cost Envelope Management for Production AI Agents">
+  <meta name="twitter:description" content="Token budgets, VRAM residency, auto-throttling, and hierarchical cost attribution — what 239 logged runs reveal about where an agent's costs actually accumulate.">
+  <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/cost-envelope-management.png">
+  <!-- JSON-LD -->
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Cost Envelope Management for Production AI Agents","description":"Token budgets, VRAM residency, auto-throttling, and hierarchical cost attribution — what 239 logged runs reveal about where an agent's costs actually accumulate, and the envelope that contains them.","keywords":"cost envelope management, production AI agents, token budgeting, hierarchical cost attribution, auto-throttling AI agents, FinOps for AI","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-06-12","dateModified":"2026-06-12","url":"https://nickmccarty.me/blog/cost-envelope-management.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/cost-envelope-management.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og/cost-envelope-management.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"cost envelope management in production AI agents"},{"@type":"Thing","name":"token budgeting"},{"@type":"Thing","name":"hierarchical cost attribution"},{"@type":"Thing","name":"auto-throttling"},{"@type":"Thing","name":"FinOps"},{"@type":"Thing","name":"Langfuse"},{"@type":"Thing","name":"CATP-LLM"}]}</script>
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script src="../assets/js/color-modes.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-YT69KZ91W7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-YT69KZ91W7');
+  </script>
+  <script src="../assets/js/analytics.js" defer></script>
+  <style>
+    .callout { border-left:3px solid var(--accent-cyan); padding:1rem 1.25rem; background:var(--bg-secondary); border-radius:0 8px 8px 0; margin:1.5rem 0; }
+    .callout p { margin:0; font-size:1.05rem; }
+    .callout.warning { border-left-color:var(--accent-pink); }
+    .stat-inline {
+      display: inline-block;
+      font-family: 'Courier New', monospace;
+      font-size: 0.88rem;
+      color: var(--accent-cyan);
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 0.1rem 0.4rem;
+    }
+    .budget-level {
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin: 1.25rem 0;
+      background: var(--bg-secondary);
+    }
+    .budget-level h3 { margin: 0 0 0.35rem; font-size: 1rem; display: flex; align-items: center; gap: 0.6rem; }
+    .budget-badge {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; padding: 0.2rem 0.5rem; border-radius: 4px;
+      background: var(--bg-tertiary); border: 1px solid var(--border-color);
+      color: var(--accent-cyan);
+    }
+    .budget-level p { margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; }
+    .budget-level .fix-ref { display: inline-block; margin-top: 0.6rem; font-size: 0.78rem; font-weight: 600; color: var(--accent-cyan); }
+  </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"Cost Envelope Management for Production AI Agents","item":"https://nickmccarty.me/blog/cost-envelope-management.html"}]}</script>
+</head>
+<body>
+  <nav>
+    <a href="../" class="logo" aria-label="Home"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4z"/></svg></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="../about.html">About</a>
+        <a href="../blog.html" class="active">Blog</a>
+        <a href="../contact.html">Contact</a>
+      </div>
+      <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/></svg>
+        <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/><path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <a href="../blog.html" class="back-link">&larr; Back to Blog</a>
+    <article>
+      <h1>Cost Envelope Management for Production AI Agents</h1>
+      <div class="post-meta">June 12, 2026 &bull; 10 min read</div>
+
+      <p>
+        Between April 7 and April 27, the harness ran the same eval task 239 times: <em>&ldquo;Search
+        for best practices for cost envelope management in production AI agents.&rdquo;</em> It issued
+        414 web searches, averaged 1.5 evaluation rounds per run, and passed its own quality bar
+        15 times. This post is the answer that task was looking for&mdash;written from the telemetry
+        those 239 runs left behind. It is both the findings and the bill.
+      </p>
+
+      <p>
+        A <strong>cost envelope</strong> is the set of resource budgets an agent must operate inside,
+        plus the enforcement that keeps it there. For an API-metered agent the envelope is denominated
+        in dollars. For a local-first harness the currencies are different but the discipline is
+        identical: <em>tokens</em> (context in, generation out), <em>seconds</em> (wall-clock
+        inference time), and <em>VRAM</em> (which models are resident, and for how long). Every
+        mechanism below generalizes to the dollar-denominated case&mdash;multiply tokens by a unit
+        price and the math carries over.
+      </p>
+
+      <h2>The Commodity Answer</h2>
+
+      <p>
+        Before the real mechanics, it is worth showing what the agent actually found out there. One of
+        the 239 runs&mdash;a 14B producer in a controlled experiment&mdash;synthesized the web&rsquo;s
+        consensus into advice like this:
+      </p>
+
+      <pre><code># Example: Measuring AI cost per inference
+import time
+
+start_time = time.time()
+result = model(prompt, context="...")
+end_time = time.time()
+
+cost = end_time - start_time
+print("Cost of inference:", cost, "seconds")</code></pre>
+
+      <p>
+        Cost per inference, measured in units of seconds&mdash;with a budget elsewhere in the same
+        document specified as <span class="stat-inline">CPU: 100 GHz</span>, and every section closing
+        with &ldquo;use Prometheus for monitoring and Grafana for visualization.&rdquo; This is not
+        the model failing; it is the model faithfully compressing what ranks for the query. The search
+        traces show the agent repeatedly reformulating&mdash;<em>&ldquo;best practices for cost
+        envelope management <strong>beyond</strong> observability and budget limits&rdquo;</em>,
+        <em>&ldquo;&hellip;<strong>beyond</strong> right-sizing and idle resource
+        elimination&rdquo;</em>&mdash;trying to escape that commodity layer. What follows is the
+        answer it could not find: an envelope described as enforcement points in a running system,
+        with the run logs to show where the costs actually accumulate.
+      </p>
+
+      <h2>The Envelope Has Four Levels</h2>
+
+      <p>
+        Budget enforcement that lives in one place fails. A per-request token cap does nothing about a
+        revision loop that issues fifteen requests; a loop cap does nothing about three models
+        squatting in VRAM at 0.1&times; generation speed. The envelope is four nested budgets, each
+        with its own enforcement point.
+      </p>
+
+      <div class="budget-level">
+        <h3>L1 &mdash; Per-Call <span class="budget-badge">tokens</span></h3>
+        <p>
+          Explicit <code>num_ctx</code> and <code>num_predict</code> overrides on every call site, so
+          no Modelfile default can silently set the context or generation budget. Context entering the
+          call is itself budgeted: wholesale document injection was replaced with gap-targeted
+          extraction after a single 14.8K-character wiki file was found bloating synthesis context past
+          27K characters&mdash;paying full price, in tokens and degraded output, for content the task
+          did not need.
+        </p>
+        <span class="fix-ref">Enforced by: call-site overrides, Surgical Compressor, Semantic Chunker</span>
+      </div>
+
+      <div class="budget-level">
+        <h3>L2 &mdash; Per-Run <span class="budget-badge">rounds &times; tokens</span></h3>
+        <p>
+          The Wiggum loop is capped at a maximum round count, and&mdash;more importantly&mdash;exits
+          early when spending more would buy nothing. Cycling detection compares consecutive rounds&rsquo;
+          scores and dimensional breakdowns; a producer repeating itself is cut off, saving roughly
+          <span class="stat-inline">1,300 s</span> of inference per stuck run. Best-round restoration
+          ensures that when the loop exhausts its budget without passing, the highest-scoring round is
+          what ships&mdash;so the spend buys the best available output rather than the last one.
+        </p>
+        <span class="fix-ref">Enforced by: round caps, cycling detection, best-round restoration in wiggum.py</span>
+      </div>
+
+      <div class="budget-level">
+        <h3>L3 &mdash; Per-Model <span class="budget-badge">VRAM &times; seconds</span></h3>
+        <p>
+          The Keep-Alive Budget treats VRAM residency as a spend decision. <code>_estimate_keep_alive()</code>
+          sets each model&rsquo;s <code>keep_alive</code> adaptively from how soon that role&mdash;producer,
+          evaluator, planner&mdash;will be called again, instead of pinning everything resident with
+          <code>-1</code>. The failure mode it prevents is expensive precisely because it is quiet:
+          an over-committed GPU does not crash, it generates at a tenth of normal speed, and every
+          token in the pipeline silently costs ten times as much wall-clock.
+        </p>
+        <span class="fix-ref">Enforced by: Keep-Alive Budget (A4), Model Role Separation (A2)</span>
+      </div>
+
+      <div class="budget-level">
+        <h3>L4 &mdash; Per-Fleet <span class="budget-badge">cost avoidance</span></h3>
+        <p>
+          The cheapest call is the one not made. The search cache fronts DDGS queries with a SQLite
+          TTL cache, so the 239 runs&rsquo; 414 web searches were a floor, not the true demand&mdash;repeat
+          queries within the TTL window cost nothing. The same logic applies to research contexts and
+          Semantic Scholar lookups. At fleet level, cache hit rate is a budget lever as real as any cap.
+        </p>
+        <span class="fix-ref">Enforced by: SQLite TTL Search Cache, prompt/context reuse</span>
+      </div>
+
+      <h2>The Anatomy of One Expensive Run</h2>
+
+      <p>
+        Aggregates hide structure, so here is a single fully-itemized run: a <code>/lit-review</code>
+        invocation that fetched 26 arXiv candidates, curated them through a five-persona panel,
+        annotated the 4 survivors, clustered, synthesized, and rendered a survey.
+      </p>
+
+      <ul style="margin: 1rem 0 1.5rem 1.5rem; line-height: 2.1;">
+        <li><strong>Total:</strong> <span class="stat-inline">1,823 s</span> &mdash;
+          <span class="stat-inline">60,940 tokens in</span> /
+          <span class="stat-inline">8,335 tokens out</span> at ~10 tok/s</li>
+        <li><strong>Input dominates output 7:1.</strong> Curation is the reason: 26 papers &times; 5
+          personas, each persona re-reading the paper annotation. The cost driver is not generation,
+          it is repeatedly <em>showing</em> things to models.</li>
+        <li><strong>Each annotation&rsquo;s evaluation round:</strong> ~127&ndash;132 s at 7 tok/s.
+          Quality gates are a second model reading the first model&rsquo;s output&mdash;verification
+          spend scales with however much you produce.</li>
+        <li><strong>The follow-up run was 10&times; cheaper.</strong> Annotating one known paper ID
+          cost <span class="stat-inline">174 s</span>, 4,949 in / 1,162 out&mdash;because retrieval and
+          curation were already done. Knowing <em>what</em> to read is most of the budget.</li>
+      </ul>
+
+      <div class="callout">
+        <p>The ratio worth internalizing: in an agentic pipeline with quality gates, <strong>input tokens
+        are the budget</strong>. Generation is the visible cost; re-reading&mdash;by evaluators, panels,
+        and revision rounds&mdash;is the dominant one. Context engineering and cost management are the
+        same discipline viewed from different dashboards.</p>
+      </div>
+
+      <h2>What 239 Runs Say About Where the Budget Goes</h2>
+
+      <p>
+        The run log for the cost-management task itself, April 7&ndash;27, across five producer
+        models (qwen3.6-35b carried 144 of the runs):
+      </p>
+
+      <ul style="margin: 1rem 0 1.5rem 1.5rem; line-height: 2.1;">
+        <li><span class="stat-inline">239 runs</span>, <span class="stat-inline">414 web searches</span>,
+          average <span class="stat-inline">1.5 Wiggum rounds</span> per run &mdash; every average round
+          above 1.0 is a full re-read and partial re-write of the output.</li>
+        <li>Average final composite <span class="stat-inline">7.48</span> against an 8.0 pass bar &mdash;
+          the marginal revision round was usually spent closing a half-point gap.</li>
+        <li>Of 86 multi-round runs, <span class="stat-inline">8 regressed</span> &mdash; the final score
+          came in below round one. Those rounds were worse than wasted: they paid tokens to damage the
+          output, which is why best-round restoration is a cost control and not just a quality control.</li>
+        <li>On enumerated tasks generally, <code>count_check_retry</code> fires in 25% of runs and the
+          retried output averages <span class="stat-inline">&minus;0.39</span> composite &mdash; a
+          measured price for satisfying a count constraint. Budgeting means knowing which retries have
+          negative expected value.</li>
+      </ul>
+
+      <p>
+        This is <strong>hierarchical cost attribution</strong> in practice, and it requires no
+        platform&mdash;only logging discipline. Every run appends to <code>runs.jsonl</code> with its
+        model assignments, tool calls, searches, round count, scores, and output size; attribution
+        rolls up from call &rarr; stage &rarr; run &rarr; task type &rarr; fleet with a dozen lines of
+        pandas. The <a href="./analytics-view.html">token-spend dashboard</a> reads the same file. And
+        the same telemetry drives <strong>auto-throttling</strong>: cycling detection, count-check
+        gating, and round caps are throttles triggered by run-level signals, not human review.
+      </p>
+
+      <h2>Where the Hosted Tooling Fits</h2>
+
+      <p>
+        The query traces that motivated this post kept asking for tools by name&mdash;AgentOps,
+        Langfuse, Arize, Prometheus, Grafana&mdash;and for &ldquo;FinOps integration.&rdquo; The honest
+        placement: those platforms supply the <em>ledger</em>&mdash;per-call traces, token-to-dollar
+        attribution, dashboards, alerts. They are the hosted equivalent of <code>runs.jsonl</code> plus
+        the analytics view, and if your agents run against metered APIs, adopt one early; rebuilding
+        trace plumbing is undifferentiated work. What no ledger supplies is the <em>enforcement</em>:
+        round caps, cycling detection, residency budgets, and cache policy live inside the agent loop,
+        at the four levels above. A dashboard that watches an unbounded loop is a bill with better
+        graphs.
+      </p>
+
+      <div class="callout">
+        <p><strong>Academic grounding:</strong> the research frontier is pushing cost from a constraint
+        into the planner&rsquo;s objective. CATP-LLM
+        (<a href="https://arxiv.org/abs/2411.16313" target="_blank" rel="noopener">arXiv:2411.16313</a>)
+        trains LLMs for cost-aware tool planning&mdash;choosing tool sequences under explicit cost
+        terms rather than treating spend as someone else&rsquo;s problem after the plan is drawn. That
+        is the envelope&rsquo;s logical endpoint: L1&ndash;L4 enforce budgets around the model;
+        cost-aware planning puts the budget inside the model&rsquo;s decision process.</p>
+      </div>
+
+      <h2>Open Questions</h2>
+
+      <ul style="margin: 1rem 0 1.5rem 1.5rem; line-height: 2.1;">
+        <li>Round caps are static; the regression data suggests they should not be. Can the supervisor
+          learn a per-task-type stopping rule from the marginal-score-per-round curve&mdash;spend a third
+          round on tasks where round 3 historically gains +0.4, never on tasks where it gains nothing?</li>
+        <li>The 7:1 input-to-output ratio prices verification at a multiple of generation. At what
+          quality bar does a cheaper evaluator model&mdash;accepting some scoring noise&mdash;beat a
+          better one, net of the re-rounds the noise causes?</li>
+        <li>Cache TTL is a cost-freshness trade made once, globally. Should TTL vary with the query&rsquo;s
+          volatility&mdash;economic data series going stale in days, arXiv metadata in months?</li>
+        <li>What is the local-first equivalent of a dollar alert&mdash;a watt-hour budget per run? The
+          telemetry has everything needed except the power draw.</li>
+      </ul>
+
+      <div class="related-post">
+        <span class="related-label">Related</span>
+        <a href="./inference-patterns.html">
+          <h4>Inference Patterns: The Substrate Layer</h4>
+          <p>The Inference Shim, Model Role Separation, Evaluator Pool, and the Keep-Alive Budget &mdash; the L3 enforcement layer in full detail.</p>
+          <span class="read-more">Read more &rarr;</span>
+        </a>
+      </div>
+
+      <section class="related-posts">
+        <h3 class="related-posts-heading">Related posts</h3>
+        <div class="related-posts-grid">
+          <a href="./analytics-view.html" class="related-post-card">
+            <div class="related-post-num">Dashboard</div>
+            <div class="related-post-title">The Analytics View</div>
+            <div class="related-post-desc">Score trends, token spend, and run distribution &mdash; the attribution ledger rendered as a dashboard.</div>
+          </a>
+          <a href="./observability-flywheel.html" class="related-post-card">
+            <div class="related-post-num">Patterns</div>
+            <div class="related-post-title">Observability and the Data Flywheel</div>
+            <div class="related-post-desc">The JSONL audit log and RunTrace patterns that make hierarchical cost attribution possible.</div>
+          </a>
+          <a href="./search-cache.html" class="related-post-card">
+            <div class="related-post-num">Infrastructure</div>
+            <div class="related-post-title">The Search Cache</div>
+            <div class="related-post-desc">SQLite TTL caching for DDGS queries and research contexts &mdash; the L4 cost-avoidance layer.</div>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer>
+    <div class="social-links">
+      <a href="https://linkedin.com/in/nicholasmccarty" target="_blank" rel="noopener" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401m-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4"/></svg></a>
+      <a href="https://github.com/nickmccarty" target="_blank" rel="noopener" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8"/></svg></a>
+      <a href="mailto:nick@upskilled.consulting" aria-label="Email"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/></svg></a>
+    </div>
+    <p class="footer-copy">&copy; 2026 Nick McCarty</p>
+  </footer>
+</body>
+</html>

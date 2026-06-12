@@ -1,27 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-     xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://nickmccarty.me/</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://nickmccarty.me/about.html</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog.html</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://nickmccarty.me/contact.html</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-12</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -30,110 +29,66 @@
     <lastmod>2026-05-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/agent-pipeline.png</image:loc>
-      <image:title>Inside agent.py: The Three-Turn Research Pipeline</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/agentic-design-patterns.html</loc>
     <lastmod>2026-05-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/agentic-design-patterns.png</image:loc>
-      <image:title>Agentic System Design Patterns</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/agentic-threat-hardening.html</loc>
     <lastmod>2026-05-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/agentic-threat-hardening.png</image:loc>
-      <image:title>Agentic Threat Hardening: The OWASP Top 10, Applied</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/alignment-fine-tuning.html</loc>
     <lastmod>2026-05-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/alignment-fine-tuning.png</image:loc>
-      <image:title>Fine-Tuning and Alignment Deep Cuts: Synthetic Data, Poisoning, and Safety Recovery</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/alt-data-pipeline.html</loc>
     <lastmod>2026-05-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/alt-data-pipeline.png</image:loc>
-      <image:title>The Alt-Data Pipeline: From Beige Book to Paper Trading Thesis</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/analytics-view.html</loc>
     <lastmod>2026-05-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/analytics-view.png</image:loc>
-      <image:title>The Analytics View: Score Trends, Token Spend, and Run Distribution</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/audio-data-flywheel.html</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/audio-data-flywheel.png</image:loc>
-      <image:title>The Audio Data Flywheel</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/autoresearch-convergence.html</loc>
     <lastmod>2026-05-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/autoresearch-convergence.png</image:loc>
-      <image:title>When the Loop Defeats Itself: Convergence Failures in Autonomous Prompt Optimization</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/autoresearch-view.html</loc>
     <lastmod>2026-05-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/autoresearch-view.png</image:loc>
-      <image:title>The Autoresearch View: 40 Experiments, One Keep, and a 3% Signal Rate</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/beige-book-rag-dpo.html</loc>
     <lastmod>2026-05-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/beige-book-rag-dpo.png</image:loc>
-      <image:title>The Position Swap: Beige Book RAG Results and the DPO Cold-Start Problem</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/circuit-extraction-notebook.html</loc>
     <lastmod>2026-05-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/circuit-extraction-notebook.png</image:loc>
-      <image:title>Circuit Extraction Notebook</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/circuit-extraction-pot-detection.html</loc>
@@ -146,120 +101,78 @@
     <lastmod>2026-05-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/context-engineering.png</image:loc>
-      <image:title>Context Engineering: What Reaches the Model</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/convergence-detectors-shipped.html</loc>
     <lastmod>2026-05-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/convergence-detectors-shipped.png</image:loc>
-      <image:title>Building the Detectors: What Actually Shipped After 107 Experiments</image:title>
-    </image:image>
+  </url>
+  <url>
+    <loc>https://nickmccarty.me/blog/cost-envelope-management.html</loc>
+    <lastmod>2026-06-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/curator.html</loc>
     <lastmod>2026-05-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/curator.png</image:loc>
-      <image:title>Five Personas, One Veto: Consensus Filtering for Fine-Tuning Data</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/debug-troubleshoot-skills.html</loc>
     <lastmod>2026-05-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/debug-troubleshoot-skills.png</image:loc>
-      <image:title>The Diagnostic Skills: /debug and /troubleshoot</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/design-build-page-skills.html</loc>
     <lastmod>2026-05-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/design-build-page-skills.png</image:loc>
-      <image:title>The Site Generation Skills: /design and /build-page</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/docker-deployment.html</loc>
     <lastmod>2026-05-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/docker-deployment.png</image:loc>
-      <image:title>Deploying the Harness with Docker: CPU, GPU, and Compose Variants</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/email-skill.html</loc>
     <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/email-skill.png</image:loc>
-      <image:title>The Email Skill: Personalized Outreach Drafts from Conference Speaker CSVs</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/eval-suite.html</loc>
     <lastmod>2026-05-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/eval-suite.png</image:loc>
-      <image:title>The Regression Harness: Eval Suite, Criterion Functions, and Experimental Infrastructure</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/evaluation-robustness.html</loc>
     <lastmod>2026-04-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/evaluation-robustness.png</image:loc>
-      <image:title>Automated Evaluation Robustness: Metamorphic Testing, Scoring Bias, and Prompt Sensitivity</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/evaluation-uncertainty.html</loc>
     <lastmod>2026-04-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/evaluation-uncertainty.png</image:loc>
-      <image:title>Evaluation Uncertainty, Calibration, and Harness Reliability</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/experimental-methodology.html</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/experimental-methodology.png</image:loc>
-      <image:title>Experimental Methodology: Four Experiments, One Pipeline</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/explorer-view.html</loc>
     <lastmod>2026-05-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/explorer-view.png</image:loc>
-      <image:title>The Explorer View: Per-Run Pipeline DAG Inspector</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/extracting-vision-features.html</loc>
@@ -272,10 +185,6 @@
     <lastmod>2026-05-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/failure-taxonomy.png</image:loc>
-      <image:title>A Failure Taxonomy for Agentic Systems</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/fastapi-web-app.html</loc>
@@ -288,10 +197,6 @@
     <lastmod>2026-05-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/fine-tune-view.png</image:loc>
-      <image:title>The Fine-tune View: DPO Training Runs, RL Data, and the Preference Feedback Loop</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/fine-tuning-vision-models.html</loc>
@@ -304,64 +209,40 @@
     <lastmod>2026-06-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/forge-plugin-skills.png</image:loc>
-      <image:title>The Plugin System: /forge:plugin and /forge:list</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/fred-bea-tools.html</loc>
     <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/fred-bea-tools.png</image:loc>
-      <image:title>The Economic Data Tools: FRED and BEA</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/fred-rag-results.html</loc>
     <lastmod>2026-05-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/fred-rag-results.png</image:loc>
-      <image:title>Live Data Beats Narrative: FRED RAG Experiment Results</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/gepa-autoresearch.html</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/gepa-autoresearch.png</image:loc>
-      <image:title>From Hill-Climbing to Pareto: GEPA and the Autoresearch Loop</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/github-skill.html</loc>
     <lastmod>2026-05-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/github-skill.png</image:loc>
-      <image:title>The GitHub Skill: LLM-Assisted Git Operations from the Agent Loop</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/github-view.html</loc>
     <lastmod>2026-05-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/github-view.png</image:loc>
-      <image:title>The GitHub View: Repo Health at a Glance</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/harness-data-model.html</loc>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -370,110 +251,66 @@
     <lastmod>2026-05-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/harness-roadmap.png</image:loc>
-      <image:title>Seven Principles and a Moving Frontier: The Harness Roadmap</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/harness-thesis.html</loc>
     <lastmod>2026-05-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/harness-thesis.png</image:loc>
-      <image:title>The Harness Thesis: Why Scaffolding Beats Model Selection</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/inference-patterns.html</loc>
     <lastmod>2026-05-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/inference-patterns.png</image:loc>
-      <image:title>Inference Patterns: The Substrate Layer</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/inference-shim.html</loc>
     <lastmod>2026-05-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/inference-shim.png</image:loc>
-      <image:title>inference.py: The Unified LLM Backend Shim</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/judge-benchmarks-scaling.html</loc>
     <lastmod>2026-04-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/judge-benchmarks-scaling.png</image:loc>
-      <image:title>Judge Benchmarks and Test-Time Scaling: Where LLM Judges Succeed and Where They Don't</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/judge-reliability.html</loc>
     <lastmod>2026-04-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/judge-reliability.png</image:loc>
-      <image:title>Judging the Judges: Benchmark Contamination and LLM Evaluation Reliability</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/knowledge-graphs-extraction.html</loc>
     <lastmod>2026-05-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/knowledge-graphs-extraction.png</image:loc>
-      <image:title>Knowledge Graphs and Structured Extraction: Beyond the Vector Store</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/layer4-circuit-diagram.html</loc>
     <lastmod>2026-06-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/layer4-circuit-diagram.png</image:loc>
-      <image:title>Layer 4 Circuit Diagram</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/leverage.html</loc>
     <lastmod>2026-05-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/leverage.png</image:loc>
-      <image:title>Leverage: What the Metric Measures, What It Doesn't, and Why the Replacement Framing Gets the Math Wrong</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/lit-review-skill.html</loc>
     <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/lit-review-skill.png</image:loc>
-      <image:title>The Lit-Review Skill: Seven Steps from ArXiv Query to Rendered Survey</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/mcp-view.html</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/mcp-view.png</image:loc>
-      <image:title>The MCP View: Exposing the Harness as a Tool Server</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/mechanistic-interpretability.html</loc>
@@ -486,210 +323,126 @@
     <lastmod>2026-05-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/memory-observability.png</image:loc>
-      <image:title>Memory as Infrastructure: Quality-Weighted Retrieval and the Ontology Graph</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/memory-view.html</loc>
     <lastmod>2026-05-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/memory-view.png</image:loc>
-      <image:title>The Memory View: 2,173 Observations, Quality Signals, and an Ontology Graph</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/mine-knowledge.html</loc>
     <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/mine-knowledge.png</image:loc>
-      <image:title>Mining a Ground-Truth Knowledge Base for the Eval Suite</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/multi-objective-alignment.html</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/multi-objective-alignment.png</image:loc>
-      <image:title>Multi-Objective Alignment: Beyond Scalar Rewards</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/observability-flywheel.html</loc>
     <lastmod>2026-05-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/observability-flywheel.png</image:loc>
-      <image:title>Observability and the Data Flywheel</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/onboarding-grill-me-skills.html</loc>
     <lastmod>2026-06-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/onboarding-grill-me-skills.png</image:loc>
-      <image:title>The Interview Skills: /grill-me and /onboarding</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/op-cli.html</loc>
     <lastmod>2026-05-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/op-cli.png</image:loc>
-      <image:title>The op CLI: A Rich REPL for the Research Harness</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/orchestration-patterns.html</loc>
     <lastmod>2026-05-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/orchestration-patterns.png</image:loc>
-      <image:title>Orchestration Patterns: Scaling to Multi-Agent Execution</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/osint-enrichment.html</loc>
     <lastmod>2026-05-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/osint-enrichment.png</image:loc>
-      <image:title>OSINT Enrichment: Nine Layers of Passive Reconnaissance</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/osint-skill.html</loc>
     <lastmod>2026-05-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/osint-skill.png</image:loc>
-      <image:title>The OSINT Skill: 11-Layer Target Enrichment for Research Tasks</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/page-feedback-widget.html</loc>
     <lastmod>2026-05-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/page-feedback-widget.png</image:loc>
-      <image:title>The Page Feedback Widget: Closing the Loop Between Browser and Agent</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/panel.html</loc>
     <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/panel.png</image:loc>
-      <image:title>The Wiggum Panel: Three-Persona Parallel Evaluation</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/parallel-inference.html</loc>
     <lastmod>2026-05-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/parallel-inference.png</image:loc>
-      <image:title>Parallel Inference: Hardware Substrates for LLM Workloads</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/perplexity-vs-harness.html</loc>
     <lastmod>2026-05-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/perplexity-vs-harness.png</image:loc>
-      <image:title>Harness vs. Perplexity: Eight Iterations to Parity</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/pipeline-in-motion.html</loc>
     <lastmod>2026-05-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/pipeline-in-motion.png</image:loc>
-      <image:title>The Pipeline in Motion: Tracing a Task Through All Eleven Subsystems</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/pipeline-view.html</loc>
     <lastmod>2026-05-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/pipeline-view.png</image:loc>
-      <image:title>The Pipeline View: Data Enrichment DAG</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/planner.html</loc>
     <lastmod>2026-05-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/planner.png</image:loc>
-      <image:title>The Planner: Two-Pass Pre-Research Analysis</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/playwright-skill.html</loc>
     <lastmod>2026-05-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/playwright-skill.png</image:loc>
-      <image:title>The Playwright Skill: LLM-Guided Navigation via ARIA Snapshots</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/prompt-injection-security.html</loc>
     <lastmod>2026-05-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/prompt-injection-security.png</image:loc>
-      <image:title>Prompt Injection and Agentic Security: What the Attack Literature Says</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/research-history-view.html</loc>
     <lastmod>2026-05-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/research-history-view.png</image:loc>
-      <image:title>The Research History View: A Unified Activity Log</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/runs-view.html</loc>
     <lastmod>2026-05-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/runs-view.png</image:loc>
-      <image:title>The Runs View: Pipeline Stage Visualization and Live Run Monitoring</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/sam-object-detection.html</loc>
@@ -708,120 +461,72 @@
     <lastmod>2026-05-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/sbom-aibom.png</image:loc>
-      <image:title>SBOM and AIBOM for Agentic Systems</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/scratchpad-test-harness-skills.html</loc>
     <lastmod>2026-06-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/scratchpad-test-harness-skills.png</image:loc>
-      <image:title>The Developer Utility Skills: /scratchpad and /test-harness</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/search-cache.html</loc>
     <lastmod>2026-05-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/search-cache.png</image:loc>
-      <image:title>The Search Cache: SQLite TTL Caching for DDGS Queries and Research Contexts</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/security-patterns.html</loc>
     <lastmod>2026-05-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/security-patterns.png</image:loc>
-      <image:title>Security Patterns: Constraining the Agent</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/security-view.html</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/security-view.png</image:loc>
-      <image:title>The Security View: 36 Events, 28 Blocks, and Live Injection Intercepts</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/server.html</loc>
     <lastmod>2026-05-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/server.png</image:loc>
-      <image:title>harness/api: The FastAPI Backend and Dashboard Server</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/sessions-artifacts-view.html</loc>
     <lastmod>2026-05-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/sessions-artifacts-view.png</image:loc>
-      <image:title>Sessions and Artifacts: The Harness Output Registry</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/site-deck-skills.html</loc>
     <lastmod>2026-05-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/site-deck-skills.png</image:loc>
-      <image:title>The Site Generation Skills: /site and /deck</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/skillopt-gaps.html</loc>
     <lastmod>2026-05-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/skillopt-gaps.png</image:loc>
-      <image:title>What SkillOpt Gets Right</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/skillopt-shipped.html</loc>
     <lastmod>2026-06-02</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/skillopt-shipped.png</image:loc>
-      <image:title>Closing the SkillOpt Gaps: What Actually Shipped</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/skills-registry.html</loc>
     <lastmod>2026-05-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/skills-registry.png</image:loc>
-      <image:title>The Skills Registry: Hook Points, Auto-Activation, and 38 Skills</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/slm-efficiency.html</loc>
     <lastmod>2026-05-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/slm-efficiency.png</image:loc>
-      <image:title>Small Language Models and the Efficiency-Accuracy Frontier</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/sparse-probing-pot-detection.html</loc>
@@ -834,110 +539,66 @@
     <lastmod>2026-04-29</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/structured-knowledge-queries.png</image:loc>
-      <image:title>Structured Knowledge Queries: Ontology, SPARQL, and Grounded Verification</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/subagent-demo.html</loc>
     <lastmod>2026-05-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/subagent-demo.png</image:loc>
-      <image:title>The Subagent Demo Suite: Orchestrating Multi-Task Research Portfolios</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/submit-view.html</loc>
     <lastmod>2026-05-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/submit-view.png</image:loc>
-      <image:title>The Submit View: Queuing Tasks and Watching the Pipeline Execute in Real Time</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/suggest-reorient-skills.html</loc>
     <lastmod>2026-05-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/suggest-reorient-skills.png</image:loc>
-      <image:title>The Navigation Skills: /suggest and /re-orient</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/supervisor.html</loc>
     <lastmod>2026-05-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/supervisor.png</image:loc>
-      <image:title>The Supervisor: Four Convergence Signals and Advisory Interventions</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/system-view.html</loc>
     <lastmod>2026-05-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/system-view.png</image:loc>
-      <image:title>The System View: Governance Docs, Active Configuration, and 38 Skills</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/telemetry-router.html</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/telemetry-router.png</image:loc>
-      <image:title>The Telemetry Router: Mining runs.jsonl for Self-Directed Improvement</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/the-wiggum-loop.html</loc>
     <lastmod>2026-05-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/the-wiggum-loop.png</image:loc>
-      <image:title>The Wiggum Loop: Cross-Model Evaluation and Dimensional Revision</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/tinytroupe-tasks.html</loc>
     <lastmod>2026-05-27</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/tinytroupe-tasks.png</image:loc>
-      <image:title>Synthetic Eval Task Generation with TinyTroupe Personas</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/tool-use-planning.html</loc>
     <lastmod>2026-05-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/tool-use-planning.png</image:loc>
-      <image:title>Agentic Tool Use and Planning: What the Literature Says</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/trade-execution-skills.html</loc>
     <lastmod>2026-06-01</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/trade-execution-skills.png</image:loc>
-      <image:title>The Trading Skills: /validate-trades and /execute-trades</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/training-faster-rcnn-geospatial.html</loc>
@@ -950,39 +611,23 @@
     <lastmod>2026-05-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/verification-patterns.png</image:loc>
-      <image:title>Verification Patterns: Measuring and Improving Output Quality</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/voice-view.html</loc>
     <lastmod>2026-05-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/voice-view.png</image:loc>
-      <image:title>The Voice View: Push-to-Talk Notes, Task Dictation, and the Audio Data Flywheel</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/wiki-sync.html</loc>
     <lastmod>2026-05-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/wiki-sync.png</image:loc>
-      <image:title>The Wiki Sync Skill: Deterministic Source Extraction and Gap-Targeted Code Injection</image:title>
-    </image:image>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/youtube-transcribe.html</loc>
     <lastmod>2026-05-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://nickmccarty.me/assets/images/og/youtube-transcribe.png</image:loc>
-      <image:title>YouTube and Media Transcription: Two Paths, One Research Input</image:title>
-    </image:image>
   </url>
 </urlset>

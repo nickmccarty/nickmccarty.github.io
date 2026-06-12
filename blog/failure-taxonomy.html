@@ -5,13 +5,13 @@
   <meta name="robots" content="max-image-preview:large">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>A Failure Taxonomy for Agentic Systems</title>
-  <meta name="description" content="Six failure classes derived from 1,500 logged production runs: Retrieval, Planning, Synthesis, Evaluation, Revision, and Infrastructure failures — with frequency data, representative records, and the patterns that reduced each class's rate.">
+  <meta name="description" content="Six failure classes derived from 1,500 logged production runs — Retrieval, Planning, Synthesis, Evaluation, Revision, and Infrastructure — with frequency data, representative records, and a mapping to MAST, the multi-agent AI system failure taxonomy.">
   <link rel="alternate" type="application/rss+xml" title="Nick McCarty" href="https://nickmccarty.me/feed.xml">
   <link rel="canonical" href="https://nickmccarty.me/blog/failure-taxonomy.html">
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="A Failure Taxonomy for Agentic Systems">
-  <meta property="og:description" content="Six failure classes — Retrieval, Planning, Synthesis, Evaluation, Revision, Infrastructure — ranked by frequency and cost, with real data from 1,500 production runs and the diagnostic patterns that catch them early.">
+  <meta property="og:description" content="Six failure classes ranked by frequency and cost, with real data from 1,500 production runs, the diagnostic patterns that catch them early, and a mapping to the MAST multi-agent failure taxonomy.">
   <meta property="og:url" content="https://nickmccarty.me/blog/failure-taxonomy.html">
   <meta property="og:image" content="https://nickmccarty.me/assets/images/og/failure-taxonomy.png">
   <meta property="og:image:width" content="1200">
@@ -25,7 +25,7 @@
   <meta name="twitter:description" content="Six failure classes — Retrieval, Planning, Synthesis, Evaluation, Revision, Infrastructure — ranked by frequency and cost, with real data from 1,500 production runs.">
   <meta name="twitter:image" content="https://nickmccarty.me/assets/images/og/failure-taxonomy.png">
   <!-- JSON-LD -->
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"A Failure Taxonomy for Agentic Systems","description":"Six failure classes — retrieval, synthesis, planning, evaluation, revision, infrastructure — ranked by frequency and cost, with real data from 1,500 production runs.","keywords":"agentic system failure taxonomy, retrieval failure analysis, planning failure production","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-05-22","dateModified":"2026-05-22","url":"https://nickmccarty.me/blog/failure-taxonomy.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/failure-taxonomy.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og/failure-taxonomy.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"agentic system failure taxonomy"},{"@type":"Thing","name":"retrieval failure analysis"},{"@type":"Thing","name":"planning failure production"}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"A Failure Taxonomy for Agentic Systems","description":"Six failure classes — retrieval, synthesis, planning, evaluation, revision, infrastructure — ranked by frequency and cost, with real data from 1,500 production runs.","keywords":"agentic system failure taxonomy, multi-agent AI system failure modes, MAST taxonomy, retrieval failure analysis, planning failure production","author":{"@type":"Person","@id":"https://nickmccarty.me/#person","name":"Nick McCarty","url":"https://nickmccarty.me","sameAs":["https://linkedin.com/in/nicholasmccarty","https://github.com/nickmccarty"]},"publisher":{"@type":"Organization","@id":"https://upskilled.consulting/#organization","name":"Upskilled Consulting","url":"https://upskilled.consulting","logo":{"@type":"ImageObject","url":"https://upskilled.consulting/assets/images/logo.png"}},"datePublished":"2026-05-22","dateModified":"2026-06-12","url":"https://nickmccarty.me/blog/failure-taxonomy.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://nickmccarty.me/blog/failure-taxonomy.html"},"image":{"@type":"ImageObject","url":"https://nickmccarty.me/assets/images/og/failure-taxonomy.png","width":1200,"height":630},"inLanguage":"en-US","articleSection":"Agentic Harness Engineering","isPartOf":{"@type":"Blog","name":"Nick McCarty","url":"https://nickmccarty.me/blog.html"},"speakable":{"@type":"SpeakableSpecification","cssSelector":["h1",".subtitle"]},"about":{"@type":"Thing","name":"Agentic Harness Engineering"},"mentions":[{"@type":"Thing","name":"agentic system failure taxonomy"},{"@type":"Thing","name":"multi-agent AI system failure modes"},{"@type":"Thing","name":"MAST taxonomy"},{"@type":"Thing","name":"MAST-Data"},{"@type":"Thing","name":"retrieval failure analysis"},{"@type":"Thing","name":"planning failure production"}]}</script>
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="../assets/images/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="../assets/images/favicon-16x16.png">
@@ -369,6 +369,61 @@ print(f"Revision regressions: {fails['regression'].sum()} / {len(fails)} fails")
         derived from observing a failure class in production, diagnosing its root cause, and
         implementing a solution whose consequences were measured over subsequent runs.
       </p>
+
+      <h2>Where This Sits Against MAST</h2>
+
+      <p>
+        The six classes above were derived from one system&rsquo;s logs, which raises the obvious
+        question: do they generalize? The closest academic analog is MAST&mdash;the Multi-Agent
+        System Failure Taxonomy (<a href="https://arxiv.org/abs/2503.13657" target="_blank" rel="noopener">arXiv:2503.13657</a>)&mdash;the
+        first taxonomy of failure modes in multi-agent AI systems, built from MAST-Data, a corpus
+        of more than 1,600 annotated execution traces collected across seven popular multi-agent
+        frameworks running GPT-4, Claude 3, Qwen2.5, and CodeLlama backends. Its three top-level
+        categories were validated with high inter-annotator agreement
+        (<span class="stat-inline">&kappa; = 0.88</span>): <em>specification issues</em>,
+        <em>inter-agent misalignment</em>, and <em>task verification failures</em>.
+      </p>
+
+      <p>The two taxonomies map cleanly where the architectures overlap:</p>
+
+      <ul style="margin: 1rem 0 1.5rem 1.5rem; line-height: 2.1;">
+        <li><strong>Specification issues &harr; F2 Planning failures.</strong> MAST&rsquo;s ambiguous-task and
+          role-definition failures are the multi-agent generalization of the planner generating queries
+          that miss the task&rsquo;s core requirement. The closed-book pre-pass in Planner-First (B1) is
+          a specification fix.</li>
+        <li><strong>Task verification failures &harr; F4 Evaluation failures.</strong> MAST&rsquo;s missing or
+          shallow verification maps directly onto evaluator hallucination, drift, and self-evaluation
+          bias. Model Role Separation (A2) and the Evaluator Pool (A3) exist because verification by
+          the producing agent is unreliable&mdash;MAST reaches the same conclusion at the
+          inter-agent level.</li>
+        <li><strong>Inter-agent misalignment</strong> has no analog in a single-pipeline harness&mdash;it
+          emerges only when multiple agents hold divergent task state. It becomes relevant the moment
+          the harness scales to <a href="./orchestration-patterns.html">multi-agent DAG execution</a>,
+          which is why worktree isolation and DAG dependency contracts appear in that post.</li>
+        <li><strong>F1, F5, and F6 sit below MAST&rsquo;s level of analysis.</strong> Retrieval, revision, and
+          infrastructure failures are per-agent substrate problems. MAST assumes each agent&rsquo;s
+          pipeline works and asks what breaks between agents; this taxonomy asks what breaks inside one.</li>
+      </ul>
+
+      <p>
+        MAST&rsquo;s headline finding is worth stating plainly: across frameworks and models, the
+        authors attribute the bulk of failures to system design rather than model capability&mdash;the
+        improvement headroom is in the scaffolding. That is the <a href="./harness-thesis.html">harness
+        thesis</a>, arrived at independently from 1,600 traces of other people&rsquo;s systems.
+      </p>
+
+      <div class="callout pink">
+        <p><strong>Academic grounding:</strong> The production literature corroborates from several angles.
+        A system-level taxonomy of LLM applications (<a href="https://arxiv.org/abs/2511.19933" target="_blank" rel="noopener">arXiv:2511.19933</a>)
+        catalogs fifteen hidden failure modes invisible to knowledge-and-reasoning benchmarks. A study of
+        agentic systems in production (<a href="https://arxiv.org/abs/2605.01604" target="_blank" rel="noopener">arXiv:2605.01604</a>)
+        identifies seven production-specific failure modes and finds that ROUGE, BERTScore, and accuracy
+        fail to detect four of them entirely&mdash;and catch the remaining three only after a multi-cycle
+        lag, which is the argument for dimensional rubrics over surface metrics. And Aegis
+        (<a href="https://arxiv.org/abs/2508.19504" target="_blank" rel="noopener">arXiv:2508.19504</a>)
+        shows that fixing the environment alone&mdash;observability, computation offloading, speculative
+        actions&mdash;raises agent success rates 6.7&ndash;12.5% with zero changes to the agent or model.</p>
+      </div>
 
       <h2>What the Literature Leaves Open</h2>
       <p>Several questions raised by this body of research remain unresolved — and bear directly on how the harness should diagnose and respond to its own failures:</p>
