@@ -11,7 +11,7 @@
     <language>en-us</language>
     <managingEditor>nickmccarty0@gmail.com (Nick McCarty)</managingEditor>
     <webMaster>nickmccarty0@gmail.com (Nick McCarty)</webMaster>
-    <lastBuildDate>Fri, 12 Jun 2026 20:17:15 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 13 Jun 2026 01:11:59 +0000</lastBuildDate>
     <pubDate>Fri, 12 Jun 2026 00:00:00 +0000</pubDate>
     <ttl>1440</ttl>
     <image>
@@ -19,6 +19,20 @@
       <title>Nick McCarty</title>
       <link>https://nickmccarty.me</link>
     </image>
+  <item>
+    <title>The Case Against Prompt Engineering</title>
+    <link>https://nickmccarty.me/blog/case-against-prompt-engineering.html</link>
+    <guid isPermaLink="true">https://nickmccarty.me/blog/case-against-prompt-engineering.html</guid>
+    <pubDate>Fri, 12 Jun 2026 00:00:00 +0000</pubDate>
+    <description>Format brittleness, distributional overfitting, and the Guardrail-to-Handcuff transition — the strongest rebuttals against prompt engineering, argued against my own harness with my own run logs.</description>
+    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
+    <category>is prompt engineering dead</category>
+    <category>prompt engineering brittleness</category>
+    <category>prompt sensitivity</category>
+    <category>prompting inversion</category>
+    <category>prompt distributional overfitting</category>
+    <enclosure url="https://nickmccarty.me/assets/images/og/case-against-prompt-engineering.png" type="image/png" length="0"/>
+  </item>
   <item>
     <title>Cost Envelope Management for Production AI Agents</title>
     <link>https://nickmccarty.me/blog/cost-envelope-management.html</link>
@@ -610,18 +624,6 @@
     <category>research harness CLI</category>
     <category>isometric ASCII splash screen</category>
     <enclosure url="https://nickmccarty.me/assets/images/og/op-cli.png" type="image/png" length="0"/>
-  </item>
-  <item>
-    <title>The Supervisor: Four Convergence Signals and Advisory Interventions</title>
-    <link>https://nickmccarty.me/blog/supervisor.html</link>
-    <guid isPermaLink="true">https://nickmccarty.me/blog/supervisor.html</guid>
-    <pubDate>Sun, 24 May 2026 00:00:00 +0000</pubDate>
-    <description>supervisor.py monitors the harness pipeline for convergence collapse across four signals — score variance, output size CV, search utilization, and content similarity — and recommends specific interventions when thresholds are crossed.</description>
-    <author>nickmccarty0@gmail.com (Nick McCarty)</author>
-    <category>supervisor convergence signals</category>
-    <category>harness pipeline monitoring</category>
-    <category>agentic convergence interventions</category>
-    <enclosure url="https://nickmccarty.me/assets/images/og/supervisor.png" type="image/png" length="0"/>
   </item>
   </channel>
 </rss>
