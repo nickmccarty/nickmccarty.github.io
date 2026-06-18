@@ -98,7 +98,7 @@
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/circuit-extraction-pot-detection.html</loc>
-    <lastmod>2026-01-13</lastmod>
+    <lastmod>2026-06-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -182,7 +182,7 @@
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/extracting-vision-features.html</loc>
-    <lastmod>2026-01-07</lastmod>
+    <lastmod>2026-06-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -194,7 +194,7 @@
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/fastapi-web-app.html</loc>
-    <lastmod>2025-12-28</lastmod>
+    <lastmod>2026-06-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -206,7 +206,7 @@
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/fine-tuning-vision-models.html</loc>
-    <lastmod>2025-12-28</lastmod>
+    <lastmod>2026-06-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -248,7 +248,7 @@
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/harness-data-model.html</loc>
-    <lastmod>2026-06-12</lastmod>
+    <lastmod>2026-06-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -320,7 +320,7 @@
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/mechanistic-interpretability.html</loc>
-    <lastmod>2026-01-05</lastmod>
+    <lastmod>2026-06-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -452,13 +452,13 @@
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/sam-object-detection.html</loc>
-    <lastmod>2026-01-10</lastmod>
+    <lastmod>2026-06-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/sam-vs-fasterrcnn-comparison.html</loc>
-    <lastmod>2026-01-03</lastmod>
+    <lastmod>2026-06-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -536,7 +536,7 @@
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/sparse-probing-pot-detection.html</loc>
-    <lastmod>2026-01-09</lastmod>
+    <lastmod>2026-06-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -608,7 +608,7 @@
   </url>
   <url>
     <loc>https://nickmccarty.me/blog/training-faster-rcnn-geospatial.html</loc>
-    <lastmod>2025-12-20</lastmod>
+    <lastmod>2026-06-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
