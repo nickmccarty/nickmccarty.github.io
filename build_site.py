@@ -11,9 +11,17 @@ Outputs:
 
 Side effects:
     Injects Google Analytics into any blog post that is missing it.
+    Rewrites each post's JSON-LD "dateModified" to its real last-change date.
+
+Recommended workflow: edit content, run this build, then commit the content
+and the regenerated artifacts together. Building with uncommitted edits is
+fine — dirty files are dated TODAY; clean files use their last git commit
+date. Splitting content and build into separate commits on different days can
+drift a post's lastmod forward by one build cycle (harmless, day-granular).
 """
 import json
 import re
+import subprocess
 from datetime import date
 from html.parser import HTMLParser
 from pathlib import Path
@@ -94,6 +102,48 @@ posts = [read_post(p) for p in sorted(BLOG_DIR.glob("*.html"))
 print(f"Loaded {len(posts)} posts")
 
 
+# ── Git modification dates ────────────────────────────────────────────────────
+# A page's real "last modified" date is the last git commit that touched it.
+# Files with uncommitted changes (modified or untracked) count as TODAY, so a
+# build over a freshly edited working tree dates those edits correctly.
+def _git(*args) -> str:
+    try:
+        return subprocess.run(["git", *args], capture_output=True,
+                              text=True, encoding="utf-8").stdout
+    except Exception:
+        return ""
+
+
+_dirty = set()
+for _line in _git("status", "--porcelain").splitlines():
+    _p = _line[3:].strip()
+    if " -> " in _p:                       # renamed: take the new path
+        _p = _p.split(" -> ")[-1]
+    _dirty.add(_p.strip('"'))
+
+# One reverse-chronological pass: first time a path appears = its newest commit.
+_commit_date: dict[str, str] = {}
+_cur = None
+for _line in _git("log", "--format=%cs", "--name-only").splitlines():
+    _line = _line.strip()
+    if not _line:
+        continue
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", _line):
+        _cur = _line
+    elif _cur and _line not in _commit_date:
+        _commit_date[_line] = _cur
+
+
+def mod_date(rel_path: str, fallback: str) -> str:
+    """Last meaningful modification date for a repo-relative path.
+    Dirty (uncommitted) files -> TODAY; clean tracked files -> last commit
+    date; otherwise the supplied fallback (the post's own publish date)."""
+    rp = rel_path.replace("\\", "/")
+    if rp in _dirty:
+        return TODAY
+    return _commit_date.get(rp, fallback)
+
+
 # ── 1. Search index ───────────────────────────────────────────────────────────
 index_data = [{k: v for k, v in p.items() if not k.startswith("_")} for p in posts]
 Path("search-index.json").write_text(
@@ -146,7 +196,7 @@ for p in posts:
     if (BLOG_DIR / p["s"]).stat().st_size > 500_000:
         continue  # skip heavyweight notebook exports — Google can't index them
     url = f"{BASE_URL}/blog/{p['s']}"
-    mod = p["_date"]
+    mod = mod_date(f"blog/{p['s']}", p["_date"])
     # Higher priority for series/analysis posts
     pri = 0.8 if p["c"] in ("Agentic Harness Engineering", "Analysis") else 0.7
     lines += [
@@ -246,27 +296,43 @@ Path("llms.txt").write_text("\n".join(llms_lines) + "\n", encoding="utf-8")
 print(f"llms.txt           {len(llms_lines)} lines")
 
 
-# ── 4. Inject GA into posts missing it ───────────────────────────────────────
+# ── 4. Patch posts: refresh dateModified + inject missing GA ──────────────────
 ga_pattern = re.compile(re.escape(GA_ID))
-fixed = 0
+dm_pattern = re.compile(r'("dateModified"\s*:\s*")[^"]*(")')
+ga_fixed = 0
+dm_fixed = 0
 for p in posts:
     html = p["_html"]
     path = BLOG_DIR / p["s"]
     # Skip data-heavy files (> 500 KB) -- notebook exports / SVG dumps
     if path.stat().st_size > 500_000:
         continue
-    if ga_pattern.search(html):
-        continue
-    # Inject before </head>
-    new_html = html.replace("</head>", GA_SNIPPET, 1)
-    if new_html != html:
-        path.write_text(new_html, encoding="utf-8")
-        print(f"  + GA injected   {p['s']}")
-        fixed += 1
+    changed = False
 
-if fixed == 0:
+    # a) Keep JSON-LD dateModified in sync with the real last-change date
+    want = mod_date(f"blog/{p['s']}", p["_date"])
+    new_html, n = dm_pattern.subn(rf'\g<1>{want}\g<2>', html)
+    if n and new_html != html:
+        html = new_html
+        changed = True
+        dm_fixed += 1
+
+    # b) Inject GA before </head> if absent
+    if not ga_pattern.search(html):
+        nh = html.replace("</head>", GA_SNIPPET, 1)
+        if nh != html:
+            html = nh
+            changed = True
+            ga_fixed += 1
+            print(f"  + GA injected   {p['s']}")
+
+    if changed:
+        path.write_text(html, encoding="utf-8")
+
+print(f"dateModified       {dm_fixed} posts refreshed")
+if ga_fixed == 0:
     print("GA injection       all posts already have GA")
 else:
-    print(f"GA injection       {fixed} posts updated")
+    print(f"GA injection       {ga_fixed} posts updated")
 
 print("\nDone.")
