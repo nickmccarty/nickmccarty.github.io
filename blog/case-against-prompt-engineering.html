@@ -62,6 +62,14 @@
     }
     .rebuttal h3 { margin: 0 0 0.35rem; font-size: 1rem; }
     .rebuttal p { margin: 0.5rem 0 0; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; }
+    .eval-log { border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; margin: 1.5rem 0; }
+    .eval-log-head { font-family: 'Courier New', monospace; font-size: 0.74rem; color: var(--text-secondary); background: var(--bg-tertiary); padding: 0.55rem 0.9rem; border-bottom: 1px solid var(--border-color); word-break: break-word; }
+    .eval-round { padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--border-color); }
+    .eval-round:last-child { border-bottom: none; }
+    .eval-round-label { display: inline-block; font-family: 'Courier New', monospace; font-size: 0.74rem; color: var(--accent-pink); letter-spacing: 0.04em; margin-bottom: 0.35rem; }
+    .eval-round p { margin: 0; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.65; }
+    .eval-round .eval-verdict { display: block; margin-top: 0.3rem; font-style: italic; opacity: 0.85; }
+    .eval-round strong { color: var(--accent-cyan); font-weight: 600; }
   </style>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://nickmccarty.me/"},{"@type":"ListItem","position":2,"name":"Blog","item":"https://nickmccarty.me/blog.html"},{"@type":"ListItem","position":3,"name":"The Case Against Prompt Engineering","item":"https://nickmccarty.me/blog/case-against-prompt-engineering.html"}]}</script>
 </head>
@@ -231,8 +239,46 @@
       <h2>My Own Logs Testify for the Prosecution</h2>
 
       <p>
+        Start with the argument from the top of this post. The task was mundane&mdash;<em>&ldquo;What
+        are the most important ML papers from last year?&rdquo;</em>&mdash;run with the date injected
+        into the context window (May 2026, so &ldquo;last year&rdquo; is unambiguously 2025), a
+        qwen3.6-35b producer, and a qwen3-8b evaluator scoring its draft across three
+        <a href="./the-wiggum-loop.html">Wiggum-loop</a> rounds. Here is that evaluator deciding,
+        three times, what year it is&mdash;straight from <code>runs.jsonl</code>:
+      </p>
+
+      <div class="eval-log">
+        <div class="eval-log-head">runs.jsonl &middot; run 20260515T235659Z &middot; producer qwen3.6-35b &middot; evaluator qwen3-8b &middot; task &ldquo;most important ML papers from last year&rdquo;</div>
+        <div class="eval-round">
+          <span class="eval-round-label">ROUND 1 &middot; score 6.6</span>
+          <p>&ldquo;&hellip;a clearer connection to the task of identifying the most important ML papers from last year <strong>(2025)</strong>.&rdquo;</p>
+        </div>
+        <div class="eval-round">
+          <span class="eval-round-label">ROUND 2 &middot; score 6.9</span>
+          <p>&ldquo;The year references are incorrect, and the content is about 2023, not <strong>2024</strong> as per the temporal guide.&rdquo;
+          <span class="eval-verdict">&rarr; revise to &ldquo;correctly reference <strong>2024</strong> as the current year and 2023 as &lsquo;last year.&rsquo;&rdquo;</span></p>
+        </div>
+        <div class="eval-round">
+          <span class="eval-round-label">ROUND 3 &middot; score 6.0</span>
+          <p>&ldquo;The output incorrectly refers to 2023 as &lsquo;last year&rsquo; when the task specifies &lsquo;last year&rsquo; as <strong>2025</strong>.&rdquo;
+          <span class="eval-verdict">&rarr; revise to &ldquo;correctly refer to <strong>2025</strong> as &lsquo;last year.&rsquo;&rdquo;</span></p>
+        </div>
+      </div>
+
+      <p>
+        The producer never moved off 2025. The evaluator spent three rounds disagreeing first with
+        the context window&mdash;the injected date said 2026&mdash;and then with itself, sliding to
+        2024 and back to 2025 while the composite score drifted
+        <span class="stat-inline">6.6 &rarr; 6.9 &rarr; 6.0</span> as the loop &ldquo;corrected&rdquo;
+        toward a year that was never on the calendar. The date was right there in the prompt. One
+        incidental phrase&mdash;&ldquo;last year&rdquo;&mdash;was load-bearing enough to send a
+        quality gate into a temporal tailspin. The instrument I built to catch brittleness was, in
+        that run, the brittle thing.
+      </p>
+
+      <p>
         It would be convenient to treat this as other people&rsquo;s problem. My
-        <code>runs.jsonl</code> says otherwise. Three exhibits from the eval suite&rsquo;s
+        <code>runs.jsonl</code> says otherwise. Three more exhibits from the eval suite&rsquo;s
         instruction-variant and model-swap runs:
       </p>
 
